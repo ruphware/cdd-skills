@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bash syntax check
+        run: bash -n scripts/install.sh
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Python compile
+        run: python -m compileall .
+
+      - name: Skill structure check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.agents/skills')
+          assert root.exists(), 'missing .agents/skills'
+
+          def has_frontmatter(p: Path) -> None:
+            txt = p.read_text(encoding='utf-8')
+            m = re.match(r'^---\n(.*?)\n---\n', txt, re.S)
+            assert m, f'missing YAML frontmatter in {p}'
+            fm = m.group(1)
+            assert re.search(r'^name:\s*\S+', fm, re.M), f'missing name in {p}'
+            assert re.search(r'^description:', fm, re.M), f'missing description in {p}'
+
+          for skill in sorted(root.iterdir()):
+            if not skill.is_dir():
+              continue
+            skill_md = skill / 'SKILL.md'
+            assert skill_md.exists(), f'missing {skill_md}'
+            has_frontmatter(skill_md)
+            oy = skill / 'agents' / 'openai.yaml'
+            assert oy.exists(), f'missing {oy}'
+            y = oy.read_text(encoding='utf-8')
+            assert 'allow_implicit_invocation: false' in y, f'implicit invocation not disabled in {oy}'
+
+          print('OK')
+          PY
