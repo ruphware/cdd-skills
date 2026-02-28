@@ -5,71 +5,81 @@ description: |
   Use this skill only when explicitly invoked via `$cdd-ship-step`.
 
   Primary use:
-  - Implement a concrete change (feature/bugfix/refactor) and produce a working patch.
-  - Create or update a TODO.md step with:
-    - Automated checks (exact commands)
-    - UAT checklist
+  - Implement one concrete TODO step (feature/bugfix/refactor) and produce a working patch.
+  - Ensure the step has exact Automated checks + a UAT checklist.
   - Follow the repo’s operating contract in AGENTS.md.
-
-  Don’t use when:
-  - The user wants only Q&A, brainstorming, or review without code changes.
-  - The task is only to refresh docs/INDEX.md (use `$cdd-refresh-index`).
 
   Success criteria:
   - Minimal patch implementing the deliverable.
-  - TODO step has Goal/Deliverable/Changes/Automated checks/UAT.
+  - TODO step has: Goal / Deliverable / Changes / Automated checks / UAT.
   - Validation commands listed (and run when possible).
-  - Final report includes files changed + commands + next action.
+  - Final report includes: files changed + commands + next action + request for UAT sign-off.
 ---
 
-# CDD Ship Step Skill (explicit-only)
+# CDD: Ship a TODO step (explicit-only)
 
-## 0) Repo contract (required)
-1) Read and follow `/AGENTS.md` (repo-level contract).
-2) Read: `/TODO.md`, `/docs/INDEX.md`, `/docs/JOURNAL.md`, and any relevant `/docs/specs/*`.
+## Non-negotiables
+- Follow the target repo’s `/AGENTS.md`.
+- Keep diffs minimal and scoped to the chosen step.
+- Never introduce deadlines or deadline-like phrasing.
 
-If `docs/INDEX.md` is missing/stale and the task depends on architecture context:
-- Prefer running `$cdd-refresh-index` explicitly before continuing.
+## 0) Session bootstrap (required)
+Initialize context in this order:
+1) Read `/AGENTS.md`.
+2) Read `/README.md`.
+3) Find TODO files (`TODO.md`, `TODO-*.md`).
+4) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-refresh-index` before proceeding when architecture context matters).
+5) Read `/docs/specs/blueprint.md`.
+6) Read `/docs/JOURNAL.md` **top section only** for process rules.
 
-## 1) Plan before edits (required)
+## 1) Choose the TODO file + step (required)
+- If multiple TODO files exist, ask which file contains the step (default: `TODO.md`).
+- Ask the user to confirm the exact step heading being shipped (e.g. `Step 03 — ...`).
+
+If the step is ambiguous or missing acceptance detail:
+- Ask one blocking question, OR
+- Propose a short **Confirm** bullet list (acceptance rules / constraints) and ask for approval to add it to the step.
+
+## 2) Plan before edits (required)
 Provide:
-- **File Plan** table: `filename | purpose | ≈LOC`
-- **Logging Plan:** 3–7 grep-friendly logs at key branches/state changes/I/O
-- **Risks:** list likely failure points (interfaces, migration, data shape, env assumptions)
+- File plan: `filename | purpose | ≈LOC`
+- Logging plan: 3–7 grep-friendly logs at key branches/state changes/I/O
+- Risks: top likely failure modes (interfaces, migrations, data shapes, env assumptions)
 
-## 2) Implementation constraints (required)
-- Keep changes minimal; avoid unrelated refactors.
+## 3) Implementation constraints (required)
+- Keep changes minimal; avoid drive-by refactors.
 - Do not remove existing logs/tests unless explicitly requested.
-- Prefer composition over cleverness.
-- Add logs where state changes or branching occurs.
+- Prefer boring, readable code over cleverness.
 
-## 3) TODO step discipline (required)
-If the work is not represented in TODO.md:
-- Add a new `## Step NN — ...` section using the template in:
-  `.agents/skills/cdd-ship-step/assets/todo-step.template.md`
+## 4) TODO discipline (required)
+- Ensure the chosen step contains (at minimum):
+  - Goal
+  - Deliverable
+  - Changes
+  - Automated checks (exact commands)
+  - UAT (manual checklist)
 
-Every step MUST include:
-- Goal
-- Deliverable
-- Changes
-- Automated checks (exact commands)
-- UAT checklist
+If the work is not represented anywhere:
+- Add a new `## Step NN — ...` using:
+  - `.agents/skills/cdd-ship-step/assets/todo-step.template.md`
 
-## 4) Validate (required)
-Run repo checks if they exist (lint/typecheck/tests/build).
-If checks don’t exist, propose exact commands and capture missing checks as a follow-up TODO step.
+Optional (recommended): validate TODO structure via:
+- `python .agents/skills/cdd-ship-step/scripts/validate_todo.py TODO.md`
 
-## 5) Documentation updates (required when applicable)
-Update:
-- `docs/JOURNAL.md` when changes are non-trivial (decisions, trade-offs, gotchas).
-- `docs/INDEX.md` (or run `$cdd-refresh-index`) when architecture/inventory materially changes.
+## 5) Validate (required)
+- Run repo checks if they exist (lint/typecheck/tests/build).
+- If checks don’t exist yet, propose exact commands and capture missing checks as a follow-up TODO step.
 
-## 6) Final report format (required)
+## 6) Docs updates (required when applicable)
+- Update `docs/JOURNAL.md` when changes include real decisions/tradeoffs/gotchas.
+- Refresh `docs/INDEX.md` when architecture/inventory materially changes (prefer `$cdd-refresh-index`).
+
+## 7) Final report format (required)
 Return:
 - GOAL (1 sentence)
-- CONSTRAINTS (bullets)
-- METHOD (2–4 lines)
+- SCOPE (what you touched / didn’t touch)
 - ASSUMPTIONS
-- EXECUTION (files changed + key decisions)
-- VALIDATION (exact commands)
-- NEXT (commit message + next step)
+- CHANGES (bullets + files)
+- VALIDATION (exact commands + results)
+- UAT (checklist; ask for human sign-off)
+- NEXT (suggest commit message + next step)

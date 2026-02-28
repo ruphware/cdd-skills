@@ -1,0 +1,5 @@
+interface:
+  display_name: "CDD: audit list → TODO plan (approval-gated)"
+  short_description: "Turn an audit list into grouped TODO steps with checks+UAT; approval before writing"
+policy:
+  allow_implicit_invocation: false

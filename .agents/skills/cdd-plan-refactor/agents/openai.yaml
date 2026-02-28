@@ -1,0 +1,5 @@
+interface:
+  display_name: "CDD: plan refactor from docs/INDEX.md (approval-gated)"
+  short_description: "Extract refactor targets from INDEX → propose approaches → write TODO-refactoring-<tag>.md after approval"
+policy:
+  allow_implicit_invocation: false

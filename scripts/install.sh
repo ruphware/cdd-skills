@@ -38,6 +38,10 @@ if [[ ! -d "$SRC_DIR" ]]; then
   exit 1
 fi
 
+if [[ $LINK -eq 1 ]]; then
+  echo "Warning: --link uses symlinks. Some tools may not reliably discover symlinked skills; copy install is recommended." >&2
+fi
+
 if [[ ${#TARGETS[@]} -eq 0 ]]; then
   TARGETS+=("$HOME/.agents/skills")
 fi
