@@ -1,0 +1,5 @@
+interface:
+  display_name: "CDD 06 Index"
+  short_description: "Regenerate docs/INDEX.md (architecture + inventory)"
+policy:
+  allow_implicit_invocation: false

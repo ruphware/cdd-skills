@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD: write/update PRD (Q&A + approval gate)"
-  short_description: "Ask blocking questions → draft docs/specs/prd.md → ask approval → apply"
-policy:
-  allow_implicit_invocation: false

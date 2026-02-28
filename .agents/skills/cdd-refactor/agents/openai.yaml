@@ -1,0 +1,5 @@
+interface:
+  display_name: "CDD 05 Refactor"
+  short_description: "INDEX refactor targets → approaches → TODO-refactoring-<tag>.md"
+policy:
+  allow_implicit_invocation: false

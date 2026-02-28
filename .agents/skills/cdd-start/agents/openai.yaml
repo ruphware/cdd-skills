@@ -1,0 +1,5 @@
+interface:
+  display_name: "CDD 01 Start"
+  short_description: "Create PRD → Blueprint → TODO (approval-gated)"
+policy:
+  allow_implicit_invocation: false

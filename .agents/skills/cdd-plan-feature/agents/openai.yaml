@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD: plan a feature (update PRD/Blueprint/TODO; approval-gated)"
-  short_description: "Ask blocking questions → propose PRD/Blueprint/TODO edits → approval → apply"
-policy:
-  allow_implicit_invocation: false

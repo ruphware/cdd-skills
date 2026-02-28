@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD: refresh docs/INDEX.md"
-  short_description: "Regenerate architecture snapshot + inventory using PROMPT-INDEX"
-policy:
-  allow_implicit_invocation: false

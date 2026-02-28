@@ -1,49 +1,81 @@
 # cdd-skills
 
-Distribution repo for **explicit-only** CDD (Chat-Driven Development) skills.
+Explicit-only CDD (Chat‑Driven Development) skills.
 
-These skills are packaged using the open Agent Skills standard and the Codex/Codex-CLI layout (`.agents/skills`).
+These skills follow the agent-skills folder standard (`.agents/skills`) and are designed to work well in Codex CLI.
 
-## Install (recommended: copy)
+## Start here (two workflows)
+
+### Start a new project
+
+1) Run:
+
+```text
+$cdd-start
+```
+
+2) The skill will:
+- ask for context / files to read
+- draft PRD → ask approval → write `docs/specs/prd.md`
+- draft Blueprint → ask approval → write `docs/specs/blueprint.md`
+- draft TODO plan → ask approval → write `TODO.md`
+
+### Ongoing development
+
+- Plan new work:
+
+```text
+$cdd-plan
+```
+
+- Implement the next TODO step:
+
+```text
+$cdd-implement
+```
+
+Optional maintenance:
+- `$cdd-audit` — turn audit bullets into TODO steps (approval-gated)
+- `$cdd-index` — regenerate `docs/INDEX.md`
+- `$cdd-refactor` — convert INDEX refactor targets into `TODO-refactoring-<tag>.md` (approval-gated)
+
+## Human in the loop
+
+Humans own product intent and final acceptance. Skill outputs include UAT checklists per step. An agent can run UAT commands, but a human should approve the result.
+
+## Install
 
 ```bash
-git clone git@github.com:ruphware/cdd-skills.git ~/Workspace/cdd-skills
-cd ~/Workspace/cdd-skills
+git clone git@github.com:ruphware/cdd-skills.git
+cd cdd-skills
 ./scripts/install.sh
 ```
 
-By default this **copies** skill folders into `~/.agents/skills/`.
+This copies skills into `~/.agents/skills/`.
 
-Options:
-- `--target <dir>` (repeatable) to install into additional skill roots
-- `--force` to overwrite existing installed skill dirs
-- `--link` to symlink instead of copy (not recommended; some tools may not reliably discover symlinked skills)
+## Update
 
-## Install via `$skill-installer` (Codex)
-
-In Codex, you can install a skill from a GitHub URL. Examples:
-
-```text
-$skill-installer install https://github.com/ruphware/cdd-skills/tree/main/.agents/skills/cdd-ship-step
-$skill-installer install https://github.com/ruphware/cdd-skills/tree/main/.agents/skills/cdd-refresh-index
+```bash
+cd cdd-skills
+git pull
+./scripts/install.sh --force
 ```
 
-(If newly installed skills don’t appear immediately, restart Codex.)
+Notes:
+- If you install via the default copy mode, updating the repo does not update installed skills until you rerun `./scripts/install.sh`.
+- If newly installed/updated skills don’t appear, restart Codex.
 
-## Skills
+## Commands
 
-Planning (approval-gated, explicit-only):
-- `cdd-write-prd`
-- `cdd-write-blueprint`
-- `cdd-prd-to-todo`
-- `cdd-plan-feature`
-- `cdd-plan-refactor`
-- `cdd-audit-to-plan`
+Golden path:
+- `$cdd-start` — PRD → Blueprint → TODO (approval-gated)
+- `$cdd-plan` — plan changes and TODO steps (approval-gated)
+- `$cdd-implement` — implement a TODO step
+- `$cdd-index` — regenerate `docs/INDEX.md`
+- `$cdd-audit` — audit list → TODO steps (approval-gated)
+- `$cdd-refactor` — INDEX refactor targets → refactor TODO file (approval-gated)
 
-Execution (explicit-only):
-- `cdd-ship-step`
-
-Index maintenance (explicit-only):
-- `cdd-refresh-index`
-
-All skills disable implicit invocation; use explicit `$cdd-...` invocation.
+Atomic (optional):
+- `$cdd-prd`
+- `$cdd-blueprint`
+- `$cdd-todo`

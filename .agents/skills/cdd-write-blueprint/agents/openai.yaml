@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD: write/update Blueprint (tech + architecture + approval gate)"
-  short_description: "Read PRD → propose stack/architecture → draft blueprint → ask approval → apply"
-policy:
-  allow_implicit_invocation: false

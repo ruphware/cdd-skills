@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD: ship a TODO step"
-  short_description: "Plan → patch → checks → report, aligned to AGENTS.md + TODO.md"
-policy:
-  allow_implicit_invocation: false

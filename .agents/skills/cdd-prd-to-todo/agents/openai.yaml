@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD: PRD → TODO plan (approval-gated)"
-  short_description: "Convert PRD/Blueprint into small TODO steps with checks+UAT; approval before writing"
-policy:
-  allow_implicit_invocation: false
