@@ -16,14 +16,13 @@ Runtimes:
 1) Run:
 
 ```text
-$cdd-start
+$cdd-init-project
 ```
 
 2) The skill will:
 - ask for context / files to read
-- draft PRD → ask approval → write `docs/specs/prd.md`
-- draft Blueprint → ask approval → write `docs/specs/blueprint.md`
-- draft TODO plan → ask approval → write `TODO.md`
+- help complete `TODO.md` Step 00 (PRD + Blueprint + README)
+- propose Step 01+ and ask approval to apply
 
 ### Ongoing development
 
@@ -36,13 +35,13 @@ $cdd-plan
 - Implement the next TODO step:
 
 ```text
-$cdd-implement
+$cdd-implement-todo
 ```
 
 Optional maintenance:
-- `$cdd-audit` — turn audit bullets into TODO steps (approval-gated)
+- `$cdd-audit-and-implement` — audit bullets → TODO steps → implement first step (two approvals)
 - `$cdd-index` — regenerate `docs/INDEX.md`
-- `$cdd-refactor` — convert INDEX refactor targets into `TODO-refactoring-<tag>.md` (approval-gated)
+- `$cdd-refactor` — refactor candidates → `TODO-refactor-<tag>.md` (approval-gated)
 
 ## Human in the loop
 
@@ -78,15 +77,14 @@ Notes:
 
 ## Commands
 
-Golden path:
-- `$cdd-start` — PRD → Blueprint → TODO (approval-gated)
-- `$cdd-plan` — plan changes and TODO steps (approval-gated)
-- `$cdd-implement` — implement a TODO step
-- `$cdd-index` — regenerate `docs/INDEX.md`
-- `$cdd-audit` — audit list → TODO steps (approval-gated)
-- `$cdd-refactor` — INDEX refactor targets → refactor TODO file (approval-gated)
+Breaking changes:
+- Renamed: `$cdd-start` → `$cdd-init-project`, `$cdd-implement` → `$cdd-implement-todo`, `$cdd-audit` → `$cdd-audit-and-implement`
+- Removed: `$cdd-prd`, `$cdd-blueprint`, `$cdd-todo`
 
-Atomic (optional):
-- `$cdd-prd`
-- `$cdd-blueprint`
-- `$cdd-todo`
+Golden path:
+- `$cdd-init-project` — complete Step 00 → propose Step 01+ (approval-gated)
+- `$cdd-plan` — plan changes and TODO steps (approval-gated)
+- `$cdd-implement-todo` — implement a TODO step
+- `$cdd-index` — regenerate `docs/INDEX.md`
+- `$cdd-audit-and-implement` — audit → TODO steps → implement first step (two approvals)
+- `$cdd-refactor` — refactor candidates → refactor TODO file (approval-gated)

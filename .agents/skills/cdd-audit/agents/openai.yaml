@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD 04 Audit"
-  short_description: "Turn audit bullets into grouped TODO steps (approval-gated)"
-policy:
-  allow_implicit_invocation: false

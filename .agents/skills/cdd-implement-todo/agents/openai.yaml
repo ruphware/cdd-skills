@@ -1,0 +1,5 @@
+interface:
+  display_name: "CDD 03 Implement TODO"
+  short_description: "Implement one TODO step → checks → report → UAT"
+policy:
+  allow_implicit_invocation: false

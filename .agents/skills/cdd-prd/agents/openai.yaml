@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD A1 PRD"
-  short_description: "Write/update docs/specs/prd.md (approval-gated)"
-policy:
-  allow_implicit_invocation: false

@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD A3 TODO plan"
-  short_description: "Convert PRD/Blueprint → TODO steps (approval-gated)"
-policy:
-  allow_implicit_invocation: false

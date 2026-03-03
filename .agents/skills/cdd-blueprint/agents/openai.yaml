@@ -1,5 +1,0 @@
-interface:
-  display_name: "CDD A2 Blueprint"
-  short_description: "Write/update docs/specs/blueprint.md (approval-gated)"
-policy:
-  allow_implicit_invocation: false
