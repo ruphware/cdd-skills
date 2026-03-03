@@ -4,6 +4,11 @@ Explicit-only CDD (Chat‑Driven Development) skills.
 
 These skills follow the agent-skills folder standard (`.agents/skills`) and are designed to work well in Codex CLI.
 
+Runtimes:
+- Codex CLI: install to `~/.agents/skills/`, invoke via `$cdd-*`.
+- Claude Code: install to `~/.claude/skills/`, invoke via `/cdd-*`.
+- OpenClaw: install to `~/.openclaw/skills/` (or `<workspace>/skills/`).
+
 ## Start here (two workflows)
 
 ### Start a new project
@@ -51,7 +56,13 @@ cd cdd-skills
 ./scripts/install.sh
 ```
 
-This copies skills into `~/.agents/skills/`.
+This copies skills into `~/.agents/skills/` (Codex CLI).
+
+To install for multiple runtimes:
+
+```bash
+./scripts/install.sh --target ~/.agents/skills --target ~/.claude/skills --target ~/.openclaw/skills
+```
 
 ## Update
 

@@ -1,16 +1,7 @@
 ---
 name: cdd-blueprint
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-blueprint`.
-  
-  Purpose:
-  - Select the simplest viable architecture consistent with PRD constraints.
-  - Create/update `docs/specs/blueprint.md`.
-  - Approval-gated; write only after explicit approval.
-  
-  Default file scope:
-  - `docs/specs/blueprint.md` (and optional sub-specs only if approved).
+description: "Create/update docs/specs/blueprint.md (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Blueprint (explicit-only)
@@ -23,12 +14,12 @@ description: |
 
 ## Session bootstrap (required)
 Initialize context in this order:
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
 
 
 ## Approval gate (mandatory)

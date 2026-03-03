@@ -1,17 +1,7 @@
 ---
 name: cdd-start
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-start`.
-  
-  Purpose:
-  - Start a new project workflow: PRD → Blueprint → TODO.
-  - Approval-gated at each stage; no file edits until approved.
-  
-  Default file scope (after approval):
-  - `docs/specs/prd.md`
-  - `docs/specs/blueprint.md`
-  - `TODO.md` (or a user-selected TODO file)
+description: "Start a new project workflow: PRD -> Blueprint -> TODO (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Start (explicit-only)
@@ -24,12 +14,12 @@ description: |
 
 ## Session bootstrap (required)
 Initialize context in this order:
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
 
 
 ## Repo detection & template state (required, before Stage 1)

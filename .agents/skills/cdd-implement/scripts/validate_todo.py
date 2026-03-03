@@ -3,7 +3,7 @@
 validate_todo.py — deterministic TODO.md structure checker for CDD.
 
 Usage:
-  python .agents/skills/cdd-ship-step/scripts/validate_todo.py [path/to/TODO.md]
+  python3 scripts/validate_todo.py [path/to/TODO.md]
 
 Checks:
 - Each "## Step" section includes: Goal, Deliverable, Changes, Automated checks, UAT

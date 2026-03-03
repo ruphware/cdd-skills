@@ -37,6 +37,8 @@ jobs:
             fm = m.group(1)
             assert re.search(r'^name:\s*\S+', fm, re.M), f'missing name in {p}'
             assert re.search(r'^description:', fm, re.M), f'missing description in {p}'
+            assert not re.search(r'^[a-zA-Z0-9_-]+:\s*[|>]\s*$', fm, re.M), f'multiline frontmatter not allowed in {p}'
+            assert re.search(r'^disable-model-invocation:\s*true\b', fm, re.M), f'missing disable-model-invocation: true in {p}'
 
           for skill in sorted(root.iterdir()):
             if not skill.is_dir():

@@ -1,16 +1,7 @@
 ---
 name: cdd-todo
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-todo`.
-  
-  Purpose:
-  - Convert `docs/specs/prd.md` (+ `docs/specs/blueprint.md`) into an executable step plan.
-  - Produce 5–15 small steps; every step has checks + UAT.
-  - Approval-gated; write only after explicit approval.
-  
-  Default file scope:
-  - `TODO.md` (or a user-selected TODO file).
+description: "Convert PRD/Blueprint into a TODO step plan (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD TODO plan (explicit-only)
@@ -23,12 +14,12 @@ description: |
 
 ## Session bootstrap (required)
 Initialize context in this order:
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
 
 
 ## Approval gate (mandatory)

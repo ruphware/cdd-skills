@@ -1,17 +1,7 @@
 ---
 name: cdd-implement
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-implement`.
-  
-  Purpose:
-  - Implement one concrete TODO step (feature/bugfix/refactor) and produce a working patch.
-  - Ensure the step has exact Automated checks + a UAT checklist.
-  
-  Success criteria:
-  - Minimal patch implementing the deliverable.
-  - Validation commands listed (and run when possible).
-  - Final report includes files changed + commands + request for UAT sign-off.
+description: "Implement one TODO step with validation + UAT (explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Implement (explicit-only)
@@ -23,17 +13,17 @@ description: |
 
 
 ## Non-negotiables
-- Follow the target repo’s `/AGENTS.md`.
+- Follow the target repo’s `AGENTS.md`.
 - Keep diffs minimal and scoped to the chosen step.
 
 ## Session bootstrap (required)
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
+1) Read `AGENTS.md`.
+2) Read `README.md`.
 3) Find TODO files (`TODO.md`, `TODO-*.md`).
-4) Read `/docs/INDEX.md` (if missing: recommend `$cdd-index` when architecture context matters).
-5) Read `/docs/specs/blueprint.md`.
-6) Read `/docs/specs/prd.md`.
-7) Read `/docs/JOURNAL.md` **top section only** for process rules.
+4) Read `docs/INDEX.md` (if missing: recommend `$cdd-index` when architecture context matters).
+5) Read `docs/specs/blueprint.md`.
+6) Read `docs/specs/prd.md`.
+7) Read `docs/JOURNAL.md` **top section only** for process rules.
 
 ## Choose the TODO file + step (required)
 - If multiple TODO files exist, ask which file contains the step (default: `TODO.md`).
@@ -59,10 +49,10 @@ Provide:
 
 If the work is not represented anywhere:
 - Add a new `## Step NN — ...` using:
-  - `.agents/skills/cdd-implement/assets/todo-step.template.md`
+  - `assets/todo-step.template.md` (OpenClaw: `{baseDir}/assets/todo-step.template.md`)
 
 Optional (recommended): validate TODO structure via:
-- `python .agents/skills/cdd-implement/scripts/validate_todo.py TODO.md`
+- `scripts/validate_todo.py` (OpenClaw: `{baseDir}/scripts/validate_todo.py`; see file for usage)
 
 ## Validate (required)
 - Run repo checks if they exist (lint/typecheck/tests/build).

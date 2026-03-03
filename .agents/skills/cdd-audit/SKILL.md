@@ -1,12 +1,7 @@
 ---
 name: cdd-audit
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-audit`.
-  
-  Purpose:
-  - Convert an audit list (bugs/UX issues/observations) into an actionable TODO plan.
-  - Approval-gated; write only after explicit approval.
+description: "Convert audit bullets into grouped TODO steps (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Audit (explicit-only)
@@ -19,12 +14,12 @@ description: |
 
 ## Session bootstrap (required)
 Initialize context in this order:
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
 
 
 ## Approval gate (mandatory)

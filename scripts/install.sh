@@ -8,7 +8,7 @@ set -euo pipefail
 #   ./scripts/install.sh            # safe copy into ~/.agents/skills
 #   ./scripts/install.sh --force    # overwrite existing skill dirs
 #   ./scripts/install.sh --link     # symlink instead of copy
-#   ./scripts/install.sh --target ~/.agents/skills --target ~/.claude/skills
+#   ./scripts/install.sh --target ~/.agents/skills --target ~/.claude/skills --target ~/.openclaw/skills
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC_DIR="$ROOT_DIR/.agents/skills"

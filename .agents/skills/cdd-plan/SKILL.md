@@ -1,13 +1,7 @@
 ---
 name: cdd-plan
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-plan`.
-  
-  Purpose:
-  - Plan new work on an existing project.
-  - Ask blocking questions; propose PRD/Blueprint/TODO edits.
-  - Approval-gated; apply edits only after explicit approval.
+description: "Plan new work and propose doc/TODO edits (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Plan (explicit-only)
@@ -20,12 +14,12 @@ description: |
 
 ## Session bootstrap (required)
 Initialize context in this order:
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
 
 
 ## Approval gate (mandatory)

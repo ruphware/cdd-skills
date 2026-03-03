@@ -1,13 +1,7 @@
 ---
 name: cdd-refactor
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-refactor`.
-  
-  Purpose:
-  - Read `docs/INDEX.md` and extract refactoring targets.
-  - Propose 2–3 approaches per target with tradeoffs; recommend one.
-  - Approval-gated; write a refactor TODO file only after approval.
+description: "Turn INDEX refactor targets into a refactor TODO plan (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Refactor (explicit-only)
@@ -19,12 +13,12 @@ description: |
 
 
 ## Session bootstrap (required)
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (required).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules.
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (required).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules.
 
 ## Approval gate (mandatory)
 Planning skills must **not** modify repo files on the first pass.

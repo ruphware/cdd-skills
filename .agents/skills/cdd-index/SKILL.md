@@ -1,15 +1,7 @@
 ---
 name: cdd-index
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-index`.
-  
-  Purpose:
-  - Regenerate `docs/INDEX.md` using `docs/prompts/PROMPT-INDEX.md`.
-  
-  Success criteria:
-  - Update `docs/INDEX.md` with GitHub-safe Mermaid and a file/LOC inventory.
-  - Change ONLY `docs/INDEX.md` unless `docs/prompts/PROMPT-INDEX.md` explicitly requires more.
+description: "Regenerate docs/INDEX.md using docs/prompts/PROMPT-INDEX.md (explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD Index (explicit-only)
@@ -21,7 +13,7 @@ description: |
 
 
 ## Canonical instructions
-- Execute `/docs/prompts/PROMPT-INDEX.md` as the source of truth.
+- Execute `docs/prompts/PROMPT-INDEX.md` as the source of truth.
 
 ## Rules
 - Update ONLY `docs/INDEX.md` unless PROMPT-INDEX requires otherwise.

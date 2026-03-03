@@ -1,15 +1,7 @@
 ---
 name: cdd-prd
-description: |
-  EXPLICIT-ONLY SKILL.
-  Use this skill only when explicitly invoked via `$cdd-prd`.
-  
-  Purpose:
-  - Create/update `docs/specs/prd.md` via concise Q&A.
-  - Approval-gated; write only after explicit approval.
-  
-  Default file scope:
-  - `docs/specs/prd.md` only.
+description: "Create/update docs/specs/prd.md via Q&A (approval-gated, explicit-only)."
+disable-model-invocation: true
 ---
 
 # CDD PRD (explicit-only)
@@ -22,12 +14,12 @@ description: |
 
 ## Session bootstrap (required)
 Initialize context in this order:
-1) Read `/AGENTS.md`.
-2) Read `/README.md`.
-3) Read `/docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
-4) Read `/docs/specs/blueprint.md`.
-5) Read `/docs/specs/prd.md`.
-6) Read the **top** of `/docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
+1) Read `AGENTS.md`.
+2) Read `README.md`.
+3) Read `docs/INDEX.md` (if missing: recommend running `$cdd-index` when repo context matters).
+4) Read `docs/specs/blueprint.md`.
+5) Read `docs/specs/prd.md`.
+6) Read the **top** of `docs/JOURNAL.md` for process rules (do not scan the entire file unless needed).
 
 
 ## Approval gate (mandatory)
@@ -42,7 +34,7 @@ Workflow:
 
 ## Scope safety
 - Default to editing **only** `docs/specs/prd.md`.
-- If the PRD file is missing, create it from `assets/prd.template.md`.
+- If the PRD file is missing, create it from `assets/prd.template.md` (OpenClaw: `{baseDir}/assets/prd.template.md`).
 
 ## Q&A style
 - Ask one blocking question at a time.
