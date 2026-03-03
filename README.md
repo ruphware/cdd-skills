@@ -21,8 +21,9 @@ $cdd-init-project
 
 2) The skill will:
 - ask for context / files to read
-- help complete `TODO.md` Step 00 (PRD + Blueprint + README)
-- propose Step 01+ and ask approval to apply
+- route based on repo state (empty dir / fresh boilerplate repo / existing repo)
+- for boilerplate repos: help complete `TODO.md` Step 00 (PRD + Blueprint + README) and propose Step 01+
+- for existing repos: draft a CDD adoption + docs migration plan (approval-gated)
 
 ### Ongoing development
 
@@ -82,7 +83,7 @@ Breaking changes:
 - Removed: `$cdd-prd`, `$cdd-blueprint`, `$cdd-todo`
 
 Golden path:
-- `$cdd-init-project` — complete Step 00 → propose Step 01+ (approval-gated)
+- `$cdd-init-project` — init or adopt the CDD workflow (approval-gated)
 - `$cdd-plan` — plan changes and TODO steps (approval-gated)
 - `$cdd-implement-todo` — implement a TODO step
 - `$cdd-index` — regenerate `docs/INDEX.md`

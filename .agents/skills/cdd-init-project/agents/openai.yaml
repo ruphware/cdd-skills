@@ -1,5 +1,5 @@
 interface:
   display_name: "CDD 01 Init Project"
-  short_description: "Complete TODO Step 00 → propose Step 01+ (approval-gated)"
+  short_description: "Empty dir → template; boilerplate → Step 00; existing repo → adopt CDD"
 policy:
   allow_implicit_invocation: false
