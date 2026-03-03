@@ -1,6 +1,6 @@
-# cdd-skills
+# CDD Skills
 
-Explicit-only CDD (Chat‑Driven Development) skills.
+Explicit-only Agent CDD (Chat‑Driven-Development) skills.
 
 These skills follow the agent-skills folder standard (`.agents/skills`) and are designed to work well in Codex CLI.
 
@@ -77,10 +77,6 @@ Notes:
 - If newly installed/updated skills don’t appear, restart Codex.
 
 ## Commands
-
-Breaking changes:
-- Renamed: `$cdd-start` → `$cdd-init-project`, `$cdd-implement` → `$cdd-implement-todo`, `$cdd-audit` → `$cdd-audit-and-implement`
-- Removed: `$cdd-prd`, `$cdd-blueprint`, `$cdd-todo`
 
 Golden path:
 - `$cdd-init-project` — init or adopt the CDD workflow (approval-gated)
