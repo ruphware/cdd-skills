@@ -31,8 +31,8 @@ $cdd-init-project
 2) The skill will:
 - ask for context / files to read
 - route based on repo state (empty dir / docs-seeded folder / fresh boilerplate repo / existing repo)
-- for empty dirs: propose the current folder name as the repo name, bring the boilerplate template into that same folder, and start Step 00 there
-- for docs-seeded folders: inventory raw source documents, bring the boilerplate template into that same folder, and use the discovered docs to drive Step 00
+- for empty dirs: propose the current folder name as the repo name, bring the boilerplate files into that same folder, and start Step 00 there without carrying template Git history into the new project
+- for docs-seeded folders: inventory raw source documents, bring the boilerplate files into that same folder, and use the discovered docs to drive Step 00 without carrying template Git history into the new project
 - for boilerplate repos: help complete `TODO.md` Step 00 (PRD + Blueprint + README) and propose Step 01+
 - for existing repos: draft a CDD adoption + docs migration plan (approval-gated)
 

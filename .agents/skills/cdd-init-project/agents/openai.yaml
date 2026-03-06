@@ -1,5 +1,5 @@
 interface:
   display_name: "CDD 01 Init Project"
-  short_description: "Empty dir/docs-seeded folder → bootstrap template in current folder + Step 00; boilerplate → Step 00; existing repo → adopt CDD"
+  short_description: "Empty dir/docs-seeded folder → bootstrap boilerplate files in current folder + Step 00; boilerplate → Step 00; existing repo → adopt CDD"
 policy:
   allow_implicit_invocation: false

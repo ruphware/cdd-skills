@@ -74,9 +74,11 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - a local-only repo for now
 4) If GitHub-backed:
    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-   - materialize the template into the current folder without cloning to a sibling directory and without changing directories
-   - if the current folder already has local git history, preserve that history, import the template tree into the working tree, commit locally, and warn that the first push will require explicit approval to force-push and replace the template repo's initial history
-   - otherwise, initialize locally if needed, add `origin`, fetch the remote default branch, and check out the template into the current directory
+   - materialize the boilerplate files into the current folder without cloning to a sibling directory and without changing directories
+   - never keep the template repo's git history as part of the new project history
+   - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history
+   - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
+   - connect/push the resulting project history so the remote matches the project history rather than the template history
 5) If local-only:
    - ask for a local path to a `cdd-boilerplate` checkout (or permission to clone it)
    - materialize the boilerplate into the current folder without changing directories
@@ -110,9 +112,11 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - use `docs/source-material/` as the default input set for Step 00
 7) If GitHub-backed:
    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-   - materialize the template into the current folder without cloning to a sibling directory and without changing directories
-   - if the current folder already has local git history, preserve that history, import the template tree into the working tree, commit locally, and warn that the first push will require explicit approval to force-push and replace the template repo's initial history
-   - otherwise, initialize locally if needed, add `origin`, fetch the remote default branch, and check out the template into the current directory
+   - materialize the boilerplate files into the current folder without cloning to a sibling directory and without changing directories
+   - never keep the template repo's git history as part of the new project history
+   - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history
+   - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
+   - connect/push the resulting project history so the remote matches the project history rather than the template history
 8) If local-only:
    - ask for a local path to a `cdd-boilerplate` checkout (or permission to clone it)
    - materialize the boilerplate into the current folder without changing directories
