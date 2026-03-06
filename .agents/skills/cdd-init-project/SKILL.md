@@ -1,6 +1,6 @@
 ---
 name: cdd-init-project
-description: "Init or adopt the CDD contract (empty dir, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only)."
+description: "Init or adopt the CDD contract (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only)."
 disable-model-invocation: true
 ---
 
@@ -8,6 +8,7 @@ disable-model-invocation: true
 
 This skill is designed for:
 - a brand-new project directory
+- a folder with raw source/reference documents but no substantive code yet
 - a repo freshly created from `cdd-boilerplate`
 - an existing repo that wants to adopt the CDD workflow
 
@@ -16,6 +17,7 @@ Use these repo files as the authoritative workflow and format:
 - `AGENTS.md`
 - `README.md`
 - `TODO.md` (and/or `TODO-*.md`)
+- `docs/JOURNAL.md`
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
 - `docs/prompts/PROMPT-INDEX.md` (if present)
@@ -23,11 +25,14 @@ Use these repo files as the authoritative workflow and format:
 ## State detection (required)
 Classify the workspace into exactly one state and tell the user which one you detected:
 
-### A) EMPTY_DIR
-No files present (ignore `.git/` if it exists).
+Use this precedence order; stop on the first matching state:
 
-### B) FRESH_BOILERPLATE_REPO
-The CDD contract files exist (typical `cdd-boilerplate` layout), and the repo still needs Step 00 work.
+0) Ignore non-substantive paths when classifying:
+   - `.git/`, `.github/`, `.gitignore`, `.gitattributes`, `.editorconfig`
+   - editor/OS noise such as `.DS_Store`, `.idea/`, `.vscode/`
+   - `LICENSE`, empty directories, and CI-only files
+
+1) `FRESH_BOILERPLATE_REPO` if the full CDD contract exists and the repo is still in Step 00 initialization mode.
 
 Minimum signal files:
 - `AGENTS.md`
@@ -37,8 +42,27 @@ Minimum signal files:
 - `docs/JOURNAL.md`
 - `docs/prompts/PROMPT-INDEX.md`
 
-### C) EXISTING_REPO_ADOPT_CDD
-Anything else (non-empty repo that is not the boilerplate layout).
+2) `EXISTING_REPO_ADOPT_CDD` if any substantive code/build/dependency signal exists, even if raw documents are also present.
+
+Common code/build signals:
+- source trees such as `src/`, `app/`, `lib/`, `cmd/`, `server/`, `client/`, `tests/`, `__tests__/`
+- language source files such as `.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.go`, `.rs`, `.java`, `.kt`, `.rb`, `.php`, `.swift`, `.c`, `.cc`, `.cpp`
+- dependency/build manifests such as `package.json`, `pyproject.toml`, `requirements*.txt`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle*`, `Gemfile`, `composer.json`, `Makefile`, `Dockerfile`
+
+Important boundary rule:
+- partial CDD contract files without the full boilerplate layout count as `EXISTING_REPO_ADOPT_CDD`, not a fresh init
+
+3) `DOCS_SEEDED_INIT` if no code/build signal exists but likely source/reference documents do exist.
+
+Common source-document signals:
+- root docs such as `README.md`, `notes*.md`, `requirements*.md`, `brief*.md`, `proposal*.md`, `spec*.md`
+- document folders such as `docs/`, `design/`, `adr/`, `research/`, `notes/`
+- document files such as `.md`, `.txt`, `.rst`, `.pdf`, `.docx`, `.odt`, `.pptx`, `.key`, `.xlsx`, `.csv`, `.drawio`, `.mmd`
+
+4) `EMPTY_DIR` otherwise.
+
+### A) EMPTY_DIR
+No substantive files are present after applying the ignore rules above.
 
 ## Flow A — Empty directory (no writes)
 Goal: get the user into a real `cdd-boilerplate`-derived repo (preferred) and re-run this skill there.
@@ -62,17 +86,41 @@ If the user insists on keeping the current empty folder:
 - Explain that you can only proceed after the boilerplate contract files exist in this directory.
 - Ask the user for a local path to a `cdd-boilerplate` checkout (or permission to clone it), then propose a copy plan and ask approval before writing.
 
-## Flow B — Fresh boilerplate repo (approval-gated)
-1) Read the canonical contract files above.
-2) Use `TODO.md` **Step 00** as the checklist (do not re-define it).
-3) Ask the user for any existing notes/requirements paths and read them before asking questions.
-4) Draft proposed edits (grouped by file) to:
+## Flow B — Docs-seeded init (approval-gated)
+Goal: bootstrap the CDD contract into the current folder, preserve the raw documents, and use them as default Step 00 inputs.
+
+1) Inventory the current folder for candidate source/reference documents before asking any questions.
+2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices) and ask only about:
+   - documents to exclude
+   - important external documents not present in the workspace
+3) Propose bootstrapping the CDD contract into the current folder while preserving the raw documents in place.
+4) Ask: **Approve bootstrapping the CDD contract here?**
+5) After approval, apply the CDD contract and continue with Step 00 using the detected documents as the default source material.
+6) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint
    - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
-5) Ask: **Approve and apply these changes?**
-6) After applying:
+7) Ask: **Approve and apply these changes?**
+8) After applying:
+   - list the exact Step 00 `Automated checks` commands to run
+   - provide a Step 00 UAT checklist
+   - suggest the next step to implement via `$cdd-implement-todo`
+
+## Flow C — Fresh boilerplate repo (approval-gated)
+1) Read the canonical contract files above.
+2) Use `TODO.md` **Step 00** as the checklist (do not re-define it).
+3) Inventory the current workspace for candidate source/reference documents before asking questions.
+4) Show the detected document list and ask only about:
+   - documents to exclude
+   - important external documents not present in the workspace
+5) Draft proposed edits (grouped by file) to:
+   - fill `docs/specs/prd.md`
+   - fill `docs/specs/blueprint.md`
+   - update `README.md` to match the PRD/Blueprint
+   - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
+6) Ask: **Approve and apply these changes?**
+7) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
    - suggest the next step to implement via `$cdd-implement-todo`
@@ -80,7 +128,7 @@ If the user insists on keeping the current empty folder:
 If Step 00 is already complete and the repo is actively developed:
 - STOP and recommend using `$cdd-plan` instead.
 
-## Flow C — Existing repo adopting CDD (approval-gated)
+## Flow D — Existing repo adopting CDD (approval-gated)
 Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-operable.
 
 ### Phase 1 — Audit (no writes)

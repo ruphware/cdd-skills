@@ -21,7 +21,8 @@ $cdd-init-project
 
 2) The skill will:
 - ask for context / files to read
-- route based on repo state (empty dir / fresh boilerplate repo / existing repo)
+- route based on repo state (empty dir / docs-seeded folder / fresh boilerplate repo / existing repo)
+- for docs-seeded folders: inventory raw source documents, bootstrap the CDD contract in place, then use those docs to drive Step 00
 - for boilerplate repos: help complete `TODO.md` Step 00 (PRD + Blueprint + README) and propose Step 01+
 - for existing repos: draft a CDD adoption + docs migration plan (approval-gated)
 
@@ -87,7 +88,7 @@ Notes:
 ## Commands
 
 Golden path:
-- `$cdd-init-project` — init or adopt the CDD workflow (approval-gated)
+- `$cdd-init-project` — init or adopt the CDD workflow, including docs-seeded folders (approval-gated)
 - `$cdd-plan` — plan changes and TODO steps (approval-gated)
 - `$cdd-implement-todo` — implement a TODO step; explicit step selectors should run immediately when they match exactly one step
 - `$cdd-index` — regenerate `docs/INDEX.md`
