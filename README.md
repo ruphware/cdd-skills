@@ -39,6 +39,14 @@ $cdd-plan
 $cdd-implement-todo
 ```
 
+- Implement a specific step directly:
+
+```text
+$cdd-implement-todo step 008
+```
+
+If the requested step resolves to exactly one match across `TODO.md` and `TODO-*.md`, the skill should implement it immediately. It should ask follow-up questions only when step resolution is ambiguous or the TODO step itself is underspecified.
+
 Optional maintenance:
 - `$cdd-audit-and-implement` — audit bullets → TODO steps → implement first step (two approvals)
 - `$cdd-index` — regenerate `docs/INDEX.md`
@@ -81,7 +89,7 @@ Notes:
 Golden path:
 - `$cdd-init-project` — init or adopt the CDD workflow (approval-gated)
 - `$cdd-plan` — plan changes and TODO steps (approval-gated)
-- `$cdd-implement-todo` — implement a TODO step
+- `$cdd-implement-todo` — implement a TODO step; explicit step selectors should run immediately when they match exactly one step
 - `$cdd-index` — regenerate `docs/INDEX.md`
 - `$cdd-audit-and-implement` — audit → TODO steps → implement first step (two approvals)
 - `$cdd-refactor` — refactor candidates → refactor TODO file (approval-gated)
