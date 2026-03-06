@@ -9,6 +9,15 @@ Runtimes:
 - Claude Code: install to `~/.claude/skills/`, invoke via `/cdd-*`.
 - OpenClaw: install to `~/.openclaw/skills/` (or `<workspace>/skills/`).
 
+## Recommended tools
+
+- `git` — effectively required. Install/update flows use it, and the skills assume repo-based work.
+- `gh` — strongly recommended when working with GitHub.com. `cdd-init-project` uses GitHub template/bootstrap flows more smoothly when GitHub CLI is available, but local-only paths still work.
+- `bash` — required for `./scripts/install.sh`.
+- `python3` — recommended for local validation and matches the CI environment used in this repo.
+- Writable local repos — required, since these skills inspect and update files in the target workspace.
+- GitHub network access — recommended for GitHub-backed bootstrap/adoption flows, but not required for local-only use.
+
 ## Start here (two workflows)
 
 ### Start a new project
