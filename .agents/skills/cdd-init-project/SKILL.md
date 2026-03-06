@@ -1,6 +1,6 @@
 ---
 name: cdd-init-project
-description: "Init or adopt the CDD contract (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only)."
+description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only)."
 disable-model-invocation: true
 ---
 
@@ -64,45 +64,67 @@ Common source-document signals:
 ### A) EMPTY_DIR
 No substantive files are present after applying the ignore rules above.
 
-## Flow A — Empty directory (no writes)
-Goal: get the user into a real `cdd-boilerplate`-derived repo (preferred) and re-run this skill there.
+## Flow A — Empty directory (approval-gated)
+Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory as the local repo root.
 
-1) If `.git/` exists, tell the user this is already a git repo and ask whether they want:
-   - a GitHub-connected repo, or
+1) Derive the current directory basename and propose it as the default repo name.
+2) Ask the user to confirm or edit that repo name before any bootstrap step.
+3) Ask whether they want:
+   - a GitHub-backed repo (default: private), or
    - a local-only repo for now
-2) Provide template-creation instructions (GitHub template), then STOP:
-
-GitHub CLI (template → clone):
-```bash
-gh repo create <owner>/<new-repo> --template ruphware/cdd-boilerplate --private
-git clone git@github.com:<owner>/<new-repo>.git
-cd <new-repo>
-```
-
-GitHub UI:
-- Use “Use this template” on `ruphware/cdd-boilerplate`, then clone locally.
-
-If the user insists on keeping the current empty folder:
-- Explain that you can only proceed after the boilerplate contract files exist in this directory.
-- Ask the user for a local path to a `cdd-boilerplate` checkout (or permission to clone it), then propose a copy plan and ask approval before writing.
+4) If GitHub-backed:
+   - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
+   - materialize the template into the current folder without cloning to a sibling directory and without changing directories
+   - if the current folder already has local git history, preserve that history, import the template tree into the working tree, commit locally, and warn that the first push will require explicit approval to force-push and replace the template repo's initial history
+   - otherwise, initialize locally if needed, add `origin`, fetch the remote default branch, and check out the template into the current directory
+5) If local-only:
+   - ask for a local path to a `cdd-boilerplate` checkout (or permission to clone it)
+   - materialize the boilerplate into the current folder without changing directories
+   - initialize git locally if needed, or preserve existing local history if `.git/` already exists
+6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
+7) Draft proposed edits (grouped by file) to:
+   - fill `docs/specs/prd.md`
+   - fill `docs/specs/blueprint.md`
+   - update `README.md` to match the PRD/Blueprint
+   - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
+8) Ask: **Approve and apply these changes?**
+9) After applying:
+   - list the exact Step 00 `Automated checks` commands to run
+   - provide a Step 00 UAT checklist
+   - suggest the next step to implement via `$cdd-implement-todo`
 
 ## Flow B — Docs-seeded init (approval-gated)
-Goal: bootstrap the CDD contract into the current folder, preserve the raw documents, and use them as default Step 00 inputs.
+Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discovered source material, and build Step 00 from it inside this repo.
 
 1) Inventory the current folder for candidate source/reference documents before asking any questions.
 2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices) and ask only about:
    - documents to exclude
    - important external documents not present in the workspace
-3) Propose bootstrapping the CDD contract into the current folder while preserving the raw documents in place.
-4) Ask: **Approve bootstrapping the CDD contract here?**
-5) After approval, apply the CDD contract and continue with Step 00 using the detected documents as the default source material.
-6) Draft proposed edits (grouped by file) to:
+3) Derive the current directory basename and propose it as the default repo name.
+4) Ask the user to confirm or edit that repo name before any bootstrap step.
+5) Ask whether they want:
+   - a GitHub-backed repo (default: private), or
+   - a local-only repo for now
+6) Before materializing the boilerplate, stage discovered source documents that would conflict with template paths.
+   - restore them afterward under `docs/source-material/`, preserving relative paths as much as possible
+   - use `docs/source-material/` as the default input set for Step 00
+7) If GitHub-backed:
+   - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
+   - materialize the template into the current folder without cloning to a sibling directory and without changing directories
+   - if the current folder already has local git history, preserve that history, import the template tree into the working tree, commit locally, and warn that the first push will require explicit approval to force-push and replace the template repo's initial history
+   - otherwise, initialize locally if needed, add `origin`, fetch the remote default branch, and check out the template into the current directory
+8) If local-only:
+   - ask for a local path to a `cdd-boilerplate` checkout (or permission to clone it)
+   - materialize the boilerplate into the current folder without changing directories
+   - initialize git locally if needed, or preserve existing local history if `.git/` already exists
+9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
+10) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint
    - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
-7) Ask: **Approve and apply these changes?**
-8) After applying:
+11) Ask: **Approve and apply these changes?**
+12) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
    - suggest the next step to implement via `$cdd-implement-todo`
