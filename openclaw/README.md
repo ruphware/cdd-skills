@@ -7,10 +7,11 @@ Installed form:
 - directory: `~/.openclaw/skills/cdd-master-chef`
 - slash command: `/cdd-master-chef`
 
-The skill defines a development process:
+The skill defines a three-actor development process:
 
-- **Master Chef (OpenClaw):** planning, delegation, QA gate, pass/fail
+- **Master Chef (OpenClaw):** planning, delegation, dispute handling, step-level UAT approval, commit, push, reporting
 - **Builder (ACP Codex):** implementation worker for one approved step
+- **Watchdog (OpenClaw):** 5-minute health checks, 15-minute heartbeat reports, resume on death
 - **CDD-first policy:** if a `cdd-*` Builder skill exists for the phase, use it first
 
 ## Files
@@ -73,16 +74,58 @@ Uninstall the packaged skill:
 Use the slash command to start or continue the Master Chef process:
 
 ```text
-/cdd-master-chef Use the Master Chef process for /abs/path/to/repo and draft the next approved step.
+/cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
+REPORTING_COMMAND=/abs/path/to/report-status.sh
+REPORTING_TARGET=slack:dev-loop
+Open the control block, send START, and draft the next approved step.
+```
+
+Required startup contract:
+
+- `REPO` — absolute repo path
+- `REPORTING_COMMAND` — executable path to the user-provided reporting wrapper
+- `REPORTING_TARGET` — user-selected channel or destination
+- optional branch/upstream overrides; otherwise use the current branch and configured upstream
+
+Reporting command interface:
+
+```bash
+CDD_REPORT_TARGET="<target>" \
+CDD_REPORT_EVENT="<event>" \
+CDD_REPORT_REPO="<repo>" \
+CDD_REPORT_STEP="<step-or-none>" \
+CDD_REPORT_STATUS="<status>" \
+CDD_REPORT_BODY="<markdown>" \
+"/abs/path/to/report-status.sh"
 ```
 
 The skill should:
 
-1. preflight ACP and Builder prerequisites
-2. keep work scoped to one approved step at a time
-3. delegate implementation to ACP `codex`
-4. enforce CDD-first Builder behavior
-5. run the hard QA gate before reporting PASS
+1. open and maintain the control block
+2. preflight ACP, Builder, git branch/upstream, and reporting prerequisites
+3. keep work scoped to one approved step at a time
+4. delegate implementation to ACP `codex`
+5. enforce CDD-first Builder behavior
+6. run the hard QA gate
+7. approve step-level UAT, commit, push, and send status reports for each passed step
+
+## Watchdog and reporting
+
+This skill assumes OpenClaw can trigger periodic watchdog turns.
+
+- Every 5 minutes: Watchdog checks the control block and Builder health
+- Every 15 minutes: Watchdog sends `HEARTBEAT`
+- If the active process dies before the step is complete: Watchdog resumes it and sends `RESUME`
+- If disputes resolve internally: send `DISPUTE_RESOLVED`
+- If the step hits a serious standstill, repeated death/resume, or 2 unresolved challenge loops: stop the step and send `DEADLOCK_STOPPED`
+
+Status reports must include explicit `Master Chef UAT approved` state.
+
+Step-level push policy:
+
+- every passed step ends with Master Chef UAT approval, commit, push, and `STEP_PASS`
+- if push fails, the step is `STEP_BLOCKED`
+- human control remains at the broader product level: intent, channel selection, and final overall ship/no-ship
 
 ## Runtime configuration
 

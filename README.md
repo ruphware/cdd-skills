@@ -12,16 +12,18 @@ This repo packages two complementary layers:
 The intended workflow is:
 
 1. A human sets product intent and approves work.
-2. OpenClaw runs the **Master Chef** process through `/cdd-master-chef`.
-3. Master Chef selects or plans exactly one approved TODO step.
-4. Master Chef delegates implementation to an ACP Codex Builder session.
+2. OpenClaw runs the **Master Chef** process through `/cdd-master-chef` with a user-selected reporting channel.
+3. Master Chef selects or plans exactly one approved TODO step and opens the run control block.
+4. Master Chef delegates implementation to an ACP Codex Builder session while the Watchdog supervises the run.
 5. The Builder uses the separate `cdd-*` skills first (`cdd-plan`, `cdd-implement-todo`, `cdd-index`, and related helpers).
-6. Master Chef performs the QA gate, returns UAT, and the human decides whether to ship.
+6. Master Chef resolves Builder disputes internally, performs the QA gate, approves step-level UAT, commits, pushes, and reports status.
+7. The human decides the final overall ship/no-ship for the broader workstream.
 
-This keeps planning, implementation, and acceptance separate:
+This keeps planning, implementation, supervision, and acceptance separate:
 
-- **Human**: product intent, UAT, final ship/no-ship
-- **OpenClaw Master Chef**: scope control, delegation, QA gate
+- **Human**: product intent, reporting target selection, final overall ship/no-ship
+- **OpenClaw Master Chef**: scope control, delegation, dispute resolution, QA, step-level UAT approval, commit/push/reporting
+- **OpenClaw Watchdog**: periodic health checks, heartbeat reporting, resume, deadlock reporting
 - **ACP Codex Builder**: code changes and command evidence for one approved step
 
 ## Components
@@ -56,7 +58,7 @@ Invocation:
 
 - `/cdd-master-chef`
 
-The OpenClaw skill does not replace the Builder skill pack. It orchestrates Codex over ACP and expects the separate `cdd-*` Builder skills to already be installed. See `openclaw/README.md` for operator details.
+The OpenClaw skill does not replace the Builder skill pack. It orchestrates Codex over ACP, Watchdog supervision, and user-selected reporting, and it expects the separate `cdd-*` Builder skills to already be installed. See `openclaw/README.md` for operator details.
 
 ## Recommended tools
 
@@ -132,4 +134,4 @@ Builder-only work:
 OpenClaw-driven work:
 
 - Install both the Builder skills and `cdd-master-chef`.
-- Use `/cdd-master-chef` to run the Master Chef process and delegate Builder work through ACP Codex.
+- Use `/cdd-master-chef` to run the Master Chef, Builder, and Watchdog process with user-selected reporting.
