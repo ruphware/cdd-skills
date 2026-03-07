@@ -4,7 +4,7 @@ Explicit-only Chat-Driven-Development skills and process docs for a multi-agent 
 
 This repo packages two complementary layers:
 
-- **Builder skill pack** in `.agents/skills/` for Codex CLI or Claude Code.
+- **Builder skill pack** in `skills/` for Codex CLI or Claude Code.
 - **Master Chef orchestration skill** in `openclaw/`, installed as the OpenClaw slash command `/cdd-master-chef`.
 
 ## Multi-agent development process
@@ -28,7 +28,7 @@ This keeps planning, implementation, and acceptance separate:
 
 ### Builder skill pack
 
-Source of truth: `.agents/skills/`
+Source of truth: `skills/`
 
 Runtimes:
 
@@ -84,14 +84,14 @@ Install the Builder skills for Codex CLI:
 Install the OpenClaw Master Chef skill:
 
 ```bash
-./install-openclaw.sh
+./scripts/install-openclaw.sh
 ```
 
 Typical OpenClaw + Codex setup:
 
 ```bash
 ./scripts/install.sh --target ~/.agents/skills
-./install-openclaw.sh --target ~/.openclaw/skills
+./scripts/install-openclaw.sh --target ~/.openclaw/skills
 ```
 
 ## Update
@@ -100,7 +100,7 @@ Typical OpenClaw + Codex setup:
 cd cdd-skills
 git pull
 ./scripts/install.sh --force
-./install-openclaw.sh --force
+./scripts/install-openclaw.sh --force
 ```
 
 Notes:

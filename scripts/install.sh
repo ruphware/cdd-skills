@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install CDD skills into user skill directories.
+# Install Builder CDD skills into user skill directories.
 # Default target: Codex/Codex CLI (~/.agents/skills)
 #
 # Usage:
@@ -9,8 +9,7 @@ set -euo pipefail
 #   ./scripts/install.sh --force                         # overwrite existing skill dirs
 #   ./scripts/install.sh --link                          # symlink instead of copy
 #   ./scripts/install.sh --target ~/.agents/skills \
-#                      --target ~/.claude/skills \
-#                      --target ~/.openclaw/skills
+#                      --target ~/.claude/skills
 #
 # Optional hygiene:
 #   ./scripts/install.sh --force --prune                 # also prune deprecated/invalid installed cdd-* skills
@@ -22,7 +21,7 @@ set -euo pipefail
 # - Prune never hard-deletes: it moves candidates to a timestamped backup dir (".pruned.<ts>") so you can recover.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC_DIR="$ROOT_DIR/.agents/skills"
+SRC_DIR="$ROOT_DIR/skills"
 
 FORCE=0
 LINK=0

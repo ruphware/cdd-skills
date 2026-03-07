@@ -4,12 +4,12 @@ set -euo pipefail
 # Install the OpenClaw-only cdd-master-chef skill.
 #
 # Usage:
-#   ./install-openclaw.sh
-#   ./install-openclaw.sh --force
-#   ./install-openclaw.sh --link
-#   ./install-openclaw.sh --target ~/.openclaw/skills
+#   ./scripts/install-openclaw.sh
+#   ./scripts/install-openclaw.sh --force
+#   ./scripts/install-openclaw.sh --link
+#   ./scripts/install-openclaw.sh --target ~/.openclaw/skills
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC_DIR="$ROOT_DIR/openclaw"
 TARGET_ROOT="$HOME/.openclaw/skills"
 SKILL_NAME="cdd-master-chef"
@@ -19,7 +19,7 @@ LINK=0
 
 usage() {
   cat <<'EOF'
-Usage: ./install-openclaw.sh [--target DIR] [--force] [--link]
+Usage: ./scripts/install-openclaw.sh [--target DIR] [--force] [--link]
 
 Install the OpenClaw-only cdd-master-chef skill.
 

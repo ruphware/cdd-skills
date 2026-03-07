@@ -41,19 +41,19 @@ This package does not install or duplicate the Builder skills. Install them sepa
 From the repo root:
 
 ```bash
-./install-openclaw.sh
+./scripts/install-openclaw.sh
 ```
 
 Explicit target example:
 
 ```bash
-./install-openclaw.sh --target ~/.openclaw/skills
+./scripts/install-openclaw.sh --target ~/.openclaw/skills
 ```
 
 Link install for local iteration:
 
 ```bash
-./install-openclaw.sh --link --force
+./scripts/install-openclaw.sh --link --force
 ```
 
 ## How to use it
