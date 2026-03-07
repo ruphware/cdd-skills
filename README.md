@@ -1,86 +1,97 @@
 # CDD Skills
 
-Explicit-only Agent CDD (Chat‑Driven-Development) skills.
+Explicit-only Chat-Driven-Development skills and process docs for a multi-agent development loop.
 
-These skills follow the agent-skills folder standard (`.agents/skills`) and are designed to work well in Codex CLI.
+This repo packages two complementary layers:
+
+- **Builder skill pack** in `.agents/skills/` for Codex CLI or Claude Code.
+- **Master Chef orchestration skill** in `openclaw/`, installed as the OpenClaw slash command `/cdd-master-chef`.
+
+## Multi-agent development process
+
+The intended workflow is:
+
+1. A human sets product intent and approves work.
+2. OpenClaw runs the **Master Chef** process through `/cdd-master-chef`.
+3. Master Chef selects or plans exactly one approved TODO step.
+4. Master Chef delegates implementation to an ACP Codex Builder session.
+5. The Builder uses the separate `cdd-*` skills first (`cdd-plan`, `cdd-implement-todo`, `cdd-index`, and related helpers).
+6. Master Chef performs the QA gate, returns UAT, and the human decides whether to ship.
+
+This keeps planning, implementation, and acceptance separate:
+
+- **Human**: product intent, UAT, final ship/no-ship
+- **OpenClaw Master Chef**: scope control, delegation, QA gate
+- **ACP Codex Builder**: code changes and command evidence for one approved step
+
+## Components
+
+### Builder skill pack
+
+Source of truth: `.agents/skills/`
 
 Runtimes:
-- Codex CLI: install to `~/.agents/skills/`, invoke via `$cdd-*`.
-- Claude Code: install to `~/.claude/skills/`, invoke via `/cdd-*`.
-- OpenClaw: install to `~/.openclaw/skills/` (or `<workspace>/skills/`).
+
+- Codex CLI: install to `~/.agents/skills/`, invoke via `$cdd-*`
+- Claude Code: install to `~/.claude/skills/`, invoke via `/cdd-*`
+
+Golden path commands:
+
+- `$cdd-init-project` — init or adopt the CDD workflow in the current folder
+- `$cdd-plan` — plan changes and TODO steps
+- `$cdd-implement-todo` — implement exactly one TODO step
+- `$cdd-index` — regenerate `docs/INDEX.md`
+- `$cdd-audit-and-implement` — audit -> TODO steps -> implement first step
+- `$cdd-refactor` — create a refactor TODO plan from the current index
+
+### OpenClaw Master Chef skill
+
+Source of truth: `openclaw/`
+
+Install target:
+
+- OpenClaw: `~/.openclaw/skills/cdd-master-chef`
+
+Invocation:
+
+- `/cdd-master-chef`
+
+The OpenClaw skill does not replace the Builder skill pack. It orchestrates Codex over ACP and expects the separate `cdd-*` Builder skills to already be installed. See `openclaw/README.md` for operator details.
 
 ## Recommended tools
 
-- `git` — effectively required. Install/update flows use it, and the skills assume repo-based work.
-- `gh` — strongly recommended when working with GitHub.com. `cdd-init-project` uses GitHub template/bootstrap flows more smoothly when GitHub CLI is available, but local-only paths still work.
-- `bash` — required for `./scripts/install.sh`.
-- `python3` — recommended for local validation and matches the CI environment used in this repo.
-- Writable local repos — required, since these skills inspect and update files in the target workspace.
-- GitHub network access — recommended for GitHub-backed bootstrap/adoption flows, but not required for local-only use.
-
-## Start here (two workflows)
-
-### Start a new project
-
-1) Run:
-
-```text
-$cdd-init-project
-```
-
-2) The skill will:
-- ask for context / files to read
-- route based on repo state (empty dir / docs-seeded folder / fresh boilerplate repo / existing repo)
-- for empty dirs: propose the current folder name as the repo name, bring the boilerplate files into that same folder, and start Step 00 there without carrying template Git history into the new project
-- for docs-seeded folders: inventory raw source documents, bring the boilerplate files into that same folder, and use the discovered docs to drive Step 00 without carrying template Git history into the new project
-- for boilerplate repos: help complete `TODO.md` Step 00 (PRD + Blueprint + README) and propose Step 01+
-- for existing repos: draft a CDD adoption + docs migration plan (approval-gated)
-
-### Ongoing development
-
-- Plan new work:
-
-```text
-$cdd-plan
-```
-
-- Implement the next TODO step:
-
-```text
-$cdd-implement-todo
-```
-
-- Implement a specific step directly:
-
-```text
-$cdd-implement-todo step 008
-```
-
-If the requested step resolves to exactly one match across `TODO.md` and `TODO-*.md`, the skill should implement it immediately. It should ask follow-up questions only when step resolution is ambiguous or the TODO step itself is underspecified.
-
-Optional maintenance:
-- `$cdd-audit-and-implement` — audit bullets → TODO steps → implement first step (two approvals)
-- `$cdd-index` — regenerate `docs/INDEX.md`
-- `$cdd-refactor` — refactor candidates → `TODO-refactor-<tag>.md` (approval-gated)
-
-## Human in the loop
-
-Humans own product intent and final acceptance. Skill outputs include UAT checklists per step. An agent can run UAT commands, but a human should approve the result.
+- `git` — effectively required
+- `gh` — recommended when working with GitHub-backed repos
+- `bash` — required for the install scripts
+- `python3` — recommended for local validation
+- Writable local repos — required because the Builder edits target workspaces
 
 ## Install
+
+Clone the repo:
 
 ```bash
 git clone git@github.com:ruphware/cdd-skills.git
 cd cdd-skills
+```
+
+Install the Builder skills for Codex CLI:
+
+```bash
 ./scripts/install.sh
 ```
 
-This copies skills into `~/.agents/skills/` (Codex CLI).
-
-To install for multiple runtimes:
+Install the OpenClaw Master Chef skill:
 
 ```bash
-./scripts/install.sh --target ~/.agents/skills --target ~/.claude/skills --target ~/.openclaw/skills
+./install-openclaw.sh
+```
+
+Typical OpenClaw + Codex setup:
+
+```bash
+./scripts/install.sh --target ~/.agents/skills
+./install-openclaw.sh --target ~/.openclaw/skills
 ```
 
 ## Update
@@ -89,18 +100,21 @@ To install for multiple runtimes:
 cd cdd-skills
 git pull
 ./scripts/install.sh --force
+./install-openclaw.sh --force
 ```
 
 Notes:
-- If you install via the default copy mode, updating the repo does not update installed skills until you rerun `./scripts/install.sh`.
-- If newly installed/updated skills don’t appear, restart Codex.
 
-## Commands
+- Copy installs do not update in place until you rerun the relevant installer.
+- If newly installed or updated skills do not appear, start a new session or restart the runtime.
 
-Golden path:
-- `$cdd-init-project` — init or adopt the CDD workflow in the current folder, including empty and docs-seeded folders (approval-gated)
-- `$cdd-plan` — plan changes and TODO steps (approval-gated)
-- `$cdd-implement-todo` — implement a TODO step; explicit step selectors should run immediately when they match exactly one step
-- `$cdd-index` — regenerate `docs/INDEX.md`
-- `$cdd-audit-and-implement` — audit → TODO steps → implement first step (two approvals)
-- `$cdd-refactor` — refactor candidates → refactor TODO file (approval-gated)
+## Start here
+
+Builder-only work:
+
+- Use the `cdd-*` skill pack directly from Codex CLI or Claude Code.
+
+OpenClaw-driven work:
+
+- Install both the Builder skills and `cdd-master-chef`.
+- Use `/cdd-master-chef` to run the Master Chef process and delegate Builder work through ACP Codex.

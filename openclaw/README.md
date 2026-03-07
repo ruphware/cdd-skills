@@ -1,103 +1,88 @@
-# Master Chef (Codex CLI over ACP) — Dev Convention
+# cdd-master-chef
 
-This folder defines the **Master Chef** development convention:
+This folder is the source for the OpenClaw-only `cdd-master-chef` skill.
 
-- **Master Chef (OpenClaw):** planning, delegation, QA gate, pass/fail.
-- **Builder (Codex via ACP/acpx):** implementation worker for one approved step.
-- **CDD-first policy:** if a `cdd-*` skill exists for the phase, use it first.
+Installed form:
+
+- directory: `~/.openclaw/skills/cdd-master-chef`
+- slash command: `/cdd-master-chef`
+
+The skill defines a development process:
+
+- **Master Chef (OpenClaw):** planning, delegation, QA gate, pass/fail
+- **Builder (ACP Codex):** implementation worker for one approved step
+- **CDD-first policy:** if a `cdd-*` Builder skill exists for the phase, use it first
 
 ## Files
 
-- `MASTER-CHEF-RUNBOOK.md` — canonical process + hard QA gate.
-- `MASTER-CHEF-TEST-HARNESS.md` — quick end-to-end validation of the loop.
+- `SKILL.md` — OpenClaw skill entrypoint
+- `MASTER-CHEF-RUNBOOK.md` — canonical operating procedure and QA gate
+- `MASTER-CHEF-TEST-HARNESS.md` — smoke test for the packaged skill
 
-## Master Chef runtime defaults (OpenClaw)
+## Prerequisites
 
-- `openai-codex/gpt-5.3-codex`
-- reasoning: `xhigh`
-- role: technical leader + step-level final decider (human still does final result sign-off)
-
-## Builder runtime defaults (Codex)
-
-These are **Codex CLI** settings (not OpenClaw `/model`):
-
-- `model = "gpt-5.4"`
-- `model_reasoning_effort = "xhigh"`
-- Previous default: `gpt-5.2` @ `xhigh`
-
-### OpenClaw model vs ACP/Codex model
-
-- ` /model ... ` controls OpenClaw’s own LLM.
-- ` /acp model ... ` and ` /acp set ... ` control the Builder harness (Codex).
-
-Do not treat `gpt-5.4` as an OpenClaw `openai-codex/...` model ref.
-
-## CDD-first usage map (Builder should lean on this heavily)
-
-Use these by default:
-
-- `cdd-init-project` — bootstrap/adopt CDD for repo
-- `cdd-plan` — convert scope into approval-ready TODO plan
-- `cdd-implement-todo` — implement exactly one approved TODO step
-- `cdd-index` — refresh architecture/index context
-- `cdd-audit-and-implement` — audit findings -> TODOs -> implement first approved step
-- `cdd-refactor` — build refactor plan from index
-
-Rule:
-
-- If a matching `cdd-*` skill exists, Builder must use it.
-- Freeform/manual coding is fallback-only (must be justified explicitly).
-
-## How to set model + reasoning for ACP/Codex
-
-### Option A (recommended): defaults in `~/.codex/config.toml`
-
-```toml
-model = "gpt-5.4"
-model_reasoning_effort = "xhigh"
-```
-
-### Option B: per ACP session override
-
-```text
-/acp model gpt-5.4
-/acp set model_reasoning_effort xhigh
-```
-
-Under the hood:
-
-- `/acp set <key> <value>` -> `acpx codex set <key> <value> --session <name>`
-
-## Quick start (typical loop)
-
-1) Spawn Builder session:
-
-```text
-/acp spawn codex --mode persistent --thread off --cwd /abs/path/to/repo
-```
-
-2) Pin Builder model/effort (optional if already in `~/.codex/config.toml`):
-
-```text
-/acp model gpt-5.4
-/acp set model_reasoning_effort xhigh
-```
-
-3) Run CDD-first workflow:
-
-- Refresh context if needed: `cdd-index`
-- Plan: `cdd-plan` (draft first, approval-gated)
-- Implement approved step: `cdd-implement-todo` (one step only)
-- For audit/refactor tracks: `cdd-audit-and-implement` / `cdd-refactor`
-
-4) Master Chef QA gate (scope, checks, docs, evidence), then UAT.
-   - If inconsistencies/gaps appear, Master Chef must interrogate Builder assumptions with evidence and decide factual correctness before PASS.
-
-## Preflight checks
-
-- ACP backend healthy:
+- OpenClaw with ACP enabled
+- Healthy ACP backend for Codex:
   - `/acp doctor`
-- Codex installed:
+- Codex CLI reachable on `PATH`:
   - `codex --version`
-- Required CDD skills available:
-  - `ls ~/.agents/skills/cdd-init-project ~/.agents/skills/cdd-plan ~/.agents/skills/cdd-implement-todo ~/.agents/skills/cdd-index ~/.agents/skills/cdd-audit-and-implement ~/.agents/skills/cdd-refactor >/dev/null`
+- Separate CDD Builder skills already installed for Codex:
+  - `~/.agents/skills/cdd-init-project`
+  - `~/.agents/skills/cdd-plan`
+  - `~/.agents/skills/cdd-implement-todo`
+  - `~/.agents/skills/cdd-index`
+  - `~/.agents/skills/cdd-audit-and-implement`
+  - `~/.agents/skills/cdd-refactor`
+
+This package does not install or duplicate the Builder skills. Install them separately with `./scripts/install.sh`.
+
+## Install
+
+From the repo root:
+
+```bash
+./install-openclaw.sh
+```
+
+Explicit target example:
+
+```bash
+./install-openclaw.sh --target ~/.openclaw/skills
+```
+
+Link install for local iteration:
+
+```bash
+./install-openclaw.sh --link --force
+```
+
+## How to use it
+
+Use the slash command to start or continue the Master Chef process:
+
+```text
+/cdd-master-chef Use the Master Chef process for /abs/path/to/repo and draft the next approved step.
+```
+
+The skill should:
+
+1. preflight ACP and Builder prerequisites
+2. keep work scoped to one approved step at a time
+3. delegate implementation to ACP `codex`
+4. enforce CDD-first Builder behavior
+5. run the hard QA gate before reporting PASS
+
+## Runtime configuration
+
+Model selection is managed outside this skill.
+
+- OpenClaw `/model ...` controls the Master Chef LLM
+- `/acp model ...` and `/acp set ...` control the Builder runtime
+- Codex defaults can also be managed in Codex config outside OpenClaw
+
+The skill should inspect runtime state when needed, but it should not encode preferred model IDs or reasoning defaults.
+
+## Validation
+
+- Use `MASTER-CHEF-TEST-HARNESS.md` for a packaged smoke test
+- Use `MASTER-CHEF-RUNBOOK.md` as the source of truth for day-to-day operation
