@@ -99,13 +99,28 @@ Typical OpenClaw + Codex setup:
 ```bash
 cd cdd-skills
 git pull
-./scripts/install.sh --force
-./scripts/install-openclaw.sh --force
+./scripts/install.sh --update
+./scripts/install-openclaw.sh --update
+```
+
+If the install target already contains one of the managed skill directories, rerunning the installer without `--update` fails by design.
+
+Builder update automatically runs the conservative prune logic. Use `--yes` if you want to auto-confirm prune prompts in non-interactive contexts:
+
+```bash
+./scripts/install.sh --update --yes
+```
+
+## Uninstall
+
+```bash
+./scripts/install.sh --uninstall
+./scripts/install-openclaw.sh --uninstall
 ```
 
 Notes:
 
-- Copy installs do not update in place until you rerun the relevant installer.
+- `--uninstall` lists matching installed paths and installer artifacts, asks for `y/N`, and removes them only on confirmation.
 - If newly installed or updated skills do not appear, start a new session or restart the runtime.
 
 ## Start here

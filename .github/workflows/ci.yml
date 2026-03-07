@@ -12,6 +12,7 @@ jobs:
 
       - name: Bash syntax checks
         run: |
+          bash -n scripts/install-common.sh
           bash -n scripts/install.sh
           bash -n scripts/install-openclaw.sh
           bash -n scripts/test_installers.sh

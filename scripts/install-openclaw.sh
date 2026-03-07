@@ -1,47 +1,50 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=./install-common.sh
+source "$ROOT_DIR/scripts/install-common.sh"
+
 # Install the OpenClaw-only cdd-master-chef skill.
 #
 # Usage:
 #   ./scripts/install-openclaw.sh
-#   ./scripts/install-openclaw.sh --force
+#   ./scripts/install-openclaw.sh --update
+#   ./scripts/install-openclaw.sh --uninstall
 #   ./scripts/install-openclaw.sh --link
 #   ./scripts/install-openclaw.sh --target ~/.openclaw/skills
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC_DIR="$ROOT_DIR/openclaw"
 TARGET_ROOT="$HOME/.openclaw/skills"
 SKILL_NAME="cdd-master-chef"
 
-FORCE=0
+UPDATE=0
+UNINSTALL=0
 LINK=0
 
 usage() {
   cat <<'EOF'
-Usage: ./scripts/install-openclaw.sh [--target DIR] [--force] [--link]
+Usage: ./scripts/install-openclaw.sh [--target DIR] [--link] [--update] [--uninstall]
 
 Install the OpenClaw-only cdd-master-chef skill.
 
 Options:
   --target DIR  Install into DIR instead of ~/.openclaw/skills
-  --force       Replace an existing install in place
+  --update      Replace an existing install in place
   --link        Symlink the source folder instead of copying it
+  --uninstall   List matching installed paths, ask y/N, and remove them
   -h, --help    Show this help text
 EOF
 }
 
-backup_dir() {
-  local path="$1"
-  local ts
-  ts="$(date -u +%Y%m%dT%H%M%SZ)"
-  echo "${path}.bak.${ts}"
-}
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --force)
-      FORCE=1
+    --update)
+      UPDATE=1
+      shift
+      ;;
+    --uninstall)
+      UNINSTALL=1
       shift
       ;;
     --link)
@@ -60,12 +63,42 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 0
       ;;
+    --force)
+      legacy_flag_error "--force" "Use --update instead."
+      ;;
+    --yes)
+      fail_usage "--yes is not supported by ./scripts/install-openclaw.sh."
+      ;;
     *)
       echo "Unknown arg: $1" >&2
       exit 2
       ;;
   esac
 done
+
+if [[ $UNINSTALL -eq 1 && ( $UPDATE -eq 1 || $LINK -eq 1 ) ]]; then
+  fail_usage "--uninstall cannot be combined with --update or --link."
+fi
+
+if [[ $LINK -eq 1 ]]; then
+  warn_link_mode
+fi
+
+DEST="$TARGET_ROOT/$SKILL_NAME"
+
+if [[ $UNINSTALL -eq 1 ]]; then
+  local_paths=()
+  for path in "$DEST" "$TARGET_ROOT"/"$SKILL_NAME".bak.*; do
+    path_exists "$path" || continue
+    local_paths+=("$path")
+  done
+  if [[ ${#local_paths[@]} -gt 0 ]]; then
+    remove_paths_with_confirmation "OpenClaw skill in $TARGET_ROOT" "${local_paths[@]}"
+  else
+    remove_paths_with_confirmation "OpenClaw skill in $TARGET_ROOT"
+  fi
+  exit 0
+fi
 
 if [[ ! -d "$SRC_DIR" ]]; then
   echo "Missing source dir: $SRC_DIR" >&2
@@ -77,23 +110,13 @@ if [[ ! -f "$SRC_DIR/SKILL.md" ]]; then
   exit 1
 fi
 
-if [[ $LINK -eq 1 ]]; then
-  echo "Warning: --link uses a symlink. Copy install is the safer default." >&2
-fi
-
 mkdir -p "$TARGET_ROOT"
 
-DEST="$TARGET_ROOT/$SKILL_NAME"
-
-if [[ -e "$DEST" || -L "$DEST" ]]; then
-  if [[ $FORCE -eq 1 ]]; then
-    rm -rf "$DEST"
-  else
-    BAK="$(backup_dir "$DEST")"
-    echo "Backing up existing install: $DEST -> $BAK" >&2
-    mv "$DEST" "$BAK"
-  fi
+if [[ $UPDATE -eq 0 ]]; then
+  fail_if_paths_exist_without_update "OpenClaw skill install in $TARGET_ROOT" "$DEST"
 fi
+
+remove_paths "$DEST"
 
 if [[ $LINK -eq 1 ]]; then
   ln -s "$SRC_DIR" "$DEST"

@@ -53,7 +53,19 @@ Explicit target example:
 Link install for local iteration:
 
 ```bash
-./scripts/install-openclaw.sh --link --force
+./scripts/install-openclaw.sh --link --update
+```
+
+Update an existing install:
+
+```bash
+./scripts/install-openclaw.sh --update
+```
+
+Uninstall the packaged skill:
+
+```bash
+./scripts/install-openclaw.sh --uninstall
 ```
 
 ## How to use it
@@ -86,3 +98,4 @@ The skill should inspect runtime state when needed, but it should not encode pre
 
 - Use `MASTER-CHEF-TEST-HARNESS.md` for a packaged smoke test
 - Use `MASTER-CHEF-RUNBOOK.md` as the source of truth for day-to-day operation
+- Fresh install fails if `cdd-master-chef` is already present in the target root; use `--update` to replace it or `--uninstall` to remove it first

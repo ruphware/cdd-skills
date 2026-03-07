@@ -1,44 +1,68 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=./install-common.sh
+source "$ROOT_DIR/scripts/install-common.sh"
+
 # Install Builder CDD skills into user skill directories.
 # Default target: Codex/Codex CLI (~/.agents/skills)
 #
 # Usage:
 #   ./scripts/install.sh                                 # copy into ~/.agents/skills
-#   ./scripts/install.sh --force                         # overwrite existing skill dirs
+#   ./scripts/install.sh --update                        # replace existing installed skills in place
+#   ./scripts/install.sh --uninstall                     # remove installed skills and installer artifacts after confirmation
 #   ./scripts/install.sh --link                          # symlink instead of copy
 #   ./scripts/install.sh --target ~/.agents/skills \
 #                      --target ~/.claude/skills
 #
-# Optional hygiene:
-#   ./scripts/install.sh --force --prune                 # also prune deprecated/invalid installed cdd-* skills
-#   ./scripts/install.sh --force --prune --yes           # non-interactive prune confirmations
-#
 # Notes:
+# - Fresh install fails if one of the managed skill directories already exists in the target root.
+# - Use --update to replace current installs in place; Builder prune runs automatically during --update.
 # - Prune is conservative: it only targets directories that look like CDD skills (name matches ^cdd-[a-z0-9-]+$).
 # - By default, prune asks Y/N per candidate unless --yes is provided.
 # - Prune never hard-deletes: it moves candidates to a timestamped backup dir (".pruned.<ts>") so you can recover.
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC_DIR="$ROOT_DIR/skills"
 
-FORCE=0
+UPDATE=0
+UNINSTALL=0
 LINK=0
-PRUNE=0
 YES=0
 TARGETS=()
 
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/install.sh [--target DIR ...] [--link] [--update] [--yes] [--uninstall]
+
+Install Builder CDD skills into runtime skill directories.
+
+Options:
+  --target DIR   Install into DIR instead of ~/.agents/skills; may be repeated
+  --link         Symlink source skill directories instead of copying them
+  --update       Replace existing managed installs in place and run conservative prune
+  --yes, -y      Auto-confirm prune prompts during --update
+  --uninstall    List managed installs and installer artifacts, ask y/N, and remove them
+  -h, --help     Show this help text
+EOF
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --force) FORCE=1; shift ;;
+    --update) UPDATE=1; shift ;;
+    --uninstall) UNINSTALL=1; shift ;;
     --link) LINK=1; shift ;;
-    --prune) PRUNE=1; shift ;;
     --yes|-y) YES=1; shift ;;
     --target) TARGETS+=("$2"); shift 2 ;;
     -h|--help)
-      sed -n '1,200p' "$0"
+      usage
       exit 0
+      ;;
+    --force)
+      legacy_flag_error "--force" "Use --update instead."
+      ;;
+    --prune)
+      legacy_flag_error "--prune" "Prune now runs automatically during --update."
       ;;
     *)
       echo "Unknown arg: $1" >&2
@@ -46,6 +70,14 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ $UNINSTALL -eq 1 && ( $UPDATE -eq 1 || $LINK -eq 1 || $YES -eq 1 ) ]]; then
+  fail_usage "--uninstall cannot be combined with --update, --link, or --yes."
+fi
+
+if [[ $YES -eq 1 && $UPDATE -eq 0 ]]; then
+  fail_usage "--yes is only valid with --update."
+fi
 
 if [[ ! -d "$SRC_DIR" ]]; then
   echo "Missing source skills dir: $SRC_DIR" >&2
@@ -60,7 +92,6 @@ if [[ ${#TARGETS[@]} -eq 0 ]]; then
   TARGETS+=("$HOME/.agents/skills")
 fi
 
-# Capture a repo revision for provenance markers (best-effort).
 REV="unknown"
 if command -v git >/dev/null 2>&1 && [[ -d "$ROOT_DIR/.git" ]]; then
   REV="$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -68,21 +99,11 @@ fi
 
 ORIGIN_MARKER_NAME=".cdd-skills-origin"
 
-backup_dir() {
-  local path="$1"
-  local ts
-  ts="$(date -u +%Y%m%dT%H%M%SZ)"
-  echo "${path}.bak.${ts}"
-}
-
 prune_backup_dir() {
   local path="$1"
-  local ts
-  ts="$(date -u +%Y%m%dT%H%M%SZ)"
-  echo "${path}.pruned.${ts}"
+  echo "${path}.pruned.$(timestamp_utc)"
 }
 
-# Only consider directories that are "real" skill names, not backups.
 looks_like_skill_name() {
   local name="$1"
   [[ "$name" =~ ^cdd-[a-z0-9-]+$ ]]
@@ -106,7 +127,6 @@ source_skill_names() {
 
 write_origin_marker() {
   local dest_dir="$1"
-  # Do not write markers through symlinks (would mutate the source checkout).
   if [[ -L "$dest_dir" ]]; then
     return 0
   fi
@@ -120,7 +140,6 @@ __CDD_ORIGIN__
 
 prune_deprecated_in_target() {
   local dest_root="$1"
-
   local src_set
   src_set="$(source_skill_names || true)"
 
@@ -149,13 +168,11 @@ prune_deprecated_in_target() {
       has_marker=1
     fi
 
-    # Non-interactive safety: require --yes.
     if [[ $YES -eq 0 && ! -t 0 ]]; then
       echo "Refusing to prune in non-interactive mode without --yes: $d" >&2
       exit 2
     fi
 
-    # Auto-prune rules for --yes: only prune if (a) it's clearly invalid (no SKILL.md), or (b) it has our origin marker.
     if [[ $YES -eq 1 ]]; then
       if [[ ! -f "$d/SKILL.md" || $has_marker -eq 1 ]]; then
         local bak
@@ -168,7 +185,6 @@ prune_deprecated_in_target() {
       continue
     fi
 
-    # Interactive confirm.
     echo "Prune candidate: $d" >&2
     if [[ -f "$d/SKILL.md" ]]; then
       echo "--- SKILL.md (first 20 lines) ---" >&2
@@ -191,39 +207,109 @@ prune_deprecated_in_target() {
   done
 }
 
-install_one() {
+uninstall_from_target() {
   local dest_root="$1"
-  mkdir -p "$dest_root"
+  local src_set
+  src_set="$(source_skill_names || true)"
 
-  if [[ $PRUNE -eq 1 ]]; then
-    prune_deprecated_in_target "$dest_root"
-  fi
-
+  local paths=()
   local skill
   for skill in "$SRC_DIR"/*; do
     [[ -d "$skill" ]] || continue
+    [[ -f "$skill/SKILL.md" ]] || continue
+    local name
+    name="$(basename "$skill")"
+    local dest="$dest_root/$name"
+    if path_exists "$dest"; then
+      paths+=("$dest")
+    fi
+  done
 
-    # Only install real skills (SKILL.md is the contract).
+  local d
+  for d in "$dest_root"/cdd-*; do
+    path_exists "$d" || continue
+
+    local name
+    name="$(basename "$d")"
+
+    case "$name" in
+      *.bak.*|*.pruned.*)
+        paths+=("$d")
+        continue
+        ;;
+    esac
+
+    looks_like_skill_name "$name" || continue
+
+    if in_set "$name" "$src_set"; then
+      continue
+    fi
+
+    if [[ ! -f "$d/SKILL.md" || -f "$d/$ORIGIN_MARKER_NAME" ]]; then
+      paths+=("$d")
+    fi
+  done
+
+  if [[ ${#paths[@]} -gt 0 ]]; then
+    remove_paths_with_confirmation "Builder skills in $dest_root" "${paths[@]}"
+  else
+    remove_paths_with_confirmation "Builder skills in $dest_root"
+  fi
+}
+
+install_one() {
+  local dest_root="$1"
+
+  if [[ $UNINSTALL -eq 1 ]]; then
+    uninstall_from_target "$dest_root"
+    return 0
+  fi
+
+  mkdir -p "$dest_root"
+
+  if [[ $UPDATE -eq 1 ]]; then
+    prune_deprecated_in_target "$dest_root"
+  fi
+
+  local existing=()
+  local skill
+  for skill in "$SRC_DIR"/*; do
+    [[ -d "$skill" ]] || continue
     [[ -f "$skill/SKILL.md" ]] || continue
 
     local name
     name="$(basename "$skill")"
     local dest="$dest_root/$name"
 
-    if [[ -e "$dest" && $FORCE -eq 0 ]]; then
-      local bak
-      bak="$(backup_dir "$dest")"
-      echo "Backing up existing: $dest -> $bak" >&2
-      mv "$dest" "$bak"
-    elif [[ -e "$dest" && $FORCE -eq 1 ]]; then
-      rm -rf "$dest"
+    if path_exists "$dest"; then
+      existing+=("$dest")
     fi
+  done
+
+  if [[ $UPDATE -eq 0 ]]; then
+    if [[ ${#existing[@]} -gt 0 ]]; then
+      fail_if_paths_exist_without_update "Builder skill installs in $dest_root" "${existing[@]}"
+    else
+      fail_if_paths_exist_without_update "Builder skill installs in $dest_root"
+    fi
+  fi
+
+  if [[ ${#existing[@]} -gt 0 ]]; then
+    remove_paths "${existing[@]}"
+  fi
+
+  for skill in "$SRC_DIR"/*; do
+    [[ -d "$skill" ]] || continue
+    [[ -f "$skill/SKILL.md" ]] || continue
+
+    local name
+    name="$(basename "$skill")"
+    local dest="$dest_root/$name"
 
     if [[ $LINK -eq 1 ]]; then
       ln -s "$skill" "$dest"
       echo "Linked $name -> $dest"
     else
-      # cp -a preserves perms and is portable.
       cp -a "$skill" "$dest"
       write_origin_marker "$dest"
       echo "Installed $name -> $dest"
