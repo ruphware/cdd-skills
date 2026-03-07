@@ -39,6 +39,7 @@ The human chooses models, approves the kickoff once, and mainly checks final res
   - `TODO.md` or `TODO-*.md`
 
 This package does not install or duplicate the Builder skills. Install them separately with `./scripts/install.sh`.
+The OpenClaw installer checks for the required Builder skills in the default Codex location, `~/.agents/skills`, and prints either `Verified` or a warning if they are missing there.
 
 ## Install
 

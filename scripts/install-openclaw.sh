@@ -17,6 +17,15 @@ source "$ROOT_DIR/scripts/install-common.sh"
 SRC_DIR="$ROOT_DIR/openclaw"
 TARGET_ROOT="$HOME/.openclaw/skills"
 SKILL_NAME="cdd-master-chef"
+BUILDER_SKILLS_ROOT="$HOME/.agents/skills"
+REQUIRED_BUILDER_SKILLS=(
+  cdd-init-project
+  cdd-plan
+  cdd-implement-todo
+  cdd-index
+  cdd-audit-and-implement
+  cdd-refactor
+)
 
 UPDATE=0
 UNINSTALL=0
@@ -35,6 +44,23 @@ Options:
   --uninstall   List matching installed paths, ask y/N, and remove them
   -h, --help    Show this help text
 EOF
+}
+
+check_builder_skills() {
+  local missing=()
+  local skill=""
+
+  for skill in "${REQUIRED_BUILDER_SKILLS[@]}"; do
+    [[ -f "$BUILDER_SKILLS_ROOT/$skill/SKILL.md" ]] || missing+=("$skill")
+  done
+
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    echo "Verified Builder skills -> $BUILDER_SKILLS_ROOT"
+    return 0
+  fi
+
+  echo "Warning: missing Builder skills in $BUILDER_SKILLS_ROOT: ${missing[*]}" >&2
+  echo "Install them with ./scripts/install.sh --target $BUILDER_SKILLS_ROOT, or ignore this warning if Codex loads them from another location." >&2
 }
 
 while [[ $# -gt 0 ]]; do
@@ -126,4 +152,4 @@ else
   echo "Installed $SKILL_NAME -> $DEST"
 fi
 
-echo "Prerequisite: install the separate cdd-* Builder skills for Codex (for example with ./scripts/install.sh --target ~/.agents/skills)."
+check_builder_skills
