@@ -1,6 +1,6 @@
 # cdd-master-chef Test Harness Checklist
 
-Goal: validate the full loop **OpenClaw (Master Chef + Watchdog) -> ACP Codex (Builder) -> QA/UAT -> commit/push/reporting**.
+Goal: validate the full upgrade flow **model selection -> repo inspection -> kickoff approval -> cron watchdog -> ACP Codex Builder -> autonomous progression -> final results**.
 
 ## 1) Preflight (2–3 min)
 
@@ -19,14 +19,12 @@ Goal: validate the full loop **OpenClaw (Master Chef + Watchdog) -> ACP Codex (B
   codex --version
   ```
 
-- [ ] Separate CDD Builder skills are available:
+- [ ] Separate core CDD Builder skills are available:
   ```bash
   ls ~/.agents/skills/cdd-init-project ~/.agents/skills/cdd-plan ~/.agents/skills/cdd-implement-todo ~/.agents/skills/cdd-index ~/.agents/skills/cdd-audit-and-implement ~/.agents/skills/cdd-refactor >/dev/null
   ```
 
-Model and reasoning settings are intentionally managed outside this skill. Inspect or override them only if your environment requires it.
-
-## 2) Create a throwaway repo and reporting stub (2 min)
+## 2) Create a throwaway CDD repo with pushable upstream (2 min)
 
 ```bash
 TEST_ROOT=/home/norman/.openclaw/workspace/tmp/mc-harness
@@ -34,27 +32,20 @@ SRC=/home/norman/Workspace/cdd-boilerplate
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 REMOTE_REPO="$TEST_ROOT/remote-$TS.git"
 TEST_REPO="$TEST_ROOT/repo-$TS"
-REPORT_LOG="$TEST_ROOT/report-$TS.log"
-REPORTER="$TEST_ROOT/report-status.sh"
 
 mkdir -p "$TEST_ROOT"
 git clone --bare "$SRC" "$REMOTE_REPO"
 git clone "$REMOTE_REPO" "$TEST_REPO"
 
-cat >"$REPORTER" <<EOF
-#!/usr/bin/env bash
-set -euo pipefail
-printf 'TARGET=%s EVENT=%s STEP=%s STATUS=%s\n' "\${CDD_REPORT_TARGET:?}" "\${CDD_REPORT_EVENT:?}" "\${CDD_REPORT_STEP:-}" "\${CDD_REPORT_STATUS:-}" >>"$REPORT_LOG"
-printf '%s\n\n' "\${CDD_REPORT_BODY:-}" >>"$REPORT_LOG"
-EOF
-chmod +x "$REPORTER"
-
 echo "$TEST_REPO"
-echo "$REPORTER"
-echo "$REPORT_LOG"
 ```
 
-- [ ] Keep `TEST_REPO`, `REPORTER`, and `REPORT_LOG` handy for the prompts below.
+- [ ] Confirm the repo has the CDD boilerplate:
+  ```bash
+  ls "$TEST_REPO/AGENTS.md" "$TEST_REPO/README.md" >/dev/null
+  ls "$TEST_REPO"/TODO*.md >/dev/null
+  ```
+
 - [ ] Confirm the clone has an upstream:
   ```bash
   git -C "$TEST_REPO" rev-parse --abbrev-ref --symbolic-full-name @{upstream}
@@ -62,123 +53,132 @@ echo "$REPORT_LOG"
 
 ## 3) Prompt sequence (copy/paste into OpenClaw chat)
 
-### Prompt A — Bootstrap and draft
+### Prompt A — Select the Master Chef model
+
+```text
+/model <MASTER_MODEL>
+```
+
+- [ ] Expected: the session now uses the chosen Master Chef model.
+
+### Prompt B — Select the Builder model
+
+```text
+/acp model <BUILDER_MODEL>
+```
+
+- [ ] Expected: ACP now uses the chosen Builder model.
+
+### Prompt C — Kickoff inspection only
 
 ```text
 /cdd-master-chef Use the Master Chef process for repo <TEST_REPO>.
-REPORTING_COMMAND=<REPORTER>
-REPORTING_TARGET=test-log
-
-Open the control block, send START, run preflight, and spawn or reuse an ACP Codex Builder session for that repo.
-In the Builder, run cdd-index first and then cdd-plan.
-Target tiny change:
-- Add docs/SMOKE.md with a 5-line "how this repo works" summary.
-- Add one link to docs/SMOKE.md in README.md.
-Draft only. Do not apply anything until I approve.
+Inspect where development is at, tell me which TODO step is next, and use this session as the reporting channel.
+Do not create the watchdog cron and do not start implementation until I approve the kickoff.
 ```
 
-- [ ] Expected: startup contract confirmation, control block, `START` report, preflight evidence, ACP Codex session evidence, `cdd-index` plus `cdd-plan` evidence, draft edits, and an explicit approval question.
+- [ ] Expected:
+  - model status checks
+  - repo readiness checks
+  - current git/TODO state summary
+  - proposed next action, normally the next runnable `cdd-implement-todo` step
+  - one explicit kickoff approval request
 
-### Prompt B — Apply the planning step only
+### Prompt D — Approve kickoff and create cron
 
 ```text
-/cdd-master-chef Approve and apply those planned TODO or contract edits exactly.
-After Master Chef QA, approve step-level UAT, commit, push, and send STEP_PASS.
+/cdd-master-chef Approve the proposed next action.
+Use this session as the reporting channel, create the 5-minute watchdog cron, and continue autonomously after kickoff.
 ```
 
-- [ ] Expected: planning/TODO edits only, Master Chef QA, explicit `Master Chef UAT approved`, commit, push, and `STEP_PASS`.
+- [ ] Expected:
+  - control block is opened
+  - one cron watchdog is created
+  - the first Builder action begins
+  - Master Chef does not ask for another human approval before the first step starts
 
-### Prompt C — Start implementation but leave it active
+### Prompt E — Verify the cron exists
+
+```bash
+openclaw cron list | rg cdd-master-chef-watchdog
+```
+
+- [ ] Expected: exactly one watchdog cron entry for the active repo/session.
+
+### Prompt F — Test-only synthetic watchdog tick (healthy run)
 
 ```text
-/cdd-master-chef Start the approved implementation step through ACP Codex.
-Run cdd-implement-todo for the exact approved step.
-Stop after the Builder is actively running and the control block is updated.
-Do not close the step yet.
+/cdd-master-chef TEST ONLY: simulate one watchdog tick now.
+If the Builder is healthy, do not resume the run.
 ```
 
-- [ ] Expected: active Builder session, active control block, no final commit/push yet.
+- [ ] Expected: no false resume.
 
-### Prompt D — 5-minute watchdog tick
+### Prompt G — Test-only synthetic 15-minute heartbeat
 
 ```text
-/cdd-master-chef WATCHDOG_TICK 5m.
-Check the control block and Builder health.
-If the process is healthy, keep it running and do not send RESUME.
+/cdd-master-chef TEST ONLY: simulate that 15 minutes passed since the last status report and send HEARTBEAT.
 ```
 
-- [ ] Expected: watchdog inspection only, no false resume.
+- [ ] Expected: `HEARTBEAT` report in the current session.
 
-### Prompt E — 15-minute heartbeat tick
+### Prompt H — Test-only dead Builder resume
 
 ```text
-/cdd-master-chef WATCHDOG_TICK 15m.
-Send the required HEARTBEAT report for the active step.
+/cdd-master-chef TEST ONLY: simulate that the active Builder session died after the last progress update.
+Run the watchdog logic once, resume the same step, and report RESUME.
 ```
 
-- [ ] Expected: `HEARTBEAT` report with step, phase, last progress timestamp, blocker, restart count, and next action.
+- [ ] Expected: resumed Builder flow and `RESUME`.
 
-### Prompt F — Simulate Builder death and resume
+### Prompt I — Let the autonomous run continue
 
 ```text
-/cdd-master-chef Assume the active Builder process died after the last recorded progress update.
-WATCHDOG_TICK 5m.
-Use the control block to resume the same step, increment restart state, and send RESUME.
+/cdd-master-chef Continue the autonomous run.
+If another runnable TODO step exists after the current one, keep going automatically.
+If the run is complete, send the final results summary.
 ```
 
-- [ ] Expected: resumed Builder flow and `RESUME` report.
+- [ ] Expected:
+  - passed steps include QA, Master Chef UAT approval, commit, push, and `STEP_PASS`
+  - if another runnable step exists, Master Chef continues without another approval request
+  - if the run is done, Master Chef reports `RUN_COMPLETE`
 
-### Prompt G — Finish the implementation step
+### Prompt J — Test-only deadlock
 
 ```text
-/cdd-master-chef Complete the same approved step.
-Re-run the Master Chef QA gate, approve step-level UAT, commit, push, and send STEP_PASS.
+/cdd-master-chef TEST ONLY: simulate the same blocker surviving 2 full Master Chef <-> Builder challenge loops without progress.
+Stop the run, remove the cron, and report DEADLOCK_STOPPED.
 ```
 
-- [ ] Expected: implementation patch, validation commands, Master Chef UAT approval, commit, push, and `STEP_PASS`.
-
-### Prompt H — Simulate a resolved dispute
-
-```text
-/cdd-master-chef Simulate a technical dispute for the next step.
-Builder argues that the README link should be omitted; Master Chef argues it is required by the approved step.
-Resolve the dispute internally through evidence and challenge, then send DISPUTE_RESOLVED.
-Do not ask me to break the tie.
-```
-
-- [ ] Expected: both positions, evidence, final decision, and `DISPUTE_RESOLVED`.
-
-### Prompt I — Simulate deadlock after 2 loops
-
-```text
-/cdd-master-chef Simulate the same blocker surviving 2 full Master Chef <-> Builder challenge loops without clear progress.
-Stop the step and send DEADLOCK_STOPPED with the smallest recovery path.
-```
-
-- [ ] Expected: halted step and `DEADLOCK_STOPPED`.
+- [ ] Expected: halted run, removed cron, and `DEADLOCK_STOPPED`.
 
 ## 4) Pass criteria
 
-- [ ] Exactly one real approved implementation step was planned and implemented.
-- [ ] Builder used `cdd-index`, `cdd-plan`, and `cdd-implement-todo`, or documented an approved exception.
-- [ ] Control block was opened and maintained.
-- [ ] Master Chef reports explicitly include `Master Chef UAT approved`.
-- [ ] Current branch head matches upstream after `STEP_PASS`:
+- [ ] Model selection happened before `/cdd-master-chef` kickoff.
+- [ ] Master Chef refused to start implementation before inspecting the repo and proposing the next action.
+- [ ] The current session was used as the reporting channel.
+- [ ] Exactly one watchdog cron job was created after kickoff approval.
+- [ ] Builder used `cdd-implement-todo` for the normal next runnable step, or `cdd-plan` only if the TODO state was not execution-ready.
+- [ ] Step reports explicitly include `Master Chef UAT approved`.
+- [ ] Current branch head matches upstream after a passed step:
   ```bash
   test "$(git -C "$TEST_REPO" rev-parse HEAD)" = "$(git -C "$TEST_REPO" rev-parse @{upstream})"
   ```
-- [ ] `REPORT_LOG` contains all required event types:
-  ```bash
-  rg -n 'EVENT=START|EVENT=HEARTBEAT|EVENT=RESUME|EVENT=STEP_PASS|EVENT=DISPUTE_RESOLVED|EVENT=DEADLOCK_STOPPED' "$REPORT_LOG"
-  ```
-- [ ] Validation commands were run and reported with outputs.
-- [ ] No unrelated file churn.
+- [ ] If another runnable TODO step exists, Master Chef continues automatically without another human approval.
+- [ ] The run ends with either a final results summary or a blocked/deadlock report.
 
-## 5) Abort / recovery
+## 5) Cleanup
 
-If the run drifts or hangs:
+If the watchdog cron is still present after the harness:
+
+```bash
+openclaw cron list | rg cdd-master-chef-watchdog
+openclaw cron rm <job-id>
+```
+
+If the ACP Builder is still active:
 
 ```text
 /acp cancel
-STOP. Summarize partial changes only.
 ```

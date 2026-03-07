@@ -1,39 +1,42 @@
 # cdd-master-chef
 
-This folder is the source for the OpenClaw-only `cdd-master-chef` skill.
+This folder is the source for the OpenClaw-only `cdd-master-chef` upgrade.
 
 Installed form:
 
 - directory: `~/.openclaw/skills/cdd-master-chef`
 - slash command: `/cdd-master-chef`
 
-The skill defines a three-actor development process:
+This is not the core CDD workflow. It is the OpenClaw upgrade that sits on top of the core `cdd-*` Builder skills.
 
-- **Master Chef (OpenClaw):** planning, delegation, dispute handling, step-level UAT approval, commit, push, reporting
-- **Builder (ACP Codex):** implementation worker for one approved step
-- **Watchdog (OpenClaw):** 5-minute health checks, 15-minute heartbeat reports, resume on death
-- **CDD-first policy:** if a `cdd-*` Builder skill exists for the phase, use it first
+## What it does
 
-## Files
+The skill runs a three-part process:
 
-- `SKILL.md` — OpenClaw skill entrypoint
-- `MASTER-CHEF-RUNBOOK.md` — canonical operating procedure and QA gate
-- `MASTER-CHEF-TEST-HARNESS.md` — smoke test for the packaged skill
+- **Master Chef (OpenClaw):** inspects repo state, selects the next action, drives the Builder, approves step-level UAT, commits, pushes, and reports status
+- **Builder (ACP Codex):** executes one approved step at a time using the core `cdd-*` skills
+- **Watchdog (OpenClaw cron):** checks the run every 5 minutes and emits heartbeat every 15 minutes
+
+The human chooses models, approves the kickoff once, and mainly checks final results or critical blockers.
 
 ## Prerequisites
 
 - OpenClaw with ACP enabled
-- Healthy ACP backend for Codex:
+- Healthy ACP backend:
   - `/acp doctor`
 - Codex CLI reachable on `PATH`:
   - `codex --version`
-- Separate CDD Builder skills already installed for Codex:
+- Separate core CDD Builder skills already installed for Codex:
   - `~/.agents/skills/cdd-init-project`
   - `~/.agents/skills/cdd-plan`
   - `~/.agents/skills/cdd-implement-todo`
   - `~/.agents/skills/cdd-index`
   - `~/.agents/skills/cdd-audit-and-implement`
   - `~/.agents/skills/cdd-refactor`
+- Target repo already has the CDD boilerplate:
+  - `AGENTS.md`
+  - `README.md`
+  - `TODO.md` or `TODO-*.md`
 
 This package does not install or duplicate the Builder skills. Install them separately with `./scripts/install.sh`.
 
@@ -69,73 +72,73 @@ Uninstall the packaged skill:
 ./scripts/install-openclaw.sh --uninstall
 ```
 
-## How to use it
+## How development is initiated
 
-Use the slash command to start or continue the Master Chef process:
+1. Open the OpenClaw session you want to use as the reporting channel.
+2. Select the Master Chef model with a standalone directive:
 
-```text
-/cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
-REPORTING_COMMAND=/abs/path/to/report-status.sh
-REPORTING_TARGET=slack:dev-loop
-Open the control block, send START, and draft the next approved step.
-```
+   ```text
+   /model <master-model>
+   ```
 
-Required startup contract:
+3. Select the Builder model with a standalone directive:
 
-- `REPO` — absolute repo path
-- `REPORTING_COMMAND` — executable path to the user-provided reporting wrapper
-- `REPORTING_TARGET` — user-selected channel or destination
-- optional branch/upstream overrides; otherwise use the current branch and configured upstream
+   ```text
+   /acp model <builder-model>
+   ```
 
-Reporting command interface:
+4. Start Master Chef in the existing CDD repo:
+
+   ```text
+   /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
+   Inspect where development is at, propose the next runnable TODO step, and wait for my kickoff approval before creating the watchdog cron.
+   ```
+
+5. Master Chef should then:
+   - verify model status with `/model status` and `/acp status`
+   - verify the repo already has the CDD boilerplate
+   - inspect git status, active TODO state, and the next runnable step
+   - propose the next action, normally `cdd-implement-todo` on the next runnable TODO step
+   - ask for one approval covering:
+     - the proposed next action
+     - use of the current session as the reporting channel
+     - creation of the 5-minute watchdog cron
+
+6. After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
+
+## Reporting and watchdog
+
+Reporting is OpenClaw-native:
+
+- the current OpenClaw session is the reporting channel
+- if that is not the right channel, relaunch `/cdd-master-chef` from the correct session before kickoff
+- there is no external `REPORTING_COMMAND` wrapper contract
+
+Watchdog policy:
+
+- one recurring 5-minute cron job
+- target the current main session
+- inject a system event into the active Master Chef session
+- emit `HEARTBEAT` every 15 minutes from that same loop
+- resume dead Builder runs and report `RESUME`
+- remove the cron when the autonomous run completes or stops
+
+Useful cron commands:
 
 ```bash
-CDD_REPORT_TARGET="<target>" \
-CDD_REPORT_EVENT="<event>" \
-CDD_REPORT_REPO="<repo>" \
-CDD_REPORT_STEP="<step-or-none>" \
-CDD_REPORT_STATUS="<status>" \
-CDD_REPORT_BODY="<markdown>" \
-"/abs/path/to/report-status.sh"
+openclaw cron list
+openclaw cron rm <job-id>
 ```
-
-The skill should:
-
-1. open and maintain the control block
-2. preflight ACP, Builder, git branch/upstream, and reporting prerequisites
-3. keep work scoped to one approved step at a time
-4. delegate implementation to ACP `codex`
-5. enforce CDD-first Builder behavior
-6. run the hard QA gate
-7. approve step-level UAT, commit, push, and send status reports for each passed step
-
-## Watchdog and reporting
-
-This skill assumes OpenClaw can trigger periodic watchdog turns.
-
-- Every 5 minutes: Watchdog checks the control block and Builder health
-- Every 15 minutes: Watchdog sends `HEARTBEAT`
-- If the active process dies before the step is complete: Watchdog resumes it and sends `RESUME`
-- If disputes resolve internally: send `DISPUTE_RESOLVED`
-- If the step hits a serious standstill, repeated death/resume, or 2 unresolved challenge loops: stop the step and send `DEADLOCK_STOPPED`
-
-Status reports must include explicit `Master Chef UAT approved` state.
-
-Step-level push policy:
-
-- every passed step ends with Master Chef UAT approval, commit, push, and `STEP_PASS`
-- if push fails, the step is `STEP_BLOCKED`
-- human control remains at the broader product level: intent, channel selection, and final overall ship/no-ship
 
 ## Runtime configuration
 
-Model selection is managed outside this skill.
+Model selection stays outside the skill.
 
 - OpenClaw `/model ...` controls the Master Chef LLM
 - `/acp model ...` and `/acp set ...` control the Builder runtime
-- Codex defaults can also be managed in Codex config outside OpenClaw
+- `/model status` and `/acp status` are the right checks before kickoff
 
-The skill should inspect runtime state when needed, but it should not encode preferred model IDs or reasoning defaults.
+The skill should not invent or hardcode model ids.
 
 ## Validation
 

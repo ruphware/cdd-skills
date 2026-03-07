@@ -1,36 +1,22 @@
 # CDD Skills
 
-Explicit-only Chat-Driven-Development skills and process docs for a multi-agent development loop.
+Explicit-only Chat-Driven-Development skills and process docs.
 
-This repo packages two complementary layers:
+This repo contains two skill blocks:
 
-- **Builder skill pack** in `skills/` for Codex CLI or Claude Code.
-- **Master Chef orchestration skill** in `openclaw/`, installed as the OpenClaw slash command `/cdd-master-chef`.
+## 1. Core: CDD Skills
 
-## Multi-agent development process
+The core product is the Builder skill pack in `skills/`.
 
-The intended workflow is:
+This is the single-agent workflow:
 
-1. A human sets product intent and approves work.
-2. OpenClaw runs the **Master Chef** process through `/cdd-master-chef` with a user-selected reporting channel.
-3. Master Chef selects or plans exactly one approved TODO step and opens the run control block.
-4. Master Chef delegates implementation to an ACP Codex Builder session while the Watchdog supervises the run.
-5. The Builder uses the separate `cdd-*` skills first (`cdd-plan`, `cdd-implement-todo`, `cdd-index`, and related helpers).
-6. Master Chef resolves Builder disputes internally, performs the QA gate, approves step-level UAT, commits, pushes, and reports status.
-7. The human decides the final overall ship/no-ship for the broader workstream.
+- one coding agent works the repo
+- the human stays in the loop for planning, approvals, and acceptance
+- the agent uses the `cdd-*` skills to plan and implement exactly one approved TODO step at a time
 
-This keeps planning, implementation, supervision, and acceptance separate:
+Source of truth:
 
-- **Human**: product intent, reporting target selection, final overall ship/no-ship
-- **OpenClaw Master Chef**: scope control, delegation, dispute resolution, QA, step-level UAT approval, commit/push/reporting
-- **OpenClaw Watchdog**: periodic health checks, heartbeat reporting, resume, deadlock reporting
-- **ACP Codex Builder**: code changes and command evidence for one approved step
-
-## Components
-
-### Builder skill pack
-
-Source of truth: `skills/`
+- `skills/`
 
 Runtimes:
 
@@ -46,19 +32,33 @@ Golden path commands:
 - `$cdd-audit-and-implement` — audit -> TODO steps -> implement first step
 - `$cdd-refactor` — create a refactor TODO plan from the current index
 
-### OpenClaw Master Chef skill
+## 2. Upgrade: CDD Master Chef
 
-Source of truth: `openclaw/`
+The optional upgrade is the OpenClaw skill in `openclaw/`, installed as `/cdd-master-chef`.
 
-Install target:
+This is the master-agent workflow:
+
+- the human selects the Master Chef model and the Builder model
+- the human starts Master Chef in an existing repo that already has the CDD boilerplate
+- Master Chef checks where development is at and proposes the next runnable TODO step
+- the human confirms the kickoff, reporting session, and watchdog cron setup
+- after that, Master Chef drives the Builder automatically and the human checks final results unless Master Chef reports a blocker or deadlock
+
+Source of truth:
+
+- `openclaw/`
+
+Installed form:
 
 - OpenClaw: `~/.openclaw/skills/cdd-master-chef`
+- slash command: `/cdd-master-chef`
 
-Invocation:
+The OpenClaw upgrade does not replace the Builder skill pack. It depends on the core `cdd-*` skills and delegates actual repo work to ACP Codex.
 
-- `/cdd-master-chef`
+## Relationship Between the Two
 
-The OpenClaw skill does not replace the Builder skill pack. It orchestrates Codex over ACP, Watchdog supervision, and user-selected reporting, and it expects the separate `cdd-*` Builder skills to already be installed. See `openclaw/README.md` for operator details.
+- Start with the core `cdd-*` skills if you want the normal single-agent, human-approved CDD loop.
+- Add `cdd-master-chef` only when you want OpenClaw to orchestrate the Builder, maintain a watchdog cron, and keep the human mostly at kickoff plus final review.
 
 ## Recommended tools
 
@@ -66,7 +66,7 @@ The OpenClaw skill does not replace the Builder skill pack. It orchestrates Code
 - `gh` — recommended when working with GitHub-backed repos
 - `bash` — required for the install scripts
 - `python3` — recommended for local validation
-- Writable local repos — required because the Builder edits target workspaces
+- writable local repos — required because the Builder edits target workspaces
 
 ## Install
 
@@ -77,13 +77,13 @@ git clone git@github.com:ruphware/cdd-skills.git
 cd cdd-skills
 ```
 
-Install the Builder skills for Codex CLI:
+Install the core Builder skills for Codex CLI:
 
 ```bash
 ./scripts/install.sh
 ```
 
-Install the OpenClaw Master Chef skill:
+Install the OpenClaw Master Chef upgrade:
 
 ```bash
 ./scripts/install-openclaw.sh
@@ -127,11 +127,14 @@ Notes:
 
 ## Start here
 
-Builder-only work:
+For the core single-agent workflow:
 
-- Use the `cdd-*` skill pack directly from Codex CLI or Claude Code.
+- install the Builder skill pack
+- use the `cdd-*` skills directly from Codex CLI or Claude Code
 
-OpenClaw-driven work:
+For the Master Chef upgrade:
 
-- Install both the Builder skills and `cdd-master-chef`.
-- Use `/cdd-master-chef` to run the Master Chef, Builder, and Watchdog process with user-selected reporting.
+- install both the Builder skill pack and `cdd-master-chef`
+- select models with `/model <master-model>` and `/acp model <builder-model>`
+- launch `/cdd-master-chef` from the OpenClaw session you want to use as the reporting channel
+- let Master Chef inspect the repo, propose the next TODO step, and ask for kickoff confirmation before autonomous execution begins
