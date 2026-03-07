@@ -36,6 +36,7 @@ def validate_builder_skill(skill_dir: Path) -> None:
     """Validate one Builder skill directory under skills/."""
     skill_md = skill_dir / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
+    skill_text = skill_md.read_text(encoding="utf-8")
     meta = frontmatter(skill_md)
     require_field(meta, rf"^name:\s*{re.escape(skill_dir.name)}\s*$", skill_md, "name")
     require_field(meta, r"^description:\s*.+", skill_md, "description")
@@ -52,6 +53,14 @@ def validate_builder_skill(skill_dir: Path) -> None:
     assert "allow_implicit_invocation: false" in yaml_text, (
         f"implicit invocation not disabled in {openai_yaml}"
     )
+
+    if skill_dir.name == "cdd-implement-todo":
+        assert "update only the selected step in the active `TODO*.md` file" in skill_text, (
+            f"TODO completion writeback missing in {skill_md}"
+        )
+        assert "Do not add a new step-level `Status:` field" in skill_text, (
+            f"TODO completion guardrail missing in {skill_md}"
+        )
 
 
 def validate_openclaw_skill(repo_root: Path) -> None:

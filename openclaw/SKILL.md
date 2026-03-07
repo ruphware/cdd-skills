@@ -48,6 +48,7 @@ Operating contract:
 11. When a Builder session is needed, use `/acp spawn codex --mode persistent --thread auto --cwd <repo>` unless the current thread is already bound to the correct repo session.
 12. After kickoff approval, continue automatically step to step until the run is complete, blocked, or deadlocked. The human mainly reviews final results, not each step.
 13. For each passed step:
+   - update the selected step's task items in the active `TODO*.md` file to done, without modifying unrelated steps or inventing a new step-level status field
    - run the Master Chef QA gate
    - approve step-level UAT internally
    - commit

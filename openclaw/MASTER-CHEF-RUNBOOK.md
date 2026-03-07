@@ -228,6 +228,11 @@ CONSTRAINTS:
   - indexing, audit, refactor -> matching cdd-* skill
 - If a required cdd skill is missing, broken, or insufficient, STOP and report one precise blocker
 - Do not commit or push; Master Chef owns commit, push, and reporting
+- If the step passes, update only the selected step in the active `TODO*.md` file to mark its task items done before handing control back:
+  - existing checkbox tasks -> `[x]`
+  - plain task bullets -> checked markdown checkboxes
+  - do not add a new step-level status field
+  - do not touch future or unrelated steps
 - If Master Chef challenges a claim, answer with exact files, commands, outputs, and rationale
 
 VALIDATION:
@@ -325,6 +330,7 @@ A step is not passed unless all are true:
 - [ ] Appropriate `cdd-*` skill was used, or the approved exception is documented
 - [ ] Automated checks executed and passed, or failure is explicitly justified
 - [ ] No unexplained file changes
+- [ ] The selected step's task items in the active `TODO*.md` are marked done, and unrelated steps were not changed
 - [ ] PRD, Blueprint, TODO, JOURNAL, and INDEX consistency was preserved when required by repo contract
 - [ ] Builder evidence is concrete enough to challenge and retest
 - [ ] Master Chef step-level UAT is clear, runnable, and explicitly approved

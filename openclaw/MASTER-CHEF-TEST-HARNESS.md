@@ -160,6 +160,7 @@ Stop the run, remove the cron, and report DEADLOCK_STOPPED.
 - [ ] The current session was used as the reporting channel.
 - [ ] Exactly one watchdog cron job was created after kickoff approval.
 - [ ] Builder used `cdd-implement-todo` for the normal next runnable step, or `cdd-plan` only if the TODO state was not execution-ready.
+- [ ] After a passed step, the selected step's task items are marked done in the active `TODO*.md` file and unrelated steps were left alone.
 - [ ] Step reports explicitly include `Master Chef UAT approved`.
 - [ ] Current branch head matches upstream after a passed step:
   ```bash

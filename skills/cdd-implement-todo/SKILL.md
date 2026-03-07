@@ -1,12 +1,12 @@
 ---
 name: cdd-implement-todo
-description: "Implement exactly one TODO step, run its checks, and return a UAT checklist (explicit-only)."
+description: "Implement exactly one TODO step, run its checks, mark that step's tasks done in TODO on success, and return a UAT checklist (explicit-only)."
 disable-model-invocation: true
 ---
 
 # CDD Implement TODO (explicit-only)
 
-Implement exactly one TODO step in the target repo, then run that step’s `Automated checks`, and return a UAT checklist.
+Implement exactly one TODO step in the target repo, run that step's `Automated checks`, update the active TODO file to mark that step's tasks done on success, and return a UAT checklist.
 
 ## Flow
 1) Read `AGENTS.md`, `README.md`, the active `TODO*.md`, and any files needed for the chosen step.
@@ -18,11 +18,19 @@ Implement exactly one TODO step in the target repo, then run that step’s `Auto
 3) If the step is underspecified (missing Tasks / Automated checks / UAT), draft a minimal TODO patch and ask approval before implementing.
 4) Implement the step with minimal diffs.
 5) Run the step’s listed `Automated checks` (or the repo’s stricter standard checks if they exist).
-6) Update `docs/JOURNAL.md` only when changes are non-trivial, per `AGENTS.md`.
-7) Final report format: follow the target repo’s `AGENTS.md` “Output Format Per Turn”.
+6) If implementation and checks pass, update only the selected step in the active `TODO*.md` file to show its Tasks are done:
+   - If the step's `Tasks` section already uses markdown checkboxes, change unchecked task items from `[ ]` to `[x]`.
+   - If the step's `Tasks` section uses plain bullets, rewrite only those task bullets into checked markdown checkboxes while preserving the task text and order.
+   - Do not add a new step-level `Status:` field or any other completion marker.
+   - Do not mark the TODO step done if implementation or checks failed.
+   - Do not modify future or unrelated steps.
+7) Update `docs/JOURNAL.md` only when changes are non-trivial, per `AGENTS.md`.
+8) Final report format: follow the target repo’s `AGENTS.md` “Output Format Per Turn”.
+   - Explicitly state which `TODO*.md` file and step were updated to mark the completed tasks done.
 
 ## Resolution examples
 - `$cdd-implement-todo step 008` + one matching Step 08 in the repo: implement immediately, no reconfirmation.
 - `$cdd-implement-todo step 008` + matches in `TODO.md` and `TODO-foo.md`: ask which TODO file or exact heading to use.
 - `$cdd-implement-todo` with no step argument: ask which step to implement.
 - A matched step missing `Tasks`, `Automated checks`, or `UAT`: ask approval only for the minimal TODO patch needed to make the step executable.
+- A matched step that passes implementation and checks: mark only that step's task items done in the active TODO file before the final report.
