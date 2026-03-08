@@ -145,4 +145,4 @@ For the Master Chef upgrade:
 - decide the Builder model and thinking level for subagent spawns
 - launch `/cdd-master-chef` from the OpenClaw session you want to use as the control route
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
-- after kickoff, expect the main-session watchdog cron to check Builder health every 5 minutes and emit status heartbeats about every 15 minutes
+- after kickoff, expect the main-session watchdog cron to check Builder health every 5 minutes; healthy ticks may stay quiet except for periodic heartbeats, but configured lifecycle status updates must still be attempted on step/run transitions

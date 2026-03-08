@@ -69,16 +69,22 @@ Operating contract:
    - commit
    - push
    - send full detail to the control route
-   - send concise status to the status route if configured
-16. The watchdog tick runs in the main session and may:
+   - attempt concise direct status delivery to the status route if configured
+   - update `last_status_report_at_utc` on successful status delivery
+16. Status-route delivery is event-driven, not just watchdog-driven.
+   - A configured `status_route` means Master Chef must attempt direct delivery for key lifecycle events.
+   - `best_effort` means attempt delivery and continue if it fails.
+   - `required` means attempt delivery and block/stop if it fails.
+17. The watchdog tick runs in the main session and may:
    - inspect runtime files and logs
    - inspect Builder health
    - steer the current Builder if supported
    - replace the Builder with a fresh subagent run if stale
    - report blockers or completion
-17. The watchdog tick must not create a second control loop. Recovery stays in the main session.
-18. If status-route delivery fails and policy is `best_effort`, note it in the control route and continue. If policy is `required`, stop the run and report the blocker.
-19. If repeated Builder replacements fail without progress, stop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`.
+18. The watchdog tick must not create a second control loop. Recovery stays in the main session.
+19. Healthy watchdog ticks may stay quiet, but they do not cancel status-route obligations for lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
+20. If status-route delivery fails and policy is `best_effort`, record `STATUS_DELIVERY_FAILED`, note it in the control route, and continue. If policy is `required`, record `STATUS_DELIVERY_FAILED`, stop the run, and report the blocker.
+21. If repeated Builder replacements fail without progress, stop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`.
 
 Canonical `run.json` fields:
 
@@ -118,8 +124,11 @@ Report events:
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
+- `BLOCKER_CLEARED`
+- `RUN_STOPPED`
 - `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
+- `STATUS_DELIVERY_FAILED`
 
 Route policy:
 

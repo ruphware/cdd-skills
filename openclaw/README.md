@@ -121,6 +121,8 @@ Reporting is OpenClaw-native:
 - `status_route` is optional and can be an external route such as Slack
 - the chosen route policy is written into `.cdd-runtime/master-chef/run.json`
 - the main session sends direct status updates; there is no external reporting wrapper
+- if `status_route` is configured, Master Chef must attempt direct delivery for lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, and `RUN_COMPLETE`
+- successful status delivery updates `last_status_report_at_utc`; failed delivery records `STATUS_DELIVERY_FAILED`
 
 Watchdog policy:
 

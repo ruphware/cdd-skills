@@ -328,7 +328,8 @@ After kickoff approval:
    - push
    - update runtime state
    - send full detail to control route
-   - send concise direct status update if configured
+   - attempt concise direct status delivery if a `status_route` is configured
+   - update `last_status_report_at_utc` if status delivery succeeds
 10. Re-inspect TODO state.
 11. If another runnable step exists, continue automatically.
 12. If no runnable step remains, report `RUN_COMPLETE`.
@@ -394,6 +395,7 @@ When the systemEvent fires, the **main session** should:
 4. If healthy:
    - record a watchdog tick when useful
    - send a `HEARTBEAT` only every ~15 minutes
+   - otherwise stay quiet for that watchdog tick
 5. If stale:
    - try to steer the current Builder if supported
    - otherwise replace it with a fresh Builder run for the same step
@@ -479,14 +481,17 @@ This route always gets full detail.
 ### Status route
 
 The main session sends status updates directly to the optional external route.
+A configured `status_route` means Master Chef must attempt direct delivery for key lifecycle events; control-route messages do not satisfy this requirement.
 
-Send only:
+Attempt delivery for:
 
 - `START`
-- `HEARTBEAT`
+- `HEARTBEAT` (only when the heartbeat interval is due)
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
+- `BLOCKER_CLEARED`
+- `RUN_STOPPED`
 - `RUN_COMPLETE`
 
 Keep them concise.
@@ -497,10 +502,16 @@ Do not send:
 - every Builder micro-update
 - internal debate between Master Chef and Builder
 
+Runtime obligations:
+
+- on successful status delivery, update `last_status_report_at_utc`
+- on failed status delivery, append `STATUS_DELIVERY_FAILED` to `master-chef.jsonl`
+- record the failed event label, route target, policy, and a short error summary when possible
+
 If status delivery fails:
 
-- `best_effort` -> note it in control route and continue
-- `required` -> stop and report blocker
+- `best_effort` -> attempt once, record `STATUS_DELIVERY_FAILED`, note it in control route, and continue
+- `required` -> attempt once, record `STATUS_DELIVERY_FAILED`, stop the run, and report blocker
 
 ---
 
@@ -538,5 +549,8 @@ Use these event labels:
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
+- `BLOCKER_CLEARED`
+- `RUN_STOPPED`
 - `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
+- `STATUS_DELIVERY_FAILED`

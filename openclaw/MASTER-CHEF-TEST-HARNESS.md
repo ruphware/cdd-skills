@@ -97,12 +97,14 @@ openclaw cron list | rg cdd-master-chef-watchdog
 ```text
 /cdd-master-chef TEST ONLY: simulate one watchdog tick in the main session.
 Check runtime files and Builder health. If healthy, do not replace Builder and do not send unnecessary status.
+A healthy watchdog tick may stay quiet unless a heartbeat is due, but lifecycle status delivery rules still apply separately.
 ```
 
 - [ ] Expected:
   - no false restart
   - no false blocker
   - watchdog reasoning happens in the main session
+  - healthy tick silence does not redefine or bypass configured status-route delivery for lifecycle events
 
 ### Prompt F - Stale Builder
 
@@ -156,6 +158,8 @@ If the run is complete, send the final results summary.
   - Master Chef reviews Builder output
   - the delegated path matches the routing choice rather than defaulting blindly
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
+  - if `status_route` is configured, `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are attempted as direct status deliveries rather than being satisfied only by control-route replies
+  - successful status delivery updates `last_status_report_at_utc`
 
 ### Prompt J - Deadlock
 
@@ -168,6 +172,20 @@ Stop the run, remove the cron, and report DEADLOCK_STOPPED.
   - run stops cleanly
   - cron is removed
   - deadlock is reported clearly
+
+### Prompt K - Status-route delivery contract
+
+```text
+/cdd-master-chef TEST ONLY: with a configured status route and policy best_effort, simulate one successful STEP_PASS status delivery and one failed STEP_BLOCKED status delivery.
+Update runtime state exactly as the reporting contract requires.
+```
+
+- [ ] Expected:
+  - successful status delivery updates `last_status_report_at_utc`
+  - failed delivery appends `STATUS_DELIVERY_FAILED` to `master-chef.jsonl`
+  - the failed event label, route target, and policy are recorded
+  - `best_effort` continues after recording the failure
+  - control-route reporting does not count as satisfying the status-route attempt
 
 ---
 
@@ -183,6 +201,9 @@ Stop the run, remove the cron, and report DEADLOCK_STOPPED.
 - [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
+- [ ] Configured status-route delivery was attempted for lifecycle events rather than being silently skipped.
+- [ ] `last_status_report_at_utc` changed after successful status delivery.
+- [ ] `best_effort` failures produced `STATUS_DELIVERY_FAILED` evidence without halting the run.
 - [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.
 
 ---
