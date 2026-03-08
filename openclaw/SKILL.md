@@ -41,17 +41,19 @@ Operating contract:
    - active TODO file
    - last completed step
    - next runnable TODO step
-8. The Builder must use the shared OpenClaw `cdd-*` skill pack.
-   - The normal implementation path is `cdd-implement-todo` on the next runnable TODO step.
-   - Fall back to `cdd-plan` only when the TODO state is stale or not executable.
-   - Treat the installed `cdd-*` skills as internal OpenClaw Builder workflows, not user slash commands.
+8. Master Chef chooses the internal `cdd-*` routing model.
+   - Builder default: `cdd-implement-todo` for the next runnable TODO step.
+   - Builder optional: `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action.
+   - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in the main session rather than being delegated to Builder.
+   - Excluded from the normal flow: `cdd-audit-and-implement`, unless the process is explicitly adapted for its mixed role.
+   - Treat the installed `cdd-*` skills as internal OpenClaw workflows, not user slash commands.
 9. Before implementation starts, present one kickoff approval that covers:
    - proposed next action
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - one recurring watchdog cron as a main-session `systemEvent`
    - optional direct status updates to the chosen `status_route`
-10. Spawn the Builder as a subagent with explicit model and thinking settings.
+10. Spawn the Builder as a subagent with explicit model and thinking settings, and tell it which internal `cdd-*` skill path to use.
 11. Prefer one-step Builder runs. Replace stale Builders with a fresh subagent run rather than relying on session recovery.
 12. Both Master Chef and Builder must append JSONL logs with concrete evidence for step start, validation, blockers, completion, and reporting.
 13. Use `hard_gate` and `soft_signal` validation classes:

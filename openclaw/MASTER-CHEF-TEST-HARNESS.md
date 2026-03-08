@@ -1,14 +1,17 @@
 # cdd-master-chef Test Harness Checklist (OpenClaw-direct mode)
 
-Goal: validate the flow **kickoff -> repo-local runtime state -> internal OpenClaw `cdd-*` Builder skills -> Builder subagent -> main-session watchdog wakeups -> direct status updates -> final results**.
+Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> main-session watchdog wakeups -> direct status updates -> final results**.
 
 ## 1) Preflight
 
 - [ ] Installed skill pack exists:
   ```bash
   ls ~/.openclaw/skills/cdd-master-chef/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-init-project/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-plan/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-implement-todo/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-index/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-refactor/SKILL.md >/dev/null
   ```
 
 - [ ] Repo is CDD-ready:
@@ -49,7 +52,7 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
   - branch/upstream check
   - TODO inspection
   - proposed next runnable step
-  - proposed Builder path is normally `cdd-implement-todo`
+  - explicit routing choice: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master Chef direct for setup/planning/refactor work
   - explicit kickoff approval request
 
 ### Prompt B - Kickoff approval
@@ -59,15 +62,15 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
 Use this session as the control route.
 Use <STATUS_ROUTE> as the status route with policy best_effort.
 Use Builder model <BUILDER_MODEL> with thinking <BUILDER_THINKING>.
-Initialize .cdd-runtime/master-chef/, acquire the run lease, create the watchdog cron as a main-session systemEvent, spawn the Builder subagent, have it use the shared OpenClaw cdd-* skill pack, and continue autonomously.
+Initialize .cdd-runtime/master-chef/, acquire the run lease, create the watchdog cron as a main-session systemEvent, route the approved action through the correct internal cdd skill, spawn the Builder only if the action is delegated, and continue autonomously.
 ```
 
 - [ ] Expected:
   - `.cdd-runtime/master-chef/` exists
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, `builder.jsonl`, and `watchdog.jsonl` exist
   - exactly one watchdog cron exists
-  - Builder starts as a subagent
-  - Builder handoff names the internal `cdd-implement-todo` path for normal step execution
+  - Builder starts as a subagent only when the chosen action is delegated
+  - the routing choice is named explicitly in the handoff or main-session action
 
 ### Prompt C - Verify runtime files
 
@@ -125,17 +128,21 @@ Refuse to start a duplicate run and report the active lease owner.
   - no duplicate run starts
   - lease conflict is reported clearly
 
-### Prompt H - Builder skill path
+### Prompt H - Routing model
 
 ```text
-/cdd-master-chef TEST ONLY: explain which internal Builder skill should be used for the current runnable step and why.
-If the TODO state is executable, prefer cdd-implement-todo.
-If the TODO state is stale or ambiguous, explain why cdd-plan is the correct fallback.
+/cdd-master-chef TEST ONLY: explain the routing choice for the current repo state.
+Use Builder via cdd-implement-todo for a normal runnable TODO step.
+Use Builder via cdd-index only when an index refresh is the delegated action.
+Use cdd-init-project, cdd-plan, or cdd-refactor directly in Master Chef when setup, planning, or refactor decomposition is needed.
+Explain why cdd-audit-and-implement is excluded from the normal flow.
 ```
 
 - [ ] Expected:
   - `cdd-implement-todo` is the default Builder path
-  - fallback to `cdd-plan` is justified only when the TODO state is not execution-ready
+  - `cdd-index` is treated as a delegated exception, not the default
+  - `cdd-init-project`, `cdd-plan`, and `cdd-refactor` are treated as Master-Chef-direct skills
+  - `cdd-audit-and-implement` is called out as excluded / non-default
 
 ### Prompt I - Continue the run
 
@@ -147,7 +154,7 @@ If the run is complete, send the final results summary.
 
 - [ ] Expected:
   - Master Chef reviews Builder output
-  - Builder uses the internal OpenClaw `cdd-*` workflow rather than a Codex or ACP-only path
+  - the delegated path matches the routing choice rather than defaulting blindly
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
 
 ### Prompt J - Deadlock
@@ -172,7 +179,8 @@ Stop the run, remove the cron, and report DEADLOCK_STOPPED.
 - [ ] Runtime files were created in the repo.
 - [ ] Duplicate-run prevention worked.
 - [ ] Builder recovery stayed inside the main session.
-- [ ] Master Chef chose `cdd-implement-todo` for normal step execution.
+- [ ] Master Chef chose the correct routing path for the repo state.
+- [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.

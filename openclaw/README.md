@@ -104,10 +104,10 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 5. Master Chef should then:
    - verify the repo already has the CDD boilerplate
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
-   - propose the next action, normally `cdd-implement-todo` on the next runnable TODO step
+   - choose the routing path: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master-Chef-direct planning or refactor work
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
-     - the proposed next action
+     - the proposed next action and routing path
      - the chosen status route if any
      - creation of the 5-minute watchdog cron
 
@@ -145,17 +145,28 @@ Keep these runtime files out of git, preferably via `.git/info/exclude`.
 
 ## Builder skill usage
 
-The normal Builder path is:
+Master Chef chooses the internal routing path.
+
+Default delegated path:
 
 - Master Chef chooses the next runnable TODO step
 - Builder uses the internal OpenClaw `cdd-implement-todo` skill for that step
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
 
-Fallback usage:
+Delegated exception:
 
-- `cdd-plan` only when the TODO state needs repair or the next action is not executable
-- `cdd-index`, `cdd-refactor`, `cdd-audit-and-implement`, and `cdd-init-project` only when the repo state actually calls for them
+- `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action
+
+Master-Chef-direct path:
+
+- `cdd-init-project`
+- `cdd-plan`
+- `cdd-refactor`
+
+Excluded from the normal flow:
+
+- `cdd-audit-and-implement`, because it mixes roles in a way that does not fit the clean Master Chef / Builder split
 
 ## Validation
 
