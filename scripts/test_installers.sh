@@ -92,10 +92,6 @@ OPENCLAW_INSTALL="$TMP_ROOT/openclaw-install"
 OPENCLAW_UPDATE="$TMP_ROOT/openclaw-update"
 OPENCLAW_LINK="$TMP_ROOT/openclaw-link"
 OPENCLAW_UNINSTALL="$TMP_ROOT/openclaw-uninstall"
-OPENCLAW_PREREQ_MISSING="$TMP_ROOT/openclaw-prereq-missing"
-OPENCLAW_PREREQ_OK="$TMP_ROOT/openclaw-prereq-ok"
-OPENCLAW_HOME_MISSING="$TMP_ROOT/openclaw-home-missing"
-OPENCLAW_HOME_OK="$TMP_ROOT/openclaw-home-ok"
 
 echo "[CI] INFO LegacyFlagMigration root={$TMP_ROOT}"
 assert_command_fails_with "Unsupported flag: --force" \
@@ -194,6 +190,9 @@ echo "[CI] INFO OpenClawInstallFresh root={$OPENCLAW_INSTALL}"
 "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_INSTALL"
 assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/SKILL.md"
 assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/README.md"
+assert_exists "$OPENCLAW_INSTALL/cdd-plan/SKILL.md"
+assert_exists "$OPENCLAW_INSTALL/cdd-implement-todo/SKILL.md"
+assert_command_output_contains "user-invocable: false" sed -n '1,40p' "$OPENCLAW_INSTALL/cdd-plan/SKILL.md"
 assert_command_fails_with "Rerun with --update" \
   "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_INSTALL"
 
@@ -204,36 +203,44 @@ touch "$OPENCLAW_UPDATE/cdd-master-chef/EXTRA.txt"
 assert_exists "$OPENCLAW_UPDATE/cdd-master-chef/SKILL.md"
 assert_not_exists "$OPENCLAW_UPDATE/cdd-master-chef/EXTRA.txt"
 assert_no_match "$OPENCLAW_UPDATE" 'cdd-master-chef.bak.*'
+touch "$OPENCLAW_UPDATE/cdd-plan/EXTRA.txt"
+"$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_UPDATE" --update
+assert_exists "$OPENCLAW_UPDATE/cdd-plan/SKILL.md"
+assert_not_exists "$OPENCLAW_UPDATE/cdd-plan/EXTRA.txt"
+assert_no_match "$OPENCLAW_UPDATE" 'cdd-plan.bak.*'
 
 echo "[CI] INFO OpenClawInstallLink root={$OPENCLAW_LINK}"
 "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_LINK" --link
 assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
+assert_exists "$OPENCLAW_LINK/cdd-plan/SKILL.md"
 "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_LINK" --link --update
 assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
+assert_exists "$OPENCLAW_LINK/cdd-implement-todo/SKILL.md"
 
 echo "[CI] INFO OpenClawUninstall root={$OPENCLAW_UNINSTALL}"
 "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_UNINSTALL"
 mkdir -p "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
+mkdir -p "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
+mkdir -p "$OPENCLAW_UNINSTALL/cdd-foreign"
+cat >"$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md" <<'EOF'
+---
+name: cdd-foreign
+description: foreign skill
+disable-model-invocation: true
+---
+EOF
 printf 'n\n' | "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_UNINSTALL" --uninstall
 assert_exists "$OPENCLAW_UNINSTALL/cdd-master-chef/SKILL.md"
+assert_exists "$OPENCLAW_UNINSTALL/cdd-plan/SKILL.md"
 assert_exists "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
+assert_exists "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
+assert_exists "$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md"
 printf 'y\n' | "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_UNINSTALL" --uninstall
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef"
+assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan"
+assert_not_exists "$OPENCLAW_UNINSTALL/cdd-implement-todo"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
-
-echo "[CI] INFO OpenClawPrereqWarning root={$OPENCLAW_PREREQ_MISSING}"
-mkdir -p "$OPENCLAW_HOME_MISSING"
-assert_command_output_contains \
-  "Warning: missing Builder skills in $OPENCLAW_HOME_MISSING/.agents/skills" \
-  env HOME="$OPENCLAW_HOME_MISSING" "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_PREREQ_MISSING"
-assert_exists "$OPENCLAW_PREREQ_MISSING/cdd-master-chef/SKILL.md"
-
-echo "[CI] INFO OpenClawPrereqVerified root={$OPENCLAW_PREREQ_OK}"
-mkdir -p "$OPENCLAW_HOME_OK"
-env HOME="$OPENCLAW_HOME_OK" "$ROOT_DIR/scripts/install.sh" --target "$OPENCLAW_HOME_OK/.agents/skills"
-assert_command_output_contains \
-  "Verified Builder skills -> $OPENCLAW_HOME_OK/.agents/skills" \
-  env HOME="$OPENCLAW_HOME_OK" "$ROOT_DIR/scripts/install-openclaw.sh" --target "$OPENCLAW_PREREQ_OK"
-assert_exists "$OPENCLAW_PREREQ_OK/cdd-master-chef/SKILL.md"
+assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
+assert_exists "$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md"
 
 echo "[CI] INFO InstallerSmokePassed root={$TMP_ROOT}"

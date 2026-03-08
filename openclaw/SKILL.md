@@ -41,7 +41,10 @@ Operating contract:
    - active TODO file
    - last completed step
    - next runnable TODO step
-8. The normal next action is the next runnable TODO step. Fall back to planning only when the TODO state is stale or not executable.
+8. The Builder must use the shared OpenClaw `cdd-*` skill pack.
+   - The normal implementation path is `cdd-implement-todo` on the next runnable TODO step.
+   - Fall back to `cdd-plan` only when the TODO state is stale or not executable.
+   - Treat the installed `cdd-*` skills as internal OpenClaw Builder workflows, not user slash commands.
 9. Before implementation starts, present one kickoff approval that covers:
    - proposed next action
    - runtime initialization under `.cdd-runtime/master-chef/`
@@ -58,7 +61,7 @@ Operating contract:
    - `rg --files`
    - `git ls-files --cached --others --exclude-standard`
 15. For each passed step:
-   - update only the selected step in `TODO*.md`
+   - ensure the Builder updated only the selected step in `TODO*.md`
    - run Master Chef QA
    - approve step-level UAT with explicit evidence
    - commit

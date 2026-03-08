@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import subprocess
 import sys
+import tempfile
 
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
@@ -79,18 +81,82 @@ def validate_openclaw_skill(repo_root: Path) -> None:
         "disable-model-invocation: true",
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
+    assert "The Builder runs as an OpenClaw subagent, not ACP." in skill_text, (
+        f"subagent Builder contract missing in {skill_md}"
+    )
+    assert "The watchdog is a cron `systemEvent` that wakes the main session." in skill_text, (
+        f"main-session watchdog contract missing in {skill_md}"
+    )
     assert ".cdd-runtime/master-chef/run.json" in skill_text, (
         f"durable runtime state missing in {skill_md}"
     )
-    assert "run it in an isolated session, not the main session" in skill_text, (
-        f"isolated watchdog requirement missing in {skill_md}"
+    assert "The Builder must use the shared OpenClaw `cdd-*` skill pack." in skill_text, (
+        f"shared Builder skill-pack requirement missing in {skill_md}"
     )
-    assert "MASTER_CHEF_RESTARTED" in skill_text, (
-        f"master chef restart reporting missing in {skill_md}"
+    assert "`cdd-implement-todo`" in skill_text, (
+        f"default Builder implementation skill missing in {skill_md}"
     )
-    assert "BUILDER_RESUMED" in skill_text, (
-        f"builder resume reporting missing in {skill_md}"
-    )
+
+
+def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
+    """Validate the generated OpenClaw Builder variants built from skills/."""
+    generator = repo_root / "scripts" / "build_openclaw_builder_skills.py"
+    assert generator.exists(), f"missing {generator}"
+
+    skills_root = repo_root / "skills"
+    canonical_names = sorted(path.name for path in skills_root.iterdir() if path.is_dir())
+    assert canonical_names, f"no canonical Builder skills found in {skills_root}"
+
+    with tempfile.TemporaryDirectory(prefix="cdd-openclaw-builder-") as tmp_dir:
+        output_root = Path(tmp_dir) / "generated"
+        subprocess.run(
+            [sys.executable, str(generator), "--output", str(output_root)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        for skill_name in canonical_names:
+            generated_dir = output_root / skill_name
+            skill_md = generated_dir / "SKILL.md"
+            assert skill_md.exists(), f"missing generated {skill_md}"
+            skill_text = skill_md.read_text(encoding="utf-8")
+            meta = frontmatter(skill_md)
+            require_field(
+                meta,
+                rf"^name:\s*{re.escape(skill_name)}\s*$",
+                skill_md,
+                "name",
+            )
+            require_field(
+                meta,
+                r"^description:\s*.+internal OpenClaw Builder skill.+$",
+                skill_md,
+                "internal Builder description",
+            )
+            require_field(
+                meta,
+                r"^user-invocable:\s*false\b",
+                skill_md,
+                "user-invocable: false",
+            )
+            assert "disable-model-invocation:" not in meta, (
+                f"generated skill should be model-visible in {skill_md}"
+            )
+            assert "Internal OpenClaw Builder variant generated from the canonical `skills/` pack." in skill_text, (
+                f"internal-use wrapper missing in {skill_md}"
+            )
+            assert "return that request to Master Chef" in skill_text, (
+                f"Master Chef approval routing missing in {skill_md}"
+            )
+
+            if skill_name == "cdd-implement-todo":
+                assert "update only the selected step in the active `TODO*.md` file" in skill_text, (
+                    f"generated TODO completion writeback missing in {skill_md}"
+                )
+                assert "Do not add a new step-level `Status:` field" in skill_text, (
+                    f"generated TODO completion guardrail missing in {skill_md}"
+                )
 
 
 def main() -> int:
@@ -105,6 +171,7 @@ def main() -> int:
     for skill_dir in skill_dirs:
         validate_builder_skill(skill_dir)
 
+    validate_generated_openclaw_builder_skills(repo_root)
     validate_openclaw_skill(repo_root)
     print("skill structure checks passed")
     return 0

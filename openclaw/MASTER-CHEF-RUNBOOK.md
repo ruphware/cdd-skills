@@ -37,6 +37,7 @@ The main session owns:
 
 The Builder is an OpenClaw subagent. It owns:
 
+- using the shared OpenClaw `cdd-*` Builder skill pack
 - implementing exactly one approved TODO step
 - running step validation
 - writing `builder.jsonl`
@@ -76,7 +77,14 @@ Before `/cdd-master-chef` is used:
 2. The current session should already be using the chosen Master Chef model.
 3. The Builder model and thinking level must be known before kickoff.
 4. The repo must have a pushable upstream.
-5. Confirm:
+5. The OpenClaw shared skills install must already contain:
+   - `~/.openclaw/skills/cdd-master-chef`
+   - `~/.openclaw/skills/cdd-plan`
+   - `~/.openclaw/skills/cdd-implement-todo`
+   - `~/.openclaw/skills/cdd-index`
+   - `~/.openclaw/skills/cdd-audit-and-implement`
+   - `~/.openclaw/skills/cdd-refactor`
+6. Confirm:
    - `control_route`: the current session
    - `status_route`: optional external route, such as Slack
    - `status_route_policy`: `best_effort` or `required`
@@ -101,8 +109,8 @@ On the first `/cdd-master-chef` turn:
    - next runnable TODO step
    - obvious blockers in the working tree
 3. Choose the next action:
-   - default: next runnable TODO step
-   - fallback: planning only if the TODO state is stale or ambiguous
+   - default: next runnable TODO step handled through `cdd-implement-todo`
+   - fallback: planning through `cdd-plan` only if the TODO state is stale or ambiguous
 4. Confirm:
    - Builder model
    - Builder thinking level
@@ -241,6 +249,10 @@ Optional fields:
 
 Use an OpenClaw subagent as the Builder.
 
+The Builder relies on the shared OpenClaw `cdd-*` skills that are installed into
+`~/.openclaw/skills` by `./scripts/install-openclaw.sh`. Those are OpenClaw-ready
+internal variants generated from the canonical repo skill pack in `skills/`.
+
 Default spawn shape:
 
 - `runtime: "subagent"`
@@ -262,12 +274,14 @@ Use a long-lived Builder session only when the repo or task genuinely needs pers
 
 The Builder must:
 
+- use `cdd-implement-todo` for a normal approved TODO step
+- use `cdd-plan` only when Master Chef explicitly delegates plan repair or TODO repair
 - implement exactly one approved TODO step
 - avoid scope creep
 - avoid commit/push
 - update only the selected TODO step when the step passes
 - write `builder.jsonl`
-- return a structured report with evidence, validation, UAT, and risks
+- return a structured report with evidence, validation, UAT, risks, and the exact TODO file/step it updated
 
 ---
 
@@ -278,7 +292,7 @@ After kickoff approval:
 1. Initialize or refresh runtime files.
 2. Write `run.json` and `run.lock.json`.
 3. Create the watchdog cron as a main-session `systemEvent`.
-4. Spawn the Builder subagent for the selected step.
+4. Spawn the Builder subagent for the selected step with an explicit handoff to use `cdd-implement-todo` unless the chosen action is planning.
 5. Record the Builder session key in runtime state.
 6. Let the Builder work.
 7. Review the Builder report.

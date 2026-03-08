@@ -4,45 +4,32 @@ This folder is the source for the OpenClaw-only `cdd-master-chef` upgrade.
 
 Installed form:
 
-- directory: `~/.openclaw/skills/cdd-master-chef`
-- slash command: `/cdd-master-chef`
+- `~/.openclaw/skills/cdd-master-chef`
+- `/cdd-master-chef`
 
-This is not the core CDD workflow. It is the OpenClaw upgrade that sits on top of the core `cdd-*` Builder skills.
+`./scripts/install-openclaw.sh` also installs OpenClaw-ready internal Builder variants of the full `cdd-*` skill pack into `~/.openclaw/skills`. Those Builder skills are generated from the canonical repo source in `skills/` and are meant for Master Chef and the Builder subagent, not for direct user invocation.
 
 ## What it does
 
-The skill runs a three-part process:
+The packaged OpenClaw workflow has three actors:
 
-- **Master Chef (OpenClaw):** inspects repo state, selects the next action, drives the Builder, approves step-level UAT, commits, pushes, and reports status
-- **Builder (ACP Codex):** executes one approved step at a time using the core `cdd-*` skills
-- **Watchdog (OpenClaw cron):** runs as an isolated supervisor every 5 minutes, probes Master Chef health, checks Builder health, restores the run when needed, and emits a dual-actor heartbeat every 15 minutes
+- **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, and reports status
+- **Builder:** an OpenClaw subagent that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
+- **Watchdog:** a 5-minute cron `systemEvent` that wakes the main session, checks runtime state, and nudges or replaces stale Builder runs
 
-The human chooses models, approves the kickoff once, and mainly checks final results or critical blockers.
+The human chooses the Master Chef model, chooses the Builder model and thinking level, approves kickoff once, and then mainly checks final results or critical blockers.
 
 ## Prerequisites
 
-- OpenClaw with ACP enabled
-- OpenClaw session-tool visibility wide enough for an isolated watchdog to reach the active Master Chef session:
-  - `tools.sessions.visibility = "agent"` or `"all"`
-  - if sandboxed, `agents.defaults.sandbox.sessionToolsVisibility` must preserve that reach
-- Healthy ACP backend:
-  - `/acp doctor`
-- Codex CLI reachable on `PATH`:
-  - `codex --version`
-- Separate core CDD Builder skills already installed for Codex:
-  - `~/.agents/skills/cdd-init-project`
-  - `~/.agents/skills/cdd-plan`
-  - `~/.agents/skills/cdd-implement-todo`
-  - `~/.agents/skills/cdd-index`
-  - `~/.agents/skills/cdd-audit-and-implement`
-  - `~/.agents/skills/cdd-refactor`
-- Target repo already has the CDD boilerplate:
+- OpenClaw installed and healthy
+- `git` on `PATH`
+- target repo already has the CDD boilerplate:
   - `AGENTS.md`
   - `README.md`
   - `TODO.md` or `TODO-*.md`
+- target repo has a pushable upstream branch
 
-This package does not install or duplicate the Builder skills. Install them separately with `./scripts/install.sh`.
-The OpenClaw installer checks for the required Builder skills in the default Codex location, `~/.agents/skills`, and prints either `Verified` or a warning if they are missing there.
+You do not need a separate Codex or ACP skill install for this OpenClaw package. `./scripts/install-openclaw.sh` installs both `cdd-master-chef` and the internal OpenClaw Builder `cdd-*` skills into `~/.openclaw/skills`.
 
 ## Install
 
@@ -64,103 +51,114 @@ Link install for local iteration:
 ./scripts/install-openclaw.sh --link --update
 ```
 
-Update an existing install:
+Notes:
+
+- `--link` symlinks `cdd-master-chef` itself.
+- The generated internal Builder skills are still materialized as normal directories in the target root.
+
+Update:
 
 ```bash
 ./scripts/install-openclaw.sh --update
 ```
 
-Uninstall the packaged skill:
+Uninstall:
 
 ```bash
 ./scripts/install-openclaw.sh --uninstall
 ```
 
-## How development is initiated
+## What gets installed
 
-1. Open the OpenClaw session you want to use as the reporting channel, or decide the exact route you want reports delivered to.
-2. Select the Master Chef model with a standalone directive:
+`./scripts/install-openclaw.sh` installs:
+
+- `cdd-master-chef`
+- `cdd-init-project`
+- `cdd-plan`
+- `cdd-implement-todo`
+- `cdd-index`
+- `cdd-audit-and-implement`
+- `cdd-refactor`
+
+The internal Builder variants are model-visible to OpenClaw agent runs and hidden from the user slash-command surface.
+
+## How development starts
+
+1. Open the OpenClaw session you want to use as the control route.
+2. Select the Master Chef model:
 
    ```text
    /model <master-model>
    ```
 
-3. Select the Builder model with a standalone directive:
-
-   ```text
-   /acp model <builder-model>
-   ```
-
+3. Decide the Builder model and thinking level you want Master Chef to use for subagent spawns.
 4. Start Master Chef in the existing CDD repo:
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
-   Inspect where development is at, propose the next runnable TODO step, confirm my reporting route, and wait for my kickoff approval before creating the watchdog cron.
+   Treat this session as the control route.
+   Use Builder model <BUILDER_MODEL> with thinking <BUILDER_THINKING>.
+   Inspect where development is at, propose the next runnable TODO step, and wait for my kickoff approval before creating runtime state or the watchdog cron.
    ```
 
 5. Master Chef should then:
-   - verify model status with `/model status` and `/acp status`
-   - verify session-tool visibility is sufficient for isolated watchdog supervision
    - verify the repo already has the CDD boilerplate
-   - inspect git status, active TODO state, and the next runnable step
+   - inspect git status, branch, upstream, active TODO state, and the next runnable step
    - propose the next action, normally `cdd-implement-todo` on the next runnable TODO step
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
      - the proposed next action
-     - the selected reporting route
-     - creation of the 5-minute isolated watchdog cron
+     - the chosen status route if any
+     - creation of the 5-minute watchdog cron
 
-6. After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
+After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
 
 ## Reporting and watchdog
 
 Reporting is OpenClaw-native:
 
-- the user selects the reporting route at kickoff
-- the current session is only the default route if the user explicitly accepts it
-- the selected route is written into `.cdd-runtime/master-chef/run.json`
-- there is no external `REPORTING_COMMAND` wrapper contract
+- `control_route` is the current session
+- `status_route` is optional and can be an external route such as Slack
+- the chosen route policy is written into `.cdd-runtime/master-chef/run.json`
+- the main session sends direct status updates; there is no external reporting wrapper
 
 Watchdog policy:
 
 - one recurring 5-minute cron job
-- run in an isolated session, not the main Master Chef session
-- read `.cdd-runtime/master-chef/run.json` plus actor logs on each tick
-- probe Master Chef first before attempting recovery
-- if Master Chef is healthy but Builder is stale, tell Master Chef to resume Builder and report `BUILDER_RESUMED`
-- if Master Chef is stale or dead, rehydrate the run from `run.json`, restart Master Chef, and report `MASTER_CHEF_RESTARTED`
-- emit `HEARTBEAT` every 15 minutes with both Master Chef and Builder summaries
-- remove the cron when the autonomous run completes or stops
+- `sessionTarget: "main"`
+- `payload.kind: "systemEvent"`
+- the cron wakes Master Chef in the main session
+- Master Chef checks runtime files, Builder health, and current progress
+- if the Builder is stale, Master Chef steers it or replaces it with a fresh subagent run
+- `HEARTBEAT` is emitted about every 15 minutes
+- the cron is removed when the autonomous run completes or is stopped
 
 Runtime files:
 
 - `.cdd-runtime/master-chef/run.json`
+- `.cdd-runtime/master-chef/run.lock.json`
 - `.cdd-runtime/master-chef/master-chef.jsonl`
 - `.cdd-runtime/master-chef/builder.jsonl`
 - `.cdd-runtime/master-chef/watchdog.jsonl`
 
-These files are operational state, not project docs. Keep them out of git, preferably via `.git/info/exclude`.
+Keep these runtime files out of git, preferably via `.git/info/exclude`.
 
-Useful cron commands:
+## Builder skill usage
 
-```bash
-openclaw cron list
-openclaw cron rm <job-id>
-```
+The normal Builder path is:
 
-## Runtime configuration
+- Master Chef chooses the next runnable TODO step
+- Builder uses the internal OpenClaw `cdd-implement-todo` skill for that step
+- Builder updates only the selected TODO step on success
+- Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
 
-Model selection stays outside the skill.
+Fallback usage:
 
-- OpenClaw `/model ...` controls the Master Chef LLM
-- `/acp model ...` and `/acp set ...` control the Builder runtime
-- `/model status` and `/acp status` are the right checks before kickoff
-- the isolated watchdog cron should reuse the Master Chef model selected at kickoff time
-
-The skill should not invent or hardcode model ids.
+- `cdd-plan` only when the TODO state needs repair or the next action is not executable
+- `cdd-index`, `cdd-refactor`, `cdd-audit-and-implement`, and `cdd-init-project` only when the repo state actually calls for them
 
 ## Validation
 
-- Use `MASTER-CHEF-TEST-HARNESS.md` for a packaged smoke test
-- Use `MASTER-CHEF-RUNBOOK.md` as the source of truth for day-to-day operation
-- Fresh install fails if `cdd-master-chef` is already present in the target root; use `--update` to replace it or `--uninstall` to remove it first
+- Use `MASTER-CHEF-TEST-HARNESS.md` for the packaged smoke test
+- Use `MASTER-CHEF-RUNBOOK.md` as the source of truth for operation details
+- Fresh install fails if any managed OpenClaw `cdd-*` skill already exists in the target root; use `--update` to replace them or `--uninstall` to remove them first
