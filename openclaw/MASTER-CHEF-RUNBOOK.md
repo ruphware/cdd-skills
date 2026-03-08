@@ -1,67 +1,89 @@
-# CDD Master Chef Runbook (OpenClaw + ACP Codex + isolated LLM watchdog + CDD-first)
+# CDD Master Chef Runbook (OpenClaw-direct mode)
 
 ## 0) Purpose
 
-Run autonomous development as an upgrade on top of the core CDD Builder workflow.
+Run autonomous development with one control loop:
 
-Design principle: **Soft reasoning, hard state.**
+- **Master Chef:** the current OpenClaw session
+- **Builder:** an OpenClaw subagent
+- **Watchdog:** a cron `systemEvent` that wakes the main session
+- **Status route:** optional external updates sent directly by the main session
 
-- Keep repo understanding, QA judgment, dispute resolution, and UAT reasoning LLM-driven.
-- Keep runtime state, route selection, logs, leases, event labels, and recovery thresholds explicit and durable.
+Design principle: **soft reasoning, hard state**.
 
-Actor model:
+- Keep planning, review, QA, and blocker judgment LLM-driven.
+- Keep runtime state, leases, logs, events, and recovery thresholds explicit and durable.
 
-- **OpenClaw (Master Chef):** inspects repo state, selects the next action, drives the Builder, approves step-level UAT, commits, pushes, and reports status
-- **ACP Codex (Builder):** primary Builder path; executes repo work for one approved step at a time
-- **OpenClaw isolated cron (Watchdog):** runs every 5 minutes as a separate LLM supervisor turn, reads durable run state plus actor logs, probes Master Chef health, and restores the run if needed
-- **Human:** selects models, confirms kickoff, selects routes, and mainly reviews final results or critical blockers
-
-This runbook assumes the repo already has the CDD boilerplate and the core `cdd-*` skills are installed.
+This runbook intentionally does **not** use ACP, isolated watchdog agents, or cross-session recovery logic.
 
 ---
 
-## 1) Two skill blocks
+## 1) Actor model
 
-Keep the distinction explicit:
+### Master Chef
 
-- **Core CDD Skills** are the primary single-agent workflow:
-  - one coding agent
-  - human in the loop for approvals and acceptance
-  - direct use of `cdd-plan`, `cdd-implement-todo`, `cdd-index`, and related skills
-- **CDD Master Chef** is the OpenClaw upgrade:
-  - the human approves the kickoff once
-  - Master Chef then drives the Builder across TODO steps autonomously
-  - Watchdog supervises both Master Chef and Builder
-  - the human mainly reviews final results, blockers, or deadlocks
+The main session owns:
 
-Never use Master Chef to paper over a repo that is not already CDD-ready.
+- repo inspection
+- next-step selection
+- runtime initialization
+- Builder spawn, replacement, and review
+- QA gate and step-level UAT approval
+- commit and push
+- direct status reporting
+- final summary
+
+### Builder
+
+The Builder is an OpenClaw subagent. It owns:
+
+- implementing exactly one approved TODO step
+- running step validation
+- writing `builder.jsonl`
+- returning a structured report to Master Chef
+
+### Watchdog
+
+The watchdog is **not** a separate agent. It is a cron wake-up into the main session.
+
+Its job is to remind Master Chef to:
+
+- inspect runtime state
+- inspect Builder health
+- steer or replace a stale Builder
+- send heartbeat or blocker reports when needed
+
+### Human
+
+The human owns:
+
+- model selection for the main session
+- Builder model/thinking selection
+- kickoff approval
+- final review
+- intervention when Master Chef reports a blocker or deadlock
 
 ---
 
 ## 2) Startup prerequisites
 
-Before `/cdd-master-chef` is invoked:
+Before `/cdd-master-chef` is used:
 
-1. The user must select the Master Chef model with a standalone directive:
-   - `/model <master-model>`
-2. The user must select the Builder model with a standalone directive:
-   - `/acp model <builder-model>`
-3. The target repo must already contain the CDD boilerplate:
+1. The repo must already contain:
    - `AGENTS.md`
    - `README.md`
    - `TODO.md` or `TODO-*.md`
-4. The user must confirm the reporting model:
-   - `control_route`: the operator-facing route, normally the current TUI/OpenClaw session if explicitly accepted
-   - `status_route`: optional condensed reporting route, for example Slack
-5. Session tools must be visible enough for an isolated watchdog turn to reach the active Master Chef session:
-   - `tools.sessions.visibility` should be `agent` or `all`
-   - if sandboxing is enabled, `agents.defaults.sandbox.sessionToolsVisibility` must preserve enough reach to probe and send into the active session
+2. The current session should already be using the chosen Master Chef model.
+3. The Builder model and thinking level must be known before kickoff.
+4. The repo must have a pushable upstream.
+5. Confirm:
+   - `control_route`: the current session
+   - `status_route`: optional external route, such as Slack
+   - `status_route_policy`: `best_effort` or `required`
 
-If model selection has not been made explicitly, stop and ask the user to run the directives first. Do not pick models on the user's behalf.
+If the repo is not CDD-ready, stop and route the user back to the core CDD workflow.
 
-If the repo is not CDD-ready, stop and route the user back to the core CDD workflow or `cdd-init-project`.
-
-If session-tool visibility is too narrow for cross-session supervision, do not start the autonomous run.
+If upstream is missing, do not start autonomous execution.
 
 ---
 
@@ -69,105 +91,42 @@ If session-tool visibility is too narrow for cross-session supervision, do not s
 
 On the first `/cdd-master-chef` turn:
 
-1. Verify model selection and environment:
-   - `/model status`
-   - `/acp status`
-   - `/acp doctor`
-2. Verify repo readiness:
-   - `AGENTS.md` exists
-   - `README.md` exists
-   - one active TODO file exists
+1. Inspect repo readiness:
    - `git status --short`
    - `git branch --show-current`
-3. Verify pushability:
    - `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}`
-4. Inspect where development is at:
-   - current branch and upstream
+2. Inspect development state:
    - active TODO file
    - last completed step
    - next runnable TODO step
-   - any obvious blockers in the working tree
-5. Choose the next action:
-   - default: the next runnable TODO step via `cdd-implement-todo`
-   - fallback: `cdd-plan` only when the TODO state is stale, ambiguous, or not executable
-6. Confirm routes:
-   - `control_route`: default to the current session only if the user explicitly accepts it
-   - `status_route`: capture the exact route and delivery policy:
-     - `best_effort`
-     - `required`
-7. Initialize the runtime path:
-   - `.cdd-runtime/master-chef/run.json`
-   - `.cdd-runtime/master-chef/run.lock.json`
-   - `.cdd-runtime/master-chef/master-chef.jsonl`
-   - `.cdd-runtime/master-chef/builder.jsonl`
-   - `.cdd-runtime/master-chef/watchdog.jsonl`
-8. Ensure `.cdd-runtime/` is ignored locally before autonomous work starts:
-   - prefer `.git/info/exclude`
-   - do not commit runtime files
-9. Acquire a run lease before autonomous execution:
-   - create `run.lock.json`
-   - assign `run_id`
-   - assign `run_lease_id`
-   - record the owning Master Chef session key
-10. Present one kickoff approval that includes:
+   - obvious blockers in the working tree
+3. Choose the next action:
+   - default: next runnable TODO step
+   - fallback: planning only if the TODO state is stale or ambiguous
+4. Confirm:
+   - Builder model
+   - Builder thinking level
+   - control route
+   - status route and policy
+5. Initialize runtime files under `.cdd-runtime/master-chef/`.
+6. Ensure `.cdd-runtime/` is locally ignored.
+7. Acquire the run lease in `run.lock.json`.
+8. Present one kickoff approval that includes:
    - repo state summary
    - proposed next action
-   - selected `control_route`
-   - selected `status_route` plus delivery policy
-   - runtime-state initialization
-   - run lease / duplicate-run protection
-   - creation of the 5-minute isolated watchdog cron
-11. Do not create the cron job and do not start implementation until the user confirms the kickoff.
+   - runtime initialization
+   - run lease
+   - one watchdog cron as a main-session `systemEvent`
+   - optional direct status reporting
+9. Do not create the cron job and do not spawn the Builder until the user approves kickoff.
 
 After kickoff approval, the run becomes autonomous.
 
 ---
 
-## 4) Roles and ownership
+## 4) Runtime files
 
-**Master Chef owns:**
-
-- repo inspection and next-step selection
-- kickoff proposal quality
-- Builder handoff quality
-- updating `run.json` after each material state change
-- renewing the run lease while healthy
-- writing Master Chef runtime logs
-- QA gate and step-level UAT approval
-- commit, push, and status reporting after each passed step
-- autonomous progression to subsequent TODO steps
-- final results summary
-
-**Builder owns:**
-
-- code changes for one approved step
-- running checks with command evidence
-- writing Builder runtime logs
-- reporting exact `cdd-*` usage and blockers
-- defending technical choices with concrete evidence when challenged
-
-**Watchdog owns:**
-
-- reading `run.json`, `run.lock.json`, and actor logs every 5 minutes
-- probing Master Chef health before taking recovery action
-- nudging a healthy Master Chef to resume a stale Builder
-- restarting a stale or dead Master Chef from durable run state
-- writing Watchdog runtime logs
-- sending heartbeat and recovery updates through the configured reporting model
-
-**Human owns:**
-
-- model selection
-- kickoff approval
-- route selection
-- final review of results
-- intervention only when Master Chef reports a blocker or deadlock
-
----
-
-## 5) Runtime state and logs
-
-Do not keep the canonical run state only in chat history. Use the target repo runtime path:
+Store canonical runtime state inside the repo:
 
 ```text
 .cdd-runtime/master-chef/
@@ -178,22 +137,25 @@ Do not keep the canonical run state only in chat history. Use the target repo ru
   watchdog.jsonl
 ```
 
-### 5.1 `run.json`
+### 4.1 `run.json`
 
-This file is the canonical restart snapshot. Keep it current after every material state change:
+Keep it current after every material state change.
+
+Suggested shape:
 
 ```json
 {
   "run_id": "<utc-id>",
   "repo": "/abs/path/to/repo",
-  "master_model": "<selected-master-model>",
-  "builder_model": "<selected-builder-model>",
-  "master_session_key": "<session-key>",
+  "master_model": "<model>",
+  "master_thinking": "xhigh",
+  "builder_model": "<model>",
+  "builder_thinking": "xhigh",
+  "builder_runtime": "subagent",
+  "master_session_key": "<main-session-key>",
+  "builder_session_key": "<builder-session-key>",
   "control_route": {
-    "kind": "current-session-route",
-    "channel": "<channel>",
-    "to": "<destination>",
-    "account_id": "<optional>"
+    "kind": "current-session-route"
   },
   "status_route": {
     "kind": "slack|discord|telegram|none",
@@ -202,11 +164,10 @@ This file is the canonical restart snapshot. Keep it current after every materia
   },
   "status_route_policy": "best_effort",
   "watchdog_job_id": "<cron-id>",
-  "run_lease_id": "<lease-id>",
+  "watchdog_mode": "main-system-event",
   "active_todo_path": "/abs/path/to/TODO.md",
   "active_step": "<exact step heading>",
-  "phase": "<kickoff|builder|qa|uat|commit|push|reporting|blocked|complete>",
-  "builder_session_ref": "<acp session/thread ref>",
+  "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
   "branch": "<branch>",
   "upstream": "<remote/ref>",
   "pre_step_head_sha": "<sha>",
@@ -214,25 +175,25 @@ This file is the canonical restart snapshot. Keep it current after every materia
   "last_progress_at_utc": "<ts>",
   "last_master_log_at_utc": "<ts>",
   "last_builder_log_at_utc": "<ts>",
-  "last_control_report_at_utc": "<ts>",
   "last_status_report_at_utc": "<ts>",
-  "master_restart_count": 0,
   "builder_restart_count": 0,
   "dispute_loop_count": 0,
   "current_blocker": ""
 }
 ```
 
-### 5.2 `run.lock.json`
+### 4.2 `run.lock.json`
 
-This file prevents duplicate autonomous runs:
+Use the lease file only to prevent duplicate control loops and duplicate Builder spawns.
+
+Suggested shape:
 
 ```json
 {
   "run_id": "<utc-id>",
   "lease_id": "<lease-id>",
-  "owner_session_key": "<master-session-key>",
-  "owner_model": "<master-model>",
+  "owner_session_key": "<main-session-key>",
+  "builder_session_key": "<builder-session-key>",
   "repo": "/abs/path/to/repo",
   "started_at_utc": "<ts>",
   "last_renewed_at_utc": "<ts>",
@@ -242,13 +203,13 @@ This file prevents duplicate autonomous runs:
 
 Rules:
 
-- the active Master Chef renews the lease whenever material progress happens
-- the watchdog may only replace the lease during a bounded recovery after probe failure
-- no second autonomous run may start while a coherent active lease exists
+- renew the lease whenever progress happens
+- renew the lease whenever the Builder is replaced
+- do not start a second autonomous run while a coherent active lease exists
 
-### 5.3 JSONL actor logs
+### 4.3 JSONL logs
 
-All three actors write JSONL so the watchdog can process them deterministically.
+Use JSONL logs so the main session can reason over durable evidence.
 
 Required fields per line:
 
@@ -263,7 +224,7 @@ Required fields per line:
 - `summary`
 - `session_key`
 
-Optional fields when relevant:
+Optional fields:
 
 - `command`
 - `validation`
@@ -274,511 +235,267 @@ Optional fields when relevant:
 - `blocker`
 - `route`
 
-### 5.4 Minimum logging cadence
+---
 
-**Master Chef must log at:**
+## 5) Builder runtime
 
-- kickoff start
-- kickoff approval
-- Builder handoff
-- Builder result received
-- QA start/result
-- UAT approval
-- commit start/result
-- push start/result
-- each status report
-- each dispute loop
-- run completion or stop
+Use an OpenClaw subagent as the Builder.
 
-**Builder must log at:**
+Default spawn shape:
 
-- step start
-- each `cdd-*` invocation
-- validation start/result
-- blocker
-- handoff back to Master Chef
+- `runtime: "subagent"`
+- explicit `model`
+- explicit `thinking`
+- `cwd: <repo>`
+- normally `mode: "run"`
 
-**Watchdog must log at:**
+Why `run` by default:
 
-- tick start
-- deterministic state summary
-- probe start/result
-- Builder stale detection
-- Master Chef stale detection
-- restart/resume decision
-- each report sent
+- one step at a time
+- simpler lifecycle
+- easier replacement
+- fewer stale-session edge cases
+
+Use a long-lived Builder session only when the repo or task genuinely needs persistent Builder context.
+
+### 5.1 Builder contract
+
+The Builder must:
+
+- implement exactly one approved TODO step
+- avoid scope creep
+- avoid commit/push
+- update only the selected TODO step when the step passes
+- write `builder.jsonl`
+- return a structured report with evidence, validation, UAT, and risks
 
 ---
 
-## 6) Builder skill map
+## 6) Standard autonomous loop
 
-The Builder should use these CDD skills by default:
+After kickoff approval:
 
-- `cdd-init-project` — bootstrap or adopt CDD for a repo
-- `cdd-plan` — convert scope into approval-ready TODO edits
-- `cdd-implement-todo` — implement exactly one approved TODO step
-- `cdd-index` — refresh architecture or index context
-- `cdd-audit-and-implement` — turn audit findings into TODOs and implement the first step
-- `cdd-refactor` — build a refactor TODO plan from the current index
-
-### 6.1 CDD-first execution rule
-
-- If a matching `cdd-*` skill exists for the current phase, use it first.
-- Do not bypass to freeform/manual coding unless:
-  1. the skill is missing or broken, or
-  2. the skill cannot express the approved step
-- If bypass is needed, Builder must stop and report a precise blocker plus the smallest workable fallback.
-
-### 6.2 ACP Codex is the primary Builder path
-
-- Use ACP Codex persistent thread mode by default.
-- Use direct local Codex CLI only as break-glass fallback when ACP is unavailable or explicitly approved.
-- Log any fallback clearly in `builder.jsonl` with blocker and rationale.
-
----
-
-## 7) Standard autonomous loop
-
-After the kickoff approval:
-
-1. Create or refresh `.cdd-runtime/master-chef/`.
-2. Write `run.json` with selected models, routes, branch/upstream, active step, and session references.
-3. Acquire and record the active lease in `run.lock.json`.
-4. Create the isolated watchdog cron and record its id.
-5. Spawn or reuse the Builder session:
-   - `/acp spawn codex --mode persistent --thread auto --cwd <repo>`
-6. Hand the selected step to the Builder.
-7. Require the Builder to write logs while working.
-8. Collect the Builder report: diff summary, checks, risks, blockers, and exact `cdd-*` command evidence.
-9. Run the Master Chef QA gate.
-10. Run step-level UAT internally from repo state plus Builder evidence.
-11. If the step passes:
-    - commit
-    - push
-    - report full detail to `control_route`
-    - report condensed summary to `status_route` if configured
-12. Re-inspect the TODO state.
-13. If another runnable step exists, continue automatically without a new human approval.
-14. If no runnable step remains and the autonomous scope is complete, send final results and report `RUN_COMPLETE`.
+1. Initialize or refresh runtime files.
+2. Write `run.json` and `run.lock.json`.
+3. Create the watchdog cron as a main-session `systemEvent`.
+4. Spawn the Builder subagent for the selected step.
+5. Record the Builder session key in runtime state.
+6. Let the Builder work.
+7. Review the Builder report.
+8. Run Master Chef QA and step-level UAT.
+9. If the step passes:
+   - commit
+   - push
+   - update runtime state
+   - send full detail to control route
+   - send concise direct status update if configured
+10. Re-inspect TODO state.
+11. If another runnable step exists, continue automatically.
+12. If no runnable step remains, report `RUN_COMPLETE`.
 
 Only stop autonomy when:
 
 - the run is complete
 - a hard blocker requires human input
-- a deadlock is declared
-- cron, control-route delivery, or push behavior fails in a way that makes unattended progress unsafe
+- repeated Builder replacements fail without progress
+- the user stops the run
 
 ---
 
-## 8) Builder handoff template
+## 7) Watchdog cron
 
-Use this every time:
-
-```text
-You are the Builder. Execute exactly one approved TODO step.
-
-REPO:
-- <path>
-
-STEP:
-- <exact Step NN - Title heading>
-
-RUNTIME LOG PATH:
-- .cdd-runtime/master-chef/builder.jsonl
-
-MANDATORY CONTEXT (read first):
-- AGENTS.md
-- README.md
-- the active TODO file(s): TODO.md / TODO-*.md
-- docs/specs/prd.md and docs/specs/blueprint.md (if present)
-- docs/JOURNAL.md (skim top)
-- docs/INDEX.md (if present)
-
-CONSTRAINTS:
-- Implement only this step; no scope creep
-- Keep the patch minimal
-- Preserve existing behavior unless the step says otherwise
-- Use CDD skill-first execution:
-  - planning work -> cdd-plan
-  - step implementation -> cdd-implement-todo
-  - indexing, audit, refactor -> matching cdd-* skill
-- ACP Codex is the primary Builder path
-- If a required cdd skill is missing, broken, or insufficient, STOP and report one precise blocker
-- Do not commit or push; Master Chef owns commit, push, and reporting
-- Write JSONL log lines for step start, each cdd invocation, validation start/result, blocker, and completion
-- If the step passes, update only the selected step in the active `TODO*.md` file to mark its task items done before handing control back:
-  - existing checkbox tasks -> `[x]`
-  - plain task bullets -> checked markdown checkboxes
-  - do not add a new step-level status field
-  - do not touch future or unrelated steps
-- If Master Chef challenges a claim, answer with exact files, commands, outputs, and rationale
-
-VALIDATION:
-- Run the step-listed automated checks, plus any stricter AGENTS.md checks
-- Classify each validation item as either:
-  - `hard_gate` -> failure blocks the step
-  - `soft_signal` -> failure informs review but does not alone justify a step fail unless explicitly required
-- Prefer working-tree-aware discovery checks when unstaged files matter:
-  - `rg --files`
-  - `git ls-files --cached --others --exclude-standard`
-- Do not treat a discovery grep with no matches as equivalent to a failed test suite unless the step explicitly defines it as a hard gate
-- Include exact cdd commands and exact validation commands
-
-DELIVERABLE:
-- Report using the repo AGENTS.md "Output Format Per Turn"
-- Include command evidence for cdd usage and validation
-- Include a short UAT checklist and a suggested commit message
-
-When fully done, end with:
-DONE_BUILDER: <short summary>
-```
-
----
-
-## 9) Watchdog cron
-
-Use one recurring OpenClaw cron job:
+Use one recurring cron job:
 
 - cadence: every 5 minutes
-- target: isolated session
-- payload: agent turn, not a main-session system event
-- model: the Master Chef model captured at kickoff time
-- delivery: prefer route-aware reporting logic inside the watchdog turn itself
+- `sessionTarget: "main"`
+- `payload.kind: "systemEvent"`
+- delivery: none
 
-The watchdog is an isolated LLM supervisor, not a shell loop.
+The cron job does not report on its own. It only wakes the main session.
 
-Operating envelope:
-
-- inspect structured runtime state, recent logs, and Master Chef session health
-- do bounded agent-like probes into the Master Chef session
-- resume or rehydrate only within the defined recovery policy
-- never become a second planner, second Builder, or independent run owner
-
-Preferred behavior:
-
-- use the gateway `cron.add` tool when available
-- otherwise use the documented CLI equivalent
-- prefer cron delivery `none` when the watchdog itself handles dual-route reporting
-- if only one delivery target is available, prioritize `control_route`
-
-Canonical shape:
+Example shape:
 
 ```json
 {
   "name": "cdd-master-chef-watchdog:<repo>",
   "schedule": { "kind": "every", "everyMs": 300000 },
-  "sessionTarget": "isolated",
+  "sessionTarget": "main",
   "payload": {
-    "kind": "agentTurn",
-    "text": "Run the cdd-master-chef watchdog tick for <repo> using .cdd-runtime/master-chef/run.json, run.lock.json, and actor logs. Apply deterministic checks first, then probe Master Chef if needed. Return HEARTBEAT_OK if no report is needed."
+    "kind": "systemEvent",
+    "text": "Reminder: run the cdd-master-chef watchdog tick for <repo>. Check run.json, run.lock.json, Builder health, and runtime logs. If healthy, stay quiet. If stale, steer or replace the Builder and report only if needed."
   },
-  "model": "<selected-master-model>",
-  "wakeMode": "now",
-  "deleteAfterRun": false,
-  "delivery": {
-    "mode": "none"
-  }
+  "delivery": { "mode": "none" }
 }
 ```
 
-Record the returned cron id in `watchdog_job_id`.
-
-On completion, blocker, cancellation, or deadlock, remove the job:
-
-```bash
-openclaw cron rm <job-id>
-```
+Remove the job when the run completes, blocks permanently, or is cancelled.
 
 ---
 
-## 10) Watchdog policy
+## 8) Watchdog tick policy
 
-On each 5-minute watchdog tick:
+When the systemEvent fires, the **main session** should:
 
-1. Read `.cdd-runtime/master-chef/run.json`.
-2. Read `.cdd-runtime/master-chef/run.lock.json`.
-3. Read the last lines of:
+1. Read:
+   - `run.json`
+   - `run.lock.json`
    - `master-chef.jsonl`
    - `builder.jsonl`
    - `watchdog.jsonl`
-4. If no active step exists and the run is complete or stopped, do nothing except confirm the cron should be removed.
-5. If an active run exists, compare:
+2. Check:
+   - active step
+   - lease freshness
+   - Builder session key
    - `last_progress_at_utc`
    - `last_master_log_at_utc`
    - `last_builder_log_at_utc`
-   - `last_control_report_at_utc`
    - current phase
-   - lease freshness
-6. Run deterministic checks first:
-   - does `run_id` match the lease file?
-   - is the lease still fresh?
-   - is the expected Master Chef session key present?
-   - is the Builder session ref present when phase implies Builder work?
-   - did progress timestamps move since the last watchdog judgment?
-7. If deterministic checks look suspicious, probe Master Chef with a compact status request:
-   - current step
-   - current phase
-   - Builder health
-   - last progress
-   - next action
-8. If the probe succeeds and the state is coherent, treat Master Chef as healthy.
-9. If Builder logs are stale while Master Chef is healthy:
-   - send a targeted instruction into the Master Chef session to inspect and resume Builder
-   - increment `builder_restart_count` only when Builder is actually resumed
-   - report `BUILDER_RESUMED` once the resume is confirmed
-10. If Master Chef logs are stale or the probe fails:
-   - attempt one bounded recovery by replacing the lease generation and sending a rehydration prompt to `master_session_key`
-   - the recovery prompt must tell Master Chef to reload `run.json`, `run.lock.json`, inspect actor logs, continue the same step, and avoid creating a second autonomous run
-   - if recovery succeeds, increment `master_restart_count` and report `MASTER_CHEF_RESTARTED`
-11. If 15 minutes have elapsed since the last status-route report, send `HEARTBEAT`.
+3. Inspect Builder health using native OpenClaw subagent/session tools available to the main session.
+4. If healthy:
+   - record a watchdog tick when useful
+   - send a `HEARTBEAT` only every ~15 minutes
+5. If stale:
+   - try to steer the current Builder if supported
+   - otherwise replace it with a fresh Builder run for the same step
+   - increment `builder_restart_count`
+   - renew the lease
+   - update runtime files and logs
+   - send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
+6. If repeated replacements fail without forward progress:
+   - stop the run
+   - report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
 
-### 10.1 Probe rule
+Default thresholds:
 
-Do not restart Master Chef without probing first unless the session key is missing and the current run is clearly stale.
-
-### 10.2 Staleness thresholds
-
-Default thresholds unless the repo or run overrides them explicitly:
-
-- Builder phase stale threshold: 10 minutes without Builder-log movement
-- Master Chef phase stale threshold: 10 minutes without Master-Chef-log movement during active work
-- Report heartbeat interval: 15 minutes
-- Recovery cooldown after a restart/resume: 5 minutes
-- Master Chef restart budget before deadlock: 2 failed recoveries without forward progress
-- Builder resume budget before deadlock: 2 resumes without forward progress
-
-### 10.3 Deadlock rules
-
-Declare `DEADLOCK_STOPPED` and stop the run when any of these are true:
-
-- the same Builder phase needed 2 resumes without forward movement in `last_progress_at_utc`
-- Master Chef needed 2 recoveries without forward movement in `last_progress_at_utc`
-- the same blocker survived 2 full dispute loops
-- cron or control-route behavior is broken enough that unattended supervision is no longer trustworthy
-
-If `status_route` delivery fails:
-
-- if policy is `best_effort`, log it, report degradation in `control_route`, and continue
-- if policy is `required`, stop the run and report the blocker
+- Builder stale threshold: 10 minutes without Builder progress
+- Heartbeat interval: 15 minutes
+- Builder replacement budget before deadlock: 2 failed replacements without progress
 
 ---
 
-## 11) QA, validation classes, UAT, commit, and push gate
+## 9) Validation, QA, and UAT
 
-A step is not passed unless all are true:
+Use two validation classes.
 
-- [ ] Diff matches the selected step only
-- [ ] Appropriate `cdd-*` skill was used, or the approved exception is documented
-- [ ] Automated checks executed and classified correctly
-- [ ] All `hard_gate` validations passed, or failure is explicitly justified and approved
-- [ ] `soft_signal` failures were reviewed and do not hide a real blocker
-- [ ] No unexplained file changes
-- [ ] The selected step's task items in the active `TODO*.md` are marked done, and unrelated steps were not changed
-- [ ] PRD, Blueprint, TODO, JOURNAL, and INDEX consistency was preserved when required by repo contract
-- [ ] Builder evidence is concrete enough to challenge and retest
-- [ ] Master Chef step-level UAT is clear, runnable, and explicitly approved
-- [ ] Commit was created on the configured branch
-- [ ] Push to the configured upstream succeeded
-- [ ] Actor logs, lease, and `run.json` reflect the final step state
-- [ ] Reports were sent using the configured route policy
+### `hard_gate`
 
-### 11.1 Validation class guidance
-
-Use `hard_gate` for:
+Use for:
 
 - tests
 - lint/typecheck
 - migrations
-- repo-defined must-pass automated checks
 - push/auth/upstream checks
+- repo-defined must-pass automated checks
 
-Use `soft_signal` for:
+### `soft_signal`
+
+Use for:
 
 - discovery greps
+- file-presence scans
 - coverage hints
-- file-presence sanity scans when unstaged files may exist
 - non-blocking heuristics
 
-If a step wants a discovery check to be a true blocker, the step text must make that explicit.
+If unstaged files matter, use working-tree-aware discovery commands:
+
+- `rg --files`
+- `git ls-files --cached --others --exclude-standard`
+
+Do not treat a discovery grep with no matches as equivalent to a failed test suite unless the step explicitly says it is a blocker.
+
+### Step pass gate
+
+A step is not passed unless all are true:
+
+- diff matches the selected step
+- Builder evidence is concrete
+- `hard_gate` validations passed
+- `soft_signal` failures were reviewed and do not hide a real blocker
+- the selected TODO step was updated correctly
+- step-level UAT is explicit and approved
+- commit and push succeeded
+- runtime files and logs reflect the new state
 
 ---
 
-## 12) Reporting model
+## 10) Reporting model
 
-Use a dual-route reporting model.
+Use a simple dual-route model.
 
-### 12.1 Control route
+### Control route
 
-The `control_route` is the operator-facing route, usually the TUI/OpenClaw session where Master Chef was launched.
-
-Send to `control_route`:
+The current session gets:
 
 - kickoff summary
 - Builder handoff summary
-- QA and UAT verdicts
-- recovery reasoning
-- blockers and deadlocks
+- QA/UAT verdicts
+- recovery decisions
+- blockers
 - final summary
-- any degraded status-route notices
 
-This route gets full operational detail.
+This route always gets full detail.
 
-### 12.2 Status route
+### Status route
 
-The `status_route` is an optional condensed progress route, for example Slack.
+The main session sends status updates directly to the optional external route.
 
-Send to `status_route`:
+Send only:
 
 - `START`
 - `HEARTBEAT`
+- `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
-- `MASTER_CHEF_RESTARTED`
-- `BUILDER_RESUMED`
-- `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
 
-This route gets concise summaries only.
+Keep them concise.
 
-Do not send to `status_route` by default:
+Do not send:
 
-- raw log tails
+- raw log tails by default
 - every Builder micro-update
-- internal dispute back-and-forth
-- long validation transcripts unless failure context requires it
+- internal debate between Master Chef and Builder
 
-### 12.3 Report fields
+If status delivery fails:
 
-Include in normal reports:
-
-- **EVENT**
-- **STEP**
-- **PHASE**
-- **MASTER_CHEF_STATUS**
-- **BUILDER_STATUS**
-- **LAST_PROGRESS**
-- **CHANGES**
-- **VALIDATION**
-- **BLOCKERS**
-- **RESTART_COUNTS**
-- **NEXT**
-
-`STEP_PASS` must also include:
-
-- **MASTER CHEF UAT APPROVED**
-- **COMMIT**
-- **PUSH**
-
-`RUN_COMPLETE` must include:
-
-- completed steps summary
-- final branch / head commit
-- remaining TODO items, if any
-- known risks
-- exact final review actions for the human
+- `best_effort` -> note it in control route and continue
+- `required` -> stop and report blocker
 
 ---
 
-## 13) Dispute and deadlock policy
+## 11) Failure policy
 
-Disputes between Master Chef and Builder must be resolved internally first.
+### If Builder fails or stalls
 
-Use this loop:
+1. steer the current Builder if practical
+2. otherwise replace Builder with a fresh subagent run
+3. if 2 replacements fail without progress, stop the step
 
-1. Master Chef states the exact disputed claim or design choice.
-2. Builder responds with concrete evidence, commands, and reasoning.
-3. Master Chef challenges weak assumptions, requests re-tests, or proposes a tighter alternative.
-4. Builder either proves its position or adjusts to the stronger solution.
-5. Master Chef decides the winning path and records why.
+### If cron fails
 
-After a resolved dispute, report `DISPUTE_RESOLVED` with:
+- continue manually from the control route
+- do not corrupt run ownership
+- recreate cron only if needed
 
-- disputed issue
-- Builder position
-- Master Chef position
-- evidence used to decide
-- final chosen solution
+### If main session is interrupted
 
-`dispute_loop_count` increments for each full challenge cycle on the same blocker.
+- resume manually from `run.json` and `run.lock.json`
+- inspect repo diff and Builder logs
+- either continue the same step or mark it blocked
 
-If 2 full dispute loops finish without clear forward progress, declare deadlock, stop the run, remove the cron job, and report `DEADLOCK_STOPPED`.
+The main session is the only control plane. Do not create a second control loop.
 
 ---
 
-## 14) Preflight checks
+## 12) Event labels
 
-Before implementation begins, verify:
+Use these event labels:
 
-- Master Chef model status:
-  - `/model status`
-- Builder model status:
-  - `/acp status`
-- ACP backend healthy:
-  - `/acp doctor`
-- Codex CLI reachable:
-  - `codex --version`
-- required CDD Builder skills installed:
-  - `ls ~/.agents/skills/cdd-init-project ~/.agents/skills/cdd-plan ~/.agents/skills/cdd-implement-todo ~/.agents/skills/cdd-index ~/.agents/skills/cdd-audit-and-implement ~/.agents/skills/cdd-refactor >/dev/null`
-- repo contains the CDD boilerplate:
-  - `ls AGENTS.md README.md >/dev/null`
-  - `ls TODO*.md >/dev/null`
-- target repo identified and clean enough for work:
-  - `git status --short`
-- active branch known:
-  - `git branch --show-current`
-- upstream exists and is resolvable:
-  - `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}`
-- session-tool visibility is sufficient for isolated watchdog supervision:
-  - `tools.sessions.visibility` is `agent` or `all`
-  - sandbox session-tool visibility is not overly restrictive
-- route configuration is clear:
-  - `control_route` confirmed
-  - `status_route` confirmed or intentionally omitted
-
-If upstream is missing, do not proceed into implementation. Stop and report the missing push target.
-
-If the active TODO state is not runnable, stop the implementation path and propose `cdd-plan` instead.
-
-If `.cdd-runtime/` would be tracked, fix ignore policy before kickoff approval.
-
----
-
-## 15) Failure policy
-
-If a Builder run fails:
-
-1. Retry once with tighter prompt constraints.
-2. If it still fails, isolate the failure cause and decide whether it is:
-   - a normal blocker -> report `STEP_BLOCKED`
-   - a technical dispute -> enter the dispute loop
-   - a dead process -> let Master Chef resume it
-   - a cyclical failure or deadlock -> report `DEADLOCK_STOPPED`
-
-If Master Chef becomes stale:
-
-- probe the session first
-- recover from `run.json` and `run.lock.json` only if the probe fails or state is incoherent
-- do not spawn a second parallel autonomous run
-
-If push fails:
-
-- do not mark the step passed
-- report `STEP_BLOCKED`
-- include the failing command, branch, upstream, and smallest recovery action
-
-If cron setup fails before kickoff:
-
-- do not start autonomous execution
-- ask the human to resolve the cron setup first
-
-If the `control_route` is not the intended one:
-
-- do not start autonomous execution
-- have the user reopen `/cdd-master-chef` in the correct route or explicitly re-confirm the route
-
-If the `status_route` is misconfigured:
-
-- if policy is `best_effort`, continue and report degraded external reporting in `control_route`
-- if policy is `required`, do not proceed
-
-Never silently pivot architecture mid-step.
+- `START`
+- `HEARTBEAT`
+- `BUILDER_HANDOFF`
+- `BUILDER_RESTARTED`
+- `STEP_PASS`
+- `STEP_BLOCKED`
+- `DEADLOCK_STOPPED`
+- `RUN_COMPLETE`
