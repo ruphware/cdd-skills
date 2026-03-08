@@ -40,9 +40,10 @@ This is the master-agent workflow:
 
 - the human selects the Master Chef model and the Builder model
 - the human starts Master Chef in an existing repo that already has the CDD boilerplate
-- Master Chef checks where development is at and proposes the next runnable TODO step
-- the human confirms the kickoff, reporting session, and watchdog cron setup
+- Master Chef checks where development is at, proposes the next runnable TODO step, and initializes durable runtime state
+- the human confirms the kickoff, the reporting channel, and the isolated watchdog cron setup
 - after that, Master Chef drives the Builder automatically and the human checks final results unless Master Chef reports a blocker or deadlock
+- the watchdog supervises both Master Chef and Builder from a separate cron-driven supervisor turn
 
 Source of truth:
 
@@ -58,7 +59,7 @@ The OpenClaw upgrade does not replace the Builder skill pack. It depends on the 
 ## Relationship Between the Two
 
 - Start with the core `cdd-*` skills if you want the normal single-agent, human-approved CDD loop.
-- Add `cdd-master-chef` only when you want OpenClaw to orchestrate the Builder, maintain a watchdog cron, and keep the human mostly at kickoff plus final review.
+- Add `cdd-master-chef` only when you want OpenClaw to orchestrate the Builder, maintain an isolated watchdog supervisor, and keep the human mostly at kickoff plus final review.
 
 ## Recommended tools
 
@@ -136,5 +137,6 @@ For the Master Chef upgrade:
 
 - install both the Builder skill pack and `cdd-master-chef`
 - select models with `/model <master-model>` and `/acp model <builder-model>`
-- launch `/cdd-master-chef` from the OpenClaw session you want to use as the reporting channel
-- let Master Chef inspect the repo, propose the next TODO step, and ask for kickoff confirmation before autonomous execution begins
+- launch `/cdd-master-chef` from the OpenClaw session you want to use as the default reporting channel, or be ready to name a different reporting route
+- let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
+- after kickoff, expect the isolated watchdog cron to check both Master Chef and Builder every 5 minutes and emit a combined status heartbeat every 15 minutes

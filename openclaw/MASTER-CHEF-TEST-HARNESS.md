@@ -1,8 +1,8 @@
 # cdd-master-chef Test Harness Checklist
 
-Goal: validate the full upgrade flow **model selection -> repo inspection -> kickoff approval -> cron watchdog -> ACP Codex Builder -> autonomous progression -> final results**.
+Goal: validate the full upgrade flow **model selection -> repo inspection -> kickoff approval -> isolated watchdog cron -> ACP Codex Builder -> autonomous progression -> final results**.
 
-## 1) Preflight (2–3 min)
+## 1) Preflight (2-3 min)
 
 - [ ] Installed skill exists:
   ```bash
@@ -23,6 +23,8 @@ Goal: validate the full upgrade flow **model selection -> repo inspection -> kic
   ```bash
   ls ~/.agents/skills/cdd-init-project ~/.agents/skills/cdd-plan ~/.agents/skills/cdd-implement-todo ~/.agents/skills/cdd-index ~/.agents/skills/cdd-audit-and-implement ~/.agents/skills/cdd-refactor >/dev/null
   ```
+
+- [ ] OpenClaw session tools are configured broadly enough for an isolated watchdog to reach the active Master Chef session.
 
 ## 2) Create a throwaway CDD repo with pushable upstream (2 min)
 
@@ -53,7 +55,7 @@ echo "$TEST_REPO"
 
 ## 3) Prompt sequence (copy/paste into OpenClaw chat)
 
-### Prompt A — Select the Master Chef model
+### Prompt A - Select the Master Chef model
 
 ```text
 /model <MASTER_MODEL>
@@ -61,7 +63,7 @@ echo "$TEST_REPO"
 
 - [ ] Expected: the session now uses the chosen Master Chef model.
 
-### Prompt B — Select the Builder model
+### Prompt B - Select the Builder model
 
 ```text
 /acp model <BUILDER_MODEL>
@@ -69,35 +71,37 @@ echo "$TEST_REPO"
 
 - [ ] Expected: ACP now uses the chosen Builder model.
 
-### Prompt C — Kickoff inspection only
+### Prompt C - Kickoff inspection only
 
 ```text
 /cdd-master-chef Use the Master Chef process for repo <TEST_REPO>.
-Inspect where development is at, tell me which TODO step is next, and use this session as the reporting channel.
-Do not create the watchdog cron and do not start implementation until I approve the kickoff.
+Inspect where development is at, tell me which TODO step is next, confirm this session as the reporting route unless I say otherwise,
+and wait for my kickoff approval before creating the watchdog cron.
 ```
 
 - [ ] Expected:
   - model status checks
   - repo readiness checks
+  - session-tool visibility check
   - current git/TODO state summary
   - proposed next action, normally the next runnable `cdd-implement-todo` step
   - one explicit kickoff approval request
 
-### Prompt D — Approve kickoff and create cron
+### Prompt D - Approve kickoff and create cron
 
 ```text
 /cdd-master-chef Approve the proposed next action.
-Use this session as the reporting channel, create the 5-minute watchdog cron, and continue autonomously after kickoff.
+Use this session as the reporting route, initialize .cdd-runtime/master-chef/, create the 5-minute isolated watchdog cron, and continue autonomously after kickoff.
 ```
 
 - [ ] Expected:
-  - control block is opened
-  - one cron watchdog is created
+  - `.cdd-runtime/master-chef/` is initialized
+  - `run.json`, `master-chef.jsonl`, `builder.jsonl`, and `watchdog.jsonl` exist
+  - one isolated cron watchdog is created
   - the first Builder action begins
   - Master Chef does not ask for another human approval before the first step starts
 
-### Prompt E — Verify the cron exists
+### Prompt E - Verify the cron exists
 
 ```bash
 openclaw cron list | rg cdd-master-chef-watchdog
@@ -105,33 +109,60 @@ openclaw cron list | rg cdd-master-chef-watchdog
 
 - [ ] Expected: exactly one watchdog cron entry for the active repo/session.
 
-### Prompt F — Test-only synthetic watchdog tick (healthy run)
+### Prompt F - Verify runtime files exist
 
-```text
-/cdd-master-chef TEST ONLY: simulate one watchdog tick now.
-If the Builder is healthy, do not resume the run.
+```bash
+ls "$TEST_REPO/.cdd-runtime/master-chef/run.json" \
+   "$TEST_REPO/.cdd-runtime/master-chef/master-chef.jsonl" \
+   "$TEST_REPO/.cdd-runtime/master-chef/builder.jsonl" \
+   "$TEST_REPO/.cdd-runtime/master-chef/watchdog.jsonl" >/dev/null
 ```
 
-- [ ] Expected: no false resume.
+- [ ] Expected: all runtime state and log files exist.
 
-### Prompt G — Test-only synthetic 15-minute heartbeat
-
-```text
-/cdd-master-chef TEST ONLY: simulate that 15 minutes passed since the last status report and send HEARTBEAT.
-```
-
-- [ ] Expected: `HEARTBEAT` report in the current session.
-
-### Prompt H — Test-only dead Builder resume
+### Prompt G - Test-only healthy watchdog probe
 
 ```text
-/cdd-master-chef TEST ONLY: simulate that the active Builder session died after the last progress update.
-Run the watchdog logic once, resume the same step, and report RESUME.
+/cdd-master-chef TEST ONLY: simulate one isolated watchdog tick now.
+Probe Master Chef, confirm Builder is healthy, and do not restart or resume anything.
 ```
 
-- [ ] Expected: resumed Builder flow and `RESUME`.
+- [ ] Expected:
+  - no false restart
+  - no false resume
+  - watchdog notes a healthy Master Chef and Builder state
 
-### Prompt I — Let the autonomous run continue
+### Prompt H - Test-only 15-minute heartbeat
+
+```text
+/cdd-master-chef TEST ONLY: simulate that 15 minutes passed since the last report.
+Send HEARTBEAT with both Master Chef and Builder summaries.
+```
+
+- [ ] Expected: `HEARTBEAT` report in the selected reporting route with both actor summaries.
+
+### Prompt I - Test-only stale Builder with healthy Master Chef
+
+```text
+/cdd-master-chef TEST ONLY: simulate that Builder logs went stale but Master Chef probe succeeds.
+Have the watchdog tell Master Chef to resume Builder, then report BUILDER_RESUMED.
+```
+
+- [ ] Expected: resumed Builder flow and `BUILDER_RESUMED`.
+
+### Prompt J - Test-only stale Master Chef
+
+```text
+/cdd-master-chef TEST ONLY: simulate that Master Chef logs are stale and the session probe fails.
+Use run.json and actor logs to rehydrate the same run, avoid starting a second autonomous run, and report MASTER_CHEF_RESTARTED.
+```
+
+- [ ] Expected:
+  - same run is restored
+  - no duplicate autonomous run is created
+  - `MASTER_CHEF_RESTARTED` is reported
+
+### Prompt K - Let the autonomous run continue
 
 ```text
 /cdd-master-chef Continue the autonomous run.
@@ -144,10 +175,10 @@ If the run is complete, send the final results summary.
   - if another runnable step exists, Master Chef continues without another approval request
   - if the run is done, Master Chef reports `RUN_COMPLETE`
 
-### Prompt J — Test-only deadlock
+### Prompt L - Test-only deadlock
 
 ```text
-/cdd-master-chef TEST ONLY: simulate the same blocker surviving 2 full Master Chef <-> Builder challenge loops without progress.
+/cdd-master-chef TEST ONLY: simulate two failed recoveries without forward progress.
 Stop the run, remove the cron, and report DEADLOCK_STOPPED.
 ```
 
@@ -157,11 +188,14 @@ Stop the run, remove the cron, and report DEADLOCK_STOPPED.
 
 - [ ] Model selection happened before `/cdd-master-chef` kickoff.
 - [ ] Master Chef refused to start implementation before inspecting the repo and proposing the next action.
-- [ ] The current session was used as the reporting channel.
-- [ ] Exactly one watchdog cron job was created after kickoff approval.
+- [ ] A user-selected reporting route was confirmed before kickoff.
+- [ ] Exactly one isolated watchdog cron job was created after kickoff approval.
+- [ ] `.cdd-runtime/master-chef/` was created and kept out of tracked project files.
 - [ ] Builder used `cdd-implement-todo` for the normal next runnable step, or `cdd-plan` only if the TODO state was not execution-ready.
 - [ ] After a passed step, the selected step's task items are marked done in the active `TODO*.md` file and unrelated steps were left alone.
+- [ ] Both `master-chef.jsonl` and `builder.jsonl` contain fresh entries during active work.
 - [ ] Step reports explicitly include `Master Chef UAT approved`.
+- [ ] Heartbeat reports summarize both Master Chef and Builder status.
 - [ ] Current branch head matches upstream after a passed step:
   ```bash
   test "$(git -C "$TEST_REPO" rev-parse HEAD)" = "$(git -C "$TEST_REPO" rev-parse @{upstream})"
@@ -182,4 +216,10 @@ If the ACP Builder is still active:
 
 ```text
 /acp cancel
+```
+
+If the runtime path should be removed from the throwaway repo:
+
+```bash
+rm -rf "$TEST_REPO/.cdd-runtime/master-chef"
 ```

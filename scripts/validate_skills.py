@@ -67,6 +67,7 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     """Validate the OpenClaw-only skill package."""
     skill_md = repo_root / "openclaw" / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
+    skill_text = skill_md.read_text(encoding="utf-8")
     meta = frontmatter(skill_md)
     require_field(meta, r"^name:\s*cdd-master-chef\s*$", skill_md, "name")
     require_field(meta, r"^description:\s*.+", skill_md, "description")
@@ -78,6 +79,18 @@ def validate_openclaw_skill(repo_root: Path) -> None:
         "disable-model-invocation: true",
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
+    assert ".cdd-runtime/master-chef/run.json" in skill_text, (
+        f"durable runtime state missing in {skill_md}"
+    )
+    assert "run it in an isolated session, not the main session" in skill_text, (
+        f"isolated watchdog requirement missing in {skill_md}"
+    )
+    assert "MASTER_CHEF_RESTARTED" in skill_text, (
+        f"master chef restart reporting missing in {skill_md}"
+    )
+    assert "BUILDER_RESUMED" in skill_text, (
+        f"builder resume reporting missing in {skill_md}"
+    )
 
 
 def main() -> int:

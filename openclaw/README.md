@@ -15,13 +15,16 @@ The skill runs a three-part process:
 
 - **Master Chef (OpenClaw):** inspects repo state, selects the next action, drives the Builder, approves step-level UAT, commits, pushes, and reports status
 - **Builder (ACP Codex):** executes one approved step at a time using the core `cdd-*` skills
-- **Watchdog (OpenClaw cron):** checks the run every 5 minutes and emits heartbeat every 15 minutes
+- **Watchdog (OpenClaw cron):** runs as an isolated supervisor every 5 minutes, probes Master Chef health, checks Builder health, restores the run when needed, and emits a dual-actor heartbeat every 15 minutes
 
 The human chooses models, approves the kickoff once, and mainly checks final results or critical blockers.
 
 ## Prerequisites
 
 - OpenClaw with ACP enabled
+- OpenClaw session-tool visibility wide enough for an isolated watchdog to reach the active Master Chef session:
+  - `tools.sessions.visibility = "agent"` or `"all"`
+  - if sandboxed, `agents.defaults.sandbox.sessionToolsVisibility` must preserve that reach
 - Healthy ACP backend:
   - `/acp doctor`
 - Codex CLI reachable on `PATH`:
@@ -75,7 +78,7 @@ Uninstall the packaged skill:
 
 ## How development is initiated
 
-1. Open the OpenClaw session you want to use as the reporting channel.
+1. Open the OpenClaw session you want to use as the reporting channel, or decide the exact route you want reports delivered to.
 2. Select the Master Chef model with a standalone directive:
 
    ```text
@@ -92,18 +95,20 @@ Uninstall the packaged skill:
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
-   Inspect where development is at, propose the next runnable TODO step, and wait for my kickoff approval before creating the watchdog cron.
+   Inspect where development is at, propose the next runnable TODO step, confirm my reporting route, and wait for my kickoff approval before creating the watchdog cron.
    ```
 
 5. Master Chef should then:
    - verify model status with `/model status` and `/acp status`
+   - verify session-tool visibility is sufficient for isolated watchdog supervision
    - verify the repo already has the CDD boilerplate
    - inspect git status, active TODO state, and the next runnable step
    - propose the next action, normally `cdd-implement-todo` on the next runnable TODO step
+   - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
      - the proposed next action
-     - use of the current session as the reporting channel
-     - creation of the 5-minute watchdog cron
+     - the selected reporting route
+     - creation of the 5-minute isolated watchdog cron
 
 6. After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
 
@@ -111,18 +116,30 @@ Uninstall the packaged skill:
 
 Reporting is OpenClaw-native:
 
-- the current OpenClaw session is the reporting channel
-- if that is not the right channel, relaunch `/cdd-master-chef` from the correct session before kickoff
+- the user selects the reporting route at kickoff
+- the current session is only the default route if the user explicitly accepts it
+- the selected route is written into `.cdd-runtime/master-chef/run.json`
 - there is no external `REPORTING_COMMAND` wrapper contract
 
 Watchdog policy:
 
 - one recurring 5-minute cron job
-- target the current main session
-- inject a system event into the active Master Chef session
-- emit `HEARTBEAT` every 15 minutes from that same loop
-- resume dead Builder runs and report `RESUME`
+- run in an isolated session, not the main Master Chef session
+- read `.cdd-runtime/master-chef/run.json` plus actor logs on each tick
+- probe Master Chef first before attempting recovery
+- if Master Chef is healthy but Builder is stale, tell Master Chef to resume Builder and report `BUILDER_RESUMED`
+- if Master Chef is stale or dead, rehydrate the run from `run.json`, restart Master Chef, and report `MASTER_CHEF_RESTARTED`
+- emit `HEARTBEAT` every 15 minutes with both Master Chef and Builder summaries
 - remove the cron when the autonomous run completes or stops
+
+Runtime files:
+
+- `.cdd-runtime/master-chef/run.json`
+- `.cdd-runtime/master-chef/master-chef.jsonl`
+- `.cdd-runtime/master-chef/builder.jsonl`
+- `.cdd-runtime/master-chef/watchdog.jsonl`
+
+These files are operational state, not project docs. Keep them out of git, preferably via `.git/info/exclude`.
 
 Useful cron commands:
 
@@ -138,6 +155,7 @@ Model selection stays outside the skill.
 - OpenClaw `/model ...` controls the Master Chef LLM
 - `/acp model ...` and `/acp set ...` control the Builder runtime
 - `/model status` and `/acp status` are the right checks before kickoff
+- the isolated watchdog cron should reuse the Master Chef model selected at kickoff time
 
 The skill should not invent or hardcode model ids.
 
