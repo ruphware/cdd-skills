@@ -34,6 +34,27 @@ def require_field(meta: str, pattern: str, path: Path, label: str) -> None:
     assert re.search(pattern, meta, re.M), f"missing {label} in {path}"
 
 
+def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the audit skill keeps its clarification and assumption guardrails."""
+    assert "Ask clarifying questions one at a time and keep them guided:" in skill_text, (
+        f"guided clarification flow missing in {skill_md}"
+    )
+    assert "mark one option as the recommended default and explain it briefly" in skill_text, (
+        f"recommended-option guidance missing in {skill_md}"
+    )
+    assert (
+        "If any assumption would remain after the answers, list the assumptions explicitly "
+        "and ask the user to confirm or correct them before continuing."
+    ) in skill_text, f"assumption confirmation guardrail missing in {skill_md}"
+    assert "Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure." in skill_text, (
+        f"KISS/CDD planning guardrail missing in {skill_md}"
+    )
+    assert (
+        "Ask which of the newly created steps to implement first using guided options; "
+        "recommend the first runnable new step by default."
+    ) in skill_text, f"guided implementation-step selection missing in {skill_md}"
+
+
 def validate_builder_skill(skill_dir: Path) -> None:
     """Validate one Builder skill directory under skills/."""
     skill_md = skill_dir / "SKILL.md"
@@ -63,6 +84,8 @@ def validate_builder_skill(skill_dir: Path) -> None:
         assert "Do not add a new step-level `Status:` field" in skill_text, (
             f"TODO completion guardrail missing in {skill_md}"
         )
+    if skill_dir.name == "cdd-audit-and-implement":
+        validate_audit_and_implement_skill_text(skill_text, skill_md)
 
 
 def validate_openclaw_skill(repo_root: Path) -> None:
@@ -157,6 +180,8 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 assert "Do not add a new step-level `Status:` field" in skill_text, (
                     f"generated TODO completion guardrail missing in {skill_md}"
                 )
+            if skill_name == "cdd-audit-and-implement":
+                validate_audit_and_implement_skill_text(skill_text, skill_md)
 
 
 def main() -> int:
