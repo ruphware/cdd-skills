@@ -43,9 +43,13 @@ def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> 
         f"recommended-option guidance missing in {skill_md}"
     )
     assert (
-        "If any assumption would remain after the answers, list the assumptions explicitly "
-        "and ask the user to confirm or correct them before continuing."
-    ) in skill_text, f"assumption confirmation guardrail missing in {skill_md}"
+        "If any material assumption would remain after the answers, list only those "
+        "material assumptions and ask the user to confirm or correct them before continuing."
+    ) in skill_text, f"material assumption confirmation guardrail missing in {skill_md}"
+    assert (
+        "If only minor defaults remain, disclose them briefly in the plan and proceed "
+        "without blocking."
+    ) in skill_text, f"minor default handling guardrail missing in {skill_md}"
     assert "Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure." in skill_text, (
         f"KISS/CDD planning guardrail missing in {skill_md}"
     )
