@@ -32,9 +32,13 @@ Golden path:
 - `$cdd-audit-and-implement` — turn audit items into TODO steps and implement the first one
 - `$cdd-refactor` — create a refactor TODO plan from the current index
 
-## 2. Upgrade: CDD Master Chef
+## 2. Upgrade: CDD Master Chef for OpenClaw
 
-The optional upgrade is the OpenClaw package rooted in `openclaw/`.
+The optional upgrade is the experimental OpenClaw skill package rooted in `openclaw/`.
+
+`CDD Master Chef` is very experimental, in active development, and far from done. Treat it as a rough workflow for iteration, not a finished product.
+
+If you want useful UI output, provide strong UX mockups with the plan. Without good mockups, agents will usually produce useless AI slop.
 
 This is the master-agent workflow:
 
@@ -138,7 +142,7 @@ For the core single-agent workflow:
 - install the Builder skill pack
 - use the `cdd-*` skills directly from Codex CLI or Claude Code
 
-For the Master Chef upgrade:
+For the experimental Master Chef OpenClaw skill:
 
 - install the OpenClaw package
 - select the Master Chef model with `/model <master-model>`
