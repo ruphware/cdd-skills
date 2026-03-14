@@ -117,11 +117,14 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     assert ".cdd-runtime/master-chef/run.json" in skill_text, (
         f"durable runtime state missing in {skill_md}"
     )
-    assert "The Builder must use the shared OpenClaw `cdd-*` skill pack." in skill_text, (
-        f"shared Builder skill-pack requirement missing in {skill_md}"
+    assert "Master Chef chooses the internal `cdd-*` routing model." in skill_text, (
+        f"OpenClaw routing model contract missing in {skill_md}"
     )
-    assert "`cdd-implement-todo`" in skill_text, (
-        f"default Builder implementation skill missing in {skill_md}"
+    assert "Treat the installed `cdd-*` skills as internal OpenClaw workflows, not user slash commands." in skill_text, (
+        f"internal OpenClaw workflow contract missing in {skill_md}"
+    )
+    assert "Builder default: `cdd-implement-todo` for the next runnable TODO step." in skill_text, (
+        f"default Builder routing contract missing in {skill_md}"
     )
 
 
