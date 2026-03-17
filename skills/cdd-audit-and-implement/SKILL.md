@@ -45,6 +45,7 @@ Do not convert raw audit bullets directly into TODO tasks.
 11) Apply the approved plan.
 
 ### B) Implement
-12) Ask which of the newly created steps to implement first using guided options; recommend the first runnable new step by default, prioritizing dependency order and prerequisite work.
+12) Ask which of the newly created steps to implement first using guided options; recommend the first runnable new step by default.
+    Prefer dependency order and prerequisite work when choosing that recommendation.
 13) Ask: **Approve starting implementation now?**
 14) Implement that step using the same workflow as `$cdd-implement-todo`.
