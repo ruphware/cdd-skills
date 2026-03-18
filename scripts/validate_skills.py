@@ -59,6 +59,28 @@ def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> 
     ) in skill_text, f"guided implementation-step selection missing in {skill_md}"
 
 
+def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the boot skill keeps its graceful vanilla boot contract."""
+    assert (
+        "If `AGENTS.md` is missing, stop and tell the user the repo is not CDD-ready for vanilla boot."
+    ) in skill_text, f"AGENTS hard-stop missing in {skill_md}"
+    assert (
+        "Read `AGENTS.md` first and treat it as the source of truth for role and response format."
+    ) in skill_text, f"AGENTS-first boot contract missing in {skill_md}"
+    assert (
+        "Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing."
+    ) in skill_text, f"graceful missing-docs handling missing in {skill_md}"
+    assert (
+        "Use only the top of `docs/JOURNAL.md` or development fallback files; do not ingest full history unless the user explicitly asks."
+    ) in skill_text, f"top-of-journal guardrail missing in {skill_md}"
+    assert "Do not write or modify repo files." in skill_text, (
+        f"read-only boot contract missing in {skill_md}"
+    )
+    assert "On success, recommend continuing in vanilla AGENTS-driven mode." in skill_text, (
+        f"vanilla next-step guidance missing in {skill_md}"
+    )
+
+
 def validate_builder_skill(skill_dir: Path) -> None:
     """Validate one Builder skill directory under skills/."""
     skill_md = skill_dir / "SKILL.md"
@@ -88,6 +110,8 @@ def validate_builder_skill(skill_dir: Path) -> None:
         assert "Do not add a new step-level `Status:` field" in skill_text, (
             f"TODO completion guardrail missing in {skill_md}"
         )
+    if skill_dir.name == "cdd-boot":
+        validate_boot_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-audit-and-implement":
         validate_audit_and_implement_skill_text(skill_text, skill_md)
 
@@ -187,6 +211,8 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 assert "Do not add a new step-level `Status:` field" in skill_text, (
                     f"generated TODO completion guardrail missing in {skill_md}"
                 )
+            if skill_name == "cdd-boot":
+                validate_boot_skill_text(skill_text, skill_md)
             if skill_name == "cdd-audit-and-implement":
                 validate_audit_and_implement_skill_text(skill_text, skill_md)
 

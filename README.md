@@ -25,6 +25,7 @@ Typical runtimes:
 
 Golden path:
 
+- `$cdd-boot` — ingest `AGENTS.md` plus project and development docs for vanilla AGENTS-driven work when no other `cdd-*` skill will be used
 - `$cdd-init-project` — init or adopt the CDD workflow in the current folder
 - `$cdd-plan` — plan changes and TODO steps
 - `$cdd-implement-todo` — implement exactly one TODO step and mark that step done on success
@@ -140,7 +141,8 @@ Notes:
 For the core single-agent workflow:
 
 - install the Builder skill pack
-- use the `cdd-*` skills directly from Codex CLI or Claude Code
+- use `$cdd-boot` when the repo is already CDD-ready and you want a one-time vanilla AGENTS boot before working directly
+- use the remaining `cdd-*` skills directly from Codex CLI or Claude Code when you want the structured CDD plan / implement loop
 
 For the experimental Master Chef OpenClaw skill:
 

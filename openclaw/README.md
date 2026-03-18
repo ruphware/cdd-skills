@@ -73,6 +73,7 @@ Uninstall:
 `./scripts/install-openclaw.sh` installs:
 
 - `cdd-master-chef`
+- `cdd-boot`
 - `cdd-init-project`
 - `cdd-plan`
 - `cdd-implement-todo`
@@ -159,6 +160,10 @@ Default delegated path:
 Delegated exception:
 
 - `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action
+
+Manual helper:
+
+- `cdd-boot` for best-effort repo context ingestion when a human wants a vanilla `AGENTS.md` boot; it is installed in the shared pack but is not part of the normal Master Chef routing flow
 
 Master-Chef-direct path:
 
