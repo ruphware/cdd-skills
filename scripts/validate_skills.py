@@ -81,6 +81,37 @@ def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
     )
 
 
+def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the maintain skill keeps its archive and doctoring contract."""
+    assert "Apply safe archive moves immediately." in skill_text, (
+        f"safe archive behavior missing in {skill_md}"
+    )
+    assert "Ask before deleting stale adjacent `TODO*.md` files." in skill_text, (
+        f"stale TODO deletion approval missing in {skill_md}"
+    )
+    assert "Retain the newest 3 step headings in each active TODO file." in skill_text, (
+        f"TODO keep-3 rule missing in {skill_md}"
+    )
+    assert "If the same-day archive file already exists, append the newly archived sections instead of overwriting it." in skill_text, (
+        f"same-day archive append rule missing in {skill_md}"
+    )
+    assert "Archive `docs/JOURNAL.md` only according to the rules defined there." in skill_text, (
+        f"journal archive rule missing in {skill_md}"
+    )
+    assert "If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped." in skill_text, (
+        f"journal skip rule missing in {skill_md}"
+    )
+    assert "Report the exact age in days." in skill_text, (
+        f"INDEX age reporting missing in {skill_md}"
+    )
+    assert "Never auto-delete code." in skill_text, (
+        f"no-code-deletion guardrail missing in {skill_md}"
+    )
+    assert "Do not create TODO or refactor files automatically." in skill_text, (
+        f"no-auto-refactor-artifacts guardrail missing in {skill_md}"
+    )
+
+
 def validate_builder_skill(skill_dir: Path) -> None:
     """Validate one Builder skill directory under skills/."""
     skill_md = skill_dir / "SKILL.md"
@@ -112,6 +143,8 @@ def validate_builder_skill(skill_dir: Path) -> None:
         )
     if skill_dir.name == "cdd-boot":
         validate_boot_skill_text(skill_text, skill_md)
+    if skill_dir.name == "cdd-maintain":
+        validate_maintain_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-audit-and-implement":
         validate_audit_and_implement_skill_text(skill_text, skill_md)
 
@@ -213,6 +246,8 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 )
             if skill_name == "cdd-boot":
                 validate_boot_skill_text(skill_text, skill_md)
+            if skill_name == "cdd-maintain":
+                validate_maintain_skill_text(skill_text, skill_md)
             if skill_name == "cdd-audit-and-implement":
                 validate_audit_and_implement_skill_text(skill_text, skill_md)
 

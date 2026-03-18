@@ -74,6 +74,7 @@ Uninstall:
 
 - `cdd-master-chef`
 - `cdd-boot`
+- `cdd-maintain`
 - `cdd-init-project`
 - `cdd-plan`
 - `cdd-implement-todo`
@@ -164,6 +165,7 @@ Delegated exception:
 Manual helper:
 
 - `cdd-boot` for best-effort repo context ingestion when a human wants a vanilla `AGENTS.md` boot; it is installed in the shared pack but is not part of the normal Master Chef routing flow
+- `cdd-maintain` for archive cleanup and code-health review; it is installed in the shared pack but is not part of the normal Master Chef routing flow
 
 Master-Chef-direct path:
 

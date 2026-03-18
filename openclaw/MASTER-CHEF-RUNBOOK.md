@@ -82,6 +82,7 @@ Before `/cdd-master-chef` is used:
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
    - `~/.openclaw/skills/cdd-master-chef`
    - `~/.openclaw/skills/cdd-boot`
+   - `~/.openclaw/skills/cdd-maintain`
    - `~/.openclaw/skills/cdd-init-project`
    - `~/.openclaw/skills/cdd-plan`
    - `~/.openclaw/skills/cdd-implement-todo`
@@ -271,6 +272,7 @@ Master Chef chooses the routing path.
 **Manual / non-routed helper:**
 
 - `cdd-boot` — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `cdd-maintain` — archive cleanup and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
 
 **Master Chef direct:**
 

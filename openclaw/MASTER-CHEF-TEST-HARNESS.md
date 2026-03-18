@@ -8,6 +8,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   ```bash
   ls ~/.openclaw/skills/cdd-master-chef/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-boot/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-maintain/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-init-project/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-plan/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-implement-todo/SKILL.md >/dev/null
@@ -138,12 +139,14 @@ Refuse to start a duplicate run and report the active lease owner.
 Use Builder via cdd-implement-todo for a normal runnable TODO step.
 Use Builder via cdd-index only when an index refresh is the delegated action.
 Explain why cdd-boot is a manual helper rather than part of the normal flow.
+Explain why cdd-maintain is a manual helper rather than part of the normal flow.
 Use cdd-init-project, cdd-plan, or cdd-refactor directly in Master Chef when setup, planning, or refactor decomposition is needed.
 Explain why cdd-audit-and-implement is excluded from the normal flow.
 ```
 
 - [ ] Expected:
   - `cdd-boot` is called out as a manual / non-routed helper
+  - `cdd-maintain` is called out as a manual / non-routed helper
   - `cdd-implement-todo` is the default Builder path
   - `cdd-index` is treated as a delegated exception, not the default
   - `cdd-init-project`, `cdd-plan`, and `cdd-refactor` are treated as Master-Chef-direct skills
