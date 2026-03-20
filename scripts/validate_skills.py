@@ -34,13 +34,32 @@ def require_field(meta: str, pattern: str, path: Path, label: str) -> None:
     assert re.search(pattern, meta, re.M), f"missing {label} in {path}"
 
 
+def require_any_substring(
+    skill_text: str, phrases: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that at least one expected phrase exists in the given skill text."""
+    assert any(phrase in skill_text for phrase in phrases), f"missing {label} in {path}"
+
+
 def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> None:
     """Assert the audit skill keeps its clarification and assumption guardrails."""
-    assert "Ask clarifying questions one at a time and keep them guided:" in skill_text, (
-        f"guided clarification flow missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "Ask clarifying questions one at a time and keep them guided:",
+            "Ask clarifying questions one at a time using the interaction contract above.",
+        ),
+        skill_md,
+        "guided clarification flow",
     )
-    assert "mark one option as the recommended default and explain it briefly" in skill_text, (
-        f"recommended-option guidance missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "mark one option as the recommended default and explain it briefly",
+            "put the recommended option first and mark it clearly",
+        ),
+        skill_md,
+        "recommended-option guidance",
     )
     assert (
         "If any material assumption would remain after the answers, list only those "
@@ -53,10 +72,15 @@ def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> 
     assert "Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure." in skill_text, (
         f"KISS/CDD planning guardrail missing in {skill_md}"
     )
-    assert (
-        "Ask which of the newly created steps to implement first using guided options; "
-        "recommend the first runnable new step by default."
-    ) in skill_text, f"guided implementation-step selection missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "Ask which of the newly created steps to implement first using guided options; recommend the first runnable new step by default.",
+            "Ask which of the newly created steps to implement first using the same bottom-positioned guided options; recommend the first runnable new step by default.",
+        ),
+        skill_md,
+        "guided implementation-step selection",
+    )
 
 
 def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:

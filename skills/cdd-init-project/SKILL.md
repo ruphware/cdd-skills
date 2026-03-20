@@ -22,6 +22,21 @@ Use these repo files as the authoritative workflow and format:
 - `docs/specs/blueprint.md`
 - `docs/prompts/PROMPT-INDEX.md` (if present)
 
+## Interactive planning contract
+Planning in this skill is interactive, review-driven, and continuously refined.
+
+- Start in planning mode when the runtime supports a native read-only or plan mode. If it does not, emulate that behavior by staying read-only until the user approves applying the plan.
+- Review the workspace before and during planning. Audit the relevant docs, code, manifests, configs, runbook files, and current TODO surfaces so the init or adoption plan reflects the real repo state.
+- Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
+- Ask at most one substantive clarification or decision question per message.
+- Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update state classification, source inputs, sequencing, assumptions, and validation requirements before continuing.
+- Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
+- For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
+  - offer 2-4 concrete options grounded in the repo context
+  - put the recommended option first and mark it clearly
+  - keep each option short and action-oriented
+  - avoid open-ended options unless a free-form value is truly required
+
 ## State detection (required)
 Classify the workspace into exactly one state and tell the user which one you detected:
 
@@ -61,6 +76,11 @@ Common source-document signals:
 
 4) `EMPTY_DIR` otherwise.
 
+After classification:
+- tell the user which state was detected and the main evidence for that classification
+- if any nearby state was ruled out for an important reason, say so briefly
+- continue with the matching flow using the interactive planning contract above
+
 ### A) EMPTY_DIR
 No substantive files are present after applying the ignore rules above.
 
@@ -68,8 +88,8 @@ No substantive files are present after applying the ignore rules above.
 Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory as the local repo root.
 
 1) Derive the current directory basename and propose it as the default repo name.
-2) Ask the user to confirm or edit that repo name before any bootstrap step.
-3) Ask whether they want:
+2) Ask the user to confirm or edit that repo name before any bootstrap step, using the interaction contract above.
+3) Ask whether they want, using the interaction contract above:
    - a GitHub-backed repo (default: private), or
    - a local-only repo for now
 4) If GitHub-backed:
@@ -84,13 +104,16 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - materialize the boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
-7) Draft proposed edits (grouped by file) to:
+7) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
+   - Recommend one option based on the workspace review.
+   - Keep the options at the bottom of the message under `**Options**`.
+8) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint
    - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
-8) Ask: **Approve and apply these changes?**
-9) After applying:
+9) Ask: **Approve and apply these changes?**
+10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
    - suggest the next step to implement via `$cdd-implement-todo`
@@ -99,12 +122,12 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
 Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discovered source material, and build Step 00 from it inside this repo.
 
 1) Inventory the current folder for candidate source/reference documents before asking any questions.
-2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices) and ask only about:
+2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices) and ask only about, using the interaction contract above:
    - documents to exclude
    - important external documents not present in the workspace
 3) Derive the current directory basename and propose it as the default repo name.
-4) Ask the user to confirm or edit that repo name before any bootstrap step.
-5) Ask whether they want:
+4) Ask the user to confirm or edit that repo name before any bootstrap step, using the interaction contract above.
+5) Ask whether they want, using the interaction contract above:
    - a GitHub-backed repo (default: private), or
    - a local-only repo for now
 6) Before materializing the boilerplate, stage discovered source documents that would conflict with template paths.
@@ -122,13 +145,16 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - materialize the boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
-10) Draft proposed edits (grouped by file) to:
+10) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
+    - Recommend one option based on the workspace review.
+    - Keep the options at the bottom of the message under `**Options**`.
+11) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint
    - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
-11) Ask: **Approve and apply these changes?**
-12) After applying:
+12) Ask: **Approve and apply these changes?**
+13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
    - suggest the next step to implement via `$cdd-implement-todo`
@@ -137,16 +163,19 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 1) Read the canonical contract files above.
 2) Use `TODO.md` **Step 00** as the checklist (do not re-define it).
 3) Inventory the current workspace for candidate source/reference documents before asking questions.
-4) Show the detected document list and ask only about:
+4) Show the detected document list and ask only about, using the interaction contract above:
    - documents to exclude
    - important external documents not present in the workspace
-5) Draft proposed edits (grouped by file) to:
+5) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
+   - Recommend one option based on the workspace review.
+   - Keep the options at the bottom of the message under `**Options**`.
+6) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint
    - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
-6) Ask: **Approve and apply these changes?**
-7) After applying:
+7) Ask: **Approve and apply these changes?**
+8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
    - suggest the next step to implement via `$cdd-implement-todo`
@@ -160,10 +189,14 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 ### Phase 1 — Audit (no writes)
 1) Read `README.md` and find the current runbook (setup/dev/test/build).
 2) Inventory existing docs (e.g., `docs/`, `design/`, `adr/`, root markdown files).
-3) Identify any existing planning system (issues, backlog files, TODO docs).
-4) Ask only blocking questions (e.g., docs that must keep their path due to external links).
+3) Review the current implementation surfaces that shape adoption planning: manifests, entrypoints, test/lint/typecheck config, and any existing planning system (issues, backlog files, TODO docs).
+4) Ask only blocking questions one at a time using the interaction contract above (for example, docs that must keep their path due to external links).
 
 ### Phase 2 — Draft migration plan (proposal)
+Before drafting the patch proposal, present 2-3 migration shapes when there is a real decision about scope, doc reorganization, or TODO placement.
+- Recommend one option based on the workspace review.
+- Keep the options at the bottom of the message under `**Options**`.
+
 Draft a patch proposal grouped by file, including:
 1) Add the CDD contract files (prefer matching `cdd-boilerplate` structure):
    - `AGENTS.md`, `TODO.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/JOURNAL.md`, `docs/prompts/PROMPT-INDEX.md`
