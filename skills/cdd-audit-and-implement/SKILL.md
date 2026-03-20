@@ -8,6 +8,21 @@ disable-model-invocation: true
 
 Turn an audit list into small TODO steps, apply them, then immediately implement the first chosen step.
 
+## Interactive planning contract
+Planning in this skill is interactive, review-driven, and continuously refined.
+
+- Start in planning mode when the runtime supports a native read-only or plan mode. If it does not, emulate that behavior by staying read-only until the user approves applying the plan.
+- Review the codebase before and during planning. Audit the relevant code, tests, entrypoints, configs, and current TODO surfaces so the TODO plan reflects the real implementation state.
+- Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
+- Ask at most one substantive clarification or decision question per message.
+- Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and proof requirements before continuing.
+- Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
+- For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
+  - offer 2-4 concrete options grounded in the repo context
+  - put the recommended option first and mark it clearly
+  - keep each option short and action-oriented
+  - avoid open-ended options unless a free-form value is truly required
+
 ## Audit normalization rules
 Do not convert raw audit bullets directly into TODO tasks.
 
@@ -23,29 +38,31 @@ Do not convert raw audit bullets directly into TODO tasks.
 ## Flow (two approvals)
 
 ### A) Plan
-1) Read `AGENTS.md`, `README.md`, the active `TODO*.md`, and the relevant specs.
+1) Read `AGENTS.md`, `README.md`, the active `TODO*.md`, the relevant specs, and the relevant codebase surfaces.
+   - Review the current implementation before planning: affected modules, entrypoints, tests, manifests, configs, and recent TODO context.
+   - Identify likely root causes, impacted boundaries, and proof surfaces for the audit items.
 2) Ask for the audit items (inline bullets or a file path + section).
-3) Before drafting TODO steps, identify only the blocking or plan-shaping clarifications that would materially change scope, grouping, file placement, sequencing, or approval boundaries.
-4) Ask clarifying questions one at a time and keep them guided:
-   - offer 2-4 concrete options grounded in the repo context
-   - mark one option as the recommended default and explain it briefly
-   - skip low-impact preferences and avoid open-ended questions unless a free-form value is required
+3) Before drafting TODO steps, identify only the blocking or plan-shaping clarifications that would materially change assumptions, goals, implementation paths, grouping, file placement, sequencing, or approval boundaries.
+4) Ask clarifying questions one at a time using the interaction contract above.
 5) If any material assumption would remain after the answers, list only those material assumptions and ask the user to confirm or correct them before continuing.
 6) If only minor defaults remain, disclose them briefly in the plan and proceed without blocking.
 7) Normalize the audit items:
    - identify the user-visible symptom, likely root cause, affected boundary, and proof needed for each item
    - tag each item as `spec_delta`, `implementation_delta`, `verification_delta`, or `defer`
    - merge duplicates and split mixed-surface findings before drafting steps
-8) Group the normalized items into 1–N implementation-ready TODO steps using the repo’s existing Step template. Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure.
-9) Decide where to write using guided options:
-   - default: update an existing TODO file
-   - alternative: create `TODO-audit-<tag>.md`
-   - ask for a short tag only if the user chose the new-file option
+8) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
+   - Recommend one option based on the codebase review and normalized audit results.
+   - Include the write-location choice in the same option set when possible:
+     - default: update an existing TODO file
+     - alternative: create `TODO-audit-<tag>.md`
+   - Keep the options at the bottom of the message under `**Options**`.
+   - Ask for a short tag only if the user chose the new-file option.
+9) Group the normalized items into 1–N implementation-ready TODO steps using the repo’s existing Step template. Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure.
 10) Ask: **Approve and apply the TODO plan?**
 11) Apply the approved plan.
 
 ### B) Implement
-12) Ask which of the newly created steps to implement first using guided options; recommend the first runnable new step by default.
+12) Ask which of the newly created steps to implement first using the same bottom-positioned guided options; recommend the first runnable new step by default.
     Prefer dependency order and prerequisite work when choosing that recommendation.
 13) Ask: **Approve starting implementation now?**
 14) Implement that step using the same workflow as `$cdd-implement-todo`.

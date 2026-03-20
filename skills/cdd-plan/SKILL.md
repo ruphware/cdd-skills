@@ -35,15 +35,39 @@ For any new or rewritten execution step, produce an implementation-ready step ra
 - Do not leave essential implementation detail only in the surrounding chat. Put it in the TODO step.
 - Split work into separate steps when it crosses distinct hard gates, migration boundaries, rollback surfaces, or independently testable subsystems.
 
+## Interactive planning contract
+Planning in this skill is interactive, review-driven, and continuously refined.
+
+- Start in planning mode when the runtime supports a native read-only or plan mode. If it does not, emulate that behavior by staying read-only until the user approves applying the plan.
+- Review the codebase before and during planning. Audit the relevant code, tests, entrypoints, configs, and current TODO surfaces so the plan is grounded in the actual implementation, not just the docs or user prompt.
+- Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
+- Ask at most one substantive clarification or decision question per message.
+- Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
+- Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
+- For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
+  - offer 2-4 concrete options grounded in the repo context
+  - put the recommended option first and mark it clearly
+  - keep each option short and action-oriented
+  - avoid open-ended options unless a free-form value is truly required
+
 ## Flow (approval-gated)
-1) Read the contract files above (and any linked sub-specs).
-2) Ask for the change request and only the blocking clarifications.
-3) Draft proposed edits (grouped by file):
+1) Read the contract files above, any linked sub-specs, and the relevant codebase surfaces.
+   - Review the current implementation before planning: affected modules, entrypoints, tests, manifests, configs, and existing TODO steps.
+   - Identify the likely boundaries, risks, and validation surfaces for the requested change.
+2) Ask for the change request only if it is not already clear from the user prompt.
+3) Before drafting edits, identify only the blocking or plan-shaping clarifications that would materially change assumptions, goals, implementation paths, file placement, sequencing, or approval boundaries.
+4) Ask clarifying questions one at a time using the interaction contract above.
+5) If any material assumption would remain after the answers, list only those material assumptions and ask the user to confirm or correct them before continuing.
+6) If only minor defaults remain, disclose them briefly in the plan and proceed without blocking.
+7) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
+   - Recommend one option based on the codebase review.
+   - Keep the options at the bottom of the message under `**Options**`.
+8) Draft proposed edits (grouped by file):
    - PRD/Blueprint deltas only if required
    - TODO step updates using the repo’s existing Step template
    - translate spec deltas into implementation deltas instead of restating product intent
    - for each new or revised execution step, include exact boundaries, interface or contract changes, sequencing notes, and validation evidence
    - add `Implementation notes` when the step would otherwise force the implementer to make decisions
    - split oversized mixed-surface work into dependency-ordered steps
-4) Ask: **Approve and apply these changes?**
-5) After applying, suggest implementing the next step via `$cdd-implement-todo`.
+9) Ask: **Approve and apply these changes?**
+10) After applying, suggest implementing the next step via `$cdd-implement-todo`.
