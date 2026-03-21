@@ -30,6 +30,9 @@ Read:
 - Check `TODO.md` and adjacent `TODO*.md` files.
 - Treat a step as archiveable only when its task list is fully complete under the repo's current TODO style.
 - If step completion is ambiguous, leave that step in place and report it.
+- Preserve top-to-bottom TODO history: archive only from the oldest contiguous archiveable block near the top of the active step list.
+- Never archive a step from the middle or tail of the active TODO file.
+- Do not leapfrog an older incomplete or ambiguous step in order to archive later completed steps below it.
 - Retain the newest 3 step headings in each active TODO file.
 - Archive older completed steps when a TODO file is long enough to need trimming.
 - Treat a TODO file as long when it has more than 6 step headings or clearly accumulated completed historical steps beyond the retained active window.
@@ -38,6 +41,7 @@ Read:
   - `TODO.md` -> `docs/archive/TODO_YYYY-MM-DD.md`
   - `TODO-foo.md` -> `docs/archive/TODO-foo_YYYY-MM-DD.md`
 - If the same-day archive file already exists, append the newly archived sections instead of overwriting it.
+- If older incomplete or ambiguous steps block a clean top trim, do not archive later completed steps; report archival as blocked by non-contiguous active history.
 - After archiving, keep the active TODO file focused on the retained newest 3 step headings plus any older incomplete or ambiguous steps that could not be archived safely.
 
 ## Stale adjacent TODO file handling

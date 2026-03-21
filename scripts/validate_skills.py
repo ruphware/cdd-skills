@@ -116,8 +116,20 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "Retain the newest 3 step headings in each active TODO file." in skill_text, (
         f"TODO keep-3 rule missing in {skill_md}"
     )
+    assert "Preserve top-to-bottom TODO history: archive only from the oldest contiguous archiveable block near the top of the active step list." in skill_text, (
+        f"TODO top-contiguous archive rule missing in {skill_md}"
+    )
+    assert "Never archive a step from the middle or tail of the active TODO file." in skill_text, (
+        f"TODO middle-archive guardrail missing in {skill_md}"
+    )
+    assert "Do not leapfrog an older incomplete or ambiguous step in order to archive later completed steps below it." in skill_text, (
+        f"TODO leapfrog guardrail missing in {skill_md}"
+    )
     assert "If the same-day archive file already exists, append the newly archived sections instead of overwriting it." in skill_text, (
         f"same-day archive append rule missing in {skill_md}"
+    )
+    assert "If older incomplete or ambiguous steps block a clean top trim, do not archive later completed steps; report archival as blocked by non-contiguous active history." in skill_text, (
+        f"TODO non-contiguous history rule missing in {skill_md}"
     )
     assert "Archive `docs/JOURNAL.md` only according to the rules defined there." in skill_text, (
         f"journal archive rule missing in {skill_md}"
