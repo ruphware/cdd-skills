@@ -125,6 +125,21 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped." in skill_text, (
         f"journal skip rule missing in {skill_md}"
     )
+    assert "Treat `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` as canonical support docs." in skill_text, (
+        f"support-doc scope missing in {skill_md}"
+    )
+    assert "Classify each support doc as `current`, `drifted`, `missing`, or `unclear`." in skill_text, (
+        f"support-doc classification rule missing in {skill_md}"
+    )
+    assert "Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`." in skill_text, (
+        f"support-doc no-silent-refresh rule missing in {skill_md}"
+    )
+    assert "Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`" in skill_text, (
+        f"documentation approval gate missing in {skill_md}"
+    )
+    assert "Keep documentation approval separate from stale TODO deletion approval so the user can approve doc updates without approving file deletions." in skill_text, (
+        f"separate doc/deletion approval rule missing in {skill_md}"
+    )
     assert "Report the exact age in days." in skill_text, (
         f"INDEX age reporting missing in {skill_md}"
     )

@@ -1,12 +1,12 @@
 ---
 name: cdd-maintain
-description: "Maintain a CDD repo by archiving long TODO and journal files, checking docs freshness, and doctoring the codebase for refactor and dead-code signals (explicit-only)."
+description: "Maintain a CDD repo by archiving long TODO and journal files, auditing support-doc drift, proposing approval-gated doc refreshes, and doctoring the codebase for refactor and dead-code signals (explicit-only)."
 disable-model-invocation: true
 ---
 
 # CDD Maintain (explicit-only)
 
-Use this skill for explicit codebase maintenance: archive long CDD files, check stale docs, and doctor the repo for refactor and dead-code signals.
+Use this skill for explicit codebase maintenance: archive long CDD files, audit support-doc drift, propose approval-gated documentation refreshes, and doctor the repo for refactor and dead-code signals.
 
 ## Sources of truth
 Read:
@@ -15,12 +15,16 @@ Read:
 - `TODO.md` and adjacent `TODO*.md`
 - `docs/JOURNAL.md`
 - `docs/INDEX.md`
+- `docs/specs/prd.md`
+- `docs/specs/blueprint.md`
+- `docs/prompts/PROMPT-INDEX.md` if present
 - repo manifests, entrypoints, and test/lint/typecheck config as needed for code-health checks
 
 ## Safe archive behavior
 - Apply safe archive moves immediately.
 - Ask before deleting stale adjacent `TODO*.md` files.
 - Do not delete or rewrite application code as part of maintenance.
+- Do not silently rewrite support docs as part of maintenance.
 
 ## TODO archive rules
 - Check `TODO.md` and adjacent `TODO*.md` files.
@@ -46,6 +50,20 @@ Read:
 - Read the archive or rotation guidance at the top of `docs/JOURNAL.md`.
 - Archive `docs/JOURNAL.md` only according to the rules defined there.
 - If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped.
+
+## Support documentation drift review
+- Treat `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` as canonical support docs.
+- Also review `docs/INDEX.md` and `docs/prompts/PROMPT-INDEX.md` when present as support-doc navigation surfaces.
+- Compare each support doc against the current repo state using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs.
+- Check whether setup/dev/test/build instructions, documented workflows, active features, architecture notes, and referenced doc paths still match the repo.
+- Classify each support doc as `current`, `drifted`, `missing`, or `unclear`.
+- If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
+- If `README.md` or `docs/specs/*` has drifted, prepare the needed edits and show them to the user before applying anything.
+- Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`.
+- Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`
+- Keep documentation approval separate from stale TODO deletion approval so the user can approve doc updates without approving file deletions.
+- If the user approves, apply only the approved support-doc edits and then report them.
+- If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
 ## INDEX freshness
 - Check how old `docs/INDEX.md` is using the last git change when available, otherwise filesystem mtime.
@@ -74,6 +92,9 @@ Return a maintenance report that includes:
 - `Archive actions applied`
 - `Deletion approval needed`
 - `Journal archive status`
+- `Support documentation status`
+- `Documentation updates proposed` or `Documentation updates applied`
+- `Documentation approval needed`
 - `INDEX freshness`
 - `Refactor severity summary`
 - `Dead/orphan code findings`

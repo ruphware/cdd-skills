@@ -272,7 +272,7 @@ Master Chef chooses the routing path.
 **Manual / non-routed helper:**
 
 - `cdd-boot` — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
-- `cdd-maintain` — archive cleanup and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `cdd-maintain` — archive cleanup, support-doc drift review, and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
 
 **Master Chef direct:**
 
