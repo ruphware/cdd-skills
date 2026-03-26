@@ -77,10 +77,27 @@ def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> 
         (
             "Ask which of the newly created steps to implement first using guided options; recommend the first runnable new step by default.",
             "Ask which of the newly created steps to implement first using the same bottom-positioned guided options; recommend the first runnable new step by default.",
+            "Ask which of the newly created steps to implement first using the same bottom-positioned, selector-prefixed guided options; recommend the first runnable new step by default.",
         ),
         skill_md,
         "guided implementation-step selection",
     )
+
+
+def validate_selector_labeled_options(skill_text: str, skill_md: Path) -> None:
+    """Assert interactive planning skills require visible option selectors."""
+    assert (
+        "prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key"
+    ) in skill_text, f"selector-labeled option guidance missing in {skill_md}"
+    assert (
+        "default to letters: `A.`, `B.`, `C.`"
+    ) in skill_text, f"default lettered option guidance missing in {skill_md}"
+    assert (
+        "use numbers only when the surrounding context is already numeric and that would be clearer"
+    ) in skill_text, f"numeric option fallback guidance missing in {skill_md}"
+    assert (
+        "when practical, tell the user they can reply with just the selector"
+    ) in skill_text, f"selector reply guidance missing in {skill_md}"
 
 
 def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
@@ -198,6 +215,13 @@ def validate_builder_skill(skill_dir: Path) -> None:
         validate_maintain_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-audit-and-implement":
         validate_audit_and_implement_skill_text(skill_text, skill_md)
+    if skill_dir.name in {
+        "cdd-plan",
+        "cdd-init-project",
+        "cdd-refactor",
+        "cdd-audit-and-implement",
+    }:
+        validate_selector_labeled_options(skill_text, skill_md)
 
 
 def validate_openclaw_skill(repo_root: Path) -> None:
@@ -301,6 +325,13 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 validate_maintain_skill_text(skill_text, skill_md)
             if skill_name == "cdd-audit-and-implement":
                 validate_audit_and_implement_skill_text(skill_text, skill_md)
+            if skill_name in {
+                "cdd-plan",
+                "cdd-init-project",
+                "cdd-refactor",
+                "cdd-audit-and-implement",
+            }:
+                validate_selector_labeled_options(skill_text, skill_md)
 
 
 def main() -> int:

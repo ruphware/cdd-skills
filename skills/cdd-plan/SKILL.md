@@ -47,8 +47,12 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
   - offer 2-4 concrete options grounded in the repo context
   - put the recommended option first and mark it clearly
+  - prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key
+  - default to letters: `A.`, `B.`, `C.`
+  - use numbers only when the surrounding context is already numeric and that would be clearer
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
+  - when practical, tell the user they can reply with just the selector
 
 ## Flow (approval-gated)
 1) Read the contract files above, any linked sub-specs, and the relevant codebase surfaces.
@@ -61,7 +65,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 6) If only minor defaults remain, disclose them briefly in the plan and proceed without blocking.
 7) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
    - Recommend one option based on the codebase review.
-   - Keep the options at the bottom of the message under `**Options**`.
+   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file):
    - PRD/Blueprint deltas only if required
    - TODO step updates using the repo’s existing Step template

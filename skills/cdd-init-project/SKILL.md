@@ -34,8 +34,12 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
   - offer 2-4 concrete options grounded in the repo context
   - put the recommended option first and mark it clearly
+  - prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key
+  - default to letters: `A.`, `B.`, `C.`
+  - use numbers only when the surrounding context is already numeric and that would be clearer
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
+  - when practical, tell the user they can reply with just the selector
 
 ## State detection (required)
 Classify the workspace into exactly one state and tell the user which one you detected:
@@ -106,7 +110,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
 6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
 7) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
    - Recommend one option based on the workspace review.
-   - Keep the options at the bottom of the message under `**Options**`.
+   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
@@ -147,7 +151,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
 10) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
     - Recommend one option based on the workspace review.
-    - Keep the options at the bottom of the message under `**Options**`.
+    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 11) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
@@ -168,7 +172,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - important external documents not present in the workspace
 5) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
    - Recommend one option based on the workspace review.
-   - Keep the options at the bottom of the message under `**Options**`.
+   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 6) Draft proposed edits (grouped by file) to:
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
@@ -195,7 +199,7 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 ### Phase 2 — Draft migration plan (proposal)
 Before drafting the patch proposal, present 2-3 migration shapes when there is a real decision about scope, doc reorganization, or TODO placement.
 - Recommend one option based on the workspace review.
-- Keep the options at the bottom of the message under `**Options**`.
+- Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 
 Draft a patch proposal grouped by file, including:
 1) Add the CDD contract files (prefer matching `cdd-boilerplate` structure):

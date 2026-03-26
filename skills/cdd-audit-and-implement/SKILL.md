@@ -20,8 +20,12 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
   - offer 2-4 concrete options grounded in the repo context
   - put the recommended option first and mark it clearly
+  - prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key
+  - default to letters: `A.`, `B.`, `C.`
+  - use numbers only when the surrounding context is already numeric and that would be clearer
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
+  - when practical, tell the user they can reply with just the selector
 
 ## Audit normalization rules
 Do not convert raw audit bullets directly into TODO tasks.
@@ -55,14 +59,14 @@ Do not convert raw audit bullets directly into TODO tasks.
    - Include the write-location choice in the same option set when possible:
      - default: update an existing TODO file
      - alternative: create `TODO-audit-<tag>.md`
-   - Keep the options at the bottom of the message under `**Options**`.
+   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
    - Ask for a short tag only if the user chose the new-file option.
 9) Group the normalized items into 1–N implementation-ready TODO steps using the repo’s existing Step template. Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure.
 10) Ask: **Approve and apply the TODO plan?**
 11) Apply the approved plan.
 
 ### B) Implement
-12) Ask which of the newly created steps to implement first using the same bottom-positioned guided options; recommend the first runnable new step by default.
+12) Ask which of the newly created steps to implement first using the same bottom-positioned, selector-prefixed guided options; recommend the first runnable new step by default.
     Prefer dependency order and prerequisite work when choosing that recommendation.
 13) Ask: **Approve starting implementation now?**
 14) Implement that step using the same workflow as `$cdd-implement-todo`.
