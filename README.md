@@ -44,8 +44,7 @@ If you want useful UI output, provide strong UX mockups with the plan. Without g
 
 This is the master-agent workflow:
 
-- the human selects the Master Chef model
-- the human chooses the Builder model and thinking level
+- the human supplies one explicit per-run Run config with `master_model`, `master_thinking`, `builder_model`, `builder_thinking`, `control_route`, `status_route`, and `status_route_policy`
 - the human starts Master Chef in an existing repo that already has the CDD boilerplate
 - Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval
 - after kickoff, Master Chef drives the Builder automatically and the human mostly checks final results unless Master Chef reports a blocker or deadlock
@@ -149,8 +148,7 @@ For the core single-agent workflow:
 For the experimental Master Chef OpenClaw skill:
 
 - install the OpenClaw package
-- select the Master Chef model with `/model <master-model>`
-- decide the Builder model and thinking level for subagent spawns
-- launch `/cdd-master-chef` from the OpenClaw session you want to use as the control route
+- prepare one Run config block and set the main session to `master_model` from that block with `/model <master-model>`
+- launch `/cdd-master-chef` from the OpenClaw session referenced by `control_route` in that block, normally the current session
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
-- after kickoff, expect the main-session watchdog cron to check Builder health every 5 minutes; healthy ticks may stay quiet except for periodic heartbeats, but configured lifecycle status updates must still be attempted on step/run transitions
+- after kickoff, expect Master Chef to handle Builder checks directly in the main session, keep recovery in-session, and still attempt configured lifecycle status updates through `status_route`

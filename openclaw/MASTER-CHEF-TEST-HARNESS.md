@@ -1,6 +1,6 @@
 # cdd-master-chef Test Harness Checklist (OpenClaw-direct mode)
 
-Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> main-session watchdog wakeups -> direct status updates -> final results**.
+Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> direct in-session Builder checks -> direct status updates -> final results**.
 
 ## 1) Preflight
 
@@ -27,13 +27,28 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   git -C <REPO> rev-parse --abbrev-ref --symbolic-full-name @{upstream}
   ```
 
-- [ ] Main session is using the intended Master Chef model.
+- [ ] One explicit Run config block is prepared.
 
-- [ ] Builder model and thinking level are known.
+- [ ] Main session is using `master_model` from that Run config.
 
-- [ ] Control route is the current session.
+- [ ] `builder_model`, `builder_thinking`, `control_route`, `status_route`, and `status_route_policy` are known from that same Run config.
 
-- [ ] Status route is confirmed or intentionally omitted.
+- [ ] Use the standard default status route unless the run intentionally overrides it:
+
+  ```text
+  Run config:
+    master_model: gpt-5.4
+    master_thinking: xhigh
+    builder_model: gpt-5.4
+    builder_thinking: xhigh
+    control_route: current-session
+    status_route:
+      kind: telegram
+      channel: "<telegram-chat-title>"
+      to: "<telegram-chat-id>"
+      topic_id: <telegram-topic-id>
+    status_route_policy: best_effort
+  ```
 
 ---
 
@@ -43,10 +58,9 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 
 ```text
 /cdd-master-chef Use the Master Chef process for repo <REPO>.
-Treat this session as the control route.
-Treat <STATUS_ROUTE> as the optional status route with policy best_effort unless I say otherwise.
-Use Builder model <BUILDER_MODEL> with thinking <BUILDER_THINKING>.
-Inspect the repo, tell me which TODO step is next, and wait for kickoff approval before creating runtime state or the cron.
+Run config:
+<RUN_CONFIG>
+Inspect the repo, tell me which TODO step is next, and wait for kickoff approval before creating runtime state or spawning the Builder.
 ```
 
 - [ ] Expected:
@@ -61,16 +75,16 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
 
 ```text
 /cdd-master-chef Approve the proposed next action.
-Use this session as the control route.
-Use <STATUS_ROUTE> as the status route with policy best_effort.
-Use Builder model <BUILDER_MODEL> with thinking <BUILDER_THINKING>.
-Initialize .cdd-runtime/master-chef/, acquire the run lease, create the watchdog cron as a main-session systemEvent, route the approved action through the correct internal cdd skill, spawn the Builder only if the action is delegated, and continue autonomously.
+Run config:
+<RUN_CONFIG>
+Initialize .cdd-runtime/master-chef/, acquire the run lease, route the approved action through the correct internal cdd skill, spawn the Builder only if the action is delegated, and continue autonomously.
 ```
 
 - [ ] Expected:
   - `.cdd-runtime/master-chef/` exists
-  - `run.json`, `run.lock.json`, `master-chef.jsonl`, `builder.jsonl`, and `watchdog.jsonl` exist
-  - exactly one watchdog cron exists
+  - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist
+  - `run.json` records the exact approved Run config
+  - no watchdog cron is created
   - Builder starts as a subagent only when the chosen action is delegated
   - the routing choice is named explicitly in the handoff or main-session action
 
@@ -80,32 +94,31 @@ Initialize .cdd-runtime/master-chef/, acquire the run lease, create the watchdog
 ls <REPO>/.cdd-runtime/master-chef/run.json \
    <REPO>/.cdd-runtime/master-chef/run.lock.json \
    <REPO>/.cdd-runtime/master-chef/master-chef.jsonl \
-   <REPO>/.cdd-runtime/master-chef/builder.jsonl \
-   <REPO>/.cdd-runtime/master-chef/watchdog.jsonl >/dev/null
+   <REPO>/.cdd-runtime/master-chef/builder.jsonl >/dev/null
 ```
 
 - [ ] Expected: all runtime files exist.
 
-### Prompt D - Verify cron exists
+### Prompt D - Verify no cron exists
 
 ```bash
 openclaw cron list | rg cdd-master-chef-watchdog
 ```
 
-- [ ] Expected: exactly one watchdog cron exists.
+- [ ] Expected: no watchdog cron exists.
 
-### Prompt E - Healthy watchdog tick
+### Prompt E - Healthy Builder check
 
 ```text
-/cdd-master-chef TEST ONLY: simulate one watchdog tick in the main session.
+/cdd-master-chef TEST ONLY: simulate one direct Builder health check in the main session.
 Check runtime files and Builder health. If healthy, do not replace Builder and do not send unnecessary status.
-A healthy watchdog tick may stay quiet unless a heartbeat is due, but lifecycle status delivery rules still apply separately.
+A healthy Builder check may stay quiet, but lifecycle status delivery rules still apply separately.
 ```
 
 - [ ] Expected:
   - no false restart
   - no false blocker
-  - watchdog reasoning happens in the main session
+  - Builder-check reasoning happens in the main session
   - healthy tick silence does not redefine or bypass configured status-route delivery for lifecycle events
 
 ### Prompt F - Stale Builder
@@ -171,12 +184,11 @@ If the run is complete, send the final results summary.
 
 ```text
 /cdd-master-chef TEST ONLY: simulate two failed Builder replacements without forward progress.
-Stop the run, remove the cron, and report DEADLOCK_STOPPED.
+Stop the run and report DEADLOCK_STOPPED.
 ```
 
 - [ ] Expected:
   - run stops cleanly
-  - cron is removed
   - deadlock is reported clearly
 
 ### Prompt K - Status-route delivery contract
@@ -199,7 +211,7 @@ Update runtime state exactly as the reporting contract requires.
 
 - [ ] Main session acted as the only control plane.
 - [ ] Builder ran as an OpenClaw subagent.
-- [ ] Watchdog was a main-session `systemEvent`, not an isolated agent.
+- [ ] No watchdog cron or second supervising loop was used.
 - [ ] Runtime files were created in the repo.
 - [ ] Duplicate-run prevention worked.
 - [ ] Builder recovery stayed inside the main session.
@@ -215,13 +227,6 @@ Update runtime state exactly as the reporting contract requires.
 ---
 
 ## 4) Cleanup
-
-If the watchdog cron still exists:
-
-```bash
-openclaw cron list | rg cdd-master-chef-watchdog
-openclaw cron rm <job-id>
-```
 
 If the runtime directory should be removed from the test repo:
 

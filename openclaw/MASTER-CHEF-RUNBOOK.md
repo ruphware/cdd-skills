@@ -6,7 +6,6 @@ Run autonomous development with one control loop:
 
 - **Master Chef:** the current OpenClaw session
 - **Builder:** an OpenClaw subagent
-- **Watchdog:** a cron `systemEvent` that wakes the main session
 - **Status route:** optional external updates sent directly by the main session
 
 Design principle: **soft reasoning, hard state**.
@@ -30,6 +29,7 @@ The main session owns:
 - runtime initialization
 - direct use of planning-oriented `cdd-*` skills when needed
 - Builder spawn, replacement, and review
+- direct Builder health checks when the session is active
 - QA gate and step-level UAT approval
 - commit and push
 - direct status reporting
@@ -45,23 +45,15 @@ The Builder is an OpenClaw subagent. It owns:
 - writing `builder.jsonl`
 - returning a structured report to Master Chef
 
-### Watchdog
+There is no watchdog actor, cron wake-up, or second control loop.
 
-The watchdog is **not** a separate agent. It is a cron wake-up into the main session.
-
-Its job is to remind Master Chef to:
-
-- inspect runtime state
-- inspect Builder health
-- steer or replace a stale Builder
-- send heartbeat or blocker reports when needed
+If a Builder needs inspection, recovery, or reporting, Master Chef handles it directly in the main session while already active.
 
 ### Human
 
 The human owns:
 
-- model selection for the main session
-- Builder model/thinking selection
+- the per-run Run config
 - kickoff approval
 - final review
 - intervention when Master Chef reports a blocker or deadlock
@@ -76,8 +68,8 @@ Before `/cdd-master-chef` is used:
    - `AGENTS.md`
    - `README.md`
    - `TODO.md` or `TODO-*.md`
-2. The current session should already be using the chosen Master Chef model.
-3. The Builder model and thinking level must be known before kickoff.
+2. The current session should already be using `master_model` from the chosen Run config.
+3. The full Run config must be known before kickoff.
 4. The repo must have a pushable upstream.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
    - `~/.openclaw/skills/cdd-master-chef`
@@ -89,14 +81,61 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-index`
    - `~/.openclaw/skills/cdd-refactor`
    - optional / mixed-role installs such as `cdd-audit-and-implement`
-6. Confirm:
-   - `control_route`: the current session
-   - `status_route`: optional external route, such as Slack
+6. Confirm the Run config includes:
+   - `control_route`: normally `current-session`
+   - `status_route`: the standard default is the placeholder Telegram route shown in the example Run config below, unless changed for the run
    - `status_route_policy`: `best_effort` or `required`
 
 If the repo is not CDD-ready, stop and route the user back to the core CDD workflow.
 
 If upstream is missing, do not start autonomous execution.
+
+### 2.1 Run config
+
+For every run, resolve one explicit block in this shape:
+
+```text
+Run config:
+  master_model: gpt-5.4
+  master_thinking: xhigh
+  builder_model: gpt-5.4
+  builder_thinking: xhigh
+  control_route: current-session
+  status_route:
+    kind: telegram
+    channel: "<telegram-chat-title>"
+    to: "<telegram-chat-id>"
+    topic_id: <telegram-topic-id>
+  status_route_policy: best_effort
+```
+
+Rules:
+
+- This block is the only place per-run model and route settings are set.
+- The user may either paste the block directly into the kickoff prompt or let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`.
+- Master Chef must not infer or merge model or route settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
+- After kickoff, copy the approved values into `.cdd-runtime/master-chef/run.json`. That file is the durable mirror of the approved Run config, not a second config source.
+- If the human wants different models or a different reporting destination on a given run, change only this block for that run.
+- Keep placeholder examples in shared docs. Real local route identifiers belong only in the local config file or the live prompt for that run.
+
+### 2.2 Local default Run config
+
+Optional local-only convenience path:
+
+```text
+~/.openclaw/config/master-chef/default-run-config.yaml
+```
+
+Resolution order:
+
+1. If the kickoff prompt includes `Run config`, use that.
+2. Otherwise, if the local default file exists, read it and show the resolved config back to the human before kickoff.
+3. Otherwise, stop and ask the human for a Run config.
+
+Privacy rule:
+
+- Treat `~/.openclaw/config/master-chef/default-run-config.yaml` as local operator config.
+- Do not copy raw ids, handles, channel names, or topic ids from it into repo docs, commits, or other shared artifacts.
 
 ---
 
@@ -118,22 +157,25 @@ On the first `/cdd-master-chef` turn:
    - delegated exception: `cdd-index` when Master Chef explicitly wants an index refresh
    - Master Chef direct: `cdd-init-project`, `cdd-plan`, or `cdd-refactor` when the repo needs setup, plan repair, or refactor decomposition before Builder work
    - excluded by default: `cdd-audit-and-implement`, unless the process is intentionally adapted for its mixed role
-4. Confirm:
-   - Builder model
-   - Builder thinking level
-   - control route
-   - status route and policy
+4. Confirm the approved Run config:
+   - `master_model`
+   - `master_thinking`
+   - `builder_model`
+   - `builder_thinking`
+   - `control_route`
+   - `status_route`
+   - `status_route_policy`
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
 8. Present one kickoff approval that includes:
    - repo state summary
    - proposed next action
+   - the approved Run config
    - runtime initialization
    - run lease
-   - one watchdog cron as a main-session `systemEvent`
    - optional direct status reporting
-9. Do not create the cron job and do not spawn the Builder until the user approves kickoff.
+9. Do not spawn the Builder until the user approves kickoff.
 
 After kickoff approval, the run becomes autonomous.
 
@@ -149,7 +191,6 @@ Store canonical runtime state inside the repo:
   run.lock.json
   master-chef.jsonl
   builder.jsonl
-  watchdog.jsonl
 ```
 
 ### 4.1 `run.json`
@@ -174,12 +215,11 @@ Suggested shape:
   },
   "status_route": {
     "kind": "slack|discord|telegram|none",
-    "channel": "<channel>",
-    "to": "<destination>"
+    "channel": "<channel-or-chat-name>",
+    "to": "<destination-id-or-handle>",
+    "topic_id": "<telegram-topic-id>"
   },
   "status_route_policy": "best_effort",
-  "watchdog_job_id": "<cron-id>",
-  "watchdog_mode": "main-system-event",
   "active_todo_path": "/abs/path/to/TODO.md",
   "active_step": "<exact step heading>",
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
@@ -324,11 +364,11 @@ After kickoff approval:
 
 1. Initialize or refresh runtime files.
 2. Write `run.json` and `run.lock.json`.
-3. Create the watchdog cron as a main-session `systemEvent`.
-4. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
-5. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, or `cdd-refactor`), run it in the main session before any Builder spawn.
-6. Record the Builder session key in runtime state when a Builder is used.
-7. If a Builder was spawned, let it work and then review the Builder report.
+3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
+4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, or `cdd-refactor`), run it in the main session before any Builder spawn.
+5. Record the Builder session key in runtime state when a Builder is used.
+6. If a Builder was spawned, let it work and then review the Builder report when it returns.
+7. If the Builder appears stale during an active main-session turn, inspect it directly, steer or replace it in-session, and update runtime/log evidence immediately.
 8. Run Master Chef QA and step-level UAT.
 9. If the step passes:
    - commit
@@ -350,74 +390,57 @@ Only stop autonomy when:
 
 ---
 
-## 7) Watchdog cron
+## 7) Direct Builder check policy
 
-Use one recurring cron job:
+There is no watchdog cron.
 
-- cadence: every 5 minutes
-- `sessionTarget: "main"`
-- `payload.kind: "systemEvent"`
-- delivery: none
+Master Chef checks Builder health directly in the main session when one of these is true:
 
-The cron job does not report on its own. It only wakes the main session.
+1. the Builder just returned and its result needs review
+2. the human asks for status, continuation, or stop
+3. Master Chef is already active in the session and wants to inspect a long-running Builder before waiting again
 
-Example shape:
+When checking Builder health, read:
 
-```json
-{
-  "name": "cdd-master-chef-watchdog:<repo>",
-  "schedule": { "kind": "every", "everyMs": 300000 },
-  "sessionTarget": "main",
-  "payload": {
-    "kind": "systemEvent",
-    "text": "Reminder: run the cdd-master-chef watchdog tick for <repo>. Check run.json, run.lock.json, Builder health, and runtime logs. If healthy, stay quiet. If stale, steer or replace the Builder and report only if needed."
-  },
-  "delivery": { "mode": "none" }
-}
-```
+- `run.json`
+- `run.lock.json`
+- `master-chef.jsonl`
+- `builder.jsonl`
 
-Remove the job when the run completes, blocks permanently, or is cancelled.
+Then inspect:
 
----
+- active step
+- lease freshness
+- Builder session key
+- `last_progress_at_utc`
+- `last_master_log_at_utc`
+- `last_builder_log_at_utc`
+- current phase
+- current Builder session status via native OpenClaw subagent/session tools
 
-## 8) Watchdog tick policy
+If healthy:
 
-When the systemEvent fires, the **main session** should:
+- keep the current Builder
+- update runtime/log evidence only when that check adds meaningful operational value
+- do not invent timer-based heartbeat chatter
 
-1. Read:
-   - `run.json`
-   - `run.lock.json`
-   - `master-chef.jsonl`
-   - `builder.jsonl`
-   - `watchdog.jsonl`
-2. Check:
-   - active step
-   - lease freshness
-   - Builder session key
-   - `last_progress_at_utc`
-   - `last_master_log_at_utc`
-   - `last_builder_log_at_utc`
-   - current phase
-3. Inspect Builder health using native OpenClaw subagent/session tools available to the main session.
-4. If healthy:
-   - record a watchdog tick when useful
-   - send a `HEARTBEAT` only every ~15 minutes
-   - otherwise stay quiet for that watchdog tick
-5. If stale:
-   - try to steer the current Builder if supported
-   - otherwise replace it with a fresh Builder run for the same step
-   - increment `builder_restart_count`
-   - renew the lease
-   - update runtime files and logs
-   - send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
-6. If repeated replacements fail without forward progress:
-   - stop the run
-   - report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
+If stale:
+
+- try to steer the current Builder if supported
+- otherwise replace it with a fresh Builder run for the same step
+- increment `builder_restart_count`
+- renew the lease
+- update runtime files and logs
+- send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
+
+If repeated replacements fail without forward progress:
+
+- stop the run
+- report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
 
 Default thresholds:
 
-- Builder stale threshold: 10 minutes without Builder progress
-- Heartbeat interval: 15 minutes
+- Builder stale threshold: 10 minutes without Builder progress, evaluated only when Master Chef performs a check
 - Builder replacement budget before deadlock: 2 failed replacements without progress
 
 ---
@@ -493,7 +516,6 @@ A configured `status_route` means Master Chef must attempt direct delivery for k
 Attempt delivery for:
 
 - `START`
-- `HEARTBEAT` (only when the heartbeat interval is due)
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
@@ -507,6 +529,7 @@ Do not send:
 
 - raw log tails by default
 - every Builder micro-update
+- timer-based heartbeat updates
 - internal debate between Master Chef and Builder
 
 Runtime obligations:
@@ -530,12 +553,6 @@ If status delivery fails:
 2. otherwise replace Builder with a fresh subagent run
 3. if 2 replacements fail without progress, stop the step
 
-### If cron fails
-
-- continue manually from the control route
-- do not corrupt run ownership
-- recreate cron only if needed
-
 ### If main session is interrupted
 
 - resume manually from `run.json` and `run.lock.json`
@@ -551,7 +568,6 @@ The main session is the only control plane. Do not create a second control loop.
 Use these event labels:
 
 - `START`
-- `HEARTBEAT`
 - `BUILDER_HANDOFF`
 - `BUILDER_RESTARTED`
 - `STEP_PASS`

@@ -1,6 +1,6 @@
 ---
 name: cdd-master-chef
-description: Run autonomous CDD delivery in OpenClaw-direct mode: the main session is Master Chef, the Builder runs as an OpenClaw subagent, state lives under .cdd-runtime/master-chef in the repo, a cron systemEvent wakes the main session for watchdog ticks, and the main session sends optional status updates directly.
+description: Run autonomous CDD delivery in OpenClaw-direct mode: the main session is Master Chef, the Builder runs as an OpenClaw subagent, state lives under .cdd-runtime/master-chef in the repo, and the main session handles Builder checks plus direct status updates without a watchdog cron.
 user-invocable: true
 disable-model-invocation: true
 homepage: https://github.com/ruphware/cdd-skills
@@ -24,17 +24,18 @@ Operating contract:
    - `TODO.md` or `TODO-*.md`
 2. The main OpenClaw session is always Master Chef.
 3. The Builder runs as an OpenClaw subagent, not ACP.
-4. The watchdog is a cron `systemEvent` that wakes the main session. It is not a separate supervising agent.
+4. There is no watchdog cron or separate supervising agent; Master Chef checks Builder health directly in the main session when active.
 5. State is durable and repo-local:
    - `.cdd-runtime/master-chef/run.json`
    - `.cdd-runtime/master-chef/run.lock.json`
    - `.cdd-runtime/master-chef/master-chef.jsonl`
    - `.cdd-runtime/master-chef/builder.jsonl`
-   - `.cdd-runtime/master-chef/watchdog.jsonl`
-6. Before kickoff, confirm:
-   - `control_route`: the current session
-   - `status_route`: optional external route such as Slack
-   - `status_route_policy`: `best_effort` or `required`
+6. Before kickoff, resolve the `Run config`:
+   - if the current prompt includes a `Run config` block, use that
+   - otherwise, if `~/.openclaw/config/master-chef/default-run-config.yaml` exists, read it, surface the resolved config back to the human, and use it as the starting `Run config` for that run
+   - the resolved `Run config` must contain `master_model`, `master_thinking`, `builder_model`, `builder_thinking`, `control_route`, `status_route`, and `status_route_policy`
+   - treat the resolved `Run config` as the only per-run source of truth; do not infer model or route settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
+   - keep local-only ids, handles, channel names, and topic ids from `~/.openclaw/config/master-chef/default-run-config.yaml` out of repo docs, commits, and other shared artifacts
 7. Before autonomous work starts, inspect:
    - current git status and branch
    - upstream branch
@@ -49,11 +50,11 @@ Operating contract:
    - Treat the installed `cdd-*` skills as internal OpenClaw workflows, not user slash commands.
 9. Before implementation starts, present one kickoff approval that covers:
    - proposed next action
+   - the approved `Run config`
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
-   - one recurring watchdog cron as a main-session `systemEvent`
    - optional direct status updates to the chosen `status_route`
-10. Spawn the Builder as a subagent with explicit model and thinking settings, and tell it which internal `cdd-*` skill path to use.
+10. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, and tell it which internal `cdd-*` skill path to use.
 11. Prefer one-step Builder runs. Replace stale Builders with a fresh subagent run rather than relying on session recovery.
 12. Both Master Chef and Builder must append JSONL logs with concrete evidence for step start, validation, blockers, completion, and reporting.
 13. Use `hard_gate` and `soft_signal` validation classes:
@@ -71,18 +72,18 @@ Operating contract:
    - send full detail to the control route
    - attempt concise direct status delivery to the status route if configured
    - update `last_status_report_at_utc` on successful status delivery
-16. Status-route delivery is event-driven, not just watchdog-driven.
+16. Status-route delivery is event-driven, not timer-driven.
    - A configured `status_route` means Master Chef must attempt direct delivery for key lifecycle events.
    - `best_effort` means attempt delivery and continue if it fails.
    - `required` means attempt delivery and block/stop if it fails.
-17. The watchdog tick runs in the main session and may:
+17. When Master Chef performs a Builder check in the main session, it may:
    - inspect runtime files and logs
    - inspect Builder health
    - steer the current Builder if supported
    - replace the Builder with a fresh subagent run if stale
    - report blockers or completion
-18. The watchdog tick must not create a second control loop. Recovery stays in the main session.
-19. Healthy watchdog ticks may stay quiet, but they do not cancel status-route obligations for lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
+18. Direct Builder checks must not create a second control loop. Recovery stays in the main session.
+19. Healthy Builder checks may stay quiet, but they do not cancel status-route obligations for lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
 20. If status-route delivery fails and policy is `best_effort`, record `STATUS_DELIVERY_FAILED`, note it in the control route, and continue. If policy is `required`, record `STATUS_DELIVERY_FAILED`, stop the run, and report the blocker.
 21. If repeated Builder replacements fail without progress, stop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`.
 
@@ -100,8 +101,6 @@ Canonical `run.json` fields:
 - `control_route`
 - `status_route`
 - `status_route_policy`
-- `watchdog_job_id`
-- `watchdog_mode`
 - `active_todo_path`
 - `active_step`
 - `phase`
@@ -120,7 +119,6 @@ Canonical `run.json` fields:
 Report events:
 
 - `START`
-- `HEARTBEAT`
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
@@ -133,4 +131,4 @@ Report events:
 Route policy:
 
 - `control_route`: full operational detail
-- `status_route`: concise direct updates sent by the main session
+- `status_route`: concise direct updates sent by the main session, defaulting in the standard Run config to the placeholder Telegram route shown in the example Run config below

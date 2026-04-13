@@ -243,8 +243,8 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     assert "The Builder runs as an OpenClaw subagent, not ACP." in skill_text, (
         f"subagent Builder contract missing in {skill_md}"
     )
-    assert "The watchdog is a cron `systemEvent` that wakes the main session." in skill_text, (
-        f"main-session watchdog contract missing in {skill_md}"
+    assert "There is no watchdog cron or separate supervising agent; Master Chef checks Builder health directly in the main session when active." in skill_text, (
+        f"direct main-session Builder-check contract missing in {skill_md}"
     )
     assert ".cdd-runtime/master-chef/run.json" in skill_text, (
         f"durable runtime state missing in {skill_md}"
