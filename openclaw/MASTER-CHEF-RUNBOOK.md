@@ -45,7 +45,9 @@ The Builder is an OpenClaw subagent. It owns:
 - writing `builder.jsonl`
 - returning a structured report to Master Chef
 
-There is no watchdog actor, cron wake-up, or second control loop.
+One Builder run equals one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+
+There is no watchdog actor, cron wake-up, second control loop, or normal Builder-session resurrection path.
 
 If a Builder needs inspection, recovery, or reporting, Master Chef handles it directly in the main session while already active.
 
@@ -330,16 +332,16 @@ Default spawn shape:
 - explicit `model`
 - explicit `thinking`
 - `cwd: <repo>`
-- normally `mode: "run"`
+- `mode: "run"`
 
-Why `run` by default:
+Why `run` for the normal flow:
 
 - one step at a time
 - simpler lifecycle
 - easier replacement
 - fewer stale-session edge cases
 
-Use a long-lived Builder session only when the repo or task genuinely needs persistent Builder context.
+Do not use long-lived Builder sessions or session resurrection as the normal path. If exceptional manual debugging ever requires session reuse, treat it as outside the standard contract and return to fresh one-step Builder runs immediately after.
 
 ### 5.1 Builder contract
 
@@ -350,6 +352,7 @@ The Builder must:
 - use `cdd-index` only when Master Chef explicitly delegates that action
 - not switch itself into planning or refactor mode; if the delegated path no longer fits, return a blocker instead
 - implement exactly one approved action
+- end after that one approved action instead of continuing into the next TODO step
 - avoid scope creep
 - avoid commit/push
 - update only the selected TODO step when the step passes
@@ -367,8 +370,8 @@ After kickoff approval:
 3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
 4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, or `cdd-refactor`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
-6. If a Builder was spawned, let it work and then review the Builder report when it returns.
-7. If the Builder appears stale during an active main-session turn, inspect it directly, steer or replace it in-session, and update runtime/log evidence immediately.
+6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
+7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh one-step Builder run for the same step, and update runtime/log evidence immediately.
 8. Run Master Chef QA and step-level UAT.
 9. If the step passes:
    - commit
@@ -378,7 +381,7 @@ After kickoff approval:
    - attempt concise direct status delivery if a `status_route` is configured
    - update `last_status_report_at_utc` if status delivery succeeds
 10. Re-inspect TODO state.
-11. If another runnable step exists, continue automatically.
+11. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
 12. If no runnable step remains, report `RUN_COMPLETE`.
 
 Only stop autonomy when:
@@ -426,12 +429,13 @@ If healthy:
 
 If stale:
 
-- try to steer the current Builder if supported
-- otherwise replace it with a fresh Builder run for the same step
+- replace it quickly with a fresh Builder run for the same step
 - increment `builder_restart_count`
 - renew the lease
 - update runtime files and logs
 - send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
+
+Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, or returned without a usable report, replace it with a fresh one-step Builder run for the same step.
 
 If repeated replacements fail without forward progress:
 
@@ -440,7 +444,7 @@ If repeated replacements fail without forward progress:
 
 Default thresholds:
 
-- Builder stale threshold: 10 minutes without Builder progress, evaluated only when Master Chef performs a check
+- Builder stale threshold: 5 minutes without Builder progress, evaluated only when Master Chef performs a check
 - Builder replacement budget before deadlock: 2 failed replacements without progress
 
 ---
@@ -549,15 +553,15 @@ If status delivery fails:
 
 ### If Builder fails or stalls
 
-1. steer the current Builder if practical
-2. otherwise replace Builder with a fresh subagent run
-3. if 2 replacements fail without progress, stop the step
+1. replace Builder quickly with a fresh one-step subagent run for the same step
+2. do not use session resurrection as the normal recovery path
+3. if 2 replacements fail without progress, stop the step instead of limping on
 
 ### If main session is interrupted
 
 - resume manually from `run.json` and `run.lock.json`
 - inspect repo diff and Builder logs
-- either continue the same step or mark it blocked
+- either continue the same step with a fresh Builder run or mark it blocked
 
 The main session is the only control plane. Do not create a second control loop.
 

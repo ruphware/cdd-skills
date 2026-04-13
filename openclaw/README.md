@@ -14,7 +14,7 @@ Installed form:
 The packaged OpenClaw workflow has two active actors:
 
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
-- **Builder:** an OpenClaw subagent that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
+- **Builder:** a fresh one-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
 There is no watchdog cron. The human supplies one explicit per-run Run config, approves kickoff once, and then mainly checks final results or critical blockers.
 
@@ -116,6 +116,8 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 
 After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
 
+After each passed, blocked, or stale delegated step, that Builder run is finished. If another delegated step exists, Master Chef re-inspects repo state and starts a fresh Builder run, normally via `cdd-implement-todo`.
+
 ## Reporting and Builder checks
 
 Reporting is OpenClaw-native:
@@ -132,7 +134,9 @@ Builder-check policy:
 
 - no watchdog cron or timer-based heartbeat loop
 - Master Chef checks runtime files, Builder health, and current progress directly in the main session
-- if the Builder is stale during an active check, Master Chef steers it or replaces it with a fresh subagent run
+- if the Builder is stale during an active check, Master Chef replaces it quickly with a fresh one-step subagent run
+- do not use Builder session resurrection as the normal continuation or recovery path
+- if 2 replacement attempts fail without forward progress, stop the run instead of limping on
 - lifecycle status delivery remains required even without a watchdog
 
 Runtime files:
@@ -151,9 +155,10 @@ Master Chef chooses the internal routing path.
 Default delegated path:
 
 - Master Chef chooses the next runnable TODO step
-- Builder uses the internal OpenClaw `cdd-implement-todo` skill for that step
+- Builder uses the internal OpenClaw `cdd-implement-todo` skill for that step in a fresh one-step run
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
+- if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
 
 Delegated exception:
 

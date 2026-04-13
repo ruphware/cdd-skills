@@ -1,6 +1,6 @@
 ---
 name: cdd-master-chef
-description: Run autonomous CDD delivery in OpenClaw-direct mode: the main session is Master Chef, the Builder runs as an OpenClaw subagent, state lives under .cdd-runtime/master-chef in the repo, and the main session handles Builder checks plus direct status updates without a watchdog cron.
+description: Run autonomous CDD delivery in OpenClaw-direct mode: the main session is Master Chef, the Builder runs as fresh one-step OpenClaw subagent runs, state lives under .cdd-runtime/master-chef in the repo, and the main session handles Builder checks plus direct status updates without a watchdog cron.
 user-invocable: true
 disable-model-invocation: true
 homepage: https://github.com/ruphware/cdd-skills
@@ -54,8 +54,11 @@ Operating contract:
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - optional direct status updates to the chosen `status_route`
-10. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, and tell it which internal `cdd-*` skill path to use.
-11. Prefer one-step Builder runs. Replace stale Builders with a fresh subagent run rather than relying on session recovery.
+10. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, for exactly one approved delegated action, and tell it which internal `cdd-*` skill path to use.
+11. Use one-step Builder runs only.
+   - One Builder run equals one approved delegated action.
+   - After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
+   - Do not treat Builder session resurrection or multi-step continuation as a normal path.
 12. Both Master Chef and Builder must append JSONL logs with concrete evidence for step start, validation, blockers, completion, and reporting.
 13. Use `hard_gate` and `soft_signal` validation classes:
    - `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
@@ -79,13 +82,12 @@ Operating contract:
 17. When Master Chef performs a Builder check in the main session, it may:
    - inspect runtime files and logs
    - inspect Builder health
-   - steer the current Builder if supported
    - replace the Builder with a fresh subagent run if stale
    - report blockers or completion
-18. Direct Builder checks must not create a second control loop. Recovery stays in the main session.
+18. Direct Builder checks must not create a second control loop. Recovery stays in the main session, using fresh Builder replacement rather than normal session resurrection.
 19. Healthy Builder checks may stay quiet, but they do not cancel status-route obligations for lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
 20. If status-route delivery fails and policy is `best_effort`, record `STATUS_DELIVERY_FAILED`, note it in the control route, and continue. If policy is `required`, record `STATUS_DELIVERY_FAILED`, stop the run, and report the blocker.
-21. If repeated Builder replacements fail without progress, stop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`.
+21. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 
 Canonical `run.json` fields:
 

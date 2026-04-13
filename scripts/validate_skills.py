@@ -246,6 +246,12 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     assert "There is no watchdog cron or separate supervising agent; Master Chef checks Builder health directly in the main session when active." in skill_text, (
         f"direct main-session Builder-check contract missing in {skill_md}"
     )
+    assert "Use one-step Builder runs only." in skill_text, (
+        f"one-step Builder-run contract missing in {skill_md}"
+    )
+    assert "Do not treat Builder session resurrection or multi-step continuation as a normal path." in skill_text, (
+        f"Builder session-resurrection guardrail missing in {skill_md}"
+    )
     assert ".cdd-runtime/master-chef/run.json" in skill_text, (
         f"durable runtime state missing in {skill_md}"
     )

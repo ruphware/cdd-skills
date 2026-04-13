@@ -85,7 +85,7 @@ Initialize .cdd-runtime/master-chef/, acquire the run lease, route the approved 
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist
   - `run.json` records the exact approved Run config
   - no watchdog cron is created
-  - Builder starts as a subagent only when the chosen action is delegated
+  - Builder starts as a one-step subagent run only when the chosen action is delegated
   - the routing choice is named explicitly in the handoff or main-session action
 
 ### Prompt C - Verify runtime files
@@ -125,12 +125,13 @@ A healthy Builder check may stay quiet, but lifecycle status delivery rules stil
 
 ```text
 /cdd-master-chef TEST ONLY: simulate that Builder progress has gone stale.
-Try steering the current Builder if possible. If not, replace it with a fresh Builder subagent for the same step.
+Replace it quickly with a fresh Builder subagent for the same step rather than resurrecting the old session.
 Keep the same TODO step, update runtime state, and report BUILDER_RESTARTED.
 ```
 
 - [ ] Expected:
   - Builder recovery happens in the main session
+  - stale recovery prefers fresh replacement over session resurrection
   - runtime state is updated
   - no duplicate control loop is created
 
@@ -176,6 +177,7 @@ If the run is complete, send the final results summary.
 - [ ] Expected:
   - Master Chef reviews Builder output
   - the delegated path matches the routing choice rather than defaulting blindly
+  - if another runnable delegated step exists, Master Chef starts a fresh one-step Builder run for it, normally via `cdd-implement-todo`
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
   - if `status_route` is configured, `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are attempted as direct status deliveries rather than being satisfied only by control-route replies
   - successful status delivery updates `last_status_report_at_utc`
@@ -217,11 +219,14 @@ Update runtime state exactly as the reporting contract requires.
 - [ ] Builder recovery stayed inside the main session.
 - [ ] Master Chef chose the correct routing path for the repo state.
 - [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
+- [ ] Builder runs stayed one-step only; the next delegated step got a fresh Builder run.
+- [ ] Builder session resurrection was not used as the normal continuation or recovery path.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] Configured status-route delivery was attempted for lifecycle events rather than being silently skipped.
 - [ ] `last_status_report_at_utc` changed after successful status delivery.
 - [ ] `best_effort` failures produced `STATUS_DELIVERY_FAILED` evidence without halting the run.
+- [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
 - [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.
 
 ---
