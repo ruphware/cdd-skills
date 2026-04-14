@@ -1,6 +1,6 @@
 # cdd-master-chef Test Harness Checklist (OpenClaw-direct mode)
 
-Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> direct in-session Builder checks -> direct status updates -> final results**.
+Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> direct in-session Builder checks -> in-session lifecycle reporting -> final results**.
 
 ## 1) Preflight
 
@@ -31,9 +31,9 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 
 - [ ] Main session is using `master_model` from that Run config.
 
-- [ ] `builder_model`, `builder_thinking`, `control_route`, `status_route`, and `status_route_policy` are known from that same Run config.
+- [ ] `builder_model` and `builder_thinking` are known from that same Run config.
 
-- [ ] Use the standard default status route unless the run intentionally overrides it:
+- [ ] The Run config stays model-only:
 
   ```text
   Run config:
@@ -41,13 +41,6 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
     master_thinking: xhigh
     builder_model: gpt-5.4
     builder_thinking: xhigh
-    control_route: current-session
-    status_route:
-      kind: telegram
-      channel: "<telegram-chat-title>"
-      to: "<telegram-chat-id>"
-      topic_id: <telegram-topic-id>
-    status_route_policy: best_effort
   ```
 
 ---
@@ -111,15 +104,15 @@ openclaw cron list | rg cdd-master-chef-watchdog
 
 ```text
 /cdd-master-chef TEST ONLY: simulate one direct Builder health check in the main session.
-Check runtime files and Builder health. If healthy, do not replace Builder and do not send unnecessary status.
-A healthy Builder check may stay quiet, but lifecycle status delivery rules still apply separately.
+Check runtime files and Builder health. If healthy, do not replace Builder and do not send unnecessary extra chatter.
+A healthy Builder check may stay quiet, but lifecycle events should still be reported clearly in-session when they actually happen.
 ```
 
 - [ ] Expected:
   - no false restart
   - no false blocker
   - Builder-check reasoning happens in the main session
-  - healthy tick silence does not redefine or bypass configured status-route delivery for lifecycle events
+  - healthy tick silence does not redefine or bypass in-session lifecycle reporting expectations
 
 ### Prompt F - Stale Builder
 
@@ -179,8 +172,7 @@ If the run is complete, send the final results summary.
   - the delegated path matches the routing choice rather than defaulting blindly
   - if another runnable delegated step exists, Master Chef starts a fresh one-step Builder run for it, normally via `cdd-implement-todo`
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
-  - if `status_route` is configured, `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are attempted as direct status deliveries rather than being satisfied only by control-route replies
-  - successful status delivery updates `last_status_report_at_utc`
+  - lifecycle events such as `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are reported clearly in the current session
 
 ### Prompt J - Deadlock
 
@@ -193,19 +185,17 @@ Stop the run and report DEADLOCK_STOPPED.
   - run stops cleanly
   - deadlock is reported clearly
 
-### Prompt K - Status-route delivery contract
+### Prompt K - In-session reporting contract
 
 ```text
-/cdd-master-chef TEST ONLY: with a configured status route and policy best_effort, simulate one successful STEP_PASS status delivery and one failed STEP_BLOCKED status delivery.
-Update runtime state exactly as the reporting contract requires.
+/cdd-master-chef TEST ONLY: simulate one successful STEP_PASS update and one STEP_BLOCKED update.
+Report them in the current session and update runtime evidence exactly as the reporting contract requires.
 ```
 
 - [ ] Expected:
-  - successful status delivery updates `last_status_report_at_utc`
-  - failed delivery appends `STATUS_DELIVERY_FAILED` to `master-chef.jsonl`
-  - the failed event label, route target, and policy are recorded
-  - `best_effort` continues after recording the failure
-  - control-route reporting does not count as satisfying the status-route attempt
+  - both lifecycle updates are reported in the current Master Chef session
+  - `master-chef.jsonl` records the lifecycle events
+  - `run.json` stays focused on run state and does not grow route metadata
 
 ---
 
@@ -223,9 +213,8 @@ Update runtime state exactly as the reporting contract requires.
 - [ ] Builder session resurrection was not used as the normal continuation or recovery path.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
-- [ ] Configured status-route delivery was attempted for lifecycle events rather than being silently skipped.
-- [ ] `last_status_report_at_utc` changed after successful status delivery.
-- [ ] `best_effort` failures produced `STATUS_DELIVERY_FAILED` evidence without halting the run.
+- [ ] Lifecycle events were reported in the Master Chef session.
+- [ ] Run config and runtime state stayed free of extra route metadata.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
 - [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.
 

@@ -22,11 +22,10 @@ There is no watchdog cron. The human supplies one explicit per-run Run config, a
 
 - OpenClaw installed and healthy
 - `git` on `PATH`
-- target repo already has the CDD boilerplate:
-  - `AGENTS.md`
-  - `README.md`
-  - `TODO.md` or `TODO-*.md`
-- target repo has a pushable upstream branch
+- target workspace is either:
+  - an existing repo that already has the CDD boilerplate (`AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`), or
+  - a new/adoptable project folder that should be initialized into CDD first
+- a pushable upstream branch is required before the normal autonomous commit/push loop begins
 
 You do not need a separate Codex or ACP skill install for this OpenClaw package. `./scripts/install-openclaw.sh` installs both `cdd-master-chef` and the internal OpenClaw Builder `cdd-*` skills into `~/.openclaw/skills`.
 
@@ -85,7 +84,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 
 ## How development starts
 
-1. Open the OpenClaw session you want to use. The standard Run config uses `control_route: current-session`.
+1. Open the OpenClaw session you want to use. That session is both Master Chef and the reporting surface for the run.
 2. Choose how Master Chef should get the Run config:
    - either paste one inline, see `MASTER-CHEF-RUNBOOK.md`, section `2.1 Run config`
    - or keep a local-only default file at `~/.openclaw/config/master-chef/default-run-config.yaml`, see section `2.2 Local default Run config`
@@ -95,7 +94,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    /model <master-model>
    ```
 
-4. Start Master Chef in the existing CDD repo:
+4. Start Master Chef in the target repo or new project folder:
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
@@ -105,14 +104,14 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval.
 
 5. Master Chef should then:
-   - verify the repo already has the CDD boilerplate
+   - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
    - choose the routing path: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master-Chef-direct planning or refactor work
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
      - the proposed next action and routing path
      - the approved Run config
-     - Builder handoff plus direct status-route reporting
+     - Builder handoff plus in-session reporting expectations
 
 After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
 
@@ -120,15 +119,12 @@ After each passed, blocked, or stale delegated step, that Builder run is finishe
 
 ## Reporting and Builder checks
 
-Reporting is OpenClaw-native:
+Reporting is OpenClaw-native and session-native:
 
-- `control_route` comes from the Run config and normally resolves to the current session
-- the standard default `status_route` in the Run config is the placeholder Telegram route shown in the example Run config below
-- if a run should report elsewhere or nowhere, change only the Run config block for that run
-- the chosen route policy is written into `.cdd-runtime/master-chef/run.json`
-- the main session sends direct status updates; there is no external reporting wrapper
-- if `status_route` is configured, Master Chef must attempt direct delivery for lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, and `RUN_COMPLETE`
-- successful status delivery updates `last_status_report_at_utc`; failed delivery records `STATUS_DELIVERY_FAILED`
+- the current Master Chef session is the only control/reporting route described by the shared package
+- lifecycle reporting such as `START`, `STEP_PASS`, `STEP_BLOCKED`, and `RUN_COMPLETE` stays in that session
+- `.cdd-runtime/master-chef/run.json` stores run state, not extra route metadata
+- if a local operator wants external notifications, keep that as local-only behavior rather than shared skill config
 
 Builder-check policy:
 
@@ -137,7 +133,7 @@ Builder-check policy:
 - if the Builder is stale during an active check, Master Chef replaces it quickly with a fresh one-step subagent run
 - do not use Builder session resurrection as the normal continuation or recovery path
 - if 2 replacement attempts fail without forward progress, stop the run instead of limping on
-- lifecycle status delivery remains required even without a watchdog
+- lifecycle reporting still happens in-session even without a watchdog
 
 Runtime files:
 
@@ -171,7 +167,7 @@ Manual helper:
 
 Master-Chef-direct path:
 
-- `cdd-init-project`
+- `cdd-init-project`, especially when the user wants a new project to start in CDD form
 - `cdd-plan`
 - `cdd-refactor`
 

@@ -233,11 +233,8 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     require_field(meta, r"^name:\s*cdd-master-chef\s*$", skill_md, "name")
     require_field(meta, r"^description:\s*.+", skill_md, "description")
     require_field(meta, r"^user-invocable:\s*true\b", skill_md, "user-invocable: true")
-    require_field(
-        meta,
-        r"^disable-model-invocation:\s*true\b",
-        skill_md,
-        "disable-model-invocation: true",
+    assert "disable-model-invocation:" not in meta, (
+        f"cdd-master-chef should stay model-visible for implicit invocation in {skill_md}"
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
     assert "The Builder runs as an OpenClaw subagent, not ACP." in skill_text, (
@@ -263,6 +260,9 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     )
     assert "Builder default: `cdd-implement-todo` for the next runnable TODO step." in skill_text, (
         f"default Builder routing contract missing in {skill_md}"
+    )
+    assert "Allowed bootstrap path: a new or adoptable project folder that should be brought into the CDD contract first via `cdd-init-project`" in skill_text, (
+        f"new-project CDD bootstrap contract missing in {skill_md}"
     )
 
 

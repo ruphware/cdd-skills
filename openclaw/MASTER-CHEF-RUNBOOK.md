@@ -6,7 +6,7 @@ Run autonomous development with one control loop:
 
 - **Master Chef:** the current OpenClaw session
 - **Builder:** an OpenClaw subagent
-- **Status route:** optional external updates sent directly by the main session
+- **Reporting surface:** the current Master Chef session
 
 Design principle: **soft reasoning, hard state**.
 
@@ -32,7 +32,7 @@ The main session owns:
 - direct Builder health checks when the session is active
 - QA gate and step-level UAT approval
 - commit and push
-- direct status reporting
+- in-session lifecycle reporting
 - final summary
 
 ### Builder
@@ -66,13 +66,12 @@ The human owns:
 
 Before `/cdd-master-chef` is used:
 
-1. The repo must already contain:
-   - `AGENTS.md`
-   - `README.md`
-   - `TODO.md` or `TODO-*.md`
+1. The target workspace must be either:
+   - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
+   - a new/adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
 2. The current session should already be using `master_model` from the chosen Run config.
 3. The full Run config must be known before kickoff.
-4. The repo must have a pushable upstream.
+4. A pushable upstream is required before the normal autonomous commit/push loop begins.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
    - `~/.openclaw/skills/cdd-master-chef`
    - `~/.openclaw/skills/cdd-boot`
@@ -84,13 +83,18 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-refactor`
    - optional / mixed-role installs such as `cdd-audit-and-implement`
 6. Confirm the Run config includes:
-   - `control_route`: normally `current-session`
-   - `status_route`: the standard default is the placeholder Telegram route shown in the example Run config below, unless changed for the run
-   - `status_route_policy`: `best_effort` or `required`
+   - `master_model`
+   - `master_thinking`
+   - `builder_model`
+   - `builder_thinking`
 
-If the repo is not CDD-ready, stop and route the user back to the core CDD workflow.
+The current Master Chef session is implicitly the control/reporting surface.
 
-If upstream is missing, do not start autonomous execution.
+If the repo is not yet CDD-ready but the request is a legitimate new-project or adoption flow, route first through `cdd-init-project` in the main session.
+
+If the repo is not CDD-ready and the request is not an init/adoption flow, stop and route the user back to the core CDD workflow.
+
+If upstream is missing, do not start autonomous implementation/commit/push execution.
 
 ### 2.1 Run config
 
@@ -102,23 +106,16 @@ Run config:
   master_thinking: xhigh
   builder_model: gpt-5.4
   builder_thinking: xhigh
-  control_route: current-session
-  status_route:
-    kind: telegram
-    channel: "<telegram-chat-title>"
-    to: "<telegram-chat-id>"
-    topic_id: <telegram-topic-id>
-  status_route_policy: best_effort
 ```
 
 Rules:
 
-- This block is the only place per-run model and route settings are set.
+- This block is the only place per-run model settings are set.
 - The user may either paste the block directly into the kickoff prompt or let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`.
-- Master Chef must not infer or merge model or route settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
+- Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
 - After kickoff, copy the approved values into `.cdd-runtime/master-chef/run.json`. That file is the durable mirror of the approved Run config, not a second config source.
-- If the human wants different models or a different reporting destination on a given run, change only this block for that run.
-- Keep placeholder examples in shared docs. Real local route identifiers belong only in the local config file or the live prompt for that run.
+- If the human wants different models on a given run, change only this block for that run.
+- Keep shared docs and commits free of local-only operator transport details.
 
 ### 2.2 Local default Run config
 
@@ -137,7 +134,7 @@ Resolution order:
 Privacy rule:
 
 - Treat `~/.openclaw/config/master-chef/default-run-config.yaml` as local operator config.
-- Do not copy raw ids, handles, channel names, or topic ids from it into repo docs, commits, or other shared artifacts.
+- Do not copy unrelated local-only overrides from it into repo docs, commits, or other shared artifacts.
 
 ---
 
@@ -150,11 +147,13 @@ On the first `/cdd-master-chef` turn:
    - `git branch --show-current`
    - `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}`
 2. Inspect development state:
-   - active TODO file
-   - last completed step
-   - next runnable TODO step
+   - active TODO file when present
+   - last completed step when present
+   - next runnable TODO step when present
    - obvious blockers in the working tree
+   - whether the repo first needs `cdd-init-project`
 3. Choose the next action and route it through the right internal skill:
+   - bootstrap path: `cdd-init-project` in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `cdd-implement-todo`
    - delegated exception: `cdd-index` when Master Chef explicitly wants an index refresh
    - Master Chef direct: `cdd-init-project`, `cdd-plan`, or `cdd-refactor` when the repo needs setup, plan repair, or refactor decomposition before Builder work
@@ -164,9 +163,6 @@ On the first `/cdd-master-chef` turn:
    - `master_thinking`
    - `builder_model`
    - `builder_thinking`
-   - `control_route`
-   - `status_route`
-   - `status_route_policy`
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
@@ -176,7 +172,7 @@ On the first `/cdd-master-chef` turn:
    - the approved Run config
    - runtime initialization
    - run lease
-   - optional direct status reporting
+   - in-session reporting expectations
 9. Do not spawn the Builder until the user approves kickoff.
 
 After kickoff approval, the run becomes autonomous.
@@ -212,16 +208,6 @@ Suggested shape:
   "builder_runtime": "subagent",
   "master_session_key": "<main-session-key>",
   "builder_session_key": "<builder-session-key>",
-  "control_route": {
-    "kind": "current-session-route"
-  },
-  "status_route": {
-    "kind": "slack|discord|telegram|none",
-    "channel": "<channel-or-chat-name>",
-    "to": "<destination-id-or-handle>",
-    "topic_id": "<telegram-topic-id>"
-  },
-  "status_route_policy": "best_effort",
   "active_todo_path": "/abs/path/to/TODO.md",
   "active_step": "<exact step heading>",
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
@@ -232,7 +218,6 @@ Suggested shape:
   "last_progress_at_utc": "<ts>",
   "last_master_log_at_utc": "<ts>",
   "last_builder_log_at_utc": "<ts>",
-  "last_status_report_at_utc": "<ts>",
   "builder_restart_count": 0,
   "dispute_loop_count": 0,
   "current_blocker": ""
@@ -377,9 +362,7 @@ After kickoff approval:
    - commit
    - push
    - update runtime state
-   - send full detail to control route
-   - attempt concise direct status delivery if a `status_route` is configured
-   - update `last_status_report_at_utc` if status delivery succeeds
+   - send full detail in the current Master Chef session
 10. Re-inspect TODO state.
 11. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
 12. If no runnable step remains, report `RUN_COMPLETE`.
@@ -497,9 +480,9 @@ A step is not passed unless all are true:
 
 ## 10) Reporting model
 
-Use a simple dual-route model.
+Use a single in-session reporting model.
 
-### Control route
+### Master Chef session
 
 The current session gets:
 
@@ -509,25 +492,11 @@ The current session gets:
 - recovery decisions
 - blockers
 - final summary
+- lifecycle events such as `START`, `BUILDER_RESTARTED`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, `RUN_STOPPED`, and `RUN_COMPLETE`
 
-This route always gets full detail.
+Keep full operational detail here.
 
-### Status route
-
-The main session sends status updates directly to the optional external route.
-A configured `status_route` means Master Chef must attempt direct delivery for key lifecycle events; control-route messages do not satisfy this requirement.
-
-Attempt delivery for:
-
-- `START`
-- `BUILDER_RESTARTED`
-- `STEP_PASS`
-- `STEP_BLOCKED`
-- `BLOCKER_CLEARED`
-- `RUN_STOPPED`
-- `RUN_COMPLETE`
-
-Keep them concise.
+Do not create or persist separate route metadata fields in the shared skill docs or runtime state.
 
 Do not send:
 
@@ -538,14 +507,9 @@ Do not send:
 
 Runtime obligations:
 
-- on successful status delivery, update `last_status_report_at_utc`
-- on failed status delivery, append `STATUS_DELIVERY_FAILED` to `master-chef.jsonl`
-- record the failed event label, route target, policy, and a short error summary when possible
-
-If status delivery fails:
-
-- `best_effort` -> attempt once, record `STATUS_DELIVERY_FAILED`, note it in control route, and continue
-- `required` -> attempt once, record `STATUS_DELIVERY_FAILED`, stop the run, and report blocker
+- append lifecycle and recovery events to `master-chef.jsonl`
+- keep `run.json` focused on run state rather than extra route metadata
+- report blockers and completion clearly in the current session
 
 ---
 
@@ -580,4 +544,3 @@ Use these event labels:
 - `RUN_STOPPED`
 - `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
-- `STATUS_DELIVERY_FAILED`

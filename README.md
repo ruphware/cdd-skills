@@ -44,14 +44,14 @@ If you want useful UI output, provide strong UX mockups with the plan. Without g
 
 This is the master-agent workflow:
 
-- the human supplies one explicit per-run Run config with `master_model`, `master_thinking`, `builder_model`, `builder_thinking`, `control_route`, `status_route`, and `status_route_policy`
-- the human starts Master Chef in an existing repo that already has the CDD boilerplate
+- the human supplies one explicit per-run Run config with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
+- the human starts Master Chef in either an existing CDD-ready repo or a new project folder that should be set up in CDD form first
 - Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval
 - after kickoff, Master Chef drives the Builder automatically with fresh one-step Builder runs and the human mostly checks final results unless Master Chef reports a blocker or deadlock
 
 The Builder in this workflow is an OpenClaw subagent. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack. Those internal Builder skills are generated from the canonical repo source in `skills/` and installed into `~/.openclaw/skills` by `./scripts/install-openclaw.sh`.
 
-Routing note: Master Chef chooses the path. The normal delegated Builder path is `cdd-implement-todo`; `cdd-index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in Master Chef; `cdd-audit-and-implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
+Routing note: Master Chef chooses the path. New projects should normally start with `cdd-init-project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `cdd-implement-todo`; `cdd-index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in Master Chef; `cdd-audit-and-implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
 Source of truth:
 
@@ -149,6 +149,6 @@ For the experimental Master Chef OpenClaw skill:
 
 - install the OpenClaw package
 - prepare one Run config block and set the main session to `master_model` from that block with `/model <master-model>`
-- launch `/cdd-master-chef` from the OpenClaw session referenced by `control_route` in that block, normally the current session
+- launch `/cdd-master-chef` from the OpenClaw session you want to use as Master Chef
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
-- after kickoff, expect Master Chef to handle Builder checks directly in the main session, replace stale Builders quickly with fresh one-step runs, avoid normal session resurrection, stop after repeated failed replacements, and still attempt configured lifecycle status updates through `status_route`
+- after kickoff, expect Master Chef to handle Builder checks directly in the main session, replace stale Builders quickly with fresh one-step runs, avoid normal session resurrection, stop after repeated failed replacements, and keep lifecycle reporting in that same session
