@@ -2,6 +2,25 @@
 
 Chat-Driven-Development skills and process docs.
 
+## Quick Install
+
+Install the repo skills for Codex, Claude Code, and Gemini CLI:
+
+```bash
+npx skills add https://github.com/ruphware/cdd-skills --skill '*' -a codex -a claude-code -a gemini-cli -g
+```
+
+## Basic Commands
+
+Start with these core commands:
+
+- `cdd-boot` — ingest `AGENTS.md` plus project and development docs for vanilla AGENTS-driven work when no other `cdd-*` skill will be used
+- `cdd-plan` — plan changes and TODO steps
+- `cdd-implement-todo` — implement exactly one TODO step and mark that step done on success
+- `cdd-maintain` — archive long CDD files, audit support-doc drift, propose README/spec refreshes for approval, and doctor the codebase for refactor and dead-code signals
+
+Details on the skill packs, manual repo install scripts, and OpenClaw setup are below.
+
 This repo contains two skill blocks.
 
 ## 1. Core: CDD Skills
@@ -22,6 +41,7 @@ Typical runtimes:
 
 - Codex CLI: install to `~/.agents/skills/`, invoke via `$cdd-*`
 - Claude Code: install to `~/.claude/skills/`, invoke via `/cdd-*`
+- Gemini CLI: install the same `cdd-*` skills with the `skills` installer and invoke the same skill names there
 
 Golden path:
 
@@ -78,7 +98,9 @@ Installed form:
 - `python3` — required for OpenClaw Builder skill generation and recommended for local validation
 - writable local repos — required because the Builder edits target workspaces
 
-## Install
+## Manual Install
+
+If you want a local checkout and the repo-managed install scripts instead of the `npx` flow above:
 
 Clone the repo:
 
