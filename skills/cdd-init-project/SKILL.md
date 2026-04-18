@@ -1,6 +1,6 @@
 ---
 name: cdd-init-project
-description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only)."
+description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only; separate confirmation required for clone/remote/init/push actions)."
 disable-model-invocation: true
 ---
 
@@ -21,6 +21,17 @@ Use these repo files as the authoritative workflow and format:
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
 - `docs/prompts/PROMPT-INDEX.md` (if present)
+
+## High-impact action guardrails
+- Stay read-only until the user approves a concrete apply plan.
+- Require a separate explicit confirmation before any networked or repo-admin action, including:
+  - cloning or downloading bootstrap material
+  - creating a GitHub repo or remote
+  - `git init`, connecting a remote, or `git push`
+  - moving or restoring user documents to resolve template path conflicts
+- When asking for that confirmation, list the exact commands or operations, the affected paths, and whether network access is required.
+- Never infer approval for clone/remote/init/push operations from general interest in adopting CDD.
+- If the user approves document edits but not repo-admin or networked actions, stop at that boundary and report the blocked next step.
 
 ## Interactive planning contract
 Planning in this skill is interactive, review-driven, and continuously refined.
@@ -96,7 +107,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
 3) Ask whether they want, using the interaction contract above:
    - a GitHub-backed repo (default: private), or
    - a local-only repo for now
-4) If GitHub-backed:
+4) If GitHub-backed and separately approved for networked/repo-admin actions:
    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
    - materialize the boilerplate files into the current folder without cloning to a sibling directory and without changing directories
    - never keep the template repo's git history as part of the new project history
@@ -104,7 +115,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
    - connect/push the resulting project history so the remote matches the project history rather than the template history
 5) If local-only:
-   - ask for a local path to a `cdd-boilerplate` checkout (or permission to clone it)
+   - ask for a local path to a `cdd-boilerplate` checkout (preferred), or ask for separate permission to clone it
    - materialize the boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
@@ -134,10 +145,10 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 5) Ask whether they want, using the interaction contract above:
    - a GitHub-backed repo (default: private), or
    - a local-only repo for now
-6) Before materializing the boilerplate, stage discovered source documents that would conflict with template paths.
+6) Before materializing the boilerplate, and only after explicit apply approval, stage discovered source documents that would conflict with template paths.
    - restore them afterward under `docs/source-material/`, preserving relative paths as much as possible
    - use `docs/source-material/` as the default input set for Step 00
-7) If GitHub-backed:
+7) If GitHub-backed and separately approved for networked/repo-admin actions:
    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
    - materialize the boilerplate files into the current folder without cloning to a sibling directory and without changing directories
    - never keep the template repo's git history as part of the new project history
@@ -145,7 +156,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
    - connect/push the resulting project history so the remote matches the project history rather than the template history
 8) If local-only:
-   - ask for a local path to a `cdd-boilerplate` checkout (or permission to clone it)
+   - ask for a local path to a `cdd-boilerplate` checkout (preferred), or ask for separate permission to clone it
    - materialize the boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
@@ -213,5 +224,6 @@ Draft a patch proposal grouped by file, including:
 
 ### Phase 3 — Apply
 1) Ask: **Approve and apply this migration plan?**
-2) Apply the approved changes.
-3) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-index` as the next action.
+2) If the approved plan includes clone, remote creation, git initialization, push, or path-moving operations, ask a second confirmation listing those exact operations before executing them.
+3) Apply only the approved changes.
+4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-index` as the next action.
