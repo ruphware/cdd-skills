@@ -1,15 +1,17 @@
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 # CDD Skills
 
-CDD workflow skills for Codex, Claude Code, and Gemini CLI.
+CDD workflow skills for agentic software engineering.
 
 ## Quick Install
 
-Install the repo skills for Codex, Claude Code, and Gemini CLI:
+Install the core `skills/` pack for Codex, Claude Code, Gemini CLI and others (adjust):
 
 ```bash
-npx skills add https://github.com/ruphware/cdd-skills --skill '*' -a codex -a claude-code -a gemini-cli -g
+npx skills add https://github.com/ruphware/cdd-skills/tree/main/skills --skill '*' -a codex -a claude-code -a gemini-cli -g
 ```
+
+Do not use the repo root URL here. The `skills` CLI scans both the repo root and `skills/`, so the root URL also picks up the `openclaw/` package as well.
 
 ## Basic Commands
 
