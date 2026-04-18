@@ -1,6 +1,6 @@
-# CDD Skills
+# CDD Skills [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 
-Chat-Driven-Development skills and process docs.
+CDD workflow skills for Codex, Claude Code, and Gemini CLI.
 
 ## Quick Install
 
@@ -19,9 +19,12 @@ Start with these core commands:
 - `cdd-implement-todo` — implement exactly one TODO step and mark that step done on success
 - `cdd-maintain` — archive long CDD files, audit support-doc drift, propose README/spec refreshes for approval, and doctor the codebase for refactor and dead-code signals
 
-Details on the skill packs, manual repo install scripts, and OpenClaw setup are below.
+## What's Included
 
-This repo contains two skill blocks.
+- Core `cdd-*` skills for the normal single-agent, human-in-the-loop CDD workflow
+- Optional `cdd-master-chef` OpenClaw package for orchestrated master-agent runs
+
+Details on the skill packs, manual repo install scripts, and OpenClaw setup are below.
 
 ## 1. Core: CDD Skills
 
