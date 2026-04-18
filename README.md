@@ -178,3 +178,7 @@ For the experimental Master Chef OpenClaw skill:
 - launch `/cdd-master-chef` from the OpenClaw session you want to use as Master Chef
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
 - after kickoff, expect Master Chef to handle Builder checks directly in the main session, replace stale Builders quickly with fresh one-step runs, avoid normal session resurrection, stop after repeated failed replacements, and keep lifecycle reporting in that same session
+
+## License
+
+Free-to-use-adjust-just-don't-blame-me-for-anything-licence. _Peace._ ✌️
