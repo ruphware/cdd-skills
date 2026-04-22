@@ -230,6 +230,72 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     assert (
         "If the user explicitly prefers a local checkout or network access is unavailable, you may use a local `cdd-boilerplate` checkout as the migration fallback source."
     ) in skill_text, f"existing repo migration fallback rule missing in {skill_md}"
+    assert (
+        "For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and preserve the CDD workflow language under the drift rules below instead of freehand rewriting."
+    ) in skill_text, f"methodology-stable contract preface missing in {skill_md}"
+    assert "## Contract-surface taxonomy and drift rules" in skill_text, (
+        f"contract-surface taxonomy heading missing in {skill_md}"
+    )
+    assert (
+        "- Treat these files as methodology-stable contract surfaces that should be materialized from `cdd-boilerplate` and kept aligned with its CDD workflow language:"
+    ) in skill_text, f"stable contract taxonomy missing in {skill_md}"
+    assert (
+        "- Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:"
+    ) in skill_text, f"repo-specific contract taxonomy missing in {skill_md}"
+    assert (
+        "- `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology."
+    ) in skill_text, f"bounded AGENTS drift rule missing in {skill_md}"
+    assert (
+        "- `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ or `TODO-*.md`; do not replace Step 00 with a repo-specific adoption format."
+    ) in skill_text, f"TODO Step 00 preservation rule missing in {skill_md}"
+    assert (
+        "- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and archive or summarize mechanics. Repo-specific content belongs in entries and summaries only."
+    ) in skill_text, f"JOURNAL preservation rule missing in {skill_md}"
+    assert (
+        "- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt."
+    ) in skill_text, f"PROMPT-INDEX preservation rule missing in {skill_md}"
+    assert (
+        "- `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality."
+    ) in skill_text, f"repo-specific output boundary missing in {skill_md}"
+    assert (
+        skill_text.count(
+            "if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above"
+        )
+        >= 3
+    ), f"bounded AGENTS flow guidance missing in {skill_md}"
+    assert (
+        skill_text.count(
+            "extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`"
+        )
+        >= 3
+    ), f"TODO Step 00 flow preservation missing in {skill_md}"
+    assert (
+        skill_text.count(
+            "keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them"
+        )
+        >= 3
+    ), f"JOURNAL/PROMPT-INDEX flow preservation missing in {skill_md}"
+    assert "Add repo-specific planning to `TODO.md`:" in skill_text, (
+        f"existing-repo TODO planning rule missing in {skill_md}"
+    )
+    assert "- preserve the boilerplate header, Step 00, and Step template" in skill_text, (
+        f"existing-repo TODO scaffold preservation missing in {skill_md}"
+    )
+    require_any_substring(
+        skill_text,
+        (
+            "- append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-index`)",
+            "- append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `cdd-index`)",
+        ),
+        skill_md,
+        "existing-repo Step 01+ append rule",
+    )
+    assert "a Step 00-style “CDD adoption” step" not in skill_text, (
+        f"old repo-specific Step 00 adoption wording should not appear in {skill_md}"
+    )
+    assert "Add an adoption plan to `TODO.md`:" not in skill_text, (
+        f"old TODO adoption-plan wording should not appear in {skill_md}"
+    )
 
 
 def validate_builder_skill(skill_dir: Path) -> None:
