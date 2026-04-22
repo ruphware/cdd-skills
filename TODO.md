@@ -73,3 +73,76 @@ Make `cdd-init-project` require the exact CDD README header block in initialized
 - Read the updated init skill and confirm the exact block is present for fresh/bootstrap README generation.
 - Confirm the placement rule says the block goes under the title and project description.
 - Confirm existing-repo adoption now asks before modifying `README.md` with that full block.
+
+## Step 03 — Bound contract-doc drift in `cdd-init-project`
+
+### Goal
+
+Make `cdd-init-project` distinguish methodology-stable CDD contract docs from repo-specific docs so init and adoption preserve boilerplate workflow language while still allowing bounded repo fit.
+
+### Constraints
+
+- `AGENTS.md` may only receive small repo-specific adjustments that lock in language, framework, or structure; do not rewrite or remove boilerplate methodology sections, rule numbering, or output contract.
+- `TODO.md` must preserve the boilerplate header, Step 00, and Step template; repo-specific planning starts in Step 01+.
+- `docs/JOURNAL.md` must preserve the boilerplate rules, entry format, and archive mechanics; repo-specific content is limited to journal entries and summaries.
+- `docs/prompts/PROMPT-INDEX.md` must stay a boilerplate-stable regeneration prompt rather than a repo-specific rewrite.
+- `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` remain repo-specific outputs.
+
+### Tasks
+
+- [ ] Update `skills/cdd-init-project/SKILL.md` to add an explicit contract-surface taxonomy that separates methodology-stable files from repo-specific files.
+- [ ] Define per-file drift rules for `AGENTS.md`, `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`, including where repo-specific content is allowed and where it is not.
+- [ ] Update the empty-dir, docs-seeded, fresh-boilerplate, and existing-repo adoption flows so stable docs are materialized from `cdd-boilerplate` under those drift rules instead of being freely rewritten.
+- [ ] Replace existing-repo wording that calls for a custom “Step 00-style” adoption step with wording that preserves boilerplate `TODO.md` Step 00 and appends repo-specific Step 01+ work only where needed.
+
+### Implementation notes
+
+- Keep the canonical bootstrap-source and approval-gate rules unchanged.
+- Be explicit about allowed repo-specific writes: `AGENTS.md` repo details, `docs/JOURNAL.md` entries, `TODO.md` Step 01+, and the normal repo-specific `README.md` / PRD / Blueprint outputs.
+- Prefer rules that block methodology drift by default instead of relying on examples alone.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [ ] Read the updated init skill and confirm it classifies methodology-stable vs repo-specific contract surfaces.
+- [ ] Confirm `AGENTS.md` methodology stays boilerplate-stable while limited repo-detail tailoring is still allowed.
+- [ ] Confirm `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md` are no longer described as repo-specific rewrites.
+
+## Step 04 — Validate contract-doc drift rules
+
+### Goal
+
+Add local validation that fails when `cdd-init-project` reopens methodology drift in CDD contract docs.
+
+### Constraints
+
+- The validator must verify the contract-surface taxonomy and drift boundaries without relying on network access.
+- Validation must fail if the skill allows a custom `TODO.md` Step 00 or repo-specific rewrite of `docs/JOURNAL.md` or `docs/prompts/PROMPT-INDEX.md`.
+- Validation must allow bounded `AGENTS.md` repo-fit edits without allowing methodology edits.
+- Keep the checks focused on the canonical skill source unless a failing test proves another surface needs coverage.
+
+### Tasks
+
+- [ ] Extend `scripts/validate_skills.py` to assert that the init skill declares the methodology-stable contract surfaces and the repo-specific surfaces.
+- [ ] Add assertions that the init skill preserves boilerplate `TODO.md` Step 00 and the step template instead of replacing them with a repo-specific adoption template.
+- [ ] Add assertions that the init skill preserves boilerplate `docs/JOURNAL.md` structure and `docs/prompts/PROMPT-INDEX.md` prompt guidance rather than synthesizing replacements.
+- [ ] Add assertions that the init skill allows only bounded `AGENTS.md` repo-detail adjustments while keeping methodology sections stable.
+- [ ] Add any narrow negative checks needed to catch the current drift language if it reappears.
+
+### Implementation notes
+
+- Prefer positive assertions for the desired rules plus narrow negative assertions for known bad patterns.
+- If the validator becomes hard to read, extract a helper instead of expanding fragile regex blocks.
+- Touch `scripts/test-skill-audit.sh` only if a validation gap cannot be covered cleanly in `scripts/validate_skills.py`.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [ ] Run the validator and confirm it would fail if the skill text reintroduced repo-specific rewrites for `TODO.md`, `docs/JOURNAL.md`, or `docs/prompts/PROMPT-INDEX.md`.
+- [ ] Confirm the validator still permits repo-specific `README.md` / PRD / Blueprint generation and limited `AGENTS.md` repo-detail edits.
