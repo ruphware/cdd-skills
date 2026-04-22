@@ -50,13 +50,13 @@ Make `cdd-init-project` require the exact CDD README header block in initialized
 
 ### Tasks
 
-- [ ] Update `skills/cdd-init-project/SKILL.md` so README-drafting steps for fresh/bootstrap flows require this exact block under the title and project description:
+- [x] Update `skills/cdd-init-project/SKILL.md` so README-drafting steps for fresh/bootstrap flows require this exact block under the title and project description:
   `[![CDD Project](https://img.shields.io/badge/CDD-Project-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-boilerplate)`
   `[![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)`
   `> This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.`
   `> Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.`
-- [ ] Update existing-repo adoption guidance so the skill must ask for confirmation before adding that full block to an existing `README.md`.
-- [ ] Extend `scripts/validate_skills.py` to assert both the exact block requirement and the existing-README confirmation rule.
+- [x] Update existing-repo adoption guidance so the skill must ask for confirmation before adding that full block to an existing `README.md`.
+- [x] Extend `scripts/validate_skills.py` to assert both the exact block requirement and the existing-README confirmation rule.
 
 ### Implementation notes
 

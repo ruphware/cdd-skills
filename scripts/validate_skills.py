@@ -194,6 +194,33 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "ask for a local path to a `cdd-boilerplate` checkout (preferred)" not in skill_text, (
         f"local checkout should not be preferred in {skill_md}"
     )
+    assert (
+        "For fresh/bootstrap repos, require this exact `README.md` block under the title and short project description, before the rest of the runbook content:"
+    ) in skill_text, f"README header placement rule missing in {skill_md}"
+    assert (
+        "[![CDD Project](https://img.shields.io/badge/CDD-Project-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-boilerplate)"
+    ) in skill_text, f"CDD project badge rule missing in {skill_md}"
+    assert (
+        "[![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)"
+    ) in skill_text, f"CDD skills badge rule missing in {skill_md}"
+    assert (
+        "> This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract."
+    ) in skill_text, f"CDD workflow note missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "> Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.",
+            "> Start with `cdd-boot`. Use `cdd-plan` + `cdd-implement-todo` for feature work, `cdd-maintain` for upkeep and drift control, and `cdd-refactor` for structured refactors.",
+        ),
+        skill_md,
+        "CDD command note",
+    )
+    assert (
+        "For existing-repo adoption, consider adding that full CDD header block to the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit."
+    ) in skill_text, f"existing README confirmation rule missing in {skill_md}"
+    assert "Avoid duplicating the block if it or its badges already exist." in skill_text, (
+        f"README duplication guardrail missing in {skill_md}"
+    )
 
 
 def validate_builder_skill(skill_dir: Path) -> None:
