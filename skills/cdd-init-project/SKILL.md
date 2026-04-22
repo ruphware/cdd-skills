@@ -22,6 +22,8 @@ Use these repo files as the authoritative workflow and format:
 - `docs/specs/blueprint.md`
 - `docs/prompts/PROMPT-INDEX.md` (if present)
 
+For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and preserve the CDD workflow language under the drift rules below instead of freehand rewriting.
+
 ## High-impact action guardrails
 - Stay read-only until the user approves a concrete apply plan.
 - Require a separate explicit confirmation before any networked or repo-admin action, including:
@@ -50,6 +52,22 @@ Use these repo files as the authoritative workflow and format:
 
 - For existing-repo adoption, consider adding that full CDD header block to the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit.
 - Avoid duplicating the block if it or its badges already exist.
+
+## Contract-surface taxonomy and drift rules
+- Treat these files as methodology-stable contract surfaces that should be materialized from `cdd-boilerplate` and kept aligned with its CDD workflow language:
+  - `AGENTS.md`
+  - `TODO.md`
+  - `docs/JOURNAL.md`
+  - `docs/prompts/PROMPT-INDEX.md`
+- Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:
+  - `README.md`
+  - `docs/specs/prd.md`
+  - `docs/specs/blueprint.md`
+- `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology.
+- `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ or `TODO-*.md`; do not replace Step 00 with a repo-specific adoption format.
+- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and archive or summarize mechanics. Repo-specific content belongs in entries and summaries only.
+- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt.
+- `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
 
 ## Interactive planning contract
 Planning in this skill is interactive, review-driven, and continuously refined.
@@ -145,10 +163,12 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - Recommend one option based on the workspace review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file) to:
+   - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD header block
-   - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
+   - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
+   - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
 9) Ask: **Approve and apply these changes?**
 10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -190,10 +210,12 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
     - Recommend one option based on the workspace review.
     - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 11) Draft proposed edits (grouped by file) to:
+   - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD header block
-   - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
+   - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
+   - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
 12) Ask: **Approve and apply these changes?**
 13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -211,10 +233,12 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - Recommend one option based on the workspace review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 6) Draft proposed edits (grouped by file) to:
+   - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD header block
-   - extend `TODO.md` with Step 01+ if needed (use the Step template already in `TODO.md`)
+   - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
+   - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
 7) Ask: **Approve and apply these changes?**
 8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -242,15 +266,17 @@ Before drafting the patch proposal, present 2-3 migration shapes when there is a
 - If the user explicitly prefers a local checkout or network access is unavailable, you may use a local `cdd-boilerplate` checkout as the migration fallback source.
 
 Draft a patch proposal grouped by file, including:
-1) Add the CDD contract files (prefer matching the structure from `https://github.com/ruphware/cdd-boilerplate`):
-   - `AGENTS.md`, `TODO.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/JOURNAL.md`, `docs/prompts/PROMPT-INDEX.md`
+1) Add the CDD contract files using the taxonomy above:
+   - `AGENTS.md`: start from the boilerplate contract and allow only bounded repo-fit edits that do not change the CDD methodology
+   - `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds
+   - `docs/specs/prd.md` and `docs/specs/blueprint.md`: fill from the actual repo rather than copying boilerplate placeholders forward
 2) Reorganize docs:
    - keep `README.md` as the runbook entrypoint
    - if the current `README.md` does not already contain the required CDD header block, ask for explicit confirmation before proposing or applying that full-block README edit during adoption
    - move/normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links
-3) Add an adoption plan to `TODO.md`:
-   - a Step 00-style “CDD adoption” step
-   - a step to generate/refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-index`)
+3) Add repo-specific planning to `TODO.md`:
+   - preserve the boilerplate header, Step 00, and Step template
+   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-index`)
 
 ### Phase 3 — Apply
 1) Ask: **Approve and apply this migration plan?**
