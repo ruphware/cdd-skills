@@ -237,9 +237,12 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 Before drafting the patch proposal, present 2-3 migration shapes when there is a real decision about scope, doc reorganization, or TODO placement.
 - Recommend one option based on the workspace review.
 - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
+- Use `https://github.com/ruphware/cdd-boilerplate` as the source of truth for the CDD contract when migrating an existing repo.
+- If migration requires copying, downloading, cloning, or otherwise materializing contract files from that source, ask for separate explicit confirmation before doing so.
+- If the user explicitly prefers a local checkout or network access is unavailable, you may use a local `cdd-boilerplate` checkout as the migration fallback source.
 
 Draft a patch proposal grouped by file, including:
-1) Add the CDD contract files (prefer matching `cdd-boilerplate` structure):
+1) Add the CDD contract files (prefer matching the structure from `https://github.com/ruphware/cdd-boilerplate`):
    - `AGENTS.md`, `TODO.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/JOURNAL.md`, `docs/prompts/PROMPT-INDEX.md`
 2) Reorganize docs:
    - keep `README.md` as the runbook entrypoint

@@ -221,6 +221,15 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "Avoid duplicating the block if it or its badges already exist." in skill_text, (
         f"README duplication guardrail missing in {skill_md}"
     )
+    assert (
+        "Use `https://github.com/ruphware/cdd-boilerplate` as the source of truth for the CDD contract when migrating an existing repo."
+    ) in skill_text, f"existing repo migration source-of-truth rule missing in {skill_md}"
+    assert (
+        "If migration requires copying, downloading, cloning, or otherwise materializing contract files from that source, ask for separate explicit confirmation before doing so."
+    ) in skill_text, f"existing repo migration approval gate missing in {skill_md}"
+    assert (
+        "If the user explicitly prefers a local checkout or network access is unavailable, you may use a local `cdd-boilerplate` checkout as the migration fallback source."
+    ) in skill_text, f"existing repo migration fallback rule missing in {skill_md}"
 
 
 def validate_builder_skill(skill_dir: Path) -> None:
