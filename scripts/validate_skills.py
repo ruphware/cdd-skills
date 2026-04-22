@@ -78,9 +78,31 @@ def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> 
             "Ask which of the newly created steps to implement first using guided options; recommend the first runnable new step by default.",
             "Ask which of the newly created steps to implement first using the same bottom-positioned guided options; recommend the first runnable new step by default.",
             "Ask which of the newly created steps to implement first using the same bottom-positioned, selector-prefixed guided options; recommend the first runnable new step by default.",
+            "Ask which newly created step should be implemented now using the same bottom-positioned, selector-prefixed guided options; recommend the first runnable new step by default.",
         ),
         skill_md,
         "guided implementation-step selection",
+    )
+    assert (
+        "The selected implementation option serves as the explicit approval to start that step immediately."
+    ) in skill_text, f"combined implementation approval guidance missing in {skill_md}"
+    assert "Include a clear stop-after-plan option." in skill_text, (
+        f"stop-after-plan option guidance missing in {skill_md}"
+    )
+    assert (
+        "If the user chooses the stop-after-plan option, stop and report the next recommended step."
+    ) in skill_text, f"stop-after-plan handling missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "If the user chooses a step, implement that step immediately using the same workflow as `$cdd-implement-todo`.",
+            "If the user chooses a step, implement that step immediately using the same workflow as `cdd-implement-todo`.",
+        ),
+        skill_md,
+        "immediate implementation handoff",
+    )
+    assert "Ask: **Approve starting implementation now?**" not in skill_text, (
+        f"repetitive implementation confirmation should not appear in {skill_md}"
     )
 
 

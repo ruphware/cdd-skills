@@ -146,3 +146,40 @@ Add local validation that fails when `cdd-init-project` reopens methodology drif
 
 - [ ] Run the validator and confirm it would fail if the skill text reintroduced repo-specific rewrites for `TODO.md`, `docs/JOURNAL.md`, or `docs/prompts/PROMPT-INDEX.md`.
 - [ ] Confirm the validator still permits repo-specific `README.md` / PRD / Blueprint generation and limited `AGENTS.md` repo-detail edits.
+
+## Step 05 — Collapse repetitive implementation confirmations in `cdd-audit-and-implement`
+
+### Goal
+
+Make `cdd-audit-and-implement` keep its explicit approval model without asking the user to reconfirm implementation immediately after they already chose the first step to implement.
+
+### Constraints
+
+- Preserve the skill's plan-approval gate before any TODO edits are applied.
+- Preserve an explicit implementation-start decision after the TODO plan is applied.
+- In the normal path, the step-selection prompt must also serve as the implementation-start approval for the selected step.
+- Keep a clear non-implementation exit path so the user can stop after plan application.
+- Align the behavior with `cdd-implement-todo`, which already treats an explicitly chosen step as authoritative.
+
+### Tasks
+
+- [x] Update `skills/cdd-audit-and-implement/SKILL.md` so Flow B collapses step selection and implementation approval into one guided options message.
+- [x] Replace the separate `Approve starting implementation now?` follow-up with wording that makes the selected option itself the implementation approval, while still offering a stop-after-plan option.
+- [x] Keep the recommendation in dependency order and make the stop path explicit rather than implied.
+- [x] Extend `scripts/validate_skills.py` to assert the non-redundant Flow B wording and to reject the old repetitive-confirmation prompt if it reappears.
+
+### Implementation notes
+
+- Keep the skill's top-level “two approvals” contract, but make the second approval happen inside the step-selection decision instead of in a separate follow-up message.
+- Prefer wording such as “Which newly created step should I implement now?” with options that map directly to “implement this step now” or “stop after planning”.
+- Touch `skills/cdd-audit-and-implement/SKILL.md` and `scripts/validate_skills.py` only unless a failing check proves another surface is required.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [ ] Read the updated audit skill and confirm the first-step selection prompt doubles as the implementation-start approval.
+- [ ] Confirm the skill still offers a clear stop-after-plan path without forcing implementation.
+- [ ] Confirm the old standalone `Approve starting implementation now?` wording is gone.
