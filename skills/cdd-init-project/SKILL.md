@@ -1,6 +1,6 @@
 ---
 name: cdd-init-project
-description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only; separate confirmation required for clone/remote/init/push actions)."
+description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only; separate confirmation required for bootstrap copy/download and clone/remote/init/push actions)."
 disable-model-invocation: true
 ---
 
@@ -32,6 +32,11 @@ Use these repo files as the authoritative workflow and format:
 - When asking for that confirmation, list the exact commands or operations, the affected paths, and whether network access is required.
 - Never infer approval for clone/remote/init/push operations from general interest in adopting CDD.
 - If the user approves document edits but not repo-admin or networked actions, stop at that boundary and report the blocked next step.
+
+## Canonical bootstrap source
+- Treat `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source when boilerplate material is needed.
+- Even when that canonical source is identified, do not copy, download, clone, or otherwise materialize boilerplate from it until the user gives separate explicit confirmation.
+- If the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source.
 
 ## Interactive planning contract
 Planning in this skill is interactive, review-driven, and continuously refined.
@@ -108,15 +113,19 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - a GitHub-backed repo (default: private), or
    - a local-only repo for now
 4) If GitHub-backed and separately approved for networked/repo-admin actions:
+   - use `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source
+   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-   - materialize the boilerplate files into the current folder without cloning to a sibling directory and without changing directories
+   - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
    - never keep the template repo's git history as part of the new project history
    - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history
    - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
    - connect/push the resulting project history so the remote matches the project history rather than the template history
 5) If local-only:
-   - ask for a local path to a `cdd-boilerplate` checkout (preferred), or ask for separate permission to clone it
-   - materialize the boilerplate into the current folder without changing directories
+   - default the bootstrap source to `https://github.com/ruphware/cdd-boilerplate`
+   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
+   - if the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source
+   - materialize the approved boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
 7) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
@@ -149,15 +158,19 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - restore them afterward under `docs/source-material/`, preserving relative paths as much as possible
    - use `docs/source-material/` as the default input set for Step 00
 7) If GitHub-backed and separately approved for networked/repo-admin actions:
+   - use `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source
+   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-   - materialize the boilerplate files into the current folder without cloning to a sibling directory and without changing directories
+   - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
    - never keep the template repo's git history as part of the new project history
    - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history
    - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
    - connect/push the resulting project history so the remote matches the project history rather than the template history
 8) If local-only:
-   - ask for a local path to a `cdd-boilerplate` checkout (preferred), or ask for separate permission to clone it
-   - materialize the boilerplate into the current folder without changing directories
+   - default the bootstrap source to `https://github.com/ruphware/cdd-boilerplate`
+   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
+   - if the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source
+   - materialize the approved boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
 10) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.

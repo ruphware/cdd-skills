@@ -14,10 +14,10 @@ Make `cdd-init-project` treat `https://github.com/ruphware/cdd-boilerplate` as t
 
 ### Tasks
 
-- [ ] Update `skills/cdd-init-project/SKILL.md` so bootstrap-source language names `https://github.com/ruphware/cdd-boilerplate` as the canonical source in Empty-directory and Docs-seeded flows.
-- [ ] Rewrite bootstrap-path instructions so the skill asks for explicit approval before copying, cloning, or otherwise materializing boilerplate from that GitHub source, instead of implying that the source can be used immediately.
-- [ ] Keep local checkout usage as an explicit fallback or user-selected alternative rather than the preferred default.
-- [ ] Extend `scripts/validate_skills.py` to assert the init skill includes the direct GitHub source rule and the explicit approval rule for copying/downloading from it.
+- [x] Update `skills/cdd-init-project/SKILL.md` so bootstrap-source language names `https://github.com/ruphware/cdd-boilerplate` as the canonical source in Empty-directory and Docs-seeded flows.
+- [x] Rewrite bootstrap-path instructions so the skill asks for explicit approval before copying, cloning, or otherwise materializing boilerplate from that GitHub source, instead of implying that the source can be used immediately.
+- [x] Keep local checkout usage as an explicit fallback or user-selected alternative rather than the preferred default.
+- [x] Extend `scripts/validate_skills.py` to assert the init skill includes the direct GitHub source rule and the explicit approval rule for copying/downloading from it.
 
 ### Implementation notes
 

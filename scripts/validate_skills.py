@@ -180,6 +180,22 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     )
 
 
+def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the init skill keeps the canonical boilerplate source guardrails."""
+    assert (
+        "Treat `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source when boilerplate material is needed."
+    ) in skill_text, f"canonical bootstrap source rule missing in {skill_md}"
+    assert (
+        "Even when that canonical source is identified, do not copy, download, clone, or otherwise materialize boilerplate from it until the user gives separate explicit confirmation."
+    ) in skill_text, f"bootstrap approval gate missing in {skill_md}"
+    assert (
+        "If the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source."
+    ) in skill_text, f"local checkout fallback rule missing in {skill_md}"
+    assert "ask for a local path to a `cdd-boilerplate` checkout (preferred)" not in skill_text, (
+        f"local checkout should not be preferred in {skill_md}"
+    )
+
+
 def validate_builder_skill(skill_dir: Path) -> None:
     """Validate one Builder skill directory under skills/."""
     skill_md = skill_dir / "SKILL.md"
@@ -213,6 +229,8 @@ def validate_builder_skill(skill_dir: Path) -> None:
         validate_boot_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-maintain":
         validate_maintain_skill_text(skill_text, skill_md)
+    if skill_dir.name == "cdd-init-project":
+        validate_init_project_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-audit-and-implement":
         validate_audit_and_implement_skill_text(skill_text, skill_md)
     if skill_dir.name in {
@@ -329,6 +347,8 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 validate_boot_skill_text(skill_text, skill_md)
             if skill_name == "cdd-maintain":
                 validate_maintain_skill_text(skill_text, skill_md)
+            if skill_name == "cdd-init-project":
+                validate_init_project_skill_text(skill_text, skill_md)
             if skill_name == "cdd-audit-and-implement":
                 validate_audit_and_implement_skill_text(skill_text, skill_md)
             if skill_name in {
