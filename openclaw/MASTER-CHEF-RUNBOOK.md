@@ -358,14 +358,18 @@ After kickoff approval:
 6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
 7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh one-step Builder run for the same step, and update runtime/log evidence immediately.
 8. Run Master Chef QA and step-level UAT.
-9. If the step passes:
+9. If Master Chef QA rejects the Builder result:
+   - record the QA findings in `master-chef.jsonl`
+   - either push the findings to a fresh Builder run for the same step or fix the issue directly in Master Chef
+   - re-run Master Chef QA and step-level UAT before passing the step
+10. If the step passes:
    - commit
    - push
    - update runtime state
-   - send full detail in the current Master Chef session
-10. Re-inspect TODO state.
-11. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
-12. If no runnable step remains, report `RUN_COMPLETE`.
+   - advertise `STEP_PASS` with full detail in the current Master Chef session
+11. Re-inspect TODO state.
+12. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
+13. If no runnable step remains, report `RUN_COMPLETE`.
 
 Only stop autonomy when:
 
@@ -471,10 +475,16 @@ A step is not passed unless all are true:
 - Builder evidence is concrete
 - `hard_gate` validations passed
 - `soft_signal` failures were reviewed and do not hide a real blocker
+- any Master Chef QA rejection was remediated and rechecked
 - the selected TODO step was updated correctly
 - step-level UAT is explicit and approved
 - commit and push succeeded
 - runtime files and logs reflect the new state
+- `STEP_PASS` was advertised in the current Master Chef session before automatic continuation
+
+### QA rejection path
+
+When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either a fresh one-step Builder run for the same step or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
 
 ---
 

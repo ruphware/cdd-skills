@@ -154,6 +154,8 @@ Default delegated path:
 - Builder uses the internal OpenClaw `cdd-implement-todo` skill for that step in a fresh one-step run
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
+- If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
+- Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
 - if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
 
 Delegated exception:

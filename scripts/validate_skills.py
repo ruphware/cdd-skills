@@ -371,6 +371,12 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     skill_md = repo_root / "openclaw" / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
     skill_text = skill_md.read_text(encoding="utf-8")
+    runbook_md = repo_root / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
+    readme_md = repo_root / "openclaw" / "README.md"
+    harness_md = repo_root / "openclaw" / "MASTER-CHEF-TEST-HARNESS.md"
+    runbook_text = runbook_md.read_text(encoding="utf-8")
+    readme_text = readme_md.read_text(encoding="utf-8")
+    harness_text = harness_md.read_text(encoding="utf-8")
     meta = frontmatter(skill_md)
     require_field(meta, r"^name:\s*cdd-master-chef\s*$", skill_md, "name")
     require_field(meta, r"^description:\s*.+", skill_md, "description")
@@ -405,6 +411,33 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     )
     assert "Allowed bootstrap path: a new or adoptable project folder that should be brought into the CDD contract first via `cdd-init-project`" in skill_text, (
         f"new-project CDD bootstrap contract missing in {skill_md}"
+    )
+    assert "if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass" in skill_text, (
+        f"Master Chef QA remediation contract missing in {skill_md}"
+    )
+    assert "advertise `STEP_PASS` with the full result, evidence, and decision trail in the current Master Chef session" in skill_text, (
+        f"session-native STEP_PASS advertising missing in {skill_md}"
+    )
+    assert "re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains" in skill_text, (
+        f"automatic TODO continuation contract missing in {skill_md}"
+    )
+    assert "When Master Chef rejects Builder output during QA" in runbook_text, (
+        f"QA rejection procedure missing in {runbook_md}"
+    )
+    assert "cannot be passed, committed, pushed, or advertised as `STEP_PASS`" in runbook_text, (
+        f"pre-remediation pass guardrail missing in {runbook_md}"
+    )
+    assert "then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes" in runbook_text, (
+        f"QA remediation continuation path missing in {runbook_md}"
+    )
+    assert "Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation" in readme_text, (
+        f"user-facing STEP_PASS advertising missing in {readme_md}"
+    )
+    assert "Prompt J - QA reject remediation" in harness_text, (
+        f"QA reject remediation harness case missing in {harness_md}"
+    )
+    assert "QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation." in harness_text, (
+        f"QA remediation pass criterion missing in {harness_md}"
     )
 
 

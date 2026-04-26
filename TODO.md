@@ -199,11 +199,11 @@ Make `cdd-master-chef` explicitly run the normal development loop as Builder com
 
 ### Tasks
 
-- [ ] Update `openclaw/SKILL.md` to state the full pass/remediation/autocontinue loop.
-- [ ] Update `openclaw/MASTER-CHEF-RUNBOOK.md` with the bad-QA remediation path and required evidence before `STEP_PASS`.
-- [ ] Update `openclaw/README.md` with the concise user-facing loop behavior.
-- [ ] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with a QA-reject/remediation case.
-- [ ] Extend `scripts/validate_skills.py` to assert the pass/remediation/session-advertising/autocontinue contract.
+- [x] Update `openclaw/SKILL.md` to state the full pass/remediation/autocontinue loop.
+- [x] Update `openclaw/MASTER-CHEF-RUNBOOK.md` with the bad-QA remediation path and required evidence before `STEP_PASS`.
+- [x] Update `openclaw/README.md` with the concise user-facing loop behavior.
+- [x] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with a QA-reject/remediation case.
+- [x] Extend `scripts/validate_skills.py` to assert the pass/remediation/session-advertising/autocontinue contract.
 
 ### Implementation notes
 

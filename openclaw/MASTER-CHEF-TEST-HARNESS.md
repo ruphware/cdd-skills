@@ -174,7 +174,20 @@ If the run is complete, send the final results summary.
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
   - lifecycle events such as `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are reported clearly in the current session
 
-### Prompt J - Deadlock
+### Prompt J - QA reject remediation
+
+```text
+/cdd-master-chef TEST ONLY: simulate that Builder returned a result that fails Master Chef QA.
+Keep the same TODO step active, record concrete QA findings, choose either a fresh Builder run for the same step or a direct Master Chef fix, re-run QA/UAT, and only then commit, push, advertise STEP_PASS, and continue automatically.
+```
+
+- [ ] Expected:
+  - no `STEP_PASS`, commit, or push happens before remediation and re-run QA
+  - QA findings are recorded in `master-chef.jsonl`
+  - remediation uses either a fresh one-step Builder run for the same step or a direct Master Chef fix
+  - after QA passes, `STEP_PASS` is advertised in the current Master Chef session before TODO re-inspection and automatic continuation
+
+### Prompt K - Deadlock
 
 ```text
 /cdd-master-chef TEST ONLY: simulate two failed Builder replacements without forward progress.
@@ -185,7 +198,7 @@ Stop the run and report DEADLOCK_STOPPED.
   - run stops cleanly
   - deadlock is reported clearly
 
-### Prompt K - In-session reporting contract
+### Prompt L - In-session reporting contract
 
 ```text
 /cdd-master-chef TEST ONLY: simulate one successful STEP_PASS update and one STEP_BLOCKED update.
@@ -213,6 +226,7 @@ Report them in the current session and update runtime evidence exactly as the re
 - [ ] Builder session resurrection was not used as the normal continuation or recovery path.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
+- [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Run config and runtime state stayed free of extra route metadata.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.

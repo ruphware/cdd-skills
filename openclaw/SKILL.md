@@ -68,10 +68,12 @@ Operating contract:
 15. For each passed step:
    - ensure the Builder updated only the selected step in `TODO*.md`
    - run Master Chef QA
+   - if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass
    - approve step-level UAT with explicit evidence
    - commit
    - push
-   - send the full result, evidence, and decision trail in the current Master Chef session
+   - advertise `STEP_PASS` with the full result, evidence, and decision trail in the current Master Chef session
+   - re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 16. Reporting is session-native.
    - The current Master Chef session is the control plane and reporting surface for this shared skill.
    - Report lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, and explicit stops in-session.
