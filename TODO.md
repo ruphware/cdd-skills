@@ -183,3 +183,77 @@ Make `cdd-audit-and-implement` keep its explicit approval model without asking t
 - [ ] Read the updated audit skill and confirm the first-step selection prompt doubles as the implementation-start approval.
 - [ ] Confirm the skill still offers a clear stop-after-plan path without forcing implementation.
 - [ ] Confirm the old standalone `Approve starting implementation now?` wording is gone.
+
+## Step 06 — Encode the Master Chef pass/remediation loop
+
+### Goal
+
+Make `cdd-master-chef` explicitly run the normal development loop as Builder completion -> Master Chef QA -> remediation when needed -> commit -> push -> session-native `STEP_PASS` advertising -> automatic continuation to the next runnable TODO step.
+
+### Constraints
+
+- Keep the Builder limited to one delegated TODO action per run.
+- Treat the current Master Chef session as the comms channel.
+- Do not add external route metadata or notification config to shared docs or runtime state.
+- Master Chef may either push bad QA findings back to a fresh Builder run or fix the issue directly, but must re-run QA before passing the step.
+
+### Tasks
+
+- [ ] Update `openclaw/SKILL.md` to state the full pass/remediation/autocontinue loop.
+- [ ] Update `openclaw/MASTER-CHEF-RUNBOOK.md` with the bad-QA remediation path and required evidence before `STEP_PASS`.
+- [ ] Update `openclaw/README.md` with the concise user-facing loop behavior.
+- [ ] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with a QA-reject/remediation case.
+- [ ] Extend `scripts/validate_skills.py` to assert the pass/remediation/session-advertising/autocontinue contract.
+
+### Implementation notes
+
+- Preserve existing one-step Builder wording and fresh Builder continuation rules.
+- Use `STEP_PASS` only after QA/UAT, commit, and push succeed.
+- If Master Chef fixes a bad result directly, the fix remains inside the same step and must be included in QA evidence.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm the Master Chef docs say bad QA is remediated before a step can pass.
+- Confirm passed steps are advertised in the current Master Chef session.
+- Confirm the loop automatically re-inspects TODO and continues to the next runnable step.
+
+## Step 07 — Encode blocked-step strategy and smaller-step restart
+
+### Goal
+
+Make `cdd-master-chef` stop the autonomous loop on a blocked step, revise the situation, decompose the blocked work into smaller TODO steps, clean stale runtime/build state when needed, and restart only from the next smaller actionable step.
+
+### Constraints
+
+- Do not burn cycles after a hard blocker or repeated failed Builder replacements.
+- Preserve `STEP_BLOCKED` and `DEADLOCK_STOPPED` reporting in the current Master Chef session.
+- Decomposition must update TODO planning before another autonomous implementation attempt starts.
+- Cleanup must be scoped to stale runtime/build artifacts and must not revert unrelated user work.
+
+### Tasks
+
+- [ ] Update `openclaw/SKILL.md` with the blocked-step revise/decompose/restart contract.
+- [ ] Update `openclaw/MASTER-CHEF-RUNBOOK.md` with a concrete blocked-step recovery procedure.
+- [ ] Update `openclaw/README.md` with the concise user-facing blocker behavior.
+- [ ] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with blocked-step decomposition and restart expectations.
+- [ ] Extend `scripts/validate_skills.py` to assert the blocked-step strategy, TODO decomposition, cleanup, and smaller-step restart contract.
+
+### Implementation notes
+
+- Prefer plan repair in Master Chef before spawning any replacement Builder after a real blocker.
+- If the step is too large or ambiguous, split it into smaller TODO steps instead of retrying the same broad step.
+- Runtime cleanup should keep `.cdd-runtime/master-chef/` coherent and leave unrelated working-tree changes intact.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm a blocked step stops the autonomous loop instead of retrying indefinitely.
+- Confirm Master Chef must revise/decompose the work into smaller TODO steps before restarting.
+- Confirm cleanup language protects unrelated user work.
