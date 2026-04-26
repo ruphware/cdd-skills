@@ -189,6 +189,7 @@ Store canonical runtime state inside the repo:
   run.lock.json
   master-chef.jsonl
   builder.jsonl
+  context-summary.md
 ```
 
 ### 4.1 `run.json`
@@ -276,6 +277,21 @@ Optional fields:
 - `push`
 - `blocker`
 - `route`
+
+### 4.4 `context-summary.md`
+
+Use `context-summary.md` as the durable Master Chef checkpoint for long runs and context compaction. It is a compact run synopsis, not a raw transcript dump, external route config, or secret store.
+
+Required sections:
+
+- `Run`: run id, repo, branch, upstream, master session key, active Builder session key when present
+- `State`: active TODO path, active step, phase, last pass SHA, current blocker, current Builder status
+- `Recent decisions`: routing choices, QA/UAT verdicts, remediation decisions, blocker strategy, and why they were chosen
+- `Current diff`: working-tree summary, files changed, commands already run, and unresolved risks
+- `Pending proof`: checks, QA, UAT, commit, push, or reporting still needed
+- `Next action`: the exact next Master Chef action after compaction or resume
+
+Keep this file current before any deliberate Master Chef compaction and after material lifecycle events such as kickoff, Builder handoff, `STEP_PASS`, `STEP_BLOCKED`, `DEADLOCK_STOPPED`, plan repair, or direct Master Chef fixes.
 
 ---
 
@@ -370,6 +386,7 @@ After kickoff approval:
 11. Re-inspect TODO state.
 12. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
 13. If no runnable step remains, report `RUN_COMPLETE`.
+14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
 
 Only stop autonomy when:
 
@@ -449,6 +466,48 @@ Default thresholds:
 
 - Builder stale threshold: 5 minutes without Builder progress, evaluated only when Master Chef performs a check
 - Builder replacement budget before deadlock: 2 failed replacements without progress
+
+---
+
+## 8) Master Chef context compaction
+
+Builder context stays simple: every normal delegated TODO action gets a fresh one-step Builder run, normally through `cdd-implement-todo`. Master Chef is long-lived, so it must make its own memory durable before compaction.
+
+### Safe compaction points
+
+Master Chef may compact only after durable state is written to `run.json`, `run.lock.json` when applicable, `master-chef.jsonl`, `builder.jsonl`, and `context-summary.md`.
+
+Safe points:
+
+- after kickoff state, run config, and lease are written
+- after Builder handoff is recorded
+- after a Builder returns and its result is recorded
+- after `STEP_PASS`, including QA/UAT, commit, push, reporting, TODO re-inspection, and next action
+- after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, including blocker evidence and strategy
+- after Master-Chef-direct planning, refactor decomposition, TODO repair, or direct fixes
+- before a known large QA, planning, or refactor phase, once the current state and intended next action are checkpointed
+
+### Unsafe compaction windows
+
+Do not compact:
+
+- before runtime files exist for the run
+- while QA findings or UAT decisions are only in the live transcript
+- between QA pass and commit/push unless a checkpoint records the exact pending action
+- while a blocker strategy, TODO decomposition, or cleanup decision is only in the live transcript
+- while uncommitted direct Master Chef fixes have no diff summary in `context-summary.md`
+
+If context pressure appears during an unsafe window, first write the missing state, logs, and `context-summary.md`, then compact from the next safe boundary.
+
+### Resume after compaction
+
+After compaction, Master Chef must reconstruct state from durable sources instead of trusting transcript memory:
+
+1. Read `AGENTS.md`, `README.md`, the active `TODO*.md`, `run.json`, `run.lock.json`, `context-summary.md`, `master-chef.jsonl`, and `builder.jsonl`.
+2. Run `git status --short`, confirm branch/upstream, and inspect the current diff.
+3. Verify the active TODO file, active step, run phase, Builder session key/status, last pass SHA, blocker state, pending proof, and next action against the repo state.
+4. If the checkpoint conflicts with repo state, stop and report `RUN_STOPPED` or `STEP_BLOCKED` rather than guessing.
+5. Continue only after the next action is explicit and supported by runtime evidence.
 
 ---
 

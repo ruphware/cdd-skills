@@ -141,8 +141,15 @@ Runtime files:
 - `.cdd-runtime/master-chef/run.lock.json`
 - `.cdd-runtime/master-chef/master-chef.jsonl`
 - `.cdd-runtime/master-chef/builder.jsonl`
+- `.cdd-runtime/master-chef/context-summary.md`
 
 Keep these runtime files out of git, preferably via `.git/info/exclude`.
+
+Context-limit policy:
+
+- Builder stays fresh through one-step runs, normally booted with `cdd-implement-todo`.
+- Master Chef checkpoints long-run memory in `.cdd-runtime/master-chef/context-summary.md` before deliberate compaction.
+- Master Chef compacts only at safe workflow boundaries and resumes from runtime files, active TODO, and git state rather than transcript memory.
 
 ## Builder skill usage
 

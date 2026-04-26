@@ -257,3 +257,42 @@ Make `cdd-master-chef` stop the autonomous loop on a blocked step, revise the si
 - Confirm a blocked step stops the autonomous loop instead of retrying indefinitely.
 - Confirm Master Chef must revise/decompose the work into smaller TODO steps before restarting.
 - Confirm cleanup language protects unrelated user work.
+
+## Step 08 — Encode Master Chef context compaction checkpoints
+
+### Goal
+
+Make `cdd-master-chef` handle long autonomous runs by using durable Master Chef context checkpoints, so Builder can stay fresh per step while Master Chef can compact and resume without losing run intent, active state, blockers, or next action.
+
+### Constraints
+
+- Preserve fresh one-step Builder runs as the normal Builder context strategy.
+- Keep Master Chef as the only control plane; do not introduce a second supervising loop.
+- Do not rely on live transcript history as the only source of run memory.
+- Compaction must happen only after writing durable state and only at safe workflow boundaries.
+- Keep checkpoint content free of secrets, raw transcript dumps, and external route config.
+
+### Tasks
+
+- [x] Update `openclaw/SKILL.md` with the Master Chef context checkpoint and compaction boundary contract.
+- [x] Update `openclaw/MASTER-CHEF-RUNBOOK.md` to add `.cdd-runtime/master-chef/context-summary.md`, its required fields, safe compaction triggers, unsafe compaction windows, and resume procedure.
+- [x] Update `openclaw/README.md` with concise operator-facing context-limit behavior.
+- [x] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with a compaction/resume test case.
+- [x] Extend `scripts/validate_skills.py` to assert the context checkpoint, safe-boundary compaction, and resume contract.
+
+### Implementation notes
+
+- Recommended checkpoint fields: run id, repo, branch/upstream, active TODO file/step, phase, last pass SHA, current Builder session key/status, pending QA/UAT/checks, blocker state, recent decisions, current diff summary, and next action.
+- Safe compaction points: after kickoff state is written, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` / `DEADLOCK_STOPPED`, after Master-Chef-direct planning/refactor work, and before a known large QA or planning phase.
+- Unsafe compaction points: before runtime state is written, during unrecorded QA decisions, between QA pass and commit/push unless a checkpoint is written first, or while blocker strategy is only in transcript.
+- Resume should treat runtime files and repo state as canonical, then re-inspect the active TODO and git status before continuing.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm Builder context strategy remains fresh one-step sessions.
+- Confirm Master Chef has a durable checkpoint file and explicit compaction triggers.
+- Confirm resume after compaction starts from runtime files, TODO, and git state rather than transcript memory.

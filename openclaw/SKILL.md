@@ -28,6 +28,7 @@ Operating contract:
    - `.cdd-runtime/master-chef/run.lock.json`
    - `.cdd-runtime/master-chef/master-chef.jsonl`
    - `.cdd-runtime/master-chef/builder.jsonl`
+   - `.cdd-runtime/master-chef/context-summary.md`
 6. Before kickoff, resolve the `Run config`:
    - if the current prompt includes a `Run config` block, use that
    - otherwise, if `~/.openclaw/config/master-chef/default-run-config.yaml` exists, read it, surface the resolved config back to the human, and use it as the starting `Run config` for that run
@@ -92,6 +93,12 @@ Operating contract:
    - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
    - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
+22. Manage Master Chef context explicitly during long runs:
+   - keep Builder context fresh through one-step Builder runs; do not compact or resume Builders as the normal path
+   - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
+   - compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning/refactor work, or before a known large QA/planning phase once a checkpoint is written
+   - do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript
+   - after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing
 
 Canonical `run.json` fields:
 

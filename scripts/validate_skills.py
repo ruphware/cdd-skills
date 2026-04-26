@@ -463,6 +463,48 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     assert "Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step." in harness_text, (
         f"blocked-step decomposition pass criterion missing in {harness_md}"
     )
+    assert ".cdd-runtime/master-chef/context-summary.md" in skill_text, (
+        f"Master Chef context checkpoint file missing in {skill_md}"
+    )
+    assert "before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`" in skill_text, (
+        f"pre-compaction checkpoint contract missing in {skill_md}"
+    )
+    assert "do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript" in skill_text, (
+        f"unsafe compaction guardrail missing in {skill_md}"
+    )
+    assert "after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing" in skill_text, (
+        f"post-compaction resume contract missing in {skill_md}"
+    )
+    assert "### 4.4 `context-summary.md`" in runbook_text, (
+        f"context-summary section missing in {runbook_md}"
+    )
+    assert "Use `context-summary.md` as the durable Master Chef checkpoint for long runs and context compaction." in runbook_text, (
+        f"context-summary purpose missing in {runbook_md}"
+    )
+    assert "## 8) Master Chef context compaction" in runbook_text, (
+        f"context compaction procedure missing in {runbook_md}"
+    )
+    assert "Master Chef may compact only after durable state is written to `run.json`, `run.lock.json` when applicable, `master-chef.jsonl`, `builder.jsonl`, and `context-summary.md`." in runbook_text, (
+        f"safe compaction boundary missing in {runbook_md}"
+    )
+    assert "Do not compact:" in runbook_text and "while QA findings or UAT decisions are only in the live transcript" in runbook_text, (
+        f"unsafe compaction windows missing in {runbook_md}"
+    )
+    assert "After compaction, Master Chef must reconstruct state from durable sources instead of trusting transcript memory:" in runbook_text, (
+        f"compaction resume procedure missing in {runbook_md}"
+    )
+    assert "Master Chef checkpoints long-run memory in `.cdd-runtime/master-chef/context-summary.md` before deliberate compaction." in readme_text, (
+        f"user-facing context checkpoint behavior missing in {readme_md}"
+    )
+    assert "Prompt N - Context compaction and resume" in harness_text, (
+        f"context compaction harness case missing in {harness_md}"
+    )
+    assert "`context-summary.md` records run, state, recent decisions, current diff, pending proof, and next action" in harness_text, (
+        f"context summary harness expectation missing in {harness_md}"
+    )
+    assert "Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state." in harness_text, (
+        f"context compaction pass criterion missing in {harness_md}"
+    )
 
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:

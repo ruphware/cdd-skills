@@ -87,7 +87,8 @@ Initialize .cdd-runtime/master-chef/, acquire the run lease, route the approved 
 ls <REPO>/.cdd-runtime/master-chef/run.json \
    <REPO>/.cdd-runtime/master-chef/run.lock.json \
    <REPO>/.cdd-runtime/master-chef/master-chef.jsonl \
-   <REPO>/.cdd-runtime/master-chef/builder.jsonl >/dev/null
+   <REPO>/.cdd-runtime/master-chef/builder.jsonl \
+   <REPO>/.cdd-runtime/master-chef/context-summary.md >/dev/null
 ```
 
 - [ ] Expected: all runtime files exist.
@@ -224,6 +225,19 @@ Report them in the current session and update runtime evidence exactly as the re
   - `master-chef.jsonl` records the lifecycle events
   - `run.json` stays focused on run state and does not grow route metadata
 
+### Prompt N - Context compaction and resume
+
+```text
+/cdd-master-chef TEST ONLY: simulate Master Chef context pressure after a STEP_PASS boundary.
+Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; compact only after that safe boundary; then resume by reading runtime files, active TODO, and git status before choosing the next action.
+```
+
+- [ ] Expected:
+  - `context-summary.md` records run, state, recent decisions, current diff, pending proof, and next action
+  - no compaction happens while QA, commit, push, blocker strategy, or next-action details exist only in transcript
+  - Builder context remains fresh through one-step Builder runs rather than Builder compaction or session resurrection
+  - resumed Master Chef state is verified against `TODO*.md`, runtime files, logs, and `git status`
+
 ---
 
 ## 3) Pass criteria
@@ -232,6 +246,7 @@ Report them in the current session and update runtime evidence exactly as the re
 - [ ] Builder ran as an OpenClaw subagent.
 - [ ] No watchdog cron or second supervising loop was used.
 - [ ] Runtime files were created in the repo.
+- [ ] `context-summary.md` was created and used as the Master Chef compaction checkpoint.
 - [ ] Duplicate-run prevention worked.
 - [ ] Builder recovery stayed inside the main session.
 - [ ] Master Chef chose the correct routing path for the repo state.
@@ -244,6 +259,7 @@ Report them in the current session and update runtime evidence exactly as the re
 - [ ] Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Run config and runtime state stayed free of extra route metadata.
+- [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
 - [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.
 
