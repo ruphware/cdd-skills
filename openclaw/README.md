@@ -157,6 +157,7 @@ Default delegated path:
 - If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
 - Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
 - if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
+- if a step is blocked, Master Chef stops the autonomous loop, reports the blocker in-session, decomposes the work into smaller TODO steps when possible, cleans only stale retry artifacts, and restarts from the next smaller actionable step
 
 Delegated exception:
 

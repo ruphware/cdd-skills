@@ -376,6 +376,7 @@ Only stop autonomy when:
 - the run is complete
 - a hard blocker requires human input
 - repeated Builder replacements fail without progress
+- a blocked step needs TODO decomposition or plan repair before another implementation attempt
 - the user stops the run
 
 ---
@@ -428,6 +429,21 @@ If repeated replacements fail without forward progress:
 
 - stop the run
 - report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
+- revise the situation before any more Builder work
+
+### If a TODO step is blocked
+
+When a step is blocked by a hard gate, ambiguous scope, missing implementation decisions, or repeated failed Builder replacements, Master Chef must stop the autonomous implementation loop instead of spawning another Builder for the same broad step.
+
+Blocked-step recovery procedure:
+
+1. Set the run phase to `blocked`, preserve the Builder report and failed validation evidence, and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session.
+2. Inspect `git status`, the current diff, `run.json`, `master-chef.jsonl`, `builder.jsonl`, failed commands, and the selected TODO step.
+3. Decide whether the blocker is external input, repo state, or an oversized or underspecified TODO step.
+4. If the blocker is plan-shaped, use Master-Chef-direct planning or TODO repair before any new Builder spawn, and decompose the work into smaller decision-complete TODO steps with clear checks and UAT.
+5. Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence.
+6. Re-inspect TODO state and restart only from the next smaller actionable TODO step with a fresh one-step Builder run.
+7. If the blocker requires human input or cannot be decomposed safely, keep the run stopped and report the exact decision needed.
 
 Default thresholds:
 
@@ -529,7 +545,7 @@ Runtime obligations:
 
 1. replace Builder quickly with a fresh one-step subagent run for the same step
 2. do not use session resurrection as the normal recovery path
-3. if 2 replacements fail without progress, stop the step instead of limping on
+3. if 2 replacements fail without progress, stop the step, report the blocker, and repair or decompose TODO before restarting from a smaller actionable step
 
 ### If main session is interrupted
 

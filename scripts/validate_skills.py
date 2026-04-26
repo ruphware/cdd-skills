@@ -439,6 +439,30 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     assert "QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation." in harness_text, (
         f"QA remediation pass criterion missing in {harness_md}"
     )
+    assert "If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:" in skill_text, (
+        f"blocked-step recovery contract missing in {skill_md}"
+    )
+    assert "decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair" in skill_text, (
+        f"blocked-step TODO decomposition contract missing in {skill_md}"
+    )
+    assert "restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged" in skill_text, (
+        f"smaller-step restart contract missing in {skill_md}"
+    )
+    assert "When a step is blocked by a hard gate, ambiguous scope, missing implementation decisions, or repeated failed Builder replacements" in runbook_text, (
+        f"blocked-step recovery procedure missing in {runbook_md}"
+    )
+    assert "Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence." in runbook_text, (
+        f"blocked-step cleanup guardrail missing in {runbook_md}"
+    )
+    assert "if a step is blocked, Master Chef stops the autonomous loop, reports the blocker in-session, decomposes the work into smaller TODO steps when possible, cleans only stale retry artifacts, and restarts from the next smaller actionable step" in readme_text, (
+        f"user-facing blocked-step behavior missing in {readme_md}"
+    )
+    assert "Prompt L - Blocked-step decomposition" in harness_text, (
+        f"blocked-step decomposition harness case missing in {harness_md}"
+    )
+    assert "Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step." in harness_text, (
+        f"blocked-step decomposition pass criterion missing in {harness_md}"
+    )
 
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:

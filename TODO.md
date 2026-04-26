@@ -236,11 +236,11 @@ Make `cdd-master-chef` stop the autonomous loop on a blocked step, revise the si
 
 ### Tasks
 
-- [ ] Update `openclaw/SKILL.md` with the blocked-step revise/decompose/restart contract.
-- [ ] Update `openclaw/MASTER-CHEF-RUNBOOK.md` with a concrete blocked-step recovery procedure.
-- [ ] Update `openclaw/README.md` with the concise user-facing blocker behavior.
-- [ ] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with blocked-step decomposition and restart expectations.
-- [ ] Extend `scripts/validate_skills.py` to assert the blocked-step strategy, TODO decomposition, cleanup, and smaller-step restart contract.
+- [x] Update `openclaw/SKILL.md` with the blocked-step revise/decompose/restart contract.
+- [x] Update `openclaw/MASTER-CHEF-RUNBOOK.md` with a concrete blocked-step recovery procedure.
+- [x] Update `openclaw/README.md` with the concise user-facing blocker behavior.
+- [x] Update `openclaw/MASTER-CHEF-TEST-HARNESS.md` with blocked-step decomposition and restart expectations.
+- [x] Extend `scripts/validate_skills.py` to assert the blocked-step strategy, TODO decomposition, cleanup, and smaller-step restart contract.
 
 ### Implementation notes
 

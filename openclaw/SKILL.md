@@ -86,6 +86,12 @@ Operating contract:
 18. Direct Builder checks must not create a second control loop. Recovery stays in the main session, using fresh Builder replacement rather than normal session resurrection.
 19. Healthy Builder checks may stay quiet, but they do not cancel in-session lifecycle reporting for events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
 20. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
+21. If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
+   - stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
+   - revise the situation in Master Chef before any more Builder work
+   - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
+   - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
+   - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
 
 Canonical `run.json` fields:
 

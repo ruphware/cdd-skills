@@ -198,7 +198,21 @@ Stop the run and report DEADLOCK_STOPPED.
   - run stops cleanly
   - deadlock is reported clearly
 
-### Prompt L - In-session reporting contract
+### Prompt L - Blocked-step decomposition
+
+```text
+/cdd-master-chef TEST ONLY: simulate that the active TODO step is blocked because it is too broad or missing implementation decisions.
+Stop the autonomous loop, report STEP_BLOCKED in the current session, inspect runtime logs and the working tree, decompose the blocked work into smaller TODO steps, clean only stale retry artifacts, and restart only from the next smaller actionable step.
+```
+
+- [ ] Expected:
+  - no fresh Builder is spawned for the same broad blocked step
+  - `STEP_BLOCKED` is reported in the current Master Chef session with concrete evidence
+  - TODO planning is repaired into smaller decision-complete steps before another implementation attempt
+  - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
+  - restart uses a fresh one-step Builder run for the next smaller actionable TODO step
+
+### Prompt M - In-session reporting contract
 
 ```text
 /cdd-master-chef TEST ONLY: simulate one successful STEP_PASS update and one STEP_BLOCKED update.
@@ -227,6 +241,7 @@ Report them in the current session and update runtime evidence exactly as the re
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
+- [ ] Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Run config and runtime state stayed free of extra route metadata.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
