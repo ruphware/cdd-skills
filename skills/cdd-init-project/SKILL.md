@@ -40,17 +40,20 @@ For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and
 - Even when that canonical source is identified, do not copy, download, clone, or otherwise materialize boilerplate from it until the user gives separate explicit confirmation.
 - If the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source.
 
-## Required README CDD Footnote block
-- For fresh/bootstrap repos, require this exact `README.md` block in a bottom `## Footnote` section so the runbook stays primary and the CDD contract remains present but low-visibility:
+## Required README CDD footnote footer
+- For fresh/bootstrap repos, require this exact `README.md` footer block near the bottom of the file so the runbook stays primary and the CDD contract remains present but low-visibility:
 
 ```md
+___
+
 [![CDD Project](https://img.shields.io/badge/CDD-Project-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-boilerplate)
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
-> This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.
-> Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.
+
+<sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
+<sup>Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.</sup>
 ```
 
-- For existing-repo adoption, consider adding or moving that full CDD Footnote block in the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit.
+- For existing-repo adoption, consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit.
 - Avoid duplicating the block if it or its badges already exist.
 
 ## Contract-surface taxonomy and drift rules
@@ -166,7 +169,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
-   - update `README.md` to match the PRD/Blueprint and include the required CDD Footnote block in a bottom `## Footnote` section
+   - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
 9) Ask: **Approve and apply these changes?**
@@ -213,7 +216,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
-   - update `README.md` to match the PRD/Blueprint and include the required CDD Footnote block in a bottom `## Footnote` section
+   - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
 12) Ask: **Approve and apply these changes?**
@@ -236,7 +239,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
-   - update `README.md` to match the PRD/Blueprint and include the required CDD Footnote block in a bottom `## Footnote` section
+   - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
 7) Ask: **Approve and apply these changes?**
@@ -272,7 +275,7 @@ Draft a patch proposal grouped by file, including:
    - `docs/specs/prd.md` and `docs/specs/blueprint.md`: fill from the actual repo rather than copying boilerplate placeholders forward
 2) Reorganize docs:
    - keep `README.md` as the runbook entrypoint
-   - if the current `README.md` does not already contain the required CDD Footnote block, ask for explicit confirmation before proposing or applying that full-block README edit during adoption
+   - if the current `README.md` does not already contain the required CDD footnote footer, ask for explicit confirmation before proposing or applying that full-block README edit during adoption
    - move/normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links
 3) Add repo-specific planning to `TODO.md`:
    - preserve the boilerplate header, Step 00, and Step template

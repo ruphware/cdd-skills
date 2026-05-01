@@ -233,6 +233,9 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression." in skill_text, (
         f"README doc-role rule missing in {skill_md}"
     )
+    assert "If `README.md` includes a CDD contract note, keep it as a low-visibility bottom footer, such as the repo-standard `___` + badges + `<sup>` footnote, rather than a top-of-file banner." in skill_text, (
+        f"README CDD footer rule missing in {skill_md}"
+    )
     assert "If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it." in skill_text, (
         f"README compaction approval rule missing in {skill_md}"
     )
@@ -286,12 +289,16 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         f"local checkout should not be preferred in {skill_md}"
     )
     assert (
-        "For fresh/bootstrap repos, require this exact `README.md` block in a bottom `## Footnote` section so the runbook stays primary and the CDD contract remains present but low-visibility:"
-    ) in skill_text, f"README Footnote placement rule missing in {skill_md}"
+        "For fresh/bootstrap repos, require this exact `README.md` footer block near the bottom of the file so the runbook stays primary and the CDD contract remains present but low-visibility:"
+    ) in skill_text, f"README footer placement rule missing in {skill_md}"
+    assert "bottom `## Footnote` section" not in skill_text, (
+        f"old README footnote-section rule should not appear in {skill_md}"
+    )
     assert (
         "For fresh/bootstrap repos, require this exact `README.md` block under the title and short project description, before the rest of the runbook content:"
         not in skill_text
     ), f"old README header placement rule should not appear in {skill_md}"
+    assert "___" in skill_text, f"README footer separator missing in {skill_md}"
     assert (
         "[![CDD Project](https://img.shields.io/badge/CDD-Project-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-boilerplate)"
     ) in skill_text, f"CDD project badge rule missing in {skill_md}"
@@ -299,20 +306,20 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         "[![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)"
     ) in skill_text, f"CDD skills badge rule missing in {skill_md}"
     assert (
-        "> This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract."
+        "<sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>"
     ) in skill_text, f"CDD workflow note missing in {skill_md}"
     require_any_substring(
         skill_text,
         (
-            "> Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.",
-            "> Start with `cdd-boot`. Use `cdd-plan` + `cdd-implement-todo` for feature work, `cdd-maintain` for upkeep and drift control, and `cdd-refactor` for structured refactors.",
+            "<sup>Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.</sup>",
+            "<sup>Start with `cdd-boot`. Use `cdd-plan` + `cdd-implement-todo` for feature work, `cdd-maintain` for upkeep and drift control, and `cdd-refactor` for structured refactors.</sup>",
         ),
         skill_md,
         "CDD command note",
     )
     assert (
-        "For existing-repo adoption, consider adding or moving that full CDD Footnote block in the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit."
-    ) in skill_text, f"existing README Footnote confirmation rule missing in {skill_md}"
+        "For existing-repo adoption, consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit."
+    ) in skill_text, f"existing README footer confirmation rule missing in {skill_md}"
     assert "Avoid duplicating the block if it or its badges already exist." in skill_text, (
         f"README duplication guardrail missing in {skill_md}"
     )
