@@ -176,13 +176,40 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped." in skill_text, (
         f"journal skip rule missing in {skill_md}"
     )
-    assert "Treat `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` as canonical support docs." in skill_text, (
+    assert "connected `docs/specs/*-definition.md` files when present" in skill_text, (
+        f"definition sources-of-truth scope missing in {skill_md}"
+    )
+    assert "Treat `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files as canonical support docs." in skill_text, (
         f"support-doc scope missing in {skill_md}"
+    )
+    assert "Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs." in skill_text, (
+        f"support-doc current-or-future contract missing in {skill_md}"
+    )
+    assert "Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, and doc-role boundaries still match the repo." in skill_text, (
+        f"support-doc role-boundary review missing in {skill_md}"
+    )
+    assert "For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression." in skill_text, (
+        f"README doc-role rule missing in {skill_md}"
+    )
+    assert "If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it." in skill_text, (
+        f"README compaction approval rule missing in {skill_md}"
+    )
+    assert "For `docs/specs/prd.md`: treat it as the product-manager view; it may include product vision, use cases, JTBD, and feature lists." in skill_text, (
+        f"PRD role rule missing in {skill_md}"
+    )
+    assert "For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec and use connected definition files for technical architecture, data structures, interfaces, technical reasoning, and implementation detail." in skill_text, (
+        f"blueprint/definition role rule missing in {skill_md}"
+    )
+    assert "Do not treat repo history as justification for stale support-doc content; drift review is about current repo truth or clearly intended future-state docs." in skill_text, (
+        f"support-doc anti-history rule missing in {skill_md}"
     )
     assert "Classify each support doc as `current`, `drifted`, `missing`, or `unclear`." in skill_text, (
         f"support-doc classification rule missing in {skill_md}"
     )
-    assert "Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`." in skill_text, (
+    assert "If `README.md`, `docs/specs/*`, or connected `*-definition.md` files have drifted, prepare the needed edits and show them to the user before applying anything." in skill_text, (
+        f"support-doc drift prep rule missing in {skill_md}"
+    )
+    assert "Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`." in skill_text, (
         f"support-doc no-silent-refresh rule missing in {skill_md}"
     )
     assert "Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`" in skill_text, (

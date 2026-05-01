@@ -351,11 +351,11 @@ Make `cdd-maintain` audit `README.md`, `docs/specs/prd.md`, `docs/specs/blueprin
 
 ### Tasks
 
-- [ ] Update `skills/cdd-maintain/SKILL.md` so support-doc drift review explicitly forbids history and CDD/TODO step progression in `README.md` while allowing current or future plans and concise runbook guidance.
-- [ ] Expand the support-doc scope in `cdd-maintain` to include connected `*-definition.md` files as technical documentation surfaces reviewed alongside `docs/specs/blueprint.md`.
-- [ ] Add explicit role rules to `cdd-maintain` for `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and `*-definition.md` files so product-facing versus technical content boundaries are enforced during drift review.
-- [ ] Extend `scripts/validate_skills.py` to assert the new `cdd-maintain` drift-language contract and the `*-definition.md` review scope.
-- [ ] Add a repo follow-on requirement that this repository's own `README.md` should be refreshed to match the new doc-role contract once the skill and validator changes land.
+- [x] Update `skills/cdd-maintain/SKILL.md` so support-doc drift review explicitly forbids history and CDD/TODO step progression in `README.md` while allowing current or future plans and concise runbook guidance.
+- [x] Expand the support-doc scope in `cdd-maintain` to include connected `*-definition.md` files as technical documentation surfaces reviewed alongside `docs/specs/blueprint.md`.
+- [x] Add explicit role rules to `cdd-maintain` for `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and `*-definition.md` files so product-facing versus technical content boundaries are enforced during drift review.
+- [x] Extend `scripts/validate_skills.py` to assert the new `cdd-maintain` drift-language contract and the `*-definition.md` review scope.
+- [x] Add a repo follow-on requirement that this repository's own `README.md` should be refreshed to match the new doc-role contract once the skill and validator changes land.
 
 ### Implementation notes
 
@@ -373,3 +373,41 @@ Make `cdd-maintain` audit `README.md`, `docs/specs/prd.md`, `docs/specs/blueprin
 - Confirm `prd.md` is described as the PM/product view.
 - Confirm `blueprint.md` plus connected `*-definition.md` files are described as technical architecture/detail surfaces.
 - Confirm the validator would fail if `cdd-maintain` stopped reviewing connected `*-definition.md` files or allowed historical README drift language.
+
+## Step 11 — Refresh this repo README to match the doc-role contract
+
+### Goal
+
+Refresh this repository's `README.md` so it matches the current README role contract: current or future runbook truth, concise navigation, and no historical CDD or TODO progression.
+
+### Constraints
+
+- Keep `README.md` as the runbook entrypoint for this repo.
+- `README.md` may include current features, use cases, and future plans.
+- `README.md` must not include historical CDD or TODO step progression.
+- If the CDD block remains in `README.md`, place it in a bottom `## Footnote` section.
+- Compact duplicated content when it is already maintained more appropriately in `TODO.md`, `docs/specs/prd.md`, or `docs/specs/blueprint.md`, without dropping necessary install or workflow guidance.
+
+### Tasks
+
+- [ ] Review this repository's `README.md` against the new `cdd-maintain` doc-role rules and the actual current repo state.
+- [ ] Propose and apply a README refresh that removes stale or overly duplicated content while preserving current runbook and install guidance.
+- [ ] Keep future-facing product/workflow notes only where they help README readers, and push lower-level planning or technical detail into the more appropriate CDD docs.
+- [ ] Run the relevant validation checks for the touched docs.
+
+### Implementation notes
+
+- Use `README.md` for concise orientation and runbook content, not as a backlog or historical record.
+- Prefer linking to the deeper CDD docs instead of repeating their full detail.
+- Re-check the CDD block placement against the current `cdd-init-project` contract before editing.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm `README.md` reflects the current repo state or clearly intended future plans.
+- Confirm historical CDD or TODO progression is no longer present.
+- Confirm duplicated detail is reduced where other canonical docs already cover it.
+- Confirm the CDD block, if retained, sits in a bottom `## Footnote` section.

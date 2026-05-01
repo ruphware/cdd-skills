@@ -17,6 +17,7 @@ Read:
 - `docs/INDEX.md`
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
+- connected `docs/specs/*-definition.md` files when present
 - `docs/prompts/PROMPT-INDEX.md` if present
 - repo manifests, entrypoints, and test/lint/typecheck config as needed for code-health checks
 
@@ -56,14 +57,19 @@ Read:
 - If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped.
 
 ## Support documentation drift review
-- Treat `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` as canonical support docs.
+- Treat `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files as canonical support docs.
 - Also review `docs/INDEX.md` and `docs/prompts/PROMPT-INDEX.md` when present as support-doc navigation surfaces.
-- Compare each support doc against the current repo state using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs.
-- Check whether setup/dev/test/build instructions, documented workflows, active features, architecture notes, and referenced doc paths still match the repo.
+- Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs.
+- Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, and doc-role boundaries still match the repo.
+- For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression.
+- If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
+- For `docs/specs/prd.md`: treat it as the product-manager view; it may include product vision, use cases, JTBD, and feature lists.
+- For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec and use connected definition files for technical architecture, data structures, interfaces, technical reasoning, and implementation detail.
+- Do not treat repo history as justification for stale support-doc content; drift review is about current repo truth or clearly intended future-state docs.
 - Classify each support doc as `current`, `drifted`, `missing`, or `unclear`.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
-- If `README.md` or `docs/specs/*` has drifted, prepare the needed edits and show them to the user before applying anything.
-- Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`.
+- If `README.md`, `docs/specs/*`, or connected `*-definition.md` files have drifted, prepare the needed edits and show them to the user before applying anything.
+- Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`.
 - Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`
 - Keep documentation approval separate from stale TODO deletion approval so the user can approve doc updates without approving file deletions.
 - If the user approves, apply only the approved support-doc edits and then report them.
