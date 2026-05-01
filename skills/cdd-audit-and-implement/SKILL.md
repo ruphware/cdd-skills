@@ -18,7 +18,10 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and proof requirements before continuing.
 - For qualifying requests that are multi-surface, ambiguous, or likely to produce more than one TODO step, first produce coarse dependency-ordered root-cause work packages before detailed TODO drafting.
 - For those qualifying requests, refine one coarse root-cause work package at a time into runnable TODO steps rather than jumping straight from normalized audit bullets to a full mixed-surface detailed plan.
+- During the coarse root-cause planning phase, review any user-provided contract details, content details, and other implementation-driving artifacts, expand them into the plan, and keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat.
+- If a reviewed artifact affects both product behavior and implementation detail, keep the exact implementation-driving detail in `TODO.md` and add explicit `TODO.md` follow-up for the relevant spec/doc update unless a durable spec delta is intentionally being drafted now.
 - Add a visible `Confirmed requirements coverage` section that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
+- Add a visible `Reviewed contract artifacts` section that identifies the user-provided artifacts, marks each as `copied as-is`, `corrected`, `expanded`, `removed`, or `left intentionally unspecified`, gives a short reason for each material change, and records where each artifact was written.
 - Only carry forward confirmed requirements that make sense for the repo.
 - Plans may be long and include many steps when the confirmed scope requires it. Do not over-compress the plan just to stay minimal.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
@@ -62,7 +65,7 @@ Do not convert raw audit bullets directly into TODO tasks.
 8) For qualifying requests, first produce coarse dependency-ordered root-cause work packages before detailed TODO drafting.
    - Use this mode only when the request is multi-surface, ambiguous, or likely to produce more than one TODO step.
    - Keep audit normalization and duplicate-collapsing intact; the coarse pass should organize normalized root-cause work, not bypass that analysis.
-   - Include a visible `Confirmed requirements coverage` section before asking for approval.
+   - Include visible `Confirmed requirements coverage` and `Reviewed contract artifacts` sections before asking for approval.
 9) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
    - Recommend one option based on the codebase review and normalized audit results.
    - Include the write-location choice in the same option set when possible:
@@ -72,6 +75,7 @@ Do not convert raw audit bullets directly into TODO tasks.
    - Ask for a short tag only if the user chose the new-file option.
 10) Group the normalized items into 1–N implementation-ready TODO steps using the repo’s existing Step template.
     - For qualifying requests, refine one coarse root-cause work package at a time into runnable TODO steps rather than jumping straight from normalized audit bullets to a full mixed-surface detailed plan.
+    - Keep exact implementation-driving detail in `TODO.md` and use explicit `TODO.md` follow-up for later spec/doc updates when mixed product/implementation artifacts are not becoming durable spec deltas now.
     - Keep the plan KISS and CDD-style: minimal diffs, no invented structure, and as many dependency-ordered steps as the confirmed scope requires.
 11) Ask: **Approve and apply the TODO plan?**
 12) Apply the approved plan.

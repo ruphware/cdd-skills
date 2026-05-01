@@ -80,6 +80,46 @@ def validate_coarse_step_planning(skill_text: str, skill_md: Path) -> None:
     ) in skill_text, f"broad-plan allowance missing in {skill_md}"
 
 
+def validate_reviewed_contract_artifacts(skill_text: str, skill_md: Path) -> None:
+    """Assert planning skills preserve reviewed artifacts in TODO-focused output."""
+    require_any_substring(
+        skill_text,
+        (
+            "During the coarse planning phase, review any user-provided contract details, content details, and other implementation-driving artifacts, expand them into the plan, and keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat.",
+            "During the coarse root-cause planning phase, review any user-provided contract details, content details, and other implementation-driving artifacts, expand them into the plan, and keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat.",
+        ),
+        skill_md,
+        "coarse artifact-review rule",
+    )
+    assert (
+        "If a reviewed artifact affects both product behavior and implementation detail, "
+        "keep the exact implementation-driving detail in `TODO.md` and add explicit "
+        "`TODO.md` follow-up for the relevant spec/doc update unless a durable spec "
+        "delta is intentionally being drafted now."
+    ) in skill_text, f"mixed-surface TODO placement rule missing in {skill_md}"
+    assert "Reviewed contract artifacts" in skill_text, (
+        f"reviewed contract artifacts section missing in {skill_md}"
+    )
+    assert (
+        "identifies the user-provided artifacts, marks each as `copied as-is`, "
+        "`corrected`, `expanded`, `removed`, or `left intentionally unspecified`, "
+        "gives a short reason for each material change, and records where each "
+        "artifact was written."
+    ) in skill_text, f"reviewed artifact disposition rule missing in {skill_md}"
+    assert (
+        "Include visible `Confirmed requirements coverage` and `Reviewed contract artifacts` sections before asking for approval."
+    ) in skill_text, f"pre-approval reviewed-artifacts rule missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "keep exact implementation-driving detail in `TODO.md` and use explicit `TODO.md` follow-up for later spec/doc updates when mixed product/implementation artifacts are not becoming durable spec deltas now",
+            "Keep exact implementation-driving detail in `TODO.md` and use explicit `TODO.md` follow-up for later spec/doc updates when mixed product/implementation artifacts are not becoming durable spec deltas now.",
+        ),
+        skill_md,
+        "TODO follow-up drafting rule",
+    )
+
+
 def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> None:
     """Assert the audit skill keeps its clarification and assumption guardrails."""
     require_any_substring(
@@ -437,6 +477,7 @@ def validate_builder_skill(skill_dir: Path) -> None:
         validate_init_project_skill_text(skill_text, skill_md)
     if skill_dir.name in {"cdd-plan", "cdd-audit-and-implement"}:
         validate_coarse_step_planning(skill_text, skill_md)
+        validate_reviewed_contract_artifacts(skill_text, skill_md)
     if skill_dir.name == "cdd-audit-and-implement":
         validate_audit_and_implement_skill_text(skill_text, skill_md)
     if skill_dir.name in {

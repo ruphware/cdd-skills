@@ -45,7 +45,10 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
 - For qualifying requests that are multi-surface, ambiguous, or likely to produce more than one TODO step, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
 - For those qualifying requests, refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
+- During the coarse planning phase, review any user-provided contract details, content details, and other implementation-driving artifacts, expand them into the plan, and keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat.
+- If a reviewed artifact affects both product behavior and implementation detail, keep the exact implementation-driving detail in `TODO.md` and add explicit `TODO.md` follow-up for the relevant spec/doc update unless a durable spec delta is intentionally being drafted now.
 - Add a visible `Confirmed requirements coverage` section that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
+- Add a visible `Reviewed contract artifacts` section that identifies the user-provided artifacts, marks each as `copied as-is`, `corrected`, `expanded`, `removed`, or `left intentionally unspecified`, gives a short reason for each material change, and records where each artifact was written.
 - Only carry forward confirmed requirements that make sense for the repo.
 - Plans may be long and include many steps when the confirmed scope requires it. Do not over-compress the plan just to stay minimal.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
@@ -70,8 +73,8 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 6) If only minor defaults remain, disclose them briefly in the plan and proceed without blocking.
 7) For qualifying requests, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
    - Use this mode only when the request is multi-surface, ambiguous, or likely to produce more than one TODO step.
-   - Keep the coarse pass lightweight but concrete enough to validate boundaries, dependency order, and coverage before detailed TODO drafting begins.
-   - Include a visible `Confirmed requirements coverage` section before asking for approval.
+   - Keep the coarse pass lightweight but concrete enough to validate boundaries, dependency order, coverage, and reviewed artifacts before detailed TODO drafting begins.
+   - Include visible `Confirmed requirements coverage` and `Reviewed contract artifacts` sections before asking for approval.
 8) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
    - Recommend one option based on the codebase review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
@@ -80,6 +83,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
    - TODO step updates using the repo’s existing Step template
    - translate spec deltas into implementation deltas instead of restating product intent
    - for each new or revised execution step, include exact boundaries, interface or contract changes, sequencing notes, and validation evidence
+   - keep exact implementation-driving detail in `TODO.md` and use explicit `TODO.md` follow-up for later spec/doc updates when mixed product/implementation artifacts are not becoming durable spec deltas now
    - add `Implementation notes` when the step would otherwise force the implementer to make decisions
    - for qualifying requests, refine one coarse step at a time into runnable TODO steps rather than drafting a single mixed-surface detailed plan in one jump
    - split oversized mixed-surface work into dependency-ordered steps

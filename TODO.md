@@ -416,3 +416,43 @@ Make `cdd-plan` and `cdd-audit-and-implement` handle qualifying planning request
 - Confirm the updated `cdd-plan` skill refines one coarse step at a time and visibly tracks confirmed user requirements.
 - Read the updated `cdd-audit-and-implement` skill and confirm it follows the same pattern after audit normalization.
 - Confirm the validator would fail if either skill skipped the coarse-step pass for qualifying requests or silently dropped confirmed requirements from the plan.
+
+## Step 12 — Preserve reviewed planning artifacts in `TODO.md` and surface disposition before approval
+
+### Goal
+
+Make `cdd-plan` and `cdd-audit-and-implement` expand user-supplied contract/content artifacts during the coarse planning phase, preserve exact implementation-driving detail in `TODO.md`, and show a visible pre-approval `Reviewed contract artifacts` section that explains how each reviewed artifact was handled.
+
+### Constraints
+
+- Apply this rule inside the existing coarse-step/root-cause planning phase; do not invent a separate brainstorming section.
+- Keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat or pushing it prematurely into PRD/Blueprint text.
+- If a reviewed artifact affects both product behavior and implementation detail, keep the exact implementation-driving detail in `TODO.md` and add explicit `TODO.md` follow-up for the relevant spec/doc update unless the planner is intentionally drafting a durable spec delta now.
+- This repository change is internal to the skill prompts, so the planning step itself does not require PRD or Blueprint edits.
+- The new review output must appear before the approval question and must work in both `cdd-plan` and `cdd-audit-and-implement`.
+
+### Tasks
+
+- [x] Update `skills/cdd-plan/SKILL.md` so the coarse planning phase explicitly reviews user-provided contract details, content details, and other implementation-driving artifacts, expands them into the plan, and preserves exact implementation detail in `TODO.md`.
+- [x] Update `skills/cdd-plan/SKILL.md` to require a visible `Reviewed contract artifacts` section before approval that identifies the user-provided artifacts, marks each as `copied as-is`, `corrected`, `expanded`, `removed`, or `left intentionally unspecified`, gives a short reason for each material change, and records where each artifact was written.
+- [x] Update `skills/cdd-plan/SKILL.md` so mixed product/implementation artifacts produce exact implementation detail in `TODO.md` plus explicit `TODO.md` follow-up for later spec/doc updates unless a durable spec delta is intentionally being drafted now.
+- [x] Update `skills/cdd-audit-and-implement/SKILL.md` with the same artifact-review, TODO-placement, mixed-surface follow-up, and pre-approval `Reviewed contract artifacts` rules, adapted to its audit-normalization flow.
+- [x] Extend `scripts/validate_skills.py` to assert the new artifact-review rules, the `TODO.md` placement rule for exact implementation-driving detail, the mixed-surface spec/doc follow-up rule, and the required `Reviewed contract artifacts` section contents for both planning skills.
+
+### Implementation notes
+
+- Reuse the existing coarse-step/root-cause planning phase rather than introducing a new named planning section.
+- Keep `Confirmed requirements coverage` and `Reviewed contract artifacts` distinct: one tracks confirmed user requirements, the other tracks how reviewed user-provided artifacts were handled.
+- Prefer validator assertions that check the exact placement/handling rules and reject regressions where implementation-driving detail is left only in chat or silently shifted into durable specs.
+- Touch `skills/cdd-plan/SKILL.md`, `skills/cdd-audit-and-implement/SKILL.md`, and `scripts/validate_skills.py` only unless a failing check proves another surface is required.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the updated `cdd-plan` skill and confirm that user-provided contract/content artifacts are reviewed during the coarse planning phase and that exact implementation-driving detail is preserved in `TODO.md`.
+- Confirm the updated `cdd-plan` skill requires a visible `Reviewed contract artifacts` section before approval with artifact identity, disposition, reason for each material change, and write location.
+- Read the updated `cdd-audit-and-implement` skill and confirm it applies the same rules after audit normalization.
+- Confirm the validator would fail if either planning skill dropped the `Reviewed contract artifacts` section, stopped preserving exact implementation-driving detail in `TODO.md`, or omitted explicit `TODO.md` follow-up for mixed product/implementation artifacts that are not being drafted as durable spec deltas now.
