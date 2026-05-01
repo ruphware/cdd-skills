@@ -43,6 +43,11 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
 - Ask at most one substantive clarification or decision question per message.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
+- For qualifying requests that are multi-surface, ambiguous, or likely to produce more than one TODO step, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
+- For those qualifying requests, refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
+- Add a visible `Confirmed requirements coverage` section that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
+- Only carry forward confirmed requirements that make sense for the repo.
+- Plans may be long and include many steps when the confirmed scope requires it. Do not over-compress the plan just to stay minimal.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
   - offer 2-4 concrete options grounded in the repo context
@@ -63,15 +68,21 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 4) Ask clarifying questions one at a time using the interaction contract above.
 5) If any material assumption would remain after the answers, list only those material assumptions and ask the user to confirm or correct them before continuing.
 6) If only minor defaults remain, disclose them briefly in the plan and proceed without blocking.
-7) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
+7) For qualifying requests, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
+   - Use this mode only when the request is multi-surface, ambiguous, or likely to produce more than one TODO step.
+   - Keep the coarse pass lightweight but concrete enough to validate boundaries, dependency order, and coverage before detailed TODO drafting begins.
+   - Include a visible `Confirmed requirements coverage` section before asking for approval.
+8) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
    - Recommend one option based on the codebase review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
-8) Draft proposed edits (grouped by file):
+9) Draft proposed edits (grouped by file):
    - PRD/Blueprint deltas only if required
    - TODO step updates using the repo’s existing Step template
    - translate spec deltas into implementation deltas instead of restating product intent
    - for each new or revised execution step, include exact boundaries, interface or contract changes, sequencing notes, and validation evidence
    - add `Implementation notes` when the step would otherwise force the implementer to make decisions
+   - for qualifying requests, refine one coarse step at a time into runnable TODO steps rather than drafting a single mixed-surface detailed plan in one jump
    - split oversized mixed-surface work into dependency-ordered steps
-9) Ask: **Approve and apply these changes?**
-10) After applying, suggest implementing the next step via `$cdd-implement-todo`.
+   - plans may be long and include many steps when the confirmed scope requires it
+10) Ask: **Approve and apply these changes?**
+11) After applying, suggest implementing the next step via `$cdd-implement-todo`.

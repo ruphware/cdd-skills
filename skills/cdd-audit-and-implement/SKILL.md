@@ -16,6 +16,11 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
 - Ask at most one substantive clarification or decision question per message.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and proof requirements before continuing.
+- For qualifying requests that are multi-surface, ambiguous, or likely to produce more than one TODO step, first produce coarse dependency-ordered root-cause work packages before detailed TODO drafting.
+- For those qualifying requests, refine one coarse root-cause work package at a time into runnable TODO steps rather than jumping straight from normalized audit bullets to a full mixed-surface detailed plan.
+- Add a visible `Confirmed requirements coverage` section that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
+- Only carry forward confirmed requirements that make sense for the repo.
+- Plans may be long and include many steps when the confirmed scope requires it. Do not over-compress the plan just to stay minimal.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
   - offer 2-4 concrete options grounded in the repo context
@@ -54,21 +59,27 @@ Do not convert raw audit bullets directly into TODO tasks.
    - identify the user-visible symptom, likely root cause, affected boundary, and proof needed for each item
    - tag each item as `spec_delta`, `implementation_delta`, `verification_delta`, or `defer`
    - merge duplicates and split mixed-surface findings before drafting steps
-8) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
+8) For qualifying requests, first produce coarse dependency-ordered root-cause work packages before detailed TODO drafting.
+   - Use this mode only when the request is multi-surface, ambiguous, or likely to produce more than one TODO step.
+   - Keep audit normalization and duplicate-collapsing intact; the coarse pass should organize normalized root-cause work, not bypass that analysis.
+   - Include a visible `Confirmed requirements coverage` section before asking for approval.
+9) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
    - Recommend one option based on the codebase review and normalized audit results.
    - Include the write-location choice in the same option set when possible:
      - default: update an existing TODO file
      - alternative: create `TODO-audit-<tag>.md`
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
    - Ask for a short tag only if the user chose the new-file option.
-9) Group the normalized items into 1–N implementation-ready TODO steps using the repo’s existing Step template. Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure.
-10) Ask: **Approve and apply the TODO plan?**
-11) Apply the approved plan.
+10) Group the normalized items into 1–N implementation-ready TODO steps using the repo’s existing Step template.
+    - For qualifying requests, refine one coarse root-cause work package at a time into runnable TODO steps rather than jumping straight from normalized audit bullets to a full mixed-surface detailed plan.
+    - Keep the plan KISS and CDD-style: minimal diffs, no invented structure, and as many dependency-ordered steps as the confirmed scope requires.
+11) Ask: **Approve and apply the TODO plan?**
+12) Apply the approved plan.
 
 ### B) Implement
-12) Ask which newly created step should be implemented now using the same bottom-positioned, selector-prefixed guided options; recommend the first runnable new step by default.
+13) Ask which newly created step should be implemented now using the same bottom-positioned, selector-prefixed guided options; recommend the first runnable new step by default.
     Prefer dependency order and prerequisite work when choosing that recommendation.
     The selected implementation option serves as the explicit approval to start that step immediately.
     Include a clear stop-after-plan option.
-13) If the user chooses the stop-after-plan option, stop and report the next recommended step.
-14) If the user chooses a step, implement that step immediately using the same workflow as `$cdd-implement-todo`.
+14) If the user chooses the stop-after-plan option, stop and report the next recommended step.
+15) If the user chooses a step, implement that step immediately using the same workflow as `$cdd-implement-todo`.

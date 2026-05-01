@@ -41,6 +41,45 @@ def require_any_substring(
     assert any(phrase in skill_text for phrase in phrases), f"missing {label} in {path}"
 
 
+def validate_coarse_step_planning(skill_text: str, skill_md: Path) -> None:
+    """Assert planning skills decompose coarse work and track confirmed coverage."""
+    assert (
+        "multi-surface, ambiguous, or likely to produce more than one TODO step"
+    ) in skill_text, f"qualifying-request trigger missing in {skill_md}"
+    require_any_substring(
+        skill_text,
+        (
+            "first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.",
+            "first produce coarse dependency-ordered root-cause work packages before detailed TODO drafting.",
+        ),
+        skill_md,
+        "coarse-step-first planning rule",
+    )
+    require_any_substring(
+        skill_text,
+        (
+            "refine one coarse step at a time into runnable TODO steps",
+            "refine one coarse root-cause work package at a time into runnable TODO steps",
+        ),
+        skill_md,
+        "one-by-one coarse refinement rule",
+    )
+    assert "Confirmed requirements coverage" in skill_text, (
+        f"confirmed requirements coverage section missing in {skill_md}"
+    )
+    assert (
+        "which user requirements were confirmed, which were excluded by user decision "
+        "or repo fit, and where each confirmed requirement is represented in the plan."
+    ) in skill_text, f"confirmed requirements mapping rule missing in {skill_md}"
+    assert (
+        "Only carry forward confirmed requirements that make sense for the repo."
+    ) in skill_text, f"repo-fit requirement filter missing in {skill_md}"
+    assert (
+        "Plans may be long and include many steps when the confirmed scope requires it. "
+        "Do not over-compress the plan just to stay minimal."
+    ) in skill_text, f"broad-plan allowance missing in {skill_md}"
+
+
 def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> None:
     """Assert the audit skill keeps its clarification and assumption guardrails."""
     require_any_substring(
@@ -69,7 +108,10 @@ def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> 
         "If only minor defaults remain, disclose them briefly in the plan and proceed "
         "without blocking."
     ) in skill_text, f"minor default handling guardrail missing in {skill_md}"
-    assert "Keep the plan KISS and CDD-style: minimal steps, minimal diffs, no invented structure." in skill_text, (
+    assert (
+        "Keep the plan KISS and CDD-style: minimal diffs, no invented structure, and "
+        "as many dependency-ordered steps as the confirmed scope requires."
+    ) in skill_text, (
         f"KISS/CDD planning guardrail missing in {skill_md}"
     )
     require_any_substring(
@@ -386,6 +428,8 @@ def validate_builder_skill(skill_dir: Path) -> None:
         validate_maintain_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-init-project":
         validate_init_project_skill_text(skill_text, skill_md)
+    if skill_dir.name in {"cdd-plan", "cdd-audit-and-implement"}:
+        validate_coarse_step_planning(skill_text, skill_md)
     if skill_dir.name == "cdd-audit-and-implement":
         validate_audit_and_implement_skill_text(skill_text, skill_md)
     if skill_dir.name in {
@@ -603,6 +647,8 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 validate_maintain_skill_text(skill_text, skill_md)
             if skill_name == "cdd-init-project":
                 validate_init_project_skill_text(skill_text, skill_md)
+            if skill_name in {"cdd-plan", "cdd-audit-and-implement"}:
+                validate_coarse_step_planning(skill_text, skill_md)
             if skill_name == "cdd-audit-and-implement":
                 validate_audit_and_implement_skill_text(skill_text, skill_md)
             if skill_name in {

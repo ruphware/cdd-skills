@@ -391,12 +391,12 @@ Make `cdd-plan` and `cdd-audit-and-implement` handle qualifying planning request
 
 ### Tasks
 
-- [ ] Update `skills/cdd-plan/SKILL.md` so qualifying planning runs must first produce a coarse-step decomposition, then refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
-- [ ] Update `skills/cdd-plan/SKILL.md` to require a visible confirmed-requirements coverage section or mapping that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
-- [ ] Update `skills/cdd-plan/SKILL.md` so the planner may produce long or many-step plans when confirmed scope requires it, while still keeping the steps dependency ordered and implementation ready.
-- [ ] Update `skills/cdd-audit-and-implement/SKILL.md` with the same qualifying coarse-step-first planning contract, adapted to audit normalization so coarse root-cause work packages are refined one by one into TODO steps.
-- [ ] Update `skills/cdd-audit-and-implement/SKILL.md` to require the same visible confirmed-requirements coverage behavior before the final TODO plan is proposed for approval.
-- [ ] Extend `scripts/validate_skills.py` to assert the new qualifying-request trigger, the coarse-step-first planning rule, the one-by-one refinement rule, the confirmed-requirements coverage rule, and the allowance for longer multi-step plans when warranted.
+- [x] Update `skills/cdd-plan/SKILL.md` so qualifying planning runs must first produce a coarse-step decomposition, then refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
+- [x] Update `skills/cdd-plan/SKILL.md` to require a visible confirmed-requirements coverage section or mapping that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
+- [x] Update `skills/cdd-plan/SKILL.md` so the planner may produce long or many-step plans when confirmed scope requires it, while still keeping the steps dependency ordered and implementation ready.
+- [x] Update `skills/cdd-audit-and-implement/SKILL.md` with the same qualifying coarse-step-first planning contract, adapted to audit normalization so coarse root-cause work packages are refined one by one into TODO steps.
+- [x] Update `skills/cdd-audit-and-implement/SKILL.md` to require the same visible confirmed-requirements coverage behavior before the final TODO plan is proposed for approval.
+- [x] Extend `scripts/validate_skills.py` to assert the new qualifying-request trigger, the coarse-step-first planning rule, the one-by-one refinement rule, the confirmed-requirements coverage rule, and the allowance for longer multi-step plans when warranted.
 
 ### Implementation notes
 
