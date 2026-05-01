@@ -374,32 +374,37 @@ Make `cdd-maintain` audit `README.md`, `docs/specs/prd.md`, `docs/specs/blueprin
 - Confirm `blueprint.md` plus connected `*-definition.md` files are described as technical architecture/detail surfaces.
 - Confirm the validator would fail if `cdd-maintain` stopped reviewing connected `*-definition.md` files or allowed historical README drift language.
 
-## Step 11 — Refresh this repo README to match the doc-role contract
+## Step 11 — Make planning skills decompose coarse steps first and track confirmed requirements
 
 ### Goal
 
-Refresh this repository's `README.md` so it matches the current README role contract: current or future runbook truth, concise navigation, and no historical CDD or TODO progression.
+Make `cdd-plan` and `cdd-audit-and-implement` handle qualifying planning requests by first breaking the work into coarse dependency-ordered steps, then refining one coarse step at a time into implementation-ready TODO steps, while visibly carrying confirmed user requirements into the resulting plan.
 
 ### Constraints
 
-- Keep `README.md` as the runbook entrypoint for this repo.
-- `README.md` may include current features, use cases, and future plans.
-- `README.md` must not include historical CDD or TODO step progression.
-- If the CDD block remains in `README.md`, place it in a bottom `## Footnote` section.
-- Compact duplicated content when it is already maintained more appropriately in `TODO.md`, `docs/specs/prd.md`, or `docs/specs/blueprint.md`, without dropping necessary install or workflow guidance.
+- Apply this planning mode only when the request is multi-surface, ambiguous, or likely to produce more than one TODO step.
+- Preserve the existing approval-gated planning flow and one-question-at-a-time clarification contract.
+- Final TODO steps must remain decision-complete and dependency ordered.
+- Plans may be long and include many steps when the confirmed request warrants that scope; do not over-compress the plan just to stay minimal.
+- Only requirements that make sense for the repo and that the user has confirmed should be carried forward as required plan coverage.
+- `cdd-audit-and-implement` must keep its audit normalization rules and root-cause grouping behavior intact.
 
 ### Tasks
 
-- [ ] Review this repository's `README.md` against the new `cdd-maintain` doc-role rules and the actual current repo state.
-- [ ] Propose and apply a README refresh that removes stale or overly duplicated content while preserving current runbook and install guidance.
-- [ ] Keep future-facing product/workflow notes only where they help README readers, and push lower-level planning or technical detail into the more appropriate CDD docs.
-- [ ] Run the relevant validation checks for the touched docs.
+- [ ] Update `skills/cdd-plan/SKILL.md` so qualifying planning runs must first produce a coarse-step decomposition, then refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
+- [ ] Update `skills/cdd-plan/SKILL.md` to require a visible confirmed-requirements coverage section or mapping that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
+- [ ] Update `skills/cdd-plan/SKILL.md` so the planner may produce long or many-step plans when confirmed scope requires it, while still keeping the steps dependency ordered and implementation ready.
+- [ ] Update `skills/cdd-audit-and-implement/SKILL.md` with the same qualifying coarse-step-first planning contract, adapted to audit normalization so coarse root-cause work packages are refined one by one into TODO steps.
+- [ ] Update `skills/cdd-audit-and-implement/SKILL.md` to require the same visible confirmed-requirements coverage behavior before the final TODO plan is proposed for approval.
+- [ ] Extend `scripts/validate_skills.py` to assert the new qualifying-request trigger, the coarse-step-first planning rule, the one-by-one refinement rule, the confirmed-requirements coverage rule, and the allowance for longer multi-step plans when warranted.
 
 ### Implementation notes
 
-- Use `README.md` for concise orientation and runbook content, not as a backlog or historical record.
-- Prefer linking to the deeper CDD docs instead of repeating their full detail.
-- Re-check the CDD block placement against the current `cdd-init-project` contract before editing.
+- Use the same qualifying-request trigger in both skills: multi-surface, ambiguous, or likely to produce more than one TODO step.
+- The coarse-step pass should happen before detailed TODO drafting, not after.
+- The confirmed-requirements coverage section can be lightweight, but it must be visible in planning output and must prevent confirmed requirements from being silently dropped.
+- Keep KISS as a guardrail against invented structure, but do not let “minimal steps” language block legitimately broad plans.
+- Touch `skills/cdd-plan/SKILL.md`, `skills/cdd-audit-and-implement/SKILL.md`, and `scripts/validate_skills.py` only unless a failing check proves another surface is needed.
 
 ### Automated checks
 
@@ -407,7 +412,7 @@ Refresh this repository's `README.md` so it matches the current README role cont
 
 ### UAT
 
-- Confirm `README.md` reflects the current repo state or clearly intended future plans.
-- Confirm historical CDD or TODO progression is no longer present.
-- Confirm duplicated detail is reduced where other canonical docs already cover it.
-- Confirm the CDD block, if retained, sits in a bottom `## Footnote` section.
+- Read the updated `cdd-plan` skill and confirm that qualifying requests begin with coarse dependency-ordered steps before detailed TODO drafting.
+- Confirm the updated `cdd-plan` skill refines one coarse step at a time and visibly tracks confirmed user requirements.
+- Read the updated `cdd-audit-and-implement` skill and confirm it follows the same pattern after audit normalization.
+- Confirm the validator would fail if either skill skipped the coarse-step pass for qualifying requests or silently dropped confirmed requirements from the plan.
