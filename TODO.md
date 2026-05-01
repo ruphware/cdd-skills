@@ -296,3 +296,80 @@ Make `cdd-master-chef` handle long autonomous runs by using durable Master Chef 
 - Confirm Builder context strategy remains fresh one-step sessions.
 - Confirm Master Chef has a durable checkpoint file and explicit compaction triggers.
 - Confirm resume after compaction starts from runtime files, TODO, and git state rather than transcript memory.
+
+## Step 09 — Move the CDD README contract block into a bottom Footnote section
+
+### Goal
+
+Make `cdd-init-project` require the full CDD README block in a bottom `## Footnote` section instead of under the title and short description.
+
+### Constraints
+
+- Preserve `README.md` as the runbook entrypoint.
+- The required block is the existing four-line CDD block: two badges plus the two quoted guidance lines.
+- For fresh/bootstrap repos, the block must live in a bottom `## Footnote` section rather than at the top of the README.
+- For existing-repo adoption, do not add or move the block unless the user explicitly confirms that README edit.
+- Avoid duplicate insertion when the full block or its badges already exist.
+
+### Tasks
+
+- [x] Update `skills/cdd-init-project/SKILL.md` so the required README rule changes from a top-of-file header block to a bottom `## Footnote` section that contains the full four-line CDD block.
+- [x] Update all README-drafting instructions in `cdd-init-project` flows so generated or adopted READMEs keep the runbook content primary and place the CDD block in the bottom Footnote section.
+- [x] Keep the existing-repo adoption confirmation rule, but rewrite it so the confirmation applies to adding or moving the full CDD block into the Footnote section.
+- [x] Extend `scripts/validate_skills.py` to assert the Footnote placement rule and reject the old under-title placement rule if it reappears.
+
+### Implementation notes
+
+- This step supersedes the older top-of-README contract recorded in Step 02; preserve that older step as TODO history rather than editing it away.
+- Keep the exact four-line block content unless a failing validator proves another change is required.
+- The placement rule should be explicit: bottom `## Footnote` section, not merely “somewhere in README”.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the updated init skill and confirm fresh/bootstrap README generation places the full CDD block in a bottom `## Footnote` section.
+- Confirm existing-repo adoption still requires explicit approval before adding or moving that full block.
+- Confirm the validator would fail if the skill switched back to top-of-README placement.
+
+## Step 10 — Tighten `cdd-maintain` support-doc drift rules around current truth and doc roles
+
+### Goal
+
+Make `cdd-maintain` audit `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `*-definition.md` files against a stricter no-drift contract: support docs must reflect current state or approved future state, with clear separation between product-facing and technical surfaces.
+
+### Constraints
+
+- `README.md` remains the runbook entrypoint and may include current features, use cases, and future plans.
+- `README.md` must not include historical project narration or CDD/TODO step progression.
+- `README.md` may be compacted when it is long and substantially duplicates content already maintained elsewhere, but that compaction stays user-approved.
+- `docs/specs/prd.md` is the product-manager view and may include vision, use cases, JTBD, and feature lists.
+- `docs/specs/blueprint.md` and connected `*-definition.md` files hold technical architecture, data structures, technical reasoning, and implementation detail.
+- `cdd-maintain` must audit for drift against current codebase reality or clearly intended future-state docs, not against repo history.
+
+### Tasks
+
+- [ ] Update `skills/cdd-maintain/SKILL.md` so support-doc drift review explicitly forbids history and CDD/TODO step progression in `README.md` while allowing current or future plans and concise runbook guidance.
+- [ ] Expand the support-doc scope in `cdd-maintain` to include connected `*-definition.md` files as technical documentation surfaces reviewed alongside `docs/specs/blueprint.md`.
+- [ ] Add explicit role rules to `cdd-maintain` for `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and `*-definition.md` files so product-facing versus technical content boundaries are enforced during drift review.
+- [ ] Extend `scripts/validate_skills.py` to assert the new `cdd-maintain` drift-language contract and the `*-definition.md` review scope.
+- [ ] Add a repo follow-on requirement that this repository's own `README.md` should be refreshed to match the new doc-role contract once the skill and validator changes land.
+
+### Implementation notes
+
+- Keep approval-gated doc edits intact; `cdd-maintain` should propose refreshes, not silently rewrite docs.
+- "Current or future" should be expressed as current repo truth or clearly intended forward-looking documentation, not vague aspirational history.
+- Treat `blueprint.md` as the anchor technical spec and `*-definition.md` files as connected detail surfaces rather than parallel PRDs.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the updated maintain skill and confirm `README.md` is audited as a current or future runbook surface with no history and no CDD/TODO step progression.
+- Confirm `prd.md` is described as the PM/product view.
+- Confirm `blueprint.md` plus connected `*-definition.md` files are described as technical architecture/detail surfaces.
+- Confirm the validator would fail if `cdd-maintain` stopped reviewing connected `*-definition.md` files or allowed historical README drift language.
