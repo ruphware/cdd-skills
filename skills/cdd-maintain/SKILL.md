@@ -13,12 +13,14 @@ Read:
 - `AGENTS.md`
 - `README.md`
 - `TODO.md` and adjacent `TODO*.md`
-- `docs/JOURNAL.md`
+- `docs/JOURNAL.md` as the stable journal entrypoint
+- `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active
 - `docs/INDEX.md`
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
 - connected `docs/specs/*-definition.md` files when present
 - `docs/prompts/PROMPT-INDEX.md` if present
+- repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces
 - repo manifests, entrypoints, and test/lint/typecheck config as needed for code-health checks
 
 ## Safe archive behavior
@@ -52,15 +54,23 @@ Read:
 - Group all such stale-file deletions into one approval request.
 
 ## Journal archive rules
-- Read the archive or rotation guidance at the top of `docs/JOURNAL.md`.
-- Archive `docs/JOURNAL.md` only according to the rules defined there.
-- If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped.
+- Read the journal layout plus archive or rotation guidance at the top of `docs/JOURNAL.md` first.
+- Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos.
+- If no active implementation `TODO-<area>.md` exists, treat the repo as single-journal mode and archive `docs/JOURNAL.md` only according to the rules defined there.
+- When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal.
+- In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
+- `TODO-next.md` is backlog and does not require `JOURNAL-next.md`.
+- Do not precreate split-journal files before split-journal mode is active.
+- In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present.
+- If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
 
 ## Support documentation drift review
 - Treat `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files as canonical support docs.
 - Also review `docs/INDEX.md` and `docs/prompts/PROMPT-INDEX.md` when present as support-doc navigation surfaces.
+- Treat repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces tied to the repo's documented workflow.
 - Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs.
-- Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, and doc-role boundaries still match the repo.
+- When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract.
+- Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, doc-role boundaries, journal topology, and workflow-skill expectations still match the repo.
 - For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression.
 - If `README.md` includes a CDD contract note, keep it as a low-visibility bottom footer, such as the repo-standard `___` + badges + `<sup>` footnote, rather than a top-of-file banner.
 - If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
@@ -68,13 +78,16 @@ Read:
 - For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec and use connected definition files for technical architecture, data structures, interfaces, technical reasoning, and implementation detail.
 - Do not treat repo history as justification for stale support-doc content; drift review is about current repo truth or clearly intended future-state docs.
 - Classify each support doc as `current`, `drifted`, `missing`, or `unclear`.
+- Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear` when that surface exists or is expected by the repo.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
 - If `README.md`, `docs/specs/*`, or connected `*-definition.md` files have drifted, prepare the needed edits and show them to the user before applying anything.
-- Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`.
+- If repo-local `.agents/skills/*/SKILL.md` files drift from the current repo structure, documentation topology, or workflow contract, prepare the needed edits and show them to the user before applying anything.
+- Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files.
 - Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`
 - Keep documentation approval separate from stale TODO deletion approval so the user can approve doc updates without approving file deletions.
 - If the user approves, apply only the approved support-doc edits and then report them.
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
+- Report repo-local skill-surface drift together with support-doc drift when present.
 
 ## INDEX freshness
 - Check how old `docs/INDEX.md` is using the last git change when available, otherwise filesystem mtime.

@@ -252,11 +252,56 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "If older incomplete or ambiguous steps block a clean top trim, do not archive later completed steps; report archival as blocked by non-contiguous active history." in skill_text, (
         f"TODO non-contiguous history rule missing in {skill_md}"
     )
-    assert "Archive `docs/JOURNAL.md` only according to the rules defined there." in skill_text, (
-        f"journal archive rule missing in {skill_md}"
+    assert "`docs/JOURNAL.md` as the stable journal entrypoint" in skill_text, (
+        f"stable journal entrypoint source missing in {skill_md}"
     )
-    assert "If `docs/JOURNAL.md` has no clear archive rule near the top, do not invent one; skip journal archival and report that it was skipped." in skill_text, (
-        f"journal skip rule missing in {skill_md}"
+    assert "docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active" in skill_text, (
+        f"split-journal source coverage missing in {skill_md}"
+    )
+    assert "repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces" in skill_text, (
+        f"repo-local skill source coverage missing in {skill_md}"
+    )
+    assert "Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos." in skill_text, (
+        f"stable journal entrypoint rule missing in {skill_md}"
+    )
+    assert "If no active implementation `TODO-<area>.md` exists, treat the repo as single-journal mode and archive `docs/JOURNAL.md` only according to the rules defined there." in skill_text, (
+        f"single-journal archive rule missing in {skill_md}"
+    )
+    assert "When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal." in skill_text, (
+        f"split-journal activation rule missing in {skill_md}"
+    )
+    assert "In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present." in skill_text, (
+        f"split-journal review coverage missing in {skill_md}"
+    )
+    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." in skill_text, (
+        f"TODO-next backlog rule missing in {skill_md}"
+    )
+    assert "Do not precreate split-journal files before split-journal mode is active." in skill_text, (
+        f"split-journal precreation guardrail missing in {skill_md}"
+    )
+    assert "In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present." in skill_text, (
+        f"split-journal archive routing missing in {skill_md}"
+    )
+    assert "If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it." in skill_text, (
+        f"journal unclear-surface skip rule missing in {skill_md}"
+    )
+    assert "Treat repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces tied to the repo's documented workflow." in skill_text, (
+        f"repo-local skill drift-surface rule missing in {skill_md}"
+    )
+    assert "When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract." in skill_text, (
+        f"repo-local skill comparison rule missing in {skill_md}"
+    )
+    assert "Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, doc-role boundaries, journal topology, and workflow-skill expectations still match the repo." in skill_text, (
+        f"support-doc topology and workflow-skill review missing in {skill_md}"
+    )
+    assert "Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear` when that surface exists or is expected by the repo." in skill_text, (
+        f"repo-local skill classification rule missing in {skill_md}"
+    )
+    assert "If repo-local `.agents/skills/*/SKILL.md` files drift from the current repo structure, documentation topology, or workflow contract, prepare the needed edits and show them to the user before applying anything." in skill_text, (
+        f"repo-local skill drift prep rule missing in {skill_md}"
+    )
+    assert "Report repo-local skill-surface drift together with support-doc drift when present." in skill_text, (
+        f"repo-local skill reporting rule missing in {skill_md}"
     )
     assert "connected `docs/specs/*-definition.md` files when present" in skill_text, (
         f"definition sources-of-truth scope missing in {skill_md}"
@@ -266,9 +311,6 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     )
     assert "Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs." in skill_text, (
         f"support-doc current-or-future contract missing in {skill_md}"
-    )
-    assert "Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, and doc-role boundaries still match the repo." in skill_text, (
-        f"support-doc role-boundary review missing in {skill_md}"
     )
     assert "For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression." in skill_text, (
         f"README doc-role rule missing in {skill_md}"
@@ -294,7 +336,7 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "If `README.md`, `docs/specs/*`, or connected `*-definition.md` files have drifted, prepare the needed edits and show them to the user before applying anything." in skill_text, (
         f"support-doc drift prep rule missing in {skill_md}"
     )
-    assert "Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, or `docs/prompts/PROMPT-INDEX.md`." in skill_text, (
+    assert "Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files." in skill_text, (
         f"support-doc no-silent-refresh rule missing in {skill_md}"
     )
     assert "Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`" in skill_text, (

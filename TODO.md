@@ -473,11 +473,11 @@ Make `cdd-maintain` maintain both single-journal and split-journal CDD repos, an
 
 ### Tasks
 
-- [ ] Update `skills/cdd-maintain/SKILL.md` so its sources of truth and journal archive rules distinguish single-journal mode from split-journal mode, with `docs/JOURNAL.md` treated as the stable entrypoint and split-journal maintenance routed through `docs/journal/` when active.
-- [ ] Update `skills/cdd-maintain/SKILL.md` so split-journal review covers `docs/journal/JOURNAL.md` for cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
-- [ ] Update `skills/cdd-maintain/SKILL.md` so maintenance reviews repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces, checks them against the current repo structure and documentation topology, and reports drift without silently rewriting them.
-- [ ] Update `skills/cdd-maintain/SKILL.md` so `TODO-next.md` stays backlog-only, does not require `JOURNAL-next.md`, and split-journal files are not precreated before split mode is active.
-- [ ] Extend `scripts/validate_skills.py` to assert the new split-journal and repo-local-skill rules for `cdd-maintain`, and refresh `skills/cdd-maintain/agents/openai.yaml` only if its default prompt would otherwise misdescribe the updated coverage.
+- [x] Update `skills/cdd-maintain/SKILL.md` so its sources of truth and journal archive rules distinguish single-journal mode from split-journal mode, with `docs/JOURNAL.md` treated as the stable entrypoint and split-journal maintenance routed through `docs/journal/` when active.
+- [x] Update `skills/cdd-maintain/SKILL.md` so split-journal review covers `docs/journal/JOURNAL.md` for cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
+- [x] Update `skills/cdd-maintain/SKILL.md` so maintenance reviews repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces, checks them against the current repo structure and documentation topology, and reports drift without silently rewriting them.
+- [x] Update `skills/cdd-maintain/SKILL.md` so `TODO-next.md` stays backlog-only, does not require `JOURNAL-next.md`, and split-journal files are not precreated before split mode is active.
+- [x] Extend `scripts/validate_skills.py` to assert the new split-journal and repo-local-skill rules for `cdd-maintain`, and refresh `skills/cdd-maintain/agents/openai.yaml` only if its default prompt would otherwise misdescribe the updated coverage.
 
 ### Implementation notes
 
