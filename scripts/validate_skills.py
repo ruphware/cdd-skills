@@ -258,8 +258,8 @@ def validate_implement_todo_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "Do not duplicate the same journal entry across multiple journal files." in skill_text, (
         f"journal dedupe guardrail missing in {skill_md}"
     )
-    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." in skill_text, (
-        f"TODO-next journal rule missing in {skill_md}"
+    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." not in skill_text, (
+        f"stale TODO-next journal rule should not appear in {skill_md}"
     )
     assert "Update `docs/JOURNAL.md` only when changes are non-trivial, per `AGENTS.md`." not in skill_text, (
         f"old root-journal-only rule should not appear in {skill_md}"
@@ -304,6 +304,9 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos." in skill_text, (
         f"stable journal entrypoint rule missing in {skill_md}"
     )
+    assert "In split-journal mode, expect the top of `docs/JOURNAL.md` to remain a short, clear current-state index/header for the active journal layout; if it no longer clearly routes readers to `docs/journal/*`, report it as drift." in skill_text, (
+        f"post-split journal entrypoint quality rule missing in {skill_md}"
+    )
     assert "If no active implementation `TODO-<area>.md` exists, treat the repo as single-journal mode and archive `docs/JOURNAL.md` only according to the rules defined there." in skill_text, (
         f"single-journal archive rule missing in {skill_md}"
     )
@@ -313,8 +316,8 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     assert "In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present." in skill_text, (
         f"split-journal review coverage missing in {skill_md}"
     )
-    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." in skill_text, (
-        f"TODO-next backlog rule missing in {skill_md}"
+    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." not in skill_text, (
+        f"stale TODO-next backlog rule should not appear in {skill_md}"
     )
     assert "Do not precreate split-journal files before split-journal mode is active." in skill_text, (
         f"split-journal precreation guardrail missing in {skill_md}"
@@ -482,13 +485,13 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         "- `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology."
     ) in skill_text, f"bounded AGENTS drift rule missing in {skill_md}"
     assert (
-        "- `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ or `TODO-*.md`; do not replace Step 00 with a repo-specific adoption format."
+        "- `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ in root `TODO.md` or split `TODO-<area>.md` files; do not replace Step 00 with a repo-specific adoption format."
     ) in skill_text, f"TODO Step 00 preservation rule missing in {skill_md}"
     assert (
-        "- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and transition-to-split mechanics. In unsplit repos it remains the live journal; once active implementation work branches into `TODO-<area>.md`, keep `docs/JOURNAL.md` as the stable journal entrypoint and use `docs/journal/*` for live split-journal content. Repo-specific content belongs in entries and summaries only."
+        "- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, compact header guidance, and transition-to-split mechanics. In unsplit repos it remains the live journal; once active implementation work branches into `TODO-<area>.md`, keep `docs/JOURNAL.md` as the stable journal entrypoint/index, rewrite it as a short current-state index after split activation, and keep it compact and high-signal. Repo-specific content belongs in entries and summaries only."
     ) in skill_text, f"JOURNAL preservation rule missing in {skill_md}"
     assert (
-        "- `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and do not create `JOURNAL-next.md`."
+        "- `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and keep split-journal mode once it starts."
     ) in skill_text, f"split-journal topology rule missing in {skill_md}"
     assert (
         "- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt."
@@ -513,7 +516,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     ), f"TODO Step 00 flow preservation missing in {skill_md}"
     assert (
         skill_text.count(
-            "keep `docs/JOURNAL.md` as the stable journal entrypoint, preserve split-journal topology only when active, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present"
+            "keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present"
         )
         >= 3
     ), f"JOURNAL/PROMPT-INDEX/local-skill flow preservation missing in {skill_md}"
@@ -539,7 +542,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         "existing-repo Step 01+ append rule",
     )
     assert (
-        "- `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint and split-journal `docs/journal/*` topology preserved only when active"
+        "- `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint/index, rewritten as a short current-state index after split activation, and split-journal `docs/journal/*` topology preserved only when active"
     ) in skill_text, f"existing-repo split-journal materialization rule missing in {skill_md}"
     assert (
         "- `.agents/skills/*/SKILL.md`: when present in the source or target repo, preserve them as repo-local workflow surfaces tied to the repo's documented process; do not require them when absent and do not import user-home skills"

@@ -35,7 +35,6 @@ Do not invent missing product, architecture, sequencing, or validation decisions
    - If the selected step is in `TODO-<area>.md`, treat matching `docs/journal/JOURNAL-<area>.md` as the default hot journal in split-journal mode.
    - In split-journal mode, use `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes.
    - Do not duplicate the same journal entry across multiple journal files.
-   - `TODO-next.md` is backlog and does not require `JOURNAL-next.md`.
 8) Final report format: follow the target repo’s `AGENTS.md` “Output Format Per Turn”.
    - Explicitly state which `TODO*.md` file and step were updated to mark the completed tasks done.
 

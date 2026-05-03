@@ -56,10 +56,10 @@ Read:
 ## Journal archive rules
 - Read the journal layout plus archive or rotation guidance at the top of `docs/JOURNAL.md` first.
 - Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos.
+- In split-journal mode, expect the top of `docs/JOURNAL.md` to remain a short, clear current-state index/header for the active journal layout; if it no longer clearly routes readers to `docs/journal/*`, report it as drift.
 - If no active implementation `TODO-<area>.md` exists, treat the repo as single-journal mode and archive `docs/JOURNAL.md` only according to the rules defined there.
 - When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal.
 - In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
-- `TODO-next.md` is backlog and does not require `JOURNAL-next.md`.
 - Do not precreate split-journal files before split-journal mode is active.
 - In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present.
 - If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
