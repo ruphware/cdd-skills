@@ -25,11 +25,13 @@ Project:
 - `docs/specs/blueprint.md`
 
 Development:
-- top of `docs/JOURNAL.md`
+- top of `docs/JOURNAL.md` as the stable journal entrypoint
+- matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` when `docs/JOURNAL.md` indicates split-journal mode
 
 ## Graceful fallback rules
 - Read `AGENTS.md` first and treat it as the source of truth for role and response format.
 - Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing.
+- Use `docs/JOURNAL.md` to detect journal layout first. If it indicates split-journal mode, continue with the matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` as needed.
 - For missing project context, use the first existing curated fallback in this order:
   - `README*.md`
   - `docs/specs/prd.md`
@@ -40,7 +42,8 @@ Development:
   - top of `CHANGELOG*.md`
   - top of `docs/CHANGELOG*.md`
   - top of `docs/notes*.md`
-- Use only the top of `docs/JOURNAL.md` or development fallback files; do not ingest full history unless the user explicitly asks.
+- If split-journal mode is active but no matching area journal is clear, prefer `docs/journal/JOURNAL.md` for cross-cutting notes and `docs/journal/SUMMARY.md` for older condensed context before falling back to non-journal docs.
+- Use only the top of `docs/JOURNAL.md`, matching split-journal files, or development fallback files; do not ingest full history unless the user explicitly asks.
 - If multiple plausible fallback docs exist in the same tier, prefer canonical CDD files, then root runbook docs, then the shortest current-state doc that answers the need.
 - Do not write or modify repo files.
 - Do not ask for approval.
@@ -58,4 +61,4 @@ Return a concise boot report that includes:
 On success, recommend continuing in vanilla AGENTS-driven mode.
 
 ## Example prompt
-`$cdd-boot Ingest AGENTS.md and assume the role. Read README.md docs/INDEX.md docs/specs/blueprint.md to understand the project. See top of docs/JOURNAL.md for implementation details.`
+`$cdd-boot Ingest AGENTS.md and assume the role. Read README.md docs/INDEX.md docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them.`

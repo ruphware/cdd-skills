@@ -216,13 +216,53 @@ def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
         "Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing."
     ) in skill_text, f"graceful missing-docs handling missing in {skill_md}"
     assert (
-        "Use only the top of `docs/JOURNAL.md` or development fallback files; do not ingest full history unless the user explicitly asks."
+        "top of `docs/JOURNAL.md` as the stable journal entrypoint"
+    ) in skill_text, f"journal entrypoint preferred input missing in {skill_md}"
+    assert (
+        "matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` when `docs/JOURNAL.md` indicates split-journal mode"
+    ) in skill_text, f"split-journal preferred inputs missing in {skill_md}"
+    assert (
+        "Use `docs/JOURNAL.md` to detect journal layout first. If it indicates split-journal mode, continue with the matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` as needed."
+    ) in skill_text, f"split-journal detection rule missing in {skill_md}"
+    assert (
+        "If split-journal mode is active but no matching area journal is clear, prefer `docs/journal/JOURNAL.md` for cross-cutting notes and `docs/journal/SUMMARY.md` for older condensed context before falling back to non-journal docs."
+    ) in skill_text, f"split-journal fallback preference missing in {skill_md}"
+    assert (
+        "Use only the top of `docs/JOURNAL.md`, matching split-journal files, or development fallback files; do not ingest full history unless the user explicitly asks."
     ) in skill_text, f"top-of-journal guardrail missing in {skill_md}"
+    assert (
+        "Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them."
+    ) in skill_text, f"boot example prompt split-journal rule missing in {skill_md}"
     assert "Do not write or modify repo files." in skill_text, (
         f"read-only boot contract missing in {skill_md}"
     )
     assert "On success, recommend continuing in vanilla AGENTS-driven mode." in skill_text, (
         f"vanilla next-step guidance missing in {skill_md}"
+    )
+
+
+def validate_implement_todo_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the implement-todo skill routes non-trivial journaling correctly."""
+    assert "Update the matching journal file only when changes are non-trivial, per `AGENTS.md`." in skill_text, (
+        f"matching-journal update rule missing in {skill_md}"
+    )
+    assert "In single-journal mode, update `docs/JOURNAL.md`." in skill_text, (
+        f"single-journal update rule missing in {skill_md}"
+    )
+    assert "If the selected step is in `TODO-<area>.md`, treat matching `docs/journal/JOURNAL-<area>.md` as the default hot journal in split-journal mode." in skill_text, (
+        f"area journal routing rule missing in {skill_md}"
+    )
+    assert "In split-journal mode, use `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes." in skill_text, (
+        f"cross-cutting journal routing rule missing in {skill_md}"
+    )
+    assert "Do not duplicate the same journal entry across multiple journal files." in skill_text, (
+        f"journal dedupe guardrail missing in {skill_md}"
+    )
+    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." in skill_text, (
+        f"TODO-next journal rule missing in {skill_md}"
+    )
+    assert "Update `docs/JOURNAL.md` only when changes are non-trivial, per `AGENTS.md`." not in skill_text, (
+        f"old root-journal-only rule should not appear in {skill_md}"
     )
 
 
@@ -511,8 +551,15 @@ def validate_builder_skill(skill_dir: Path) -> None:
         assert "Do not add a new step-level `Status:` field" in skill_text, (
             f"TODO completion guardrail missing in {skill_md}"
         )
+        validate_implement_todo_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-boot":
         validate_boot_skill_text(skill_text, skill_md)
+        assert "development (journal entrypoint + split journals) boot" in yaml_text, (
+            f"boot prompt short description missing split-journal wording in {openai_yaml}"
+        )
+        assert "Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them." in yaml_text, (
+            f"boot default prompt missing split-journal wording in {openai_yaml}"
+        )
     if skill_dir.name == "cdd-maintain":
         validate_maintain_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-init-project":
@@ -731,6 +778,7 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 assert "Do not add a new step-level `Status:` field" in skill_text, (
                     f"generated TODO completion guardrail missing in {skill_md}"
                 )
+                validate_implement_todo_skill_text(skill_text, skill_md)
             if skill_name == "cdd-boot":
                 validate_boot_skill_text(skill_text, skill_md)
             if skill_name == "cdd-maintain":

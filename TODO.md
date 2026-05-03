@@ -514,11 +514,11 @@ Make the runtime skills read from and write to the correct journal surfaces once
 
 ### Tasks
 
-- [ ] Update `skills/cdd-boot/SKILL.md` so development-context ingestion starts from `docs/JOURNAL.md` as the stable entrypoint and follows split-journal pointers when present.
-- [ ] Update `skills/cdd-boot/SKILL.md` fallbacks and example prompt so they no longer describe root `docs/JOURNAL.md` as the always-live implementation journal.
-- [ ] Update `skills/cdd-boot/agents/openai.yaml` only where needed so its prompt metadata matches the new split-journal boot behavior.
-- [ ] Update `skills/cdd-implement-todo/SKILL.md` so non-trivial journaling writes go to the matching journal file under `AGENTS.md`, using `docs/journal/JOURNAL-<area>.md` for active `TODO-<area>.md` work, `docs/journal/JOURNAL.md` only for cross-cutting notes, and no duplicated entries.
-- [ ] Extend `scripts/validate_skills.py` to assert the new `cdd-boot` split-journal read path, the revised `cdd-implement-todo` journaling rule, and the refreshed `cdd-boot` prompt text.
+- [x] Update `skills/cdd-boot/SKILL.md` so development-context ingestion starts from `docs/JOURNAL.md` as the stable entrypoint and follows split-journal pointers when present.
+- [x] Update `skills/cdd-boot/SKILL.md` fallbacks and example prompt so they no longer describe root `docs/JOURNAL.md` as the always-live implementation journal.
+- [x] Update `skills/cdd-boot/agents/openai.yaml` only where needed so its prompt metadata matches the new split-journal boot behavior.
+- [x] Update `skills/cdd-implement-todo/SKILL.md` so non-trivial journaling writes go to the matching journal file under `AGENTS.md`, using `docs/journal/JOURNAL-<area>.md` for active `TODO-<area>.md` work, `docs/journal/JOURNAL.md` only for cross-cutting notes, and no duplicated entries.
+- [x] Extend `scripts/validate_skills.py` to assert the new `cdd-boot` split-journal read path, the revised `cdd-implement-todo` journaling rule, and the refreshed `cdd-boot` prompt text.
 
 ### Implementation notes
 
