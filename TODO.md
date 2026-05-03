@@ -551,10 +551,10 @@ Make `cdd-init-project` preserve and adopt the newer boilerplate contract for st
 
 ### Tasks
 
-- [ ] Update `skills/cdd-init-project/SKILL.md` canonical contract and drift taxonomy so root `docs/JOURNAL.md` is the stable journal entrypoint and `docs/journal/*` is the optional scaled topology for split mode.
-- [ ] Update `skills/cdd-init-project/SKILL.md` fresh/bootstrap and existing-repo flows so they preserve the split-journal contract without precreating split-journal files.
-- [ ] Update `skills/cdd-init-project/SKILL.md` so repo-local `.agents/skills/*/SKILL.md` files are accounted for when present: preserve them during bootstrap or adoption, treat them as project-level workflow surfaces during repo review, and keep the scope repo-local rather than user-home.
-- [ ] Extend `scripts/validate_skills.py` to assert the new split-journal and repo-local-skill rules for `cdd-init-project`.
+- [x] Update `skills/cdd-init-project/SKILL.md` canonical contract and drift taxonomy so root `docs/JOURNAL.md` is the stable journal entrypoint and `docs/journal/*` is the optional scaled topology for split mode.
+- [x] Update `skills/cdd-init-project/SKILL.md` fresh/bootstrap and existing-repo flows so they preserve the split-journal contract without precreating split-journal files.
+- [x] Update `skills/cdd-init-project/SKILL.md` so repo-local `.agents/skills/*/SKILL.md` files are accounted for when present: preserve them during bootstrap or adoption, treat them as project-level workflow surfaces during repo review, and keep the scope repo-local rather than user-home.
+- [x] Extend `scripts/validate_skills.py` to assert the new split-journal and repo-local-skill rules for `cdd-init-project`.
 
 ### Implementation notes
 

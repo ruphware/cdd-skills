@@ -457,12 +457,24 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     assert (
         "For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and preserve the CDD workflow language under the drift rules below instead of freehand rewriting."
     ) in skill_text, f"methodology-stable contract preface missing in {skill_md}"
+    assert (
+        "- `docs/journal/JOURNAL.md`, `docs/journal/JOURNAL-<area>.md`, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active"
+    ) in skill_text, f"split-journal canonical contract listing missing in {skill_md}"
+    assert (
+        "- repo-local `.agents/skills/*/SKILL.md` files when present as project workflow surfaces"
+    ) in skill_text, f"repo-local skill canonical contract listing missing in {skill_md}"
     assert "## Contract-surface taxonomy and drift rules" in skill_text, (
         f"contract-surface taxonomy heading missing in {skill_md}"
     )
     assert (
         "- Treat these files as methodology-stable contract surfaces that should be materialized from `cdd-boilerplate` and kept aligned with its CDD workflow language:"
     ) in skill_text, f"stable contract taxonomy missing in {skill_md}"
+    assert (
+        "- Treat these optional scaled workflow surfaces as boilerplate-aligned only when the repo shape activates them:"
+    ) in skill_text, f"scaled workflow taxonomy missing in {skill_md}"
+    assert (
+        "- Treat these optional repo-local workflow surfaces as project-level contract files to preserve when present:"
+    ) in skill_text, f"repo-local workflow taxonomy missing in {skill_md}"
     assert (
         "- Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:"
     ) in skill_text, f"repo-specific contract taxonomy missing in {skill_md}"
@@ -473,11 +485,17 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         "- `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ or `TODO-*.md`; do not replace Step 00 with a repo-specific adoption format."
     ) in skill_text, f"TODO Step 00 preservation rule missing in {skill_md}"
     assert (
-        "- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and archive or summarize mechanics. Repo-specific content belongs in entries and summaries only."
+        "- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and transition-to-split mechanics. In unsplit repos it remains the live journal; once active implementation work branches into `TODO-<area>.md`, keep `docs/JOURNAL.md` as the stable journal entrypoint and use `docs/journal/*` for live split-journal content. Repo-specific content belongs in entries and summaries only."
     ) in skill_text, f"JOURNAL preservation rule missing in {skill_md}"
+    assert (
+        "- `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and do not create `JOURNAL-next.md`."
+    ) in skill_text, f"split-journal topology rule missing in {skill_md}"
     assert (
         "- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt."
     ) in skill_text, f"PROMPT-INDEX preservation rule missing in {skill_md}"
+    assert (
+        "- `.agents/skills/*/SKILL.md`: preserve repo-local project skills when present. Treat them as project-level workflow surfaces tied to the repo's documented process. Preserve them during bootstrap or adoption; do not require them when absent and do not pull user-home skills into the repo."
+    ) in skill_text, f"repo-local skill preservation rule missing in {skill_md}"
     assert (
         "- `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality."
     ) in skill_text, f"repo-specific output boundary missing in {skill_md}"
@@ -495,10 +513,16 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     ), f"TODO Step 00 flow preservation missing in {skill_md}"
     assert (
         skill_text.count(
-            "keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them"
+            "keep `docs/JOURNAL.md` as the stable journal entrypoint, preserve split-journal topology only when active, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present"
         )
         >= 3
-    ), f"JOURNAL/PROMPT-INDEX flow preservation missing in {skill_md}"
+    ), f"JOURNAL/PROMPT-INDEX/local-skill flow preservation missing in {skill_md}"
+    assert (
+        "A repo-local `.agents/skills/` folder may also be present in fresh boilerplate state; treat it as compatible boilerplate workflow surface, not as evidence of existing-repo adoption."
+    ) in skill_text, f"fresh-boilerplate local-skill compatibility note missing in {skill_md}"
+    assert (
+        "2) Inventory existing docs (e.g., `docs/`, `design/`, `adr/`, root markdown files) and repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present."
+    ) in skill_text, f"existing-repo audit local-skill inventory rule missing in {skill_md}"
     assert "Add repo-specific planning to `TODO.md`:" in skill_text, (
         f"existing-repo TODO planning rule missing in {skill_md}"
     )
@@ -514,6 +538,12 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         skill_md,
         "existing-repo Step 01+ append rule",
     )
+    assert (
+        "- `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint and split-journal `docs/journal/*` topology preserved only when active"
+    ) in skill_text, f"existing-repo split-journal materialization rule missing in {skill_md}"
+    assert (
+        "- `.agents/skills/*/SKILL.md`: when present in the source or target repo, preserve them as repo-local workflow surfaces tied to the repo's documented process; do not require them when absent and do not import user-home skills"
+    ) in skill_text, f"existing-repo repo-local skill preservation rule missing in {skill_md}"
     assert "a Step 00-style “CDD adoption” step" not in skill_text, (
         f"old repo-specific Step 00 adoption wording should not appear in {skill_md}"
     )

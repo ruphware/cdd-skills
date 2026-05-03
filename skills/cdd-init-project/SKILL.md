@@ -18,9 +18,11 @@ Use these repo files as the authoritative workflow and format:
 - `README.md`
 - `TODO.md` (and/or `TODO-*.md`)
 - `docs/JOURNAL.md`
+- `docs/journal/JOURNAL.md`, `docs/journal/JOURNAL-<area>.md`, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
 - `docs/prompts/PROMPT-INDEX.md` (if present)
+- repo-local `.agents/skills/*/SKILL.md` files when present as project workflow surfaces
 
 For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and preserve the CDD workflow language under the drift rules below instead of freehand rewriting.
 
@@ -62,14 +64,23 @@ ___
   - `TODO.md`
   - `docs/JOURNAL.md`
   - `docs/prompts/PROMPT-INDEX.md`
+- Treat these optional scaled workflow surfaces as boilerplate-aligned only when the repo shape activates them:
+  - `docs/journal/JOURNAL.md`
+  - `docs/journal/JOURNAL-<area>.md`
+  - `docs/journal/SUMMARY.md`
+  - `docs/journal/archive/`
+- Treat these optional repo-local workflow surfaces as project-level contract files to preserve when present:
+  - `.agents/skills/*/SKILL.md`
 - Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:
   - `README.md`
   - `docs/specs/prd.md`
   - `docs/specs/blueprint.md`
 - `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology.
 - `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ or `TODO-*.md`; do not replace Step 00 with a repo-specific adoption format.
-- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and archive or summarize mechanics. Repo-specific content belongs in entries and summaries only.
+- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, and transition-to-split mechanics. In unsplit repos it remains the live journal; once active implementation work branches into `TODO-<area>.md`, keep `docs/JOURNAL.md` as the stable journal entrypoint and use `docs/journal/*` for live split-journal content. Repo-specific content belongs in entries and summaries only.
+- `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and do not create `JOURNAL-next.md`.
 - `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt.
+- `.agents/skills/*/SKILL.md`: preserve repo-local project skills when present. Treat them as project-level workflow surfaces tied to the repo's documented process. Preserve them during bootstrap or adoption; do not require them when absent and do not pull user-home skills into the repo.
 - `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
 
 ## Interactive planning contract
@@ -110,6 +121,9 @@ Minimum signal files:
 - `docs/specs/blueprint.md`
 - `docs/JOURNAL.md`
 - `docs/prompts/PROMPT-INDEX.md`
+
+Compatibility note:
+- A repo-local `.agents/skills/` folder may also be present in fresh boilerplate state; treat it as compatible boilerplate workflow surface, not as evidence of existing-repo adoption.
 
 2) `EXISTING_REPO_ADOPT_CDD` if any substantive code/build/dependency signal exists, even if raw documents are also present.
 
@@ -171,7 +185,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
+   - keep `docs/JOURNAL.md` as the stable journal entrypoint, preserve split-journal topology only when active, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
 9) Ask: **Approve and apply these changes?**
 10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -218,7 +232,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
+   - keep `docs/JOURNAL.md` as the stable journal entrypoint, preserve split-journal topology only when active, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
 12) Ask: **Approve and apply these changes?**
 13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -241,7 +255,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` and `docs/prompts/PROMPT-INDEX.md` aligned with their boilerplate methodology scaffolds instead of rewriting them
+   - keep `docs/JOURNAL.md` as the stable journal entrypoint, preserve split-journal topology only when active, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
 7) Ask: **Approve and apply these changes?**
 8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -256,7 +270,7 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 
 ### Phase 1 — Audit (no writes)
 1) Read `README.md` and find the current runbook (setup/dev/test/build).
-2) Inventory existing docs (e.g., `docs/`, `design/`, `adr/`, root markdown files).
+2) Inventory existing docs (e.g., `docs/`, `design/`, `adr/`, root markdown files) and repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present.
 3) Review the current implementation surfaces that shape adoption planning: manifests, entrypoints, test/lint/typecheck config, and any existing planning system (issues, backlog files, TODO docs).
 4) Ask only blocking questions one at a time using the interaction contract above (for example, docs that must keep their path due to external links).
 
@@ -271,7 +285,8 @@ Before drafting the patch proposal, present 2-3 migration shapes when there is a
 Draft a patch proposal grouped by file, including:
 1) Add the CDD contract files using the taxonomy above:
    - `AGENTS.md`: start from the boilerplate contract and allow only bounded repo-fit edits that do not change the CDD methodology
-   - `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds
+   - `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint and split-journal `docs/journal/*` topology preserved only when active
+   - `.agents/skills/*/SKILL.md`: when present in the source or target repo, preserve them as repo-local workflow surfaces tied to the repo's documented process; do not require them when absent and do not import user-home skills
    - `docs/specs/prd.md` and `docs/specs/blueprint.md`: fill from the actual repo rather than copying boilerplate placeholders forward
 2) Reorganize docs:
    - keep `README.md` as the runbook entrypoint
