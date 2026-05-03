@@ -456,3 +456,119 @@ Make `cdd-plan` and `cdd-audit-and-implement` expand user-supplied contract/cont
 - Confirm the updated `cdd-plan` skill requires a visible `Reviewed contract artifacts` section before approval with artifact identity, disposition, reason for each material change, and write location.
 - Read the updated `cdd-audit-and-implement` skill and confirm it applies the same rules after audit normalization.
 - Confirm the validator would fail if either planning skill dropped the `Reviewed contract artifacts` section, stopped preserving exact implementation-driving detail in `TODO.md`, or omitted explicit `TODO.md` follow-up for mixed product/implementation artifacts that are not being drafted as durable spec deltas now.
+
+## Step 13 — Teach `cdd-maintain` split-journal topology and repo-local skills
+
+### Goal
+
+Make `cdd-maintain` maintain both single-journal and split-journal CDD repos, and account for repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present.
+
+### Constraints
+
+- Preserve the existing approval-gated maintenance model for documentation updates and stale TODO deletion.
+- Treat `docs/JOURNAL.md` as the stable journal entrypoint, not always the only hot journal.
+- When split-journal mode is active, route maintenance through `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` as applicable.
+- Treat `.agents/skills/*/SKILL.md` as optional repo-local workflow/governance surfaces only; do not expand this step to user-home skill directories.
+- Keep validation local and deterministic.
+
+### Tasks
+
+- [ ] Update `skills/cdd-maintain/SKILL.md` so its sources of truth and journal archive rules distinguish single-journal mode from split-journal mode, with `docs/JOURNAL.md` treated as the stable entrypoint and split-journal maintenance routed through `docs/journal/` when active.
+- [ ] Update `skills/cdd-maintain/SKILL.md` so split-journal review covers `docs/journal/JOURNAL.md` for cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
+- [ ] Update `skills/cdd-maintain/SKILL.md` so maintenance reviews repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces, checks them against the current repo structure and documentation topology, and reports drift without silently rewriting them.
+- [ ] Update `skills/cdd-maintain/SKILL.md` so `TODO-next.md` stays backlog-only, does not require `JOURNAL-next.md`, and split-journal files are not precreated before split mode is active.
+- [ ] Extend `scripts/validate_skills.py` to assert the new split-journal and repo-local-skill rules for `cdd-maintain`, and refresh `skills/cdd-maintain/agents/openai.yaml` only if its default prompt would otherwise misdescribe the updated coverage.
+
+### Implementation notes
+
+- Touch `skills/cdd-maintain/SKILL.md` and `scripts/validate_skills.py` by default; touch `skills/cdd-maintain/agents/openai.yaml` only if the invocation hint materially drifts.
+- Reuse the boilerplate split-journal vocabulary already introduced in `../cdd-boilerplate`: once any active `TODO-<area>.md` exists, split-journal mode is active and should remain active.
+- Local skill coverage is repo-local only: `.agents/skills/*/SKILL.md`.
+- Keep local-skill and support-doc edits approval-gated; `cdd-maintain` may propose updates but must not silently rewrite those files.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the updated maintain skill and confirm it distinguishes single-journal vs split-journal maintenance, with `docs/JOURNAL.md` treated as the stable entrypoint.
+- Confirm split mode review covers `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md`, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when present.
+- Confirm repo-local `.agents/skills/*/SKILL.md` files are reviewed when present and are reported as drift surfaces rather than silently rewritten.
+- Confirm `TODO-next.md` is treated as backlog only and does not require `JOURNAL-next.md`.
+- Confirm the validator would fail if `cdd-maintain` reverted to single-journal-only wording or stopped accounting for repo-local skills.
+
+## Step 14 — Align `cdd-boot` and `cdd-implement-todo` with split-journal routing
+
+### Goal
+
+Make the runtime skills read from and write to the correct journal surfaces once a repo has switched from single-journal mode to split-journal mode.
+
+### Constraints
+
+- `cdd-boot` stays read-only.
+- `cdd-boot` must treat `docs/JOURNAL.md` as the stable journal entrypoint, not always the live journal.
+- If split mode is indicated, `cdd-boot` should continue with matching `docs/journal/JOURNAL-<area>.md` and `docs/journal/SUMMARY.md` as needed.
+- `cdd-implement-todo` must follow `AGENTS.md` journaling rules for the matching hot journal file, avoid duplicate entries, and treat `TODO-next.md` as backlog that does not require `JOURNAL-next.md`.
+- Keep validator and `skills/cdd-boot/agents/openai.yaml` wording aligned.
+
+### Tasks
+
+- [ ] Update `skills/cdd-boot/SKILL.md` so development-context ingestion starts from `docs/JOURNAL.md` as the stable entrypoint and follows split-journal pointers when present.
+- [ ] Update `skills/cdd-boot/SKILL.md` fallbacks and example prompt so they no longer describe root `docs/JOURNAL.md` as the always-live implementation journal.
+- [ ] Update `skills/cdd-boot/agents/openai.yaml` only where needed so its prompt metadata matches the new split-journal boot behavior.
+- [ ] Update `skills/cdd-implement-todo/SKILL.md` so non-trivial journaling writes go to the matching journal file under `AGENTS.md`, using `docs/journal/JOURNAL-<area>.md` for active `TODO-<area>.md` work, `docs/journal/JOURNAL.md` only for cross-cutting notes, and no duplicated entries.
+- [ ] Extend `scripts/validate_skills.py` to assert the new `cdd-boot` split-journal read path, the revised `cdd-implement-todo` journaling rule, and the refreshed `cdd-boot` prompt text.
+
+### Implementation notes
+
+- `cdd-boot` must still degrade gracefully when split-journal files are absent because small repos may still use root `docs/JOURNAL.md` as the live journal.
+- Keep the change local to `skills/cdd-boot/*`, `skills/cdd-implement-todo/SKILL.md`, and `scripts/validate_skills.py` unless a failing check proves another surface is required.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm `cdd-boot` now reads root `docs/JOURNAL.md` as the journal entrypoint and follows split-journal files when indicated.
+- Confirm `cdd-implement-todo` now routes non-trivial journal updates to the matching hot journal file rather than always `docs/JOURNAL.md`.
+- Confirm the validator fails if either skill reverts to single-journal-only behavior.
+
+## Step 15 — Teach `cdd-init-project` split-journal topology and repo-local skills
+
+### Goal
+
+Make `cdd-init-project` preserve and adopt the newer boilerplate contract for stable journal entrypoints, split-journal scaling, and repo-local project skills when present.
+
+### Constraints
+
+- Preserve existing approval gates for bootstrap copy, download, clone, repo-admin actions, and adoption edits.
+- Keep `docs/JOURNAL.md` methodology-stable, but model it as the stable journal entrypoint once split mode is active.
+- Support optional `docs/journal/JOURNAL.md`, `docs/journal/JOURNAL-<area>.md`, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` only when split mode is active.
+- Treat `.agents/skills/*/SKILL.md` as repo-local project workflow surfaces only.
+- Do not precreate split-journal files before active `TODO-<area>.md` work exists, and do not require `JOURNAL-next.md`.
+
+### Tasks
+
+- [ ] Update `skills/cdd-init-project/SKILL.md` canonical contract and drift taxonomy so root `docs/JOURNAL.md` is the stable journal entrypoint and `docs/journal/*` is the optional scaled topology for split mode.
+- [ ] Update `skills/cdd-init-project/SKILL.md` fresh/bootstrap and existing-repo flows so they preserve the split-journal contract without precreating split-journal files.
+- [ ] Update `skills/cdd-init-project/SKILL.md` so repo-local `.agents/skills/*/SKILL.md` files are accounted for when present: preserve them during bootstrap or adoption, treat them as project-level workflow surfaces during repo review, and keep the scope repo-local rather than user-home.
+- [ ] Extend `scripts/validate_skills.py` to assert the new split-journal and repo-local-skill rules for `cdd-init-project`.
+
+### Implementation notes
+
+- Reuse the vocabulary already introduced in `../cdd-boilerplate` rather than inventing another split-journal model.
+- Keep fresh-boilerplate detection compatible with repos that include a local governance skill, but do not require `.agents/skills/` in every adoption case.
+- Touch `skills/cdd-init-project/SKILL.md` and `scripts/validate_skills.py` unless a failing check proves another surface must move with them.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm `cdd-init-project` now models root `docs/JOURNAL.md` as the stable entrypoint and describes split-journal files only for active split mode.
+- Confirm it now accounts for repo-local `.agents/skills/*/SKILL.md` files when present.
+- Confirm it does not require `JOURNAL-next.md` and does not precreate split-journal files in unsplit repos.
+- Confirm the validator fails if `cdd-init-project` drops either the split-journal or repo-local-skill rule.
