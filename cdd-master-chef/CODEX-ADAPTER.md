@@ -125,9 +125,11 @@ Use `max_depth = 1` unless the project has a compelling reason for recursive del
 Adapter rule:
 
 - Do not rely on Codex app dirty-state transfer for `cdd-master-chef`.
+- Prefer continuing in-session after worktree creation when Master Chef can keep both its own commands and Builder delegation rooted at `active_worktree_path` coherently.
 - The Codex adapter must either:
   - continue safely in the managed worktree in-session when the concrete runtime path supports that, or
   - stop with exact relaunch or handoff instructions when that path is not coherent in the active runtime surface
+- If a relaunch or handoff fallback is unavoidable, do not hand the Builder-start decision back to the human. The kickoff approval should already have captured whether Builder should start immediately once the managed worktree path is active.
 
 ## 7) Unsupported or blocked patterns
 

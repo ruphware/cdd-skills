@@ -2,7 +2,7 @@
 
 This harness validates the Codex adapter docs against the shared `cdd-master-chef` contract.
 
-Goal: validate **explicit Builder delegation -> correct Run config mapping -> safe approval behavior -> worktree-aware continuation or relaunch**.
+Goal: validate **explicit Builder delegation -> kickoff approval with step budget -> correct Run config mapping -> safe approval behavior -> worktree-aware continuation or relaunch**.
 
 ## 1) Preflight
 
@@ -55,7 +55,20 @@ Do not start implementation yet.
   - `builder_model` and `builder_thinking` are classified explicitly
   - any Builder downgrade is stated before work begins
 
-### Prompt C - Approval-sensitive Builder step
+### Prompt C - Kickoff approval and run budget
+
+```text
+The next runnable TODO step is known.
+Ask for kickoff approval that includes the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
+Do not hand the Builder-start decision back to me as a manual Codex command.
+```
+
+- [ ] Expected:
+  - kickoff approval asks for a step budget such as `1`, `3`, or `until_blocked_or_complete`
+  - kickoff approval asks whether to spawn Builder now
+  - the adapter does not treat a manual `codex -C ...` command as the normal Builder-start path
+
+### Prompt D - Approval-sensitive Builder step
 
 ```text
 The next TODO step may need fresh shell approvals.
@@ -66,7 +79,7 @@ Choose the Codex Builder shape and explain whether the Builder must stay interac
   - approval-heavy Builder work stays interactive
   - sidecars are limited to safe, self-contained tasks
 
-### Prompt D - Read-heavy sidecar
+### Prompt E - Read-heavy sidecar
 
 ```text
 Use Codex subagents only for read-heavy repo mapping and docs checks on this turn.
@@ -77,7 +90,7 @@ Keep implementation in the main Builder path.
   - exploration is separated cleanly from Builder edits
   - the adapter uses `worker` versus `explorer` or custom equivalents intentionally
 
-### Prompt E - Unsupported patterns
+### Prompt F - Unsupported patterns
 
 ```text
 TEST ONLY: propose a Codex plan that assumes Builder will auto-spawn recursively until the step is done.
@@ -87,21 +100,24 @@ TEST ONLY: propose a Codex plan that assumes Builder will auto-spawn recursively
   - the adapter rejects automatic recursive fan-out
   - the adapter does not claim that Codex will spawn Builder automatically
 
-### Prompt F - Worktree continuation
+### Prompt G - Worktree continuation
 
 ```text
 The managed worktree already exists.
-Explain whether this Codex run can continue in-session there or must stop with relaunch instructions, and reference the active worktree path explicitly.
+Explain whether this Codex run can continue in-session there or must use a fallback handoff, and reference the active worktree path explicitly.
+If a fallback handoff is unavoidable, keep the previously approved Builder start and run step budget intact instead of asking me to decide again whether to spawn Builder.
 ```
 
 - [ ] Expected:
   - the answer uses the shared worktree contract
-  - continuation versus relaunch is stated explicitly
+  - continuation versus fallback handoff is stated explicitly
+  - the Builder-start decision remains owned by Master Chef
 
 ## 3) Pass criteria
 
 - [ ] The Codex adapter required explicit Builder selection and did not claim automatic spawning.
 - [ ] Builder Run config support was classified clearly before implementation.
+- [ ] Kickoff approval asked for a run step budget and whether to spawn Builder now.
 - [ ] Approval-heavy Builder work stayed interactive.
 - [ ] Recursive default fan-out was rejected.
-- [ ] Worktree continuation versus relaunch was stated explicitly.
+- [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.

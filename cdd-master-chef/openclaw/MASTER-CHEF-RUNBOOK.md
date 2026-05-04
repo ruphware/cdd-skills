@@ -60,6 +60,7 @@ If a Builder needs inspection, recovery, or reporting, Master Chef handles it di
 The human owns:
 
 - the per-run Run config
+- the per-run step budget
 - kickoff approval
 - final review
 - intervention when Master Chef reports a blocker or deadlock
@@ -176,6 +177,8 @@ On the first `/cdd-master-chef` turn:
    - repo state summary
    - proposed next action
    - the approved Run config
+   - the approved run step budget
+   - whether to spawn Builder now and start the autonomous run
    - runtime initialization
    - run lease
    - in-session reporting expectations
@@ -238,6 +241,8 @@ Suggested shape:
   "master_thinking": "xhigh",
   "builder_model": "<model>",
   "builder_thinking": "xhigh",
+  "run_step_budget": 1,
+  "steps_completed_this_run": 0,
   "builder_runtime": "subagent",
   "master_session_key": "<main-session-key>",
   "builder_session_key": "<builder-session-key>",

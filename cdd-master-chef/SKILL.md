@@ -17,6 +17,7 @@ Adapter note:
 - Codex and Claude Code are current subagent-backed adapter docs in this package.
 - OpenClaw is the current packaged runtime adapter in this package.
 - Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters, but no Hermes adapter ships here today.
+- Codex and Claude Code adapters should ask for the run step budget and whether to spawn Builder now, then own that Builder handoff rather than pushing the Builder-start decision back to the human.
 - The operating contract below describes the current OpenClaw runtime path.
 - When this file repeats a shared rule, treat the shared contract as canonical and this file as the OpenClaw runtime mapping of that rule.
 
@@ -72,6 +73,8 @@ Operating contract:
 10. Before implementation starts, present one kickoff approval that covers:
    - proposed next action
    - the approved `Run config`
+   - the approved run step budget
+   - whether to spawn Builder now and start the autonomous run
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations
@@ -89,6 +92,7 @@ Operating contract:
    - `git ls-files --cached --others --exclude-standard`
 16. After relaunch into the managed worktree, treat that worktree as the active repo root for QA, TODO inspection, commit, and push.
 17. For each passed step:
+   - increment `steps_completed_this_run`
    - ensure the Builder updated only the selected step in `TODO*.md`
    - run Master Chef QA
    - if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass
@@ -96,7 +100,8 @@ Operating contract:
    - commit
    - push
    - advertise `STEP_PASS` with the full result, evidence, and decision trail in the current Master Chef session
-   - re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
+   - if `run_step_budget` is a positive integer and `steps_completed_this_run` has reached it, stop cleanly with `RUN_STOPPED` and a summary instead of continuing automatically
+   - otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 18. Reporting is session-native.
    - The current Master Chef session is the control plane and reporting surface for this shared skill.
    - Report lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, and explicit stops in-session.
@@ -134,6 +139,8 @@ Canonical `run.json` fields:
 - `builder_runtime`
 - `master_session_key`
 - `builder_session_key`
+- `run_step_budget`
+- `steps_completed_this_run`
 - `active_todo_path`
 - `active_step`
 - `phase`

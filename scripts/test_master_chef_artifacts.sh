@@ -95,6 +95,8 @@ for pattern in \
   'For `\[CDD-8\] Master Chef`:' \
   'start `(\$|/)?cdd-master-chef`.*main session.*runtime you want to control' \
   'Run config block.*current session model.*thinking.*approve or edit' \
+  'how many TODO steps this run should cover' \
+  'whether (Master Chef|it) should spawn Builder now' \
   'Adapter docs.*maintainers.*debugging.*runtime support' \
   'OpenClaw.*packaged adapter.*install\.sh --runtime openclaw' \
   'Codex.*CODEX-ADAPTER\.md.*CODEX-RUNBOOK\.md' \
@@ -138,6 +140,8 @@ for field in \
   run_id \
   repo \
   source_repo \
+  run_step_budget \
+  steps_completed_this_run \
   active_worktree_path \
   worktree_branch \
   worktree_continue_mode \
@@ -155,7 +159,9 @@ for token in \
   "## 5) Cleanup" \
   "source_repo" \
   "active_worktree_path" \
-  "worktree_continue_mode"; do
+  "worktree_continue_mode" \
+  "run_step_budget" \
+  "steps_completed_this_run"; do
   assert_contains "$SHARED_ROOT/RUNBOOK.md" "$token"
 done
 
@@ -165,7 +171,9 @@ for token in \
   "| Codex |" \
   "| Claude Code |" \
   "CODEX-ADAPTER.md" \
-  "CLAUDE-ADAPTER.md"; do
+  "CLAUDE-ADAPTER.md" \
+  "Builder-start decisions back to the human" \
+  "run step budget"; do
   assert_contains "$SHARED_ROOT/RUNTIME-CAPABILITIES.md" "$token"
 done
 
@@ -181,6 +189,10 @@ for token in \
   "if the current session model and current session thinking are visible, recommend a candidate \`Run config\`" \
   "The full Run config must be resolved and approved before kickoff." \
   "recommend a candidate Run config from the current session model and current session thinking" \
+  "the approved run step budget" \
+  "whether to spawn Builder now and start the autonomous run" \
+  "\"run_step_budget\": 1" \
+  "\"steps_completed_this_run\": 0" \
   "source_repo" \
   "worktree_continue_mode" \
   "Prompt A0 - Recommendation path" \
@@ -195,6 +207,9 @@ for token in \
       assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "$token"
       ;;
     "The full Run config must be resolved and approved before kickoff.")
+      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "$token"
+      ;;
+    "\"run_step_budget\": 1"|"\"steps_completed_this_run\": 0")
       assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "$token"
       ;;
     *)

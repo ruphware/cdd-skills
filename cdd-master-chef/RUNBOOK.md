@@ -64,6 +64,8 @@ Keep the existing fields and add:
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `run_step_budget`
+- `steps_completed_this_run`
 
 Field meanings:
 
@@ -71,6 +73,8 @@ Field meanings:
 - `source_repo` is the original checkout path where the run was requested
 - `active_worktree_path` is the managed worktree path for the run
 - `worktree_continue_mode` is `in_session` or `relaunch_required`
+- `run_step_budget` is either a positive integer step count or `until_blocked_or_complete`
+- `steps_completed_this_run` counts passed TODO steps in the current autonomous run
 
 ### `run.lock.json`
 
@@ -80,6 +84,7 @@ Keep the existing fields and add:
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `run_step_budget`
 
 ### `context-summary.md`
 
@@ -90,6 +95,7 @@ The durable checkpoint must now also record:
 - worktree branch
 - worktree continuation mode
 - whether relaunch is still pending or the worktree session is active
+- the approved run step budget and how many steps have already passed in this run
 
 ## 3) Continuation decision rule
 
@@ -97,6 +103,8 @@ Use this shared rule after worktree creation:
 
 - if the runtime adapter can safely keep Master Chef and Builder operating from the managed worktree without losing control-plane coherence, set `worktree_continue_mode: in_session` and continue there
 - otherwise, set `worktree_continue_mode: relaunch_required`, write exact relaunch instructions, and stop before implementation begins
+
+Adapters that support subagent-backed Builder runs should prefer `worktree_continue_mode: in_session` when Master Chef can keep both its own commands and Builder delegation rooted at `active_worktree_path` coherently.
 
 Exact relaunch instructions must include:
 

@@ -42,26 +42,38 @@ Before kickoff, Master Chef must state how the approved `Run config` maps into C
 
 Do not start implementation until Master Chef has named which of `exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior` applies to the Builder settings.
 
-## 4) Foreground and background policy
+## 4) Kickoff approval and run budget
+
+Before autonomous implementation starts, Master Chef should ask for one explicit kickoff approval that covers:
+
+- the next runnable TODO step or other chosen routing action
+- the approved `Run config`
+- the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
+- whether to spawn Builder now and start the autonomous run
+
+After that approval, Master Chef owns the Builder handoff. Do not treat "here is a `claude --worktree ...` command for you to run" as the normal Builder-start path.
+
+## 5) Foreground and background policy
 
 - Keep Builder in the foreground when the task may need fresh permissions, clarifying questions, or multi-phase implementation context.
 - Use background subagents only for self-contained sidecar work that can finish with pre-approved tools and no interactive recovery.
 - Once a background subagent starts, it inherits the approved permissions and auto-denies anything not approved before launch.
 - If a background subagent fails because it needs additional permission or clarification, do not stretch that path. Return control to Master Chef and retry through a foreground agent or the main session.
 
-## 5) Tool and MCP policy
+## 6) Tool and MCP policy
 
 - If `tools` is omitted, Claude subagents inherit the main session tools.
 - Foreground subagents may use inherited tools or explicitly scoped MCP servers when the configured agent definition allows it.
 - Do not rely on background Builder work for MCP-dependent or approval-heavy tasks.
 
-## 6) Worktree hand-off
+## 7) Worktree hand-off
 
 - Follow the shared clean-checkout-first worktree contract.
-- Treat `--worktree` as a startup-time or relaunch-time tool, not proof of a safe in-session repo-root switch.
-- If the current Claude session cannot safely continue from the managed worktree, stop after provisioning and relaunch Claude there.
+- Prefer `worktree_continue_mode: in_session` when the active Claude surface can keep Master Chef and Builder coherently rooted at `active_worktree_path`.
+- Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.
+- If a relaunch or restart is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.
 
-## 7) Blocked paths
+## 8) Blocked paths
 
 - Do not treat nested subagent spawning as available.
 - Do not let a background Builder path absorb clarifying-question or permission failures silently.

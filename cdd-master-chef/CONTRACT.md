@@ -52,6 +52,7 @@ One Builder run equals one approved delegated action. After that action finishes
 The human owns:
 
 - the per-run Run config
+- the per-run step budget
 - kickoff approval
 - final review
 - intervention when Master Chef reports a blocker or deadlock
@@ -96,6 +97,8 @@ Canonical `run.json` fields:
 - `builder_runtime`
 - `master_session_key`
 - `builder_session_key`
+- `run_step_budget`
+- `steps_completed_this_run`
 - `active_todo_path`
 - `active_step`
 - `phase`
@@ -141,6 +144,13 @@ Runtime adapters must define:
 - whether they can inspect the current session model and thinking well enough to recommend a candidate Run config when one is missing
 - how the model and thinking fields are honored, inherited, constrained, or downgraded
 
+Before kickoff, the run must also resolve an approved step budget for the current autonomous run:
+
+- a positive integer TODO-step count such as `1` or `3`, or
+- `until_blocked_or_complete`
+
+Runtime adapters must ask for that step budget explicitly and record it in runtime state before implementation begins.
+
 ## 5) Routing model
 
 Master Chef chooses the internal `cdd-*` routing model.
@@ -178,6 +188,8 @@ Before implementation starts, present one kickoff approval that covers:
 
 - proposed next action
 - the approved `Run config`
+- the approved run step budget
+- whether to spawn Builder now and start the autonomous run
 - runtime initialization under `.cdd-runtime/master-chef/`
 - run lease creation
 
@@ -203,6 +215,7 @@ Use working-tree-aware discovery checks when unstaged files matter:
 
 For each passed step:
 
+- increment `steps_completed_this_run`
 - ensure the Builder updated only the selected step in `TODO*.md`
 - run Master Chef QA
 - if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass
@@ -210,7 +223,8 @@ For each passed step:
 - commit
 - push
 - advertise `STEP_PASS` with the full result, evidence, and decision trail in the reporting surface
-- re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
+- if `run_step_budget` is a positive integer and `steps_completed_this_run` has reached it, stop cleanly with `RUN_STOPPED` and a summary instead of continuing automatically
+- otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 - once the managed worktree becomes active, commit, push, QA, and TODO inspection happen against the active worktree path rather than the source checkout
 
 ## 9) Reporting and recovery

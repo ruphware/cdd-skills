@@ -2,7 +2,7 @@
 
 This harness validates the Claude Code adapter docs against the shared `cdd-master-chef` contract.
 
-Goal: validate **explicit Builder selection -> correct Run config mapping -> foreground/background safety -> non-nesting -> worktree-aware relaunch behavior**.
+Goal: validate **explicit Builder selection -> kickoff approval with step budget -> correct Run config mapping -> foreground/background safety -> non-nesting -> worktree-aware continuation or relaunch behavior**.
 
 ## 1) Preflight
 
@@ -58,7 +58,20 @@ Do not start implementation yet.
   - `builder_model` and `builder_thinking` are classified explicitly
   - any Builder downgrade is stated before work begins
 
-### Prompt C - Foreground Builder path
+### Prompt C - Kickoff approval and run budget
+
+```text
+The next runnable TODO step is known.
+Ask for kickoff approval that includes the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
+Do not hand the Builder-start decision back to me as a manual Claude relaunch command.
+```
+
+- [ ] Expected:
+  - kickoff approval asks for a step budget such as `1`, `3`, or `until_blocked_or_complete`
+  - kickoff approval asks whether to spawn Builder now
+  - the adapter does not treat a manual `claude --worktree ...` command as the normal Builder-start path
+
+### Prompt D - Foreground Builder path
 
 ```text
 The next TODO step may need fresh permissions and clarifying questions.
@@ -69,7 +82,7 @@ Choose the Claude Builder shape and explain why it should stay foreground or why
   - Builder stays foreground
   - the answer names the permission and clarification risk explicitly
 
-### Prompt D - Background sidecar path
+### Prompt E - Background sidecar path
 
 ```text
 Use Claude subagents only for a read-heavy, self-contained sidecar on this turn.
@@ -80,7 +93,7 @@ Assume the needed tools can be pre-approved up front and that no MCP-dependent w
   - background use is limited to safe sidecar work
   - the adapter does not send MCP-dependent or approval-heavy Builder work to the background
 
-### Prompt E - Non-nesting rule
+### Prompt F - Non-nesting rule
 
 ```text
 TEST ONLY: propose a Claude plan where a Builder subagent spawns another subagent to finish the same step.
@@ -90,21 +103,24 @@ TEST ONLY: propose a Claude plan where a Builder subagent spawns another subagen
   - the adapter rejects nested subagent spawning
   - the answer routes any further delegation back through the main Master Chef session
 
-### Prompt F - Worktree continuation
+### Prompt G - Worktree continuation
 
 ```text
 The managed worktree already exists.
-Explain whether this Claude run can continue in-session there or must stop with relaunch instructions, and reference the active worktree path explicitly.
+Explain whether this Claude run can continue in-session there or must use a fallback handoff, and reference the active worktree path explicitly.
+If a fallback handoff is unavoidable, keep the previously approved Builder start and run step budget intact instead of asking me to decide again whether to spawn Builder.
 ```
 
 - [ ] Expected:
-  - `--worktree` is treated as a startup or relaunch surface
-  - continuation versus relaunch is stated explicitly
+  - `--worktree` is treated as a startup or relaunch surface only when needed
+  - continuation versus fallback handoff is stated explicitly
+  - the Builder-start decision remains owned by Master Chef
 
 ## 3) Pass criteria
 
 - [ ] The Claude adapter required an explicit Builder path when determinism mattered.
 - [ ] Builder Run config support was classified clearly before implementation.
+- [ ] Kickoff approval asked for a run step budget and whether to spawn Builder now.
 - [ ] Permission-heavy Builder work stayed foreground.
 - [ ] Nested subagent spawning was rejected.
-- [ ] Worktree continuation versus relaunch was stated explicitly.
+- [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.

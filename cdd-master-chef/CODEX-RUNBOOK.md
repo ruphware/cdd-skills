@@ -40,19 +40,32 @@ Before kickoff, Master Chef must state how the approved `Run config` maps into C
 
 Do not start implementation until Master Chef has named which of `exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior` applies to the Builder settings.
 
-## 4) Approval and sidecar policy
+## 4) Kickoff approval and run budget
+
+Before autonomous implementation starts, Master Chef should ask for one explicit kickoff approval that covers:
+
+- the next runnable TODO step or other chosen routing action
+- the approved `Run config`
+- the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
+- whether to spawn Builder now and start the autonomous run
+
+After that approval, Master Chef owns the Builder handoff. Do not treat "here is a `codex -C ...` command for you to run" as the normal Builder-start path.
+
+## 5) Approval and sidecar policy
 
 - Keep Builder interactive when the delegated step may need fresh approvals.
 - Use read-heavy sidecars for discovery, file mapping, or documentation checks that can safely run with narrower permissions.
 - If a sidecar fails because it cannot surface a new approval, return control to Master Chef and decide whether to retry interactively or keep the work in the main session.
 
-## 5) Worktree hand-off
+## 6) Worktree hand-off
 
 - Follow the shared clean-checkout-first worktree contract.
-- If the active Codex surface cannot safely continue in the managed worktree, stop after provisioning and relaunch with `-C <active_worktree_path>`.
+- Prefer `worktree_continue_mode: in_session` when the active Codex surface can keep Master Chef and Builder operating against `active_worktree_path` coherently.
+- If the active Codex surface truly cannot continue in the managed worktree, stop after provisioning and use the smallest coherent relaunch or handoff path.
+- If a handoff is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.
 - Do not assume Codex app worktree behavior and Codex CLI worktree behavior are identical.
 
-## 6) Blocked paths
+## 7) Blocked paths
 
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.
 - Do not hide Builder downgrade decisions.

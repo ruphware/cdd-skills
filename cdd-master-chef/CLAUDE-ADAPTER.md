@@ -107,8 +107,10 @@ Do not silently ignore `builder_model` or `builder_thinking`. State explicitly w
 Adapter rule:
 
 - Follow the shared clean-checkout-first worktree contract from Step 17.
+- Prefer continuing in-session after worktree creation when the current Claude surface can keep Master Chef and Builder coherently rooted at `active_worktree_path`.
 - Prefer relaunching or restarting Claude into the managed worktree when the active session cannot safely continue there.
 - Keep `worktree_continue_mode` explicit. Do not claim in-session continuation unless the concrete Claude runtime path has been proven for that adapter flow.
+- If relaunch is unavoidable, do not give the human the Builder-start decision back. The kickoff approval should already cover whether Builder should start immediately once the managed worktree path is active.
 
 ## 7) Unsupported or blocked patterns
 

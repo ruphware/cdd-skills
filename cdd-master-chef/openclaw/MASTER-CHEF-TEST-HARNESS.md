@@ -45,6 +45,8 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
     builder_thinking: xhigh
   ```
 
+- [ ] The run step budget is prepared as either a positive integer step count or `until_blocked_or_complete`.
+
 ---
 
 ## 2) Prompt sequence
@@ -95,7 +97,7 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
   - a managed worktree is created on a fresh branch from the current `HEAD`
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
-  - `run.json` records the exact approved Run config plus source/worktree metadata
+  - `run.json` records the exact approved Run config, the approved run step budget, and source/worktree metadata
   - no watchdog cron is created
   - the OpenClaw adapter stops with exact relaunch instructions before delegated implementation starts
   - the routing choice is named explicitly in the handoff or main-session action

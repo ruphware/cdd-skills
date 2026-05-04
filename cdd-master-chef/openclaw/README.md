@@ -37,7 +37,7 @@ The packaged OpenClaw adapter has two active actors:
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
 - **Builder:** a fresh one-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
-There is no watchdog cron. The human approves one per-run Run config, approves kickoff once, and then mainly checks final results or critical blockers.
+There is no watchdog cron. The human approves one per-run Run config, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks final results or critical blockers.
 
 ## Managed worktree policy
 
@@ -142,10 +142,14 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
    - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct planning or refactor work
+   - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
+   - ask whether to spawn Builder now and start the autonomous run
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
      - the proposed next action and routing path
      - the approved Run config
+     - the approved run step budget
+     - whether to spawn Builder now
      - Builder handoff plus in-session reporting expectations
 
 After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.

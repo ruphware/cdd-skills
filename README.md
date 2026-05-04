@@ -72,6 +72,7 @@ If you want useful UI output, provide strong UX mockups with the plan. Without g
 The shared workflow is:
 
 - the human approves one per-run Run config with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, supplied inline, loaded from a local default, or recommended from the current session model and thinking when the runtime can surface them concretely
+- the human also approves how many TODO steps this run should cover and whether Master Chef should spawn Builder now and start the autonomous run
 - the human starts Master Chef in either an existing CDD-ready repo or a new project folder that should be set up in CDD form first
 - Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval
 - after kickoff, Master Chef drives the Builder automatically with fresh one-step Builder runs and the human mostly checks final results unless Master Chef reports a blocker or deadlock
@@ -221,7 +222,7 @@ For `[CDD-8] Master Chef`:
 - for OpenClaw, use `./scripts/install.sh --runtime openclaw` or `./scripts/install.sh --all` so the internal Builder skills are generated too
 - start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw
 - provide one Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, or omit it and let Master Chef recommend one from the current session model and thinking, then approve or edit that recommendation before kickoff
-- let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
+- let Master Chef inspect the repo, propose the next TODO step, ask how many TODO steps this run should cover, ask whether it should spawn Builder now, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
 - after kickoff, expect Master Chef to manage one-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting in the main session
 
 Adapter docs are for maintainers, debugging, and adding runtime support. Use `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md` for Codex-specific adapter behavior, `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md` for Claude Code-specific adapter behavior, and `cdd-master-chef/openclaw/` for the OpenClaw adapter.
