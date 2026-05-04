@@ -63,7 +63,7 @@ Before autonomous work begins:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new or adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The full Run config must be known before kickoff.
+2. The full Run config must be resolved and approved before kickoff.
 3. A pushable upstream is required before the normal autonomous commit/push loop begins.
 4. Master Chef must inspect:
    - current git status and branch
@@ -124,12 +124,21 @@ The resolved `Run config` must contain:
 - `builder_model`
 - `builder_thinking`
 
+Runtime adapters may help resolve the `Run config` in one of three ways:
+
+- an inline `Run config` block in the kickoff prompt
+- a local default Run config file when the adapter supports one
+- a recommended candidate derived from the current session model and thinking when the runtime can surface both concretely
+
+A current-session recommendation must copy those current session values into all four Run config fields, show the full candidate block back to the human, and wait for explicit approval or edits before kickoff. Do not silently assume current session settings.
+
 Treat the resolved `Run config` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
 
 Runtime adapters must define:
 
 - how the Run config is supplied
 - whether they support local default Run config files
+- whether they can inspect the current session model and thinking well enough to recommend a candidate Run config when one is missing
 - how the model and thinking fields are honored, inherited, constrained, or downgraded
 
 ## 5) Routing model

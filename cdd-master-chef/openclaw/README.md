@@ -37,7 +37,7 @@ The packaged OpenClaw adapter has two active actors:
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
 - **Builder:** a fresh one-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
-There is no watchdog cron. The human supplies one explicit per-run Run config, approves kickoff once, and then mainly checks final results or critical blockers.
+There is no watchdog cron. The human approves one per-run Run config, approves kickoff once, and then mainly checks final results or critical blockers.
 
 ## Managed worktree policy
 
@@ -122,7 +122,8 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 2. Choose how Master Chef should get the Run config:
    - either paste one inline, see `MASTER-CHEF-RUNBOOK.md`, section `2.1 Run config`
    - or keep a local-only default file at `~/.openclaw/config/master-chef/default-run-config.yaml`, see section `2.2 Local default Run config`
-3. Select the current session model to match `master_model` from the Run config you plan to use:
+   - or omit both and let Master Chef recommend a candidate Run config from the current session model and current session thinking, then approve or edit it before kickoff
+3. Select the current session model to match `master_model` from the Run config you plan to use, or the model you want copied into the recommendation path:
 
    ```text
    /model <master-model>
@@ -135,7 +136,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    Inspect where development is at, propose the next runnable TODO step, and wait for my kickoff approval before creating runtime state or spawning the Builder.
    ```
 
-   If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval.
+   If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval. Otherwise, if the current session model and current session thinking are visible, it should recommend a candidate Run config that copies them into all four fields, show it back to the human, and wait for approval or edits before kickoff. If it cannot observe both values, it should stop and ask for a Run config.
 
 5. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`

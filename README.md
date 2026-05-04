@@ -71,7 +71,7 @@ If you want useful UI output, provide strong UX mockups with the plan. Without g
 
 The shared workflow is:
 
-- the human supplies one explicit per-run Run config with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
+- the human approves one per-run Run config with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, supplied inline, loaded from a local default, or recommended from the current session model and thinking when the runtime can surface them concretely
 - the human starts Master Chef in either an existing CDD-ready repo or a new project folder that should be set up in CDD form first
 - Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval
 - after kickoff, Master Chef drives the Builder automatically with fresh one-step Builder runs and the human mostly checks final results unless Master Chef reports a blocker or deadlock
@@ -220,7 +220,7 @@ For `[CDD-8] Master Chef`:
 - install the full repo skill set for Codex or Claude Code with `npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a claude-code -g`, or use `./scripts/install.sh --all`
 - for OpenClaw, use `./scripts/install.sh --runtime openclaw` or `./scripts/install.sh --all` so the internal Builder skills are generated too
 - start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw
-- provide one Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
+- provide one Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, or omit it and let Master Chef recommend one from the current session model and thinking, then approve or edit that recommendation before kickoff
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
 - after kickoff, expect Master Chef to manage one-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting in the main session
 

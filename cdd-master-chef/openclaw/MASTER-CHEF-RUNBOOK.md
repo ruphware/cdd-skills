@@ -73,8 +73,8 @@ Before `/cdd-master-chef` is used:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new/adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The current session should already be using `master_model` from the chosen Run config.
-3. The full Run config must be known before kickoff.
+2. The current session should already be using the `master_model` from the chosen Run config, or the model you want copied into a recommended Run config when you use the current-session path.
+3. The full Run config must be resolved and approved before kickoff.
 4. A pushable upstream is required before the normal autonomous commit/push loop begins.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
    - `~/.openclaw/skills/cdd-master-chef`
@@ -115,7 +115,8 @@ Run config:
 Rules:
 
 - This block is the only place per-run model settings are set.
-- The user may either paste the block directly into the kickoff prompt or let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`.
+- The user may either paste the block directly into the kickoff prompt, let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`, or let Master Chef recommend it from the current session model and thinking when no explicit block or local default is used.
+- A current-session recommendation must copy one concrete current session model and one concrete current session thinking value into all four fields, show the candidate block back to the human, and wait for approval or edits before kickoff.
 - Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
 - After kickoff, copy the approved values into `.cdd-runtime/master-chef/run.json`. That file is the durable mirror of the approved Run config, not a second config source.
 - If the human wants different models on a given run, change only this block for that run.
@@ -133,7 +134,8 @@ Resolution order:
 
 1. If the kickoff prompt includes `Run config`, use that.
 2. Otherwise, if the local default file exists, read it and show the resolved config back to the human before kickoff.
-3. Otherwise, stop and ask the human for a Run config.
+3. Otherwise, if the current session model and current session thinking are visible, recommend a candidate Run config that copies them into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, show it back to the human, and wait for approval or edits before kickoff.
+4. Otherwise, stop and ask the human for a Run config.
 
 Privacy rule:
 

@@ -42,6 +42,8 @@ Operating contract:
 6. Before kickoff, resolve the `Run config`:
    - if the current prompt includes a `Run config` block, use that
    - otherwise, if `~/.openclaw/config/master-chef/default-run-config.yaml` exists, read it, surface the resolved config back to the human, and use it as the starting `Run config` for that run
+   - otherwise, if the current session model and current session thinking are visible, recommend a candidate `Run config` that copies those values into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, surface it back to the human, and use it only after the human approves or edits it
+   - otherwise, stop and ask the human for a `Run config`
    - the resolved `Run config` must contain `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
    - treat the resolved `Run config` as the only per-run source of truth; do not infer model settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
    - keep shared docs and commits free of local-only operator overrides

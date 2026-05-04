@@ -29,11 +29,11 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   git -C <REPO> rev-parse --abbrev-ref --symbolic-full-name @{upstream}
   ```
 
-- [ ] One explicit Run config block is prepared.
+- [ ] Either one explicit Run config block is prepared, or the current session model and current session thinking are known for the recommendation path.
 
-- [ ] Main session is using `master_model` from that Run config.
+- [ ] Main session is using `master_model` from that Run config, or the model that should be copied into the recommended Run config.
 
-- [ ] `builder_model` and `builder_thinking` are known from that same Run config.
+- [ ] `builder_model` and `builder_thinking` are known from that same Run config, or will be copied from the current-session recommendation path.
 
 - [ ] The Run config stays model-only:
 
@@ -48,6 +48,21 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 ---
 
 ## 2) Prompt sequence
+
+### Prompt A0 - Recommendation path
+
+```text
+/cdd-master-chef Use the Master Chef process for repo <REPO>.
+Do not use any local default Run config file for this test.
+If Run config is missing, recommend one that copies the current session model and current session thinking into master_model, master_thinking, builder_model, and builder_thinking, then wait for my approval or edits before kickoff.
+```
+
+- [ ] Expected:
+  - a candidate Run config is shown back to the human
+  - `master_model`, `master_thinking`, `builder_model`, and `builder_thinking` all mirror the current session values
+  - no runtime state is created yet
+  - no Builder is spawned yet
+  - the recommendation is treated as pending approval or edits, not as an implicit fallback
 
 ### Prompt A - Inspection only
 

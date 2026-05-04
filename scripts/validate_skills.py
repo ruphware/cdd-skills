@@ -790,6 +790,9 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         contract_text,
         (
             ".cdd-runtime/master-chef/run.json",
+            "The full Run config must be resolved and approved before kickoff.",
+            "recommended candidate derived from the current session model and thinking when the runtime can surface both concretely",
+            "wait for explicit approval or edits before kickoff",
             "- `source_repo`",
             "- `active_worktree_path`",
             "- `worktree_continue_mode`",
@@ -867,6 +870,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval",
             r"For `\[CDD-8\] Master Chef`:",
             r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
+            r"Run config block.*current session model.*thinking.*approve or edit",
             r"Adapter docs.*maintainers.*debugging.*runtime support",
             r"Current concrete adapters in this repo:",
             r"OpenClaw.*packaged adapter.*install\.sh --runtime openclaw",
@@ -1108,6 +1112,8 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         skill_text,
         (
             ".cdd-runtime/master-chef/run.json",
+            "if the current session model and current session thinking are visible, recommend a candidate `Run config`",
+            "use it only after the human approves or edits it",
             "- `source_repo`",
             "- `active_worktree_path`",
             "- `worktree_continue_mode`",
@@ -1136,6 +1142,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_LABEL,
             "~/.openclaw/skills/cdd-master-chef",
             "./scripts/install.sh --runtime openclaw",
+            "The full Run config must be resolved and approved before kickoff.",
+            "let Master Chef recommend it from the current session model and thinking",
+            "wait for approval or edits before kickoff",
             "worktree_continue_mode",
             "context-summary.md",
         )
@@ -1150,6 +1159,8 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_LABEL,
             "~/.openclaw/skills/cdd-master-chef",
             "./scripts/install.sh --runtime openclaw",
+            "recommend a candidate Run config from the current session model and current session thinking",
+            "wait for approval or edits before kickoff",
             ".cdd-runtime/master-chef/context-summary.md",
             "STEP_PASS",
         )
@@ -1162,6 +1173,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         harness_text,
         (
             MASTER_CHEF_LABEL,
+            "Prompt A0 - Recommendation path",
             "Prompt J - QA reject remediation",
             "Prompt L - Blocked-step decomposition",
             "Prompt N - Context compaction and resume",

@@ -94,6 +94,7 @@ for pattern in \
   'Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval' \
   'For `\[CDD-8\] Master Chef`:' \
   'start `(\$|/)?cdd-master-chef`.*main session.*runtime you want to control' \
+  'Run config block.*current session model.*thinking.*approve or edit' \
   'Adapter docs.*maintainers.*debugging.*runtime support' \
   'OpenClaw.*packaged adapter.*install\.sh --runtime openclaw' \
   'Codex.*CODEX-ADAPTER\.md.*CODEX-RUNBOOK\.md' \
@@ -177,14 +178,24 @@ for rel in \
 done
 for token in \
   ".cdd-runtime/master-chef/run.json" \
+  "if the current session model and current session thinking are visible, recommend a candidate \`Run config\`" \
+  "The full Run config must be resolved and approved before kickoff." \
+  "recommend a candidate Run config from the current session model and current session thinking" \
   "source_repo" \
   "worktree_continue_mode" \
+  "Prompt A0 - Recommendation path" \
   "Prompt J - QA reject remediation" \
   "Prompt L - Blocked-step decomposition" \
   "Prompt N - Context compaction and resume"; do
   case "$token" in
     Prompt*)
       assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md" "$token"
+      ;;
+    "recommend a candidate Run config from the current session model and current session thinking")
+      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "$token"
+      ;;
+    "The full Run config must be resolved and approved before kickoff.")
+      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "$token"
       ;;
     *)
       assert_contains "$ROOT_DIR/cdd-master-chef/SKILL.md" "$token"
