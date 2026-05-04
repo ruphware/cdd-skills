@@ -628,11 +628,11 @@ Make Master Chef provision work on a new branch in a new git worktree under a cl
 
 ### Tasks
 
-- [ ] Define the managed worktree lifecycle: preflight cleanliness check, worktree path selection, branch naming, worktree creation, runtime-state initialization, active-worktree recording, and cleanup/archival behavior.
-- [ ] Define where Master Chef stores worktree metadata and the active worktree path in runtime state, including any additions needed in `run.json`, `run.lock.json`, and `context-summary.md`.
-- [ ] Define the runtime decision rule for “continue inside the worktree” versus “provision worktree and stop with exact relaunch instructions” when the adapter cannot safely keep Builder and Master Chef operating from the new worktree.
-- [ ] Update the shared runbook and runtime adapters so commit, push, QA, and TODO inspection are performed against the managed worktree once it becomes active.
-- [ ] Add executable test coverage for the clean-checkout-first rule, new-branch/new-worktree rule, and fallback behavior.
+- [x] Define the managed worktree lifecycle: preflight cleanliness check, worktree path selection, branch naming, worktree creation, runtime-state initialization, active-worktree recording, and cleanup/archival behavior.
+- [x] Define where Master Chef stores worktree metadata and the active worktree path in runtime state, including any additions needed in `run.json`, `run.lock.json`, and `context-summary.md`.
+- [x] Define the runtime decision rule for “continue inside the worktree” versus “provision worktree and stop with exact relaunch instructions” when the adapter cannot safely keep Builder and Master Chef operating from the new worktree.
+- [x] Update the shared runbook and runtime adapters so commit, push, QA, and TODO inspection are performed against the managed worktree once it becomes active.
+- [x] Add executable test coverage for the clean-checkout-first rule, new-branch/new-worktree rule, and fallback behavior.
 
 ### Implementation notes
 
@@ -668,11 +668,11 @@ Make `cdd-master-chef` support Codex and Claude Code subagent delegation using e
 
 ### Tasks
 
-- [ ] Add a Codex adapter contract that defines how Master Chef uses Codex subagents for Builder, exploration, QA support, and read-heavy sidecar work, including when built-in agent roles are sufficient and when project-scoped `.codex/agents/*.toml` surfaces are required.
-- [ ] Add a Claude adapter contract that defines how Master Chef uses Claude subagents, including foreground-vs-background policy, non-nesting limits, permission-mode expectations, configured-agent surfaces, and when Builder work must remain foreground to keep approvals and tool access coherent.
-- [ ] For both adapters, define how the approved `Run config` maps onto real runtime capabilities: exact support, inherited-model fallback, startup-only application, or adapter-specific constrained behavior.
-- [ ] Add runtime-specific runbook and test-harness coverage for Codex and Claude, including explicit blocked paths for unsupported delegation patterns.
-- [ ] Update shared docs so OpenClaw remains one adapter among three rather than the implied default control plane.
+- [x] Add a Codex adapter contract that defines how Master Chef uses Codex subagents for Builder, exploration, QA support, and read-heavy sidecar work, including when built-in agent roles are sufficient and when project-scoped `.codex/agents/*.toml` surfaces are required.
+- [x] Add a Claude adapter contract that defines how Master Chef uses Claude subagents, including foreground-vs-background policy, non-nesting limits, permission-mode expectations, configured-agent surfaces, and when Builder work must remain foreground to keep approvals and tool access coherent.
+- [x] For both adapters, define how the approved `Run config` maps onto real runtime capabilities: exact support, inherited-model fallback, startup-only application, or adapter-specific constrained behavior.
+- [x] Add runtime-specific runbook and test-harness coverage for Codex and Claude, including explicit blocked paths for unsupported delegation patterns.
+- [x] Update shared docs so OpenClaw remains one adapter among three rather than the implied default control plane.
 
 ### Implementation notes
 
@@ -687,10 +687,10 @@ Make `cdd-master-chef` support Codex and Claude Code subagent delegation using e
 
 ### UAT
 
-- Confirm the Codex adapter uses explicit subagent semantics and does not claim automatic spawning.
-- Confirm the Claude adapter states the non-nesting rule and background MCP limitation.
-- Confirm both adapters explain how `Run config` fields are honored or downgraded.
-- Confirm the validator fails if either adapter reintroduces unsupported runtime claims.
+- [x] Confirm the Codex adapter uses explicit subagent semantics and does not claim automatic spawning.
+- [x] Confirm the Claude adapter states the non-nesting rule and background MCP limitation.
+- [x] Confirm both adapters explain how `Run config` fields are honored or downgraded.
+- [x] Confirm the validator fails if either adapter reintroduces unsupported runtime claims.
 
 ## Step 19 — Collapse Master Chef packaging into `install.sh` and retire `install-openclaw.sh`
 

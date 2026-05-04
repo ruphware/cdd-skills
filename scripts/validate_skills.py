@@ -616,14 +616,16 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     shared_root = repo_root / "master-chef"
     readme_md = shared_root / "README.md"
     contract_md = shared_root / "CONTRACT.md"
+    runbook_md = shared_root / "RUNBOOK.md"
     matrix_md = shared_root / "RUNTIME-CAPABILITIES.md"
     root_readme_md = repo_root / "README.md"
 
-    for path in (readme_md, contract_md, matrix_md, root_readme_md):
+    for path in (readme_md, contract_md, runbook_md, matrix_md, root_readme_md):
         assert path.exists(), f"missing {path}"
 
     readme_text = readme_md.read_text(encoding="utf-8")
     contract_text = contract_md.read_text(encoding="utf-8")
+    runbook_text = runbook_md.read_text(encoding="utf-8")
     matrix_text = matrix_md.read_text(encoding="utf-8")
     root_readme_text = root_readme_md.read_text(encoding="utf-8")
 
@@ -636,8 +638,20 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     assert "`CONTRACT.md`" in readme_text and "`RUNTIME-CAPABILITIES.md`" in readme_text, (
         f"shared contract index missing in {readme_md}"
     )
+    assert "`RUNBOOK.md`" in readme_text, (
+        f"shared runbook index missing in {readme_md}"
+    )
     assert "`openclaw/`" in readme_text, (
         f"OpenClaw adapter reference missing in {readme_md}"
+    )
+    assert "`CODEX-ADAPTER.md`" in readme_text and "`CODEX-RUNBOOK.md`" in readme_text, (
+        f"Codex adapter index missing in {readme_md}"
+    )
+    assert "`CLAUDE-ADAPTER.md`" in readme_text and "`CLAUDE-RUNBOOK.md`" in readme_text, (
+        f"Claude adapter index missing in {readme_md}"
+    )
+    assert "OpenClaw remains the only packaged installer path" in readme_text, (
+        f"adapter-packaging relationship missing in {readme_md}"
     )
 
     assert "runtime-agnostic source of truth" in contract_text, (
@@ -652,6 +666,15 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     assert "One Builder run equals one approved delegated action." in contract_text, (
         f"one-step Builder-run contract missing in {contract_md}"
     )
+    assert "managed worktree" in contract_text, (
+        f"managed worktree contract missing in {contract_md}"
+    )
+    assert "source_repo" in contract_text and "active_worktree_path" in contract_text, (
+        f"worktree runtime-state fields missing in {contract_md}"
+    )
+    assert "worktree_continue_mode" in contract_text, (
+        f"worktree continuation mode missing in {contract_md}"
+    )
     assert "if QA rejects the Builder result" in contract_text, (
         f"QA remediation contract missing in {contract_md}"
     )
@@ -660,6 +683,18 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     )
     assert "Runtime adapters must define:" in contract_text, (
         f"runtime adapter obligation section missing in {contract_md}"
+    )
+    assert "Before kickoff, the source checkout must be clean." in runbook_text, (
+        f"clean-checkout preflight missing in {runbook_md}"
+    )
+    assert ".cdd-runtime/master-chef/worktrees/<run-id>/" in runbook_text, (
+        f"managed worktree path rule missing in {runbook_md}"
+    )
+    assert "stop with exact relaunch instructions" in runbook_text, (
+        f"relaunch-required rule missing in {runbook_md}"
+    )
+    assert "source_repo" in runbook_text and "active_worktree_path" in runbook_text, (
+        f"worktree metadata fields missing in {runbook_md}"
     )
 
     assert "OpenClaw" in matrix_text and "Codex" in matrix_text and "Claude Code" in matrix_text, (
@@ -674,15 +709,154 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     assert "--agents" in matrix_text and "--worktree" in matrix_text, (
         f"Claude CLI capability notes missing in {matrix_md}"
     )
+    assert "stop with relaunch instructions" in matrix_text, (
+        f"OpenClaw worktree continuation rule missing in {matrix_md}"
+    )
+    assert "`CODEX-ADAPTER.md`" in matrix_text and "`CLAUDE-ADAPTER.md`" in matrix_text, (
+        f"runtime adapter doc references missing in {matrix_md}"
+    )
 
     assert "upgrade is a shared multi-runtime contract rooted in `master-chef/`" in root_readme_text, (
         f"root README shared-contract framing missing in {root_readme_md}"
+    )
+    assert "shared operational runbook: `master-chef/RUNBOOK.md`" in root_readme_text, (
+        f"root README shared runbook reference missing in {root_readme_md}"
+    )
+    assert "Codex adapter docs: `master-chef/CODEX-ADAPTER.md` and `master-chef/CODEX-RUNBOOK.md`" in root_readme_text, (
+        f"root README Codex adapter reference missing in {root_readme_md}"
+    )
+    assert "Claude Code adapter docs: `master-chef/CLAUDE-ADAPTER.md` and `master-chef/CLAUDE-RUNBOOK.md`" in root_readme_text, (
+        f"root README Claude adapter reference missing in {root_readme_md}"
     )
     assert "`openclaw/`" in root_readme_text, (
         f"root README OpenClaw adapter reference missing in {root_readme_md}"
     )
     assert "runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`" in root_readme_text, (
         f"root README capability matrix reference missing in {root_readme_md}"
+    )
+    assert "Codex and Claude adapter docs now live under `master-chef/`, but the current packaged Builder path is still the OpenClaw adapter." in root_readme_text, (
+        f"root README adapter packaging note missing in {root_readme_md}"
+    )
+
+
+def validate_codex_adapter(repo_root: Path) -> None:
+    """Validate the Codex adapter contract, runbook, and harness."""
+    adapter_md = repo_root / "master-chef" / "CODEX-ADAPTER.md"
+    runbook_md = repo_root / "master-chef" / "CODEX-RUNBOOK.md"
+    harness_md = repo_root / "master-chef" / "CODEX-TEST-HARNESS.md"
+
+    for path in (adapter_md, runbook_md, harness_md):
+        assert path.exists(), f"missing {path}"
+
+    adapter_text = adapter_md.read_text(encoding="utf-8")
+    runbook_text = runbook_md.read_text(encoding="utf-8")
+    harness_text = harness_md.read_text(encoding="utf-8")
+
+    assert "Codex only spawns subagents when you explicitly ask it to." in adapter_text, (
+        f"explicit Codex subagent trigger rule missing in {adapter_md}"
+    )
+    assert "`worker`" in adapter_text and "`explorer`" in adapter_text, (
+        f"Codex built-in agent coverage missing in {adapter_md}"
+    )
+    assert ".codex/agents/*.toml" in adapter_text, (
+        f"Codex project-agent surface missing in {adapter_md}"
+    )
+    assert "Startup-only application" in adapter_text, (
+        f"Codex startup-only run-config outcome missing in {adapter_md}"
+    )
+    assert "Do not claim that Codex will spawn Builder automatically without explicit delegation instructions." in adapter_text, (
+        f"Codex automatic-spawn guardrail missing in {adapter_md}"
+    )
+    assert "Do not promise that Codex app worktree behavior and Codex CLI worktree behavior are identical without adapter-specific proof." in adapter_text, (
+        f"Codex worktree-proof guardrail missing in {adapter_md}"
+    )
+
+    assert "Treat Builder delegation as explicit." in runbook_text, (
+        f"Codex explicit-delegation runbook rule missing in {runbook_md}"
+    )
+    assert ".codex/agents/*.toml" in runbook_text, (
+        f"Codex runbook project-agent surface missing in {runbook_md}"
+    )
+    assert "`exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior`" in runbook_text, (
+        f"Codex runbook Builder classification rule missing in {runbook_md}"
+    )
+    assert "relaunch with `-C <active_worktree_path>`" in runbook_text, (
+        f"Codex runbook worktree relaunch rule missing in {runbook_md}"
+    )
+
+    assert "Prompt E - Unsupported patterns" in harness_text, (
+        f"Codex harness unsupported-pattern case missing in {harness_md}"
+    )
+    assert "automatic Builder spawning is not claimed" in harness_text, (
+        f"Codex harness automatic-spawn expectation missing in {harness_md}"
+    )
+    assert "Recursive default fan-out was rejected." in harness_text, (
+        f"Codex harness recursive-fanout pass criterion missing in {harness_md}"
+    )
+
+
+def validate_claude_adapter(repo_root: Path) -> None:
+    """Validate the Claude Code adapter contract, runbook, and harness."""
+    adapter_md = repo_root / "master-chef" / "CLAUDE-ADAPTER.md"
+    runbook_md = repo_root / "master-chef" / "CLAUDE-RUNBOOK.md"
+    harness_md = repo_root / "master-chef" / "CLAUDE-TEST-HARNESS.md"
+
+    for path in (adapter_md, runbook_md, harness_md):
+        assert path.exists(), f"missing {path}"
+
+    adapter_text = adapter_md.read_text(encoding="utf-8")
+    runbook_text = runbook_md.read_text(encoding="utf-8")
+    harness_text = harness_md.read_text(encoding="utf-8")
+
+    assert "Claude can delegate automatically" in adapter_text, (
+        f"Claude automatic-delegation capability note missing in {adapter_md}"
+    )
+    assert "--agents <json>" in adapter_text and "--agent <name>" in adapter_text, (
+        f"Claude session-agent surfaces missing in {adapter_md}"
+    )
+    assert ".claude/agents/" in adapter_text and "~/.claude/agents/" in adapter_text, (
+        f"Claude file-agent surfaces missing in {adapter_md}"
+    )
+    assert "Subagents cannot spawn other subagents." in adapter_text, (
+        f"Claude non-nesting rule missing in {adapter_md}"
+    )
+    assert "Once a background subagent is running, it inherits the pre-approved permissions and auto-denies anything that was not approved before launch." in adapter_text, (
+        f"Claude background permission rule missing in {adapter_md}"
+    )
+    assert "Do not rely on background Builder flows for MCP-dependent or approval-heavy work" in adapter_text, (
+        f"Claude background-MCP guardrail missing in {adapter_md}"
+    )
+    assert "`builder_thinking` is not assumed to have a stable per-subagent override surface in this adapter." in adapter_text, (
+        f"Claude builder-thinking constraint missing in {adapter_md}"
+    )
+    assert "Startup-only application" in adapter_text, (
+        f"Claude startup-only run-config outcome missing in {adapter_md}"
+    )
+
+    assert "--effort <master_thinking>" in runbook_text, (
+        f"Claude runbook effort mapping missing in {runbook_md}"
+    )
+    assert "Subagents cannot spawn other subagents" in runbook_text, (
+        f"Claude runbook non-nesting rule missing in {runbook_md}"
+    )
+    assert "Once a background subagent starts, it inherits the approved permissions and auto-denies anything not approved before launch." in runbook_text, (
+        f"Claude runbook background permission rule missing in {runbook_md}"
+    )
+    assert "Do not rely on background Builder work for MCP-dependent or approval-heavy tasks." in runbook_text, (
+        f"Claude runbook background-MCP guardrail missing in {runbook_md}"
+    )
+    assert "Treat `--worktree` as a startup-time or relaunch-time tool" in runbook_text, (
+        f"Claude runbook worktree startup-only rule missing in {runbook_md}"
+    )
+
+    assert "Prompt E - Non-nesting rule" in harness_text, (
+        f"Claude harness non-nesting case missing in {harness_md}"
+    )
+    assert "Permission-heavy Builder work stayed foreground." in harness_text, (
+        f"Claude harness foreground pass criterion missing in {harness_md}"
+    )
+    assert "Nested subagent spawning was rejected." in harness_text, (
+        f"Claude harness nested-spawn pass criterion missing in {harness_md}"
     )
 
 
@@ -713,6 +887,12 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     )
     assert "The Builder runs as an OpenClaw subagent, not ACP." in skill_text, (
         f"subagent Builder contract missing in {skill_md}"
+    )
+    assert "require a clean source checkout before kickoff" in skill_text, (
+        f"clean-checkout rule missing in {skill_md}"
+    )
+    assert "managed worktree" in skill_text and "relaunch instructions" in skill_text, (
+        f"managed worktree relaunch contract missing in {skill_md}"
     )
     assert "There is no watchdog cron or separate supervising agent; Master Chef checks Builder health directly in the main session when active." in skill_text, (
         f"direct main-session Builder-check contract missing in {skill_md}"
@@ -746,6 +926,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     )
     assert "re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains" in skill_text, (
         f"automatic TODO continuation contract missing in {skill_md}"
+    )
+    assert "After relaunch into the managed worktree, treat that worktree as the active repo root for QA, TODO inspection, commit, and push." in skill_text, (
+        f"active worktree operation rule missing in {skill_md}"
     )
     assert "When Master Chef rejects Builder output during QA" in runbook_text, (
         f"QA rejection procedure missing in {runbook_md}"
@@ -810,14 +993,35 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     assert "shared `cdd-master-chef` workflow" in readme_text, (
         f"shared workflow framing missing in {readme_md}"
     )
+    assert "source checkout must be clean before kickoff" in readme_text.lower(), (
+        f"clean-checkout user-facing rule missing in {readme_md}"
+    )
+    assert "stops with exact relaunch instructions" in readme_text, (
+        f"relaunch user-facing rule missing in {readme_md}"
+    )
     assert "the shared, runtime-agnostic master chef contract is no longer rooted only in `openclaw/`" in readme_text.lower(), (
         f"shared-contract relationship missing in {readme_md}"
     )
     assert "OpenClaw adapter" in runbook_text, (
         f"OpenClaw adapter framing missing in {runbook_md}"
     )
+    assert "Require a clean source checkout." in runbook_text, (
+        f"runbook clean-checkout procedure missing in {runbook_md}"
+    )
+    assert "worktree_continue_mode" in runbook_text, (
+        f"runbook worktree metadata missing in {runbook_md}"
+    )
+    assert "relaunch instructions" in runbook_text, (
+        f"runbook relaunch instructions missing in {runbook_md}"
+    )
     assert "shared Master Chef contract" in harness_text, (
         f"shared-contract harness framing missing in {harness_md}"
+    )
+    assert "Dirty checkout refusal" in harness_text, (
+        f"dirty-checkout harness case missing in {harness_md}"
+    )
+    assert "managed worktree" in harness_text and "relaunch instructions" in harness_text, (
+        f"worktree relaunch harness coverage missing in {harness_md}"
     )
     assert "### 4.4 `context-summary.md`" in runbook_text, (
         f"context-summary section missing in {runbook_md}"
@@ -944,6 +1148,8 @@ def main() -> int:
 
     validate_generated_openclaw_builder_skills(repo_root)
     validate_master_chef_shared_contract(repo_root)
+    validate_codex_adapter(repo_root)
+    validate_claude_adapter(repo_root)
     validate_openclaw_adapter(repo_root)
     print("skill structure checks passed")
     return 0

@@ -72,28 +72,42 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
 /cdd-master-chef Approve the proposed next action.
 Run config:
 <RUN_CONFIG>
-Initialize .cdd-runtime/master-chef/, acquire the run lease, route the approved action through the correct internal cdd skill, spawn the Builder only if the action is delegated, and continue autonomously.
+Require a clean source checkout, create the managed worktree and fresh branch, initialize runtime state there, acquire the run lease, and stop with exact relaunch instructions if the adapter cannot safely continue in-session.
 ```
 
 - [ ] Expected:
-  - `.cdd-runtime/master-chef/` exists
-  - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist
-  - `run.json` records the exact approved Run config
+  - the source checkout is refused if dirty
+  - a managed worktree is created on a fresh branch from the current `HEAD`
+  - the managed worktree contains `.cdd-runtime/master-chef/`
+  - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
+  - `run.json` records the exact approved Run config plus source/worktree metadata
   - no watchdog cron is created
-  - Builder starts as a one-step subagent run only when the chosen action is delegated
+  - the OpenClaw adapter stops with exact relaunch instructions before delegated implementation starts
   - the routing choice is named explicitly in the handoff or main-session action
 
 ### Prompt C - Verify runtime files
 
 ```bash
-ls <REPO>/.cdd-runtime/master-chef/run.json \
-   <REPO>/.cdd-runtime/master-chef/run.lock.json \
-   <REPO>/.cdd-runtime/master-chef/master-chef.jsonl \
-   <REPO>/.cdd-runtime/master-chef/builder.jsonl \
-   <REPO>/.cdd-runtime/master-chef/context-summary.md >/dev/null
+ls <WORKTREE>/.cdd-runtime/master-chef/run.json \
+   <WORKTREE>/.cdd-runtime/master-chef/run.lock.json \
+   <WORKTREE>/.cdd-runtime/master-chef/master-chef.jsonl \
+   <WORKTREE>/.cdd-runtime/master-chef/builder.jsonl \
+   <WORKTREE>/.cdd-runtime/master-chef/context-summary.md >/dev/null
 ```
 
 - [ ] Expected: all runtime files exist.
+
+### Prompt C1 - Dirty checkout refusal
+
+```text
+/cdd-master-chef TEST ONLY: simulate kickoff from a dirty source checkout.
+Do not create the managed worktree. Stop and tell me to stash, commit, or discard changes first.
+```
+
+- [ ] Expected:
+  - no managed worktree is created
+  - no implementation begins
+  - the refusal names the clean-checkout-first rule clearly
 
 ### Prompt D - Verify no cron exists
 
@@ -171,6 +185,7 @@ If the run is complete, send the final results summary.
 ```
 
 - [ ] Expected:
+  - this prompt is run from the managed worktree after the relaunch step
   - Master Chef reviews Builder output
   - the delegated path matches the routing choice rather than defaulting blindly
   - if another runnable delegated step exists, Master Chef starts a fresh one-step Builder run for it, normally via `cdd-implement-todo`
@@ -247,7 +262,10 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Main session acted as the only control plane.
 - [ ] Builder ran as an OpenClaw subagent.
 - [ ] No watchdog cron or second supervising loop was used.
-- [ ] Runtime files were created in the repo.
+- [ ] Runtime files were created in the managed worktree.
+- [ ] Dirty source checkouts were refused before managed worktree creation.
+- [ ] The run started from a fresh branch in a managed worktree rather than the source checkout branch.
+- [ ] The OpenClaw adapter stopped with exact relaunch instructions before delegated implementation began.
 - [ ] `context-summary.md` was created and used as the Master Chef compaction checkpoint.
 - [ ] Duplicate-run prevention worked.
 - [ ] Builder recovery stayed inside the main session.

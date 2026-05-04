@@ -181,6 +181,31 @@ On the first `/cdd-master-chef` turn:
 
 After kickoff approval, the run becomes autonomous.
 
+### 3.1 Managed worktree kickoff
+
+Before implementation starts:
+
+1. Require a clean source checkout.
+   - If `git status --short` shows tracked or staged changes, stop and ask the human to stash, commit, or discard changes first.
+2. Record the source checkout path, source branch, and source `HEAD` SHA.
+3. Choose a managed worktree path under:
+
+   ```text
+   .cdd-runtime/master-chef/worktrees/<run-id>/
+   ```
+
+4. Create a fresh per-run branch from the current branch `HEAD`, preferably:
+
+   ```text
+   master-chef/<run-id>
+   ```
+
+5. Create the managed worktree from the source checkout with that fresh branch.
+6. Initialize runtime files inside the managed worktree so `.cdd-runtime/master-chef/` is relative to the active repo root after relaunch.
+7. Record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
+8. The current OpenClaw adapter must set `worktree_continue_mode` to `relaunch_required`, then stop with exact relaunch instructions before any delegated implementation starts.
+9. After relaunch into the managed worktree, treat that path as the active repo root for QA, TODO inspection, commit, push, and runtime files.
+
 ---
 
 ## 4) Runtime files
@@ -206,6 +231,7 @@ Suggested shape:
 {
   "run_id": "<utc-id>",
   "repo": "/abs/path/to/repo",
+  "source_repo": "/abs/path/to/source-repo",
   "master_model": "<model>",
   "master_thinking": "xhigh",
   "builder_model": "<model>",
@@ -216,6 +242,11 @@ Suggested shape:
   "active_todo_path": "/abs/path/to/TODO.md",
   "active_step": "<exact step heading>",
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
+  "source_branch": "<source-branch>",
+  "source_head_sha": "<source-sha>",
+  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/master-chef/worktrees/<run-id>",
+  "worktree_branch": "<worktree-branch>",
+  "worktree_continue_mode": "relaunch_required|in_session",
   "branch": "<branch>",
   "upstream": "<remote/ref>",
   "pre_step_head_sha": "<sha>",
@@ -242,6 +273,10 @@ Suggested shape:
   "owner_session_key": "<main-session-key>",
   "builder_session_key": "<builder-session-key>",
   "repo": "/abs/path/to/repo",
+  "source_repo": "/abs/path/to/source-repo",
+  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/master-chef/worktrees/<run-id>",
+  "worktree_branch": "<worktree-branch>",
+  "worktree_continue_mode": "relaunch_required|in_session",
   "started_at_utc": "<ts>",
   "last_renewed_at_utc": "<ts>",
   "generation": 1
@@ -288,8 +323,8 @@ Use `context-summary.md` as the durable Master Chef checkpoint for long runs and
 
 Required sections:
 
-- `Run`: run id, repo, branch, upstream, master session key, active Builder session key when present
-- `State`: active TODO path, active step, phase, last pass SHA, current blocker, current Builder status
+- `Run`: run id, repo, source repo, active worktree path, branch, upstream, master session key, active Builder session key when present
+- `State`: active TODO path, active step, phase, worktree branch, worktree continuation mode, last pass SHA, current blocker, current Builder status
 - `Recent decisions`: routing choices, QA/UAT verdicts, remediation decisions, blocker strategy, and why they were chosen
 - `Current diff`: working-tree summary, files changed, commands already run, and unresolved risks
 - `Pending proof`: checks, QA, UAT, commit, push, or reporting still needed
@@ -391,6 +426,8 @@ After kickoff approval:
 12. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
 13. If no runnable step remains, report `RUN_COMPLETE`.
 14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
+
+All QA, TODO inspection, commit, and push actions after worktree activation happen against the active managed worktree path rather than the original source checkout.
 
 Only stop autonomy when:
 

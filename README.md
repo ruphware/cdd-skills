@@ -77,11 +77,14 @@ The shared workflow is:
 Current repo state:
 
 - shared Master Chef source of truth: `master-chef/`
+- shared operational runbook: `master-chef/RUNBOOK.md`
+- Codex adapter docs: `master-chef/CODEX-ADAPTER.md` and `master-chef/CODEX-RUNBOOK.md`
+- Claude Code adapter docs: `master-chef/CLAUDE-ADAPTER.md` and `master-chef/CLAUDE-RUNBOOK.md`
 - current installable adapter package: `openclaw/`
 - runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`
 - canonical Builder workflow source still lives in `skills/`
 
-The current packaged Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack. Those internal Builder skills are generated from the canonical repo source in `skills/` and installed into `~/.openclaw/skills` by `./scripts/install-openclaw.sh`.
+Codex and Claude adapter docs now live under `master-chef/`, but the current packaged Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack. Those internal Builder skills are generated from the canonical repo source in `skills/` and installed into `~/.openclaw/skills` by `./scripts/install-openclaw.sh`.
 
 Routing note: Master Chef chooses the path. New projects should normally start with `cdd-init-project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `cdd-implement-todo`; `cdd-index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in Master Chef; `cdd-audit-and-implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 

@@ -72,6 +72,7 @@ Before autonomous work begins:
    - last completed step when present
    - next runnable TODO step when present
    - whether the repo first needs `cdd-init-project`
+5. Before kickoff, the source checkout must be clean. If it is dirty, stop and ask the human to stash, commit, or discard changes before managed worktree creation.
 
 ## 3) Durable runtime state
 
@@ -87,6 +88,7 @@ Canonical `run.json` fields:
 
 - `run_id`
 - `repo`
+- `source_repo`
 - `master_model`
 - `master_thinking`
 - `builder_model`
@@ -97,6 +99,11 @@ Canonical `run.json` fields:
 - `active_todo_path`
 - `active_step`
 - `phase`
+- `source_branch`
+- `source_head_sha`
+- `active_worktree_path`
+- `worktree_branch`
+- `worktree_continue_mode`
 - `branch`
 - `upstream`
 - `pre_step_head_sha`
@@ -137,7 +144,26 @@ Master Chef chooses the internal `cdd-*` routing model.
 
 Runtime adapters must define the install roots, invocation surface, and delegation mechanism for those internal workflows.
 
-## 6) Kickoff and Builder lifecycle
+## 6) Managed worktree lifecycle
+
+Master Chef runs against a managed worktree rather than mutating the source checkout in place.
+
+- Create the managed worktree from the current branch `HEAD`.
+- Use a fresh per-run branch rather than reusing the source checkout branch.
+- Record the source checkout path separately from the active worktree path.
+- Initialize runtime state in the managed worktree before implementation begins.
+- Continue in the worktree only when the runtime adapter can safely re-root the active control loop there.
+- Otherwise, stop with exact relaunch instructions and mark the run as `relaunch_required` before any implementation starts.
+
+Prefer a managed worktree path under:
+
+```text
+.cdd-runtime/master-chef/worktrees/<run-id>/
+```
+
+Runtime adapters may use a different location only if they document that choice explicitly.
+
+## 7) Kickoff and Builder lifecycle
 
 Before implementation starts, present one kickoff approval that covers:
 
@@ -154,7 +180,7 @@ Use one-step Builder runs only.
 
 Both Master Chef and Builder must append durable evidence for step start, validation, blockers, completion, and reporting.
 
-## 7) Validation, QA, and UAT
+## 8) Validation, QA, and UAT
 
 Use `hard_gate` and `soft_signal` validation classes:
 
@@ -176,8 +202,9 @@ For each passed step:
 - push
 - advertise `STEP_PASS` with the full result, evidence, and decision trail in the reporting surface
 - re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
+- once the managed worktree becomes active, commit, push, QA, and TODO inspection happen against the active worktree path rather than the source checkout
 
-## 8) Reporting and recovery
+## 9) Reporting and recovery
 
 Report events:
 
@@ -200,7 +227,7 @@ If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed
 - clean only stale runtime or build artifacts needed for a coherent retry, and never revert unrelated user work
 - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
 
-## 9) Context compaction
+## 10) Context compaction
 
 Manage Master Chef context explicitly during long runs:
 
@@ -210,7 +237,7 @@ Manage Master Chef context explicitly during long runs:
 - do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript
 - after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing
 
-## 10) Runtime adapter obligations
+## 11) Runtime adapter obligations
 
 Runtime adapters must define:
 
@@ -220,5 +247,6 @@ Runtime adapters must define:
 - how tools and MCP access are inherited or restricted
 - how child working directories are selected
 - how worktree creation and hand-off are realized or limited
+- whether they continue in the managed worktree in-session or stop with relaunch instructions
 - how the reporting surface maps onto the runtime
 - any runtime-specific stop conditions or safety restrictions that are stricter than the shared contract
