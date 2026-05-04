@@ -16,7 +16,7 @@ Runtime adapters may be stricter than this matrix, but they must not claim broad
 
 ### OpenClaw
 
-- The repo currently ships the OpenClaw adapter in `openclaw/`.
+- The repo currently ships the OpenClaw adapter docs in `cdd-master-chef/openclaw/`.
 - The OpenClaw adapter remains the only packaged Master Chef runtime today, but it is no longer the canonical shared contract surface.
 - The current adapter should provision the managed worktree, write worktree metadata, and stop with exact relaunch instructions before autonomous implementation starts.
 

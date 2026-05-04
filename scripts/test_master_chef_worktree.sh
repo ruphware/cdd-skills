@@ -81,11 +81,11 @@ fi
 
 echo "[MasterChefWorktree] INFO DirtyPreflightRejected repo={$dirty_repo}"
 
-assert_contains "$ROOT_DIR/master-chef/CONTRACT.md" "Before kickoff, the source checkout must be clean."
-assert_contains "$ROOT_DIR/master-chef/CONTRACT.md" "active_worktree_path"
-assert_contains "$ROOT_DIR/master-chef/RUNBOOK.md" "stop with exact relaunch instructions"
-assert_contains "$ROOT_DIR/openclaw/README.md" "After relaunch, treat the managed worktree as the active repo root"
-assert_contains "$ROOT_DIR/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
+assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "Before kickoff, the source checkout must be clean."
+assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "active_worktree_path"
+assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions"
+assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch, treat the managed worktree as the active repo root"
+assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
 
 echo "[MasterChefWorktree] INFO ContractDocsVerified root={$ROOT_DIR}"
 echo "[MasterChefWorktree] INFO TestPassed root={$TMP_ROOT}"

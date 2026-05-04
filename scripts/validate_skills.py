@@ -687,7 +687,9 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
 
 def validate_master_chef_shared_contract(repo_root: Path) -> None:
     """Validate shared Master Chef contract artifacts structurally."""
-    shared_root = repo_root / "master-chef"
+    shared_root = repo_root / "cdd-master-chef"
+    legacy_shared_root = repo_root / "master-chef"
+    legacy_openclaw_root = repo_root / "openclaw"
     readme_md = shared_root / "README.md"
     contract_md = shared_root / "CONTRACT.md"
     runbook_md = shared_root / "RUNBOOK.md"
@@ -697,6 +699,20 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
 
     for path in (readme_md, contract_md, runbook_md, matrix_md, root_readme_md, install_sh):
         assert path.exists(), f"missing {path}"
+
+    assert (shared_root / "SKILL.md").exists(), f"missing {shared_root / 'SKILL.md'}"
+    assert legacy_shared_root.exists(), f"missing {legacy_shared_root}"
+    assert legacy_openclaw_root.exists(), f"missing {legacy_openclaw_root}"
+    assert (legacy_shared_root / "README.md").exists(), f"missing {legacy_shared_root / 'README.md'}"
+    assert not (legacy_shared_root / "CONTRACT.md").exists(), (
+        f"legacy shared root should not remain canonical: {legacy_shared_root / 'CONTRACT.md'}"
+    )
+    assert (legacy_openclaw_root / "README.md").exists(), (
+        f"missing {legacy_openclaw_root / 'README.md'}"
+    )
+    assert not (legacy_openclaw_root / "SKILL.md").exists(), (
+        f"legacy OpenClaw root should not remain a skill package: {legacy_openclaw_root / 'SKILL.md'}"
+    )
 
     readme_text = readme_md.read_text(encoding="utf-8")
     contract_text = contract_md.read_text(encoding="utf-8")
@@ -709,6 +725,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         readme_text,
         (
             MASTER_CHEF_LABEL,
+            "`SKILL.md`",
             "`CONTRACT.md`",
             "`RUNBOOK.md`",
             "`RUNTIME-CAPABILITIES.md`",
@@ -793,10 +810,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         CDD_CORE_LABELS
         + (
             MASTER_CHEF_LABEL,
-            "master-chef/RUNBOOK.md",
-            "master-chef/CODEX-ADAPTER.md",
-            "master-chef/CLAUDE-ADAPTER.md",
-            "master-chef/RUNTIME-CAPABILITIES.md",
+            "cdd-master-chef/RUNBOOK.md",
+            "cdd-master-chef/CODEX-ADAPTER.md",
+            "cdd-master-chef/CLAUDE-ADAPTER.md",
+            "cdd-master-chef/RUNTIME-CAPABILITIES.md",
             "./scripts/install.sh --runtime claude",
             "./scripts/install.sh --runtime openclaw",
             "Use the core `cdd-*` loop when you want a single coding agent",
@@ -819,9 +836,9 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
 
 def validate_codex_adapter(repo_root: Path) -> None:
     """Validate the Codex adapter artifacts structurally."""
-    adapter_md = repo_root / "master-chef" / "CODEX-ADAPTER.md"
-    runbook_md = repo_root / "master-chef" / "CODEX-RUNBOOK.md"
-    harness_md = repo_root / "master-chef" / "CODEX-TEST-HARNESS.md"
+    adapter_md = repo_root / "cdd-master-chef" / "CODEX-ADAPTER.md"
+    runbook_md = repo_root / "cdd-master-chef" / "CODEX-RUNBOOK.md"
+    harness_md = repo_root / "cdd-master-chef" / "CODEX-TEST-HARNESS.md"
 
     for path in (adapter_md, runbook_md, harness_md):
         assert path.exists(), f"missing {path}"
@@ -890,9 +907,9 @@ def validate_codex_adapter(repo_root: Path) -> None:
 
 def validate_claude_adapter(repo_root: Path) -> None:
     """Validate the Claude Code adapter artifacts structurally."""
-    adapter_md = repo_root / "master-chef" / "CLAUDE-ADAPTER.md"
-    runbook_md = repo_root / "master-chef" / "CLAUDE-RUNBOOK.md"
-    harness_md = repo_root / "master-chef" / "CLAUDE-TEST-HARNESS.md"
+    adapter_md = repo_root / "cdd-master-chef" / "CLAUDE-ADAPTER.md"
+    runbook_md = repo_root / "cdd-master-chef" / "CLAUDE-RUNBOOK.md"
+    harness_md = repo_root / "cdd-master-chef" / "CLAUDE-TEST-HARNESS.md"
 
     for path in (adapter_md, runbook_md, harness_md):
         assert path.exists(), f"missing {path}"
@@ -968,12 +985,12 @@ def validate_claude_adapter(repo_root: Path) -> None:
 
 def validate_openclaw_adapter(repo_root: Path) -> None:
     """Validate the OpenClaw adapter package structurally."""
-    skill_md = repo_root / "openclaw" / "SKILL.md"
+    skill_md = repo_root / "cdd-master-chef" / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
     skill_text = skill_md.read_text(encoding="utf-8")
-    runbook_md = repo_root / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
-    readme_md = repo_root / "openclaw" / "README.md"
-    harness_md = repo_root / "openclaw" / "MASTER-CHEF-TEST-HARNESS.md"
+    runbook_md = repo_root / "cdd-master-chef" / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
+    readme_md = repo_root / "cdd-master-chef" / "openclaw" / "README.md"
+    harness_md = repo_root / "cdd-master-chef" / "openclaw" / "MASTER-CHEF-TEST-HARNESS.md"
     runbook_text = runbook_md.read_text(encoding="utf-8")
     readme_text = readme_md.read_text(encoding="utf-8")
     harness_text = harness_md.read_text(encoding="utf-8")

@@ -8,11 +8,11 @@ Goal: validate **explicit Builder delegation -> correct Run config mapping -> sa
 
 - [ ] The shared Master Chef contract docs exist:
   ```bash
-  ls master-chef/CONTRACT.md \
-     master-chef/RUNBOOK.md \
-     master-chef/CODEX-ADAPTER.md \
-     master-chef/CODEX-RUNBOOK.md \
-     master-chef/CODEX-TEST-HARNESS.md >/dev/null
+  ls cdd-master-chef/CONTRACT.md \
+     cdd-master-chef/RUNBOOK.md \
+     cdd-master-chef/CODEX-ADAPTER.md \
+     cdd-master-chef/CODEX-RUNBOOK.md \
+     cdd-master-chef/CODEX-TEST-HARNESS.md >/dev/null
   ```
 
 - [ ] The current Codex CLI exposes the expected session controls:

@@ -4,7 +4,7 @@
 
 This runbook is the OpenClaw adapter over the shared `[CDD-8] Master Chef` contract.
 
-Use the source repo's `master-chef/` docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
+Use the parent `cdd-master-chef/` package docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
 Run autonomous development with one control loop:
 

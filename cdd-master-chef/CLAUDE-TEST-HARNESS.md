@@ -8,11 +8,11 @@ Goal: validate **explicit Builder selection -> correct Run config mapping -> for
 
 - [ ] The shared Master Chef contract docs exist:
   ```bash
-  ls master-chef/CONTRACT.md \
-     master-chef/RUNBOOK.md \
-     master-chef/CLAUDE-ADAPTER.md \
-     master-chef/CLAUDE-RUNBOOK.md \
-     master-chef/CLAUDE-TEST-HARNESS.md >/dev/null
+  ls cdd-master-chef/CONTRACT.md \
+     cdd-master-chef/RUNBOOK.md \
+     cdd-master-chef/CLAUDE-ADAPTER.md \
+     cdd-master-chef/CLAUDE-RUNBOOK.md \
+     cdd-master-chef/CLAUDE-TEST-HARNESS.md >/dev/null
   ```
 
 - [ ] The current Claude CLI exposes the expected session controls:

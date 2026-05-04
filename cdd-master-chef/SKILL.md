@@ -1,6 +1,6 @@
 ---
 name: cdd-master-chef
-description: Run the OpenClaw adapter for the shared cdd-master-chef autonomous workflow. Use for non-trivial development in an existing CDD repo or when starting a new project that should adopt CDD first; the main session is Master Chef, the Builder runs as fresh one-step OpenClaw subagent runs, repo state lives under .cdd-runtime/master-chef, and the main session handles Builder checks and operator-facing reporting without a watchdog cron.
+description: Run the current OpenClaw adapter from the canonical cdd-master-chef package. Use for non-trivial development in an existing CDD repo or when starting a new project that should adopt CDD first; the main session is Master Chef, the Builder runs as fresh one-step OpenClaw subagent runs, repo state lives under .cdd-runtime/master-chef, and the main session handles Builder checks and operator-facing reporting without a watchdog cron.
 user-invocable: true
 homepage: https://github.com/ruphware/cdd-skills
 metadata: {"openclaw":{"requires":{"bins":["git"],"config":[]}}}
@@ -12,14 +12,14 @@ Use this skill for the OpenClaw adapter of the shared `[CDD-8] Master Chef` work
 
 Adapter note:
 
-- The runtime-agnostic Master Chef contract now lives in the source repo under `master-chef/`.
-- This skill defines how OpenClaw realizes that shared contract.
+- The runtime-agnostic Master Chef contract now lives beside this skill in `CONTRACT.md`, `RUNBOOK.md`, and `RUNTIME-CAPABILITIES.md`.
+- The current concrete runtime mapping in this package is the OpenClaw adapter under `openclaw/`.
 - When this file repeats a shared rule, treat the shared contract as canonical and this file as the OpenClaw runtime mapping of that rule.
 
 References:
 
-- `{baseDir}/MASTER-CHEF-RUNBOOK.md`
-- `{baseDir}/MASTER-CHEF-TEST-HARNESS.md`
+- `{baseDir}/openclaw/MASTER-CHEF-RUNBOOK.md`
+- `{baseDir}/openclaw/MASTER-CHEF-TEST-HARNESS.md`
 
 Operating contract:
 

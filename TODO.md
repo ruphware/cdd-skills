@@ -826,10 +826,10 @@ Make top-level `cdd-master-chef/` the only committed first-class Master Chef ski
 
 ### Tasks
 
-- [ ] Create a committed top-level `cdd-master-chef/` package surface with `SKILL.md`, `README.md`, shared contract docs, and current concrete adapter docs/artifacts now split across `master-chef/` and `openclaw/`.
-- [ ] Move or rewrite source-of-truth references so shared contract docs point to `cdd-master-chef/` as canonical and top-level `master-chef/` / `openclaw/` no longer act as parallel canonical package roots.
-- [ ] Re-home OpenClaw adapter files under the canonical package or another non-root-scanned adapter subtree and remove any top-level `SKILL.md` surface that would cause repo-root skill discovery to treat the old `openclaw/` path as a separate installable skill.
-- [ ] Update local scripts/tests that read from `MASTER_CHEF_SRC_ROOT` or `OPENCLAW_SRC_ROOT` to follow the new canonical package layout.
+- [x] Create a committed top-level `cdd-master-chef/` package surface with `SKILL.md`, `README.md`, shared contract docs, and current concrete adapter docs/artifacts now split across `master-chef/` and `openclaw/`.
+- [x] Move or rewrite source-of-truth references so shared contract docs point to `cdd-master-chef/` as canonical and top-level `master-chef/` / `openclaw/` no longer act as parallel canonical package roots.
+- [x] Re-home OpenClaw adapter files under the canonical package or another non-root-scanned adapter subtree and remove any top-level `SKILL.md` surface that would cause repo-root skill discovery to treat the old `openclaw/` path as a separate installable skill.
+- [x] Update local scripts/tests that read from `MASTER_CHEF_SRC_ROOT` or `OPENCLAW_SRC_ROOT` to follow the new canonical package layout.
 
 ### Implementation notes
 

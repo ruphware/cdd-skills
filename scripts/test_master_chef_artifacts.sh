@@ -19,6 +19,14 @@ assert_exists() {
   }
 }
 
+assert_not_exists() {
+  local path="$1"
+  [[ ! -e "$path" ]] || {
+    echo "Unexpected path exists: $path" >&2
+    exit 1
+  }
+}
+
 assert_contains() {
   local path="$1"
   local pattern="$2"
@@ -28,10 +36,12 @@ assert_contains() {
   }
 }
 
-SHARED_ROOT="$ROOT_DIR/master-chef"
+PACKAGE_ROOT="$ROOT_DIR/cdd-master-chef"
+SHARED_ROOT="$PACKAGE_ROOT"
 
 echo "[MasterChefArtifacts] INFO SharedContractRoot path={$SHARED_ROOT}"
 for rel in \
+  SKILL.md \
   README.md \
   CONTRACT.md \
   RUNBOOK.md \
@@ -44,6 +54,12 @@ for rel in \
   CLAUDE-TEST-HARNESS.md; do
   assert_exists "$SHARED_ROOT/$rel"
 done
+
+echo "[MasterChefArtifacts] INFO LegacyStubPaths root={$ROOT_DIR}"
+assert_exists "$ROOT_DIR/master-chef/README.md"
+assert_not_exists "$ROOT_DIR/master-chef/CONTRACT.md"
+assert_exists "$ROOT_DIR/openclaw/README.md"
+assert_not_exists "$ROOT_DIR/openclaw/SKILL.md"
 
 echo "[MasterChefArtifacts] INFO SharedContractFields file={CONTRACT.md}"
 for field in \
@@ -83,10 +99,9 @@ done
 
 echo "[MasterChefArtifacts] INFO OpenClawAdapter package={openclaw}"
 for rel in \
-  "openclaw/SKILL.md" \
-  "openclaw/README.md" \
-  "openclaw/MASTER-CHEF-RUNBOOK.md" \
-  "openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
+  "cdd-master-chef/openclaw/README.md" \
+  "cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" \
+  "cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
   assert_exists "$ROOT_DIR/$rel"
 done
 for token in \
@@ -98,10 +113,10 @@ for token in \
   "Prompt N - Context compaction and resume"; do
   case "$token" in
     Prompt*)
-      assert_contains "$ROOT_DIR/openclaw/MASTER-CHEF-TEST-HARNESS.md" "$token"
+      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md" "$token"
       ;;
     *)
-      assert_contains "$ROOT_DIR/openclaw/SKILL.md" "$token"
+      assert_contains "$ROOT_DIR/cdd-master-chef/SKILL.md" "$token"
       ;;
   esac
 done

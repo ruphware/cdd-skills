@@ -20,8 +20,8 @@ source "$ROOT_DIR/scripts/install-common.sh"
 #   ./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 
 SKILLS_SRC_ROOT="$ROOT_DIR/skills"
-MASTER_CHEF_SRC_ROOT="$ROOT_DIR/master-chef"
-OPENCLAW_SRC_ROOT="$ROOT_DIR/openclaw"
+MASTER_CHEF_SRC_ROOT="$ROOT_DIR/cdd-master-chef"
+OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"
 RUNTIME_BUILDER_GENERATOR="$ROOT_DIR/scripts/build_runtime_builder_skills.py"
 
 UPDATE=0
@@ -146,9 +146,7 @@ emit_openclaw_master_chef_package() {
   local dest_dir="$1"
 
   mkdir -p "$dest_dir"
-  cp -a "$OPENCLAW_SRC_ROOT/." "$dest_dir/"
-  mkdir -p "$dest_dir/master-chef"
-  cp -a "$MASTER_CHEF_SRC_ROOT/." "$dest_dir/master-chef/"
+  cp -a "$MASTER_CHEF_SRC_ROOT/." "$dest_dir/"
 }
 
 build_source_packages() {
@@ -493,7 +491,12 @@ if [[ ! -d "$SKILLS_SRC_ROOT" ]]; then
 fi
 
 if [[ ! -d "$MASTER_CHEF_SRC_ROOT" ]]; then
-  echo "Missing shared Master Chef source dir: $MASTER_CHEF_SRC_ROOT" >&2
+  echo "Missing canonical Master Chef package dir: $MASTER_CHEF_SRC_ROOT" >&2
+  exit 1
+fi
+
+if [[ ! -f "$MASTER_CHEF_SRC_ROOT/SKILL.md" ]]; then
+  echo "Missing Master Chef skill entrypoint: $MASTER_CHEF_SRC_ROOT/SKILL.md" >&2
   exit 1
 fi
 
@@ -502,8 +505,8 @@ if [[ "$RUNTIME" == "openclaw" ]]; then
     echo "Missing OpenClaw adapter source dir: $OPENCLAW_SRC_ROOT" >&2
     exit 1
   fi
-  if [[ ! -f "$OPENCLAW_SRC_ROOT/SKILL.md" ]]; then
-    echo "Missing OpenClaw skill entrypoint: $OPENCLAW_SRC_ROOT/SKILL.md" >&2
+  if [[ ! -f "$OPENCLAW_SRC_ROOT/README.md" ]]; then
+    echo "Missing OpenClaw adapter docs: $OPENCLAW_SRC_ROOT/README.md" >&2
     exit 1
   fi
 fi

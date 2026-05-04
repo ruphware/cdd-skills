@@ -10,7 +10,7 @@ Install the core `skills/` pack for Codex, Claude Code, Gemini CLI and others (a
 npx skills add https://github.com/ruphware/cdd-skills/tree/main/skills --skill '*' -a codex -a claude-code -a gemini-cli -g
 ```
 
-Do not use the repo root URL here. The `skills` CLI scans both the repo root and `skills/`, so the root URL also picks up the `openclaw/` package as well.
+The repo now also carries the canonical top-level `cdd-master-chef/` package. Use the explicit `skills/` path here when you want only the core `[CDD-0]` through `[CDD-7]` pack.
 
 ## Skill Map
 
@@ -22,7 +22,7 @@ Do not use the repo root URL here. The `skills` CLI scans both the repo root and
 - `[CDD-5] Refactor` — `cdd-refactor` — create a refactor TODO plan from the current index
 - `[CDD-6] Index` — `cdd-index` — regenerate `docs/INDEX.md`
 - `[CDD-7] Maintain` — `cdd-maintain` — archive long CDD files, audit support-doc drift, propose README/spec refreshes for approval, and doctor the codebase for refactor and dead-code signals
-- `[CDD-8] Master Chef` — `cdd-master-chef` — start the autonomous development process through the shared Master Chef contract and the current OpenClaw adapter
+- `[CDD-8] Master Chef` — `cdd-master-chef` — start the autonomous development process through the canonical Master Chef package and its current runtime adapters
 
 ## When to Use What
 
@@ -34,7 +34,7 @@ Do not use the repo root URL here. The `skills` CLI scans both the repo root and
 - Core `[CDD-0]` through `[CDD-7]` skills for the normal single-agent, human-in-the-loop CDD workflow
 - Separate `[CDD-8] Master Chef` shared contract docs plus the current OpenClaw adapter package for orchestrated autonomous runs
 
-Details on the skill packs, shared Master Chef contract, manual repo install scripts, and the current OpenClaw adapter are below.
+Details on the skill packs, canonical Master Chef package, manual repo install scripts, and the current OpenClaw adapter are below.
 
 ## 1. Core: `[CDD-0]` through `[CDD-7]`
 
@@ -65,7 +65,7 @@ Typical core path:
 
 ## 2. `[CDD-8] Master Chef` (Shared Contract + Runtime Adapters)
 
-The optional `[CDD-8] Master Chef` upgrade starts the autonomous development process through a shared multi-runtime contract rooted in `master-chef/`, with the current installable adapter package rooted in `openclaw/`.
+The optional `[CDD-8] Master Chef` upgrade starts the autonomous development process through the canonical multi-runtime package rooted in `cdd-master-chef/`, with current OpenClaw adapter docs under `cdd-master-chef/openclaw/`.
 
 `[CDD-8] Master Chef` is very experimental, in active development, and far from done. Treat it as a rough workflow for iteration, not a finished product.
 
@@ -80,22 +80,22 @@ The shared workflow is:
 
 Current repo state:
 
-- shared Master Chef source of truth: `master-chef/`
-- shared operational runbook: `master-chef/RUNBOOK.md`
-- Codex adapter docs: `master-chef/CODEX-ADAPTER.md` and `master-chef/CODEX-RUNBOOK.md`
-- Claude Code adapter docs: `master-chef/CLAUDE-ADAPTER.md` and `master-chef/CLAUDE-RUNBOOK.md`
-- current installable adapter package: `openclaw/`
-- runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`
+- canonical Master Chef package root: `cdd-master-chef/`
+- shared operational runbook: `cdd-master-chef/RUNBOOK.md`
+- Codex adapter docs: `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md`
+- Claude Code adapter docs: `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md`
+- current OpenClaw adapter docs: `cdd-master-chef/openclaw/`
+- runtime capability matrix: `cdd-master-chef/RUNTIME-CAPABILITIES.md`
 - canonical Builder workflow source still lives in `skills/`
 
-Codex and Claude adapter docs now live under `master-chef/`, and the unified installer now ships a documentation-only `[CDD-8] Master Chef` package to core single-agent targets. The current packaged runnable Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack, installed into `~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`.
+Codex and Claude adapter docs now live in `cdd-master-chef/`, and the unified installer now ships a documentation-only `[CDD-8] Master Chef` package to core single-agent targets. The current packaged runnable Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack, installed into `~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`.
 
 Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; `[CDD-4] Audit + Implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
 Source of truth:
 
-- `master-chef/` for the shared contract
-- `openclaw/` for the current OpenClaw adapter package
+- `cdd-master-chef/` for the shared contract and packaged skill root
+- `cdd-master-chef/openclaw/` for the current OpenClaw adapter docs
 - canonical Builder workflow source still lives in `skills/`
 
 Installed form:

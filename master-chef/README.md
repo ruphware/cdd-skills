@@ -1,26 +1,14 @@
-# [CDD-8] Master Chef
+# [CDD-8] Master Chef Legacy Path
 
-This directory is the shared source of truth for `[CDD-8] Master Chef`, the multi-runtime autonomous development process that sits beside the core `[CDD-0]` through `[CDD-7]` CDD skills.
+The canonical `[CDD-8] Master Chef` package root now lives in `../cdd-master-chef/`.
 
-Use these files as the canonical contract surfaces:
+Use these paths instead:
 
-- `CONTRACT.md` — runtime-agnostic Master Chef behavior
-- `RUNBOOK.md` — shared worktree, hand-off, and operational procedure
-- `RUNTIME-CAPABILITIES.md` — capability boundaries for OpenClaw, Codex, and Claude Code
+- `../cdd-master-chef/SKILL.md`
+- `../cdd-master-chef/README.md`
+- `../cdd-master-chef/CONTRACT.md`
+- `../cdd-master-chef/RUNBOOK.md`
+- `../cdd-master-chef/RUNTIME-CAPABILITIES.md`
+- `../cdd-master-chef/openclaw/README.md`
 
-Runtime adapters consume that shared contract and define how a specific runtime realizes it:
-
-- `openclaw/` — current installable adapter package and runtime-specific docs
-- `CODEX-ADAPTER.md` — Codex Builder delegation contract
-- `CODEX-RUNBOOK.md` — Codex operating path over the shared contract
-- `CODEX-TEST-HARNESS.md` — Codex adapter verification checklist
-- `CLAUDE-ADAPTER.md` — Claude Code Builder delegation contract
-- `CLAUDE-RUNBOOK.md` — Claude Code operating path over the shared contract
-- `CLAUDE-TEST-HARNESS.md` — Claude Code adapter verification checklist
-
-Relationship to the rest of the repo:
-
-- `skills/` remains the canonical Builder workflow source for the core `[CDD-0]` through `[CDD-7]` `cdd-*` skills.
-- `openclaw/` is one adapter over the shared `[CDD-8] Master Chef` contract defined here; it is no longer the only Master Chef source of truth.
-- Codex and Claude adapter docs live in `master-chef/` today even though OpenClaw remains the only packaged installer path for the current repo state.
-- Packaging and installer unification are separate follow-on work. This directory defines the shared behavior first so adapter and packaging work can follow a stable contract.
+This `master-chef/` directory remains only as a compatibility stub so the repo history and older references still resolve cleanly during the package-root migration.
