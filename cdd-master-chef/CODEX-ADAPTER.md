@@ -63,6 +63,9 @@ Adapter implication:
 
 - Master Chef should keep Builder work interactive when the delegated step may need fresh approvals.
 - Read-heavy sidecar agents are the safest place to use narrower sandboxes and specialized MCP/tool setups.
+- This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
+- A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
+- When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
 ## 4) Run config mapping
 

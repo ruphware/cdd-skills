@@ -143,6 +143,7 @@ Runtime adapters must define:
 - whether they support local default Run config files
 - whether they can inspect the current session model and thinking well enough to recommend a candidate Run config when one is missing
 - how the model and thinking fields are honored, inherited, constrained, or downgraded
+- how Builder monitoring works, including whether live status, partial output, or direct reasoning visibility actually exist in that runtime
 
 Before kickoff, the run must also resolve an approved step budget for the current autonomous run:
 
@@ -200,6 +201,14 @@ Use one-step Builder runs only.
 - Do not treat Builder session resurrection or multi-step continuation as a normal path.
 
 Both Master Chef and Builder must append durable evidence for step start, validation, blockers, completion, and reporting.
+
+Builder monitoring must use direct runtime evidence before heuristics:
+
+- If the runtime can expose direct Builder status, final messages, or explicit progress replies, use those surfaces first.
+- If the runtime cannot expose live Builder reasoning or streaming partial output, say so explicitly and report Builder state as `running` or `unknown`, not `stale`, during quiet periods.
+- Do not treat a missing diff, an empty `builder.jsonl`, or one short wait window with no completion as proof that Builder has died.
+- For long-effort Builders, especially `builder_thinking: xhigh`, allow a longer quiet window before probing or replacing unless the runtime reports direct failure sooner.
+- Replace Builder only after direct failure or closure, an explicit Builder blocker, or no response to a direct status probe after the adapter-defined grace window.
 
 ## 8) Validation, QA, and UAT
 

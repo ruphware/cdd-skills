@@ -116,6 +116,20 @@ If a fallback handoff is unavoidable, keep the previously approved Builder start
   - continuation versus fallback handoff is stated explicitly
   - the Builder-start decision remains owned by Master Chef
 
+### Prompt H - Long-thinking Builder monitoring
+
+```text
+The Builder is running with builder_thinking: xhigh.
+After one short wait there is still no diff, builder.jsonl is empty, and no completion has arrived yet.
+Explain what direct Builder status the Claude adapter can actually observe, what it cannot observe, how long it should wait before the first stale probe, and what evidence is required before replacement.
+```
+
+- [ ] Expected:
+  - the adapter does not claim live Builder thinking or guaranteed streaming partial output
+  - a missing diff or empty `builder.jsonl` alone is not treated as stale
+  - `xhigh` Builder gets at least a 10-minute quiet window before the first stale probe
+  - replacement requires direct failure, closure, explicit blocker, or no response to a direct status probe
+
 ## 3) Pass criteria
 
 - [ ] The Claude adapter required an explicit Builder path when determinism mattered.
@@ -124,3 +138,4 @@ If a fallback handoff is unavoidable, keep the previously approved Builder start
 - [ ] Permission-heavy Builder work stayed foreground.
 - [ ] Nested subagent spawning was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
+- [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.

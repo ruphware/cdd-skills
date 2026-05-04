@@ -109,18 +109,23 @@ Operating contract:
 19. When Master Chef performs a Builder check in the main session, it may:
    - inspect runtime files and logs
    - inspect Builder health
+   - use direct Builder status or progress surfaces when the runtime exposes them
    - replace the Builder with a fresh subagent run if stale
    - report blockers or completion
 20. Direct Builder checks must not create a second control loop. Recovery stays in the main session, using fresh Builder replacement rather than normal session resurrection.
 21. Healthy Builder checks may stay quiet, but they do not cancel in-session lifecycle reporting for events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
-22. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
-23. If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
+22. If the runtime does not expose live Builder thinking or streaming partial output, report Builder state as `running` or `unknown` during quiet periods rather than guessing.
+   - Do not treat a missing diff, an empty `builder.jsonl`, or one short wait window as proof that Builder has died.
+   - For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless direct failure evidence arrives sooner.
+   - Use one direct status probe before replacement when the runtime supports it.
+23. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
+24. If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
    - stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
    - revise the situation in Master Chef before any more Builder work
    - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
    - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
-24. Manage Master Chef context explicitly during long runs:
+25. Manage Master Chef context explicitly during long runs:
    - keep Builder context fresh through one-step Builder runs; do not compact or resume Builders as the normal path
    - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
    - compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning/refactor work, or before a known large QA/planning phase once a checkpoint is written

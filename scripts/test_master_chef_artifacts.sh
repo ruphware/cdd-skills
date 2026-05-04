@@ -149,6 +149,12 @@ for field in \
   current_blocker; do
   assert_contains "$SHARED_ROOT/CONTRACT.md" "- \`$field\`"
 done
+for token in \
+  "how Builder monitoring works, including whether live status, partial output, or direct reasoning visibility actually exist in that runtime" \
+  "Do not treat a missing diff, an empty \`builder.jsonl\`, or one short wait window with no completion as proof that Builder has died." \
+  "For long-effort Builders, especially \`builder_thinking: xhigh\`, allow a longer quiet window before probing or replacing unless the runtime reports direct failure sooner."; do
+  assert_contains "$SHARED_ROOT/CONTRACT.md" "$token"
+done
 
 echo "[MasterChefArtifacts] INFO SharedRunbookFields file={RUNBOOK.md}"
 for token in \
@@ -161,7 +167,9 @@ for token in \
   "active_worktree_path" \
   "worktree_continue_mode" \
   "run_step_budget" \
-  "steps_completed_this_run"; do
+  "steps_completed_this_run" \
+  "If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does." \
+  "For \`builder_thinking: xhigh\`, allow at least a 10-minute quiet window before the first stale probe unless the runtime reports direct failure sooner."; do
   assert_contains "$SHARED_ROOT/RUNBOOK.md" "$token"
 done
 
@@ -173,8 +181,53 @@ for token in \
   "CODEX-ADAPTER.md" \
   "CLAUDE-ADAPTER.md" \
   "Builder-start decisions back to the human" \
-  "run step budget"; do
+  "run step budget" \
+  "must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it"; do
   assert_contains "$SHARED_ROOT/RUNTIME-CAPABILITIES.md" "$token"
+done
+
+echo "[MasterChefArtifacts] INFO CodexAdapter file={CODEX-*}"
+for token in \
+  "does not guarantee live access to Builder chain-of-thought or streaming partial output" \
+  "missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died" \
+  "## 7) Builder monitoring" \
+  "A \`wait\` result that says no agent has completed yet means \`running\` or \`unknown\`, not \`dead\`." \
+  "For \`builder_thinking: xhigh\`, allow at least a 10-minute quiet window before the first stale probe unless Codex reports direct failure sooner." \
+  "### Prompt H - Long-thinking Builder monitoring" \
+  "Long-thinking Builder monitoring used direct evidence instead of guessing."; do
+  case "$token" in
+    "does not guarantee live access to Builder chain-of-thought or streaming partial output"|"missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died")
+      assert_contains "$ROOT_DIR/cdd-master-chef/CODEX-ADAPTER.md" "$token"
+      ;;
+    "### Prompt H - Long-thinking Builder monitoring"|"Long-thinking Builder monitoring used direct evidence instead of guessing.")
+      assert_contains "$ROOT_DIR/cdd-master-chef/CODEX-TEST-HARNESS.md" "$token"
+      ;;
+    *)
+      assert_contains "$ROOT_DIR/cdd-master-chef/CODEX-RUNBOOK.md" "$token"
+      ;;
+  esac
+done
+
+echo "[MasterChefArtifacts] INFO ClaudeAdapter file={CLAUDE-*}"
+for token in \
+  "does not guarantee live access to Builder chain-of-thought or streaming partial output" \
+  "missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died" \
+  "## 8) Builder monitoring" \
+  "A quiet wait with no completion means \`running\` or \`unknown\`, not \`dead\`." \
+  "For \`builder_thinking: xhigh\`, allow at least a 10-minute quiet window before the first stale probe unless Claude reports direct failure sooner." \
+  "### Prompt H - Long-thinking Builder monitoring" \
+  "Long-thinking Builder monitoring used direct evidence instead of guessing."; do
+  case "$token" in
+    "does not guarantee live access to Builder chain-of-thought or streaming partial output"|"missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died")
+      assert_contains "$ROOT_DIR/cdd-master-chef/CLAUDE-ADAPTER.md" "$token"
+      ;;
+    "### Prompt H - Long-thinking Builder monitoring"|"Long-thinking Builder monitoring used direct evidence instead of guessing.")
+      assert_contains "$ROOT_DIR/cdd-master-chef/CLAUDE-TEST-HARNESS.md" "$token"
+      ;;
+    *)
+      assert_contains "$ROOT_DIR/cdd-master-chef/CLAUDE-RUNBOOK.md" "$token"
+      ;;
+  esac
 done
 
 echo "[MasterChefArtifacts] INFO OpenClawAdapter package={openclaw}"

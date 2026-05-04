@@ -73,7 +73,16 @@ After that approval, Master Chef owns the Builder handoff. Do not treat "here is
 - Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.
 - If a relaunch or restart is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.
 
-## 8) Blocked paths
+## 8) Builder monitoring
+
+- The current Claude adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
+- A quiet wait with no completion means `running` or `unknown`, not `dead`.
+- Do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
+- For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless Claude reports direct failure sooner.
+- After that grace window, use one direct status request before replacement when the active Claude surface can send it coherently.
+- Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, or no reply to that direct status probe after the grace window.
+
+## 9) Blocked paths
 
 - Do not treat nested subagent spawning as available.
 - Do not let a background Builder path absorb clarifying-question or permission failures silently.

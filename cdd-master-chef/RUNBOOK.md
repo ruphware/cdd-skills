@@ -106,6 +106,16 @@ Use this shared rule after worktree creation:
 
 Adapters that support subagent-backed Builder runs should prefer `worktree_continue_mode: in_session` when Master Chef can keep both its own commands and Builder delegation rooted at `active_worktree_path` coherently.
 
+### Builder monitoring evidence
+
+Use runtime-native Builder status surfaces before indirect repo heuristics.
+
+- If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does.
+- During quiet periods, report `running` or `unknown` rather than `stale` unless direct failure evidence exists.
+- A missing diff, an empty `builder.jsonl`, or a short wait with no completion is not enough to justify Builder replacement.
+- For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless the runtime reports direct failure sooner.
+- After that grace window, use one explicit status probe before replacement when the runtime supports it.
+
 Exact relaunch instructions must include:
 
 - the managed worktree path

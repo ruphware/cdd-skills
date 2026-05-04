@@ -65,7 +65,16 @@ After that approval, Master Chef owns the Builder handoff. Do not treat "here is
 - If a handoff is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.
 - Do not assume Codex app worktree behavior and Codex CLI worktree behavior are identical.
 
-## 7) Blocked paths
+## 7) Builder monitoring
+
+- The current Codex adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
+- A `wait` result that says no agent has completed yet means `running` or `unknown`, not `dead`.
+- Do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
+- For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless Codex reports direct failure sooner.
+- After that grace window, use one direct status request before replacement when the active Codex surface can send it coherently.
+- Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, or no reply to that direct status probe after the grace window.
+
+## 8) Blocked paths
 
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.
 - Do not hide Builder downgrade decisions.

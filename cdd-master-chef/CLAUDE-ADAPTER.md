@@ -72,6 +72,9 @@ Adapter implication:
 
 - Multi-step delegation must be chained by the main Master Chef session rather than delegated recursively through Builder.
 - If a Builder step needs another agent, return control to Master Chef and let the main session launch the next agent explicitly.
+- This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
+- A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
+- When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
 ## 5) Run config mapping
 
