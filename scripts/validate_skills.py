@@ -1068,8 +1068,11 @@ def validate_claude_adapter(repo_root: Path) -> None:
 def validate_openclaw_adapter(repo_root: Path) -> None:
     """Validate the OpenClaw adapter package structurally."""
     skill_md = repo_root / "cdd-master-chef" / "SKILL.md"
+    openai_yaml = repo_root / "cdd-master-chef" / "agents" / "openai.yaml"
     assert skill_md.exists(), f"missing {skill_md}"
+    assert openai_yaml.exists(), f"missing {openai_yaml}"
     skill_text = skill_md.read_text(encoding="utf-8")
+    yaml_text = openai_yaml.read_text(encoding="utf-8")
     runbook_md = repo_root / "cdd-master-chef" / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
     readme_md = repo_root / "cdd-master-chef" / "openclaw" / "README.md"
     harness_md = repo_root / "cdd-master-chef" / "openclaw" / "MASTER-CHEF-TEST-HARNESS.md"
@@ -1084,6 +1087,12 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         f"cdd-master-chef should stay model-visible for implicit invocation in {skill_md}"
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
+    assert 'display_name: "[CDD-8] Master Chef"' in yaml_text, (
+        f"unexpected display name in {openai_yaml}"
+    )
+    assert "allow_implicit_invocation: true" in yaml_text, (
+        f"implicit invocation should stay enabled in {openai_yaml}"
+    )
     require_headings(
         skill_text,
         (

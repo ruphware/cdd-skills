@@ -98,6 +98,7 @@ assert_master_chef_package_surface() {
   local package_root="$2"
 
   assert_exists "$package_root/SKILL.md"
+  assert_exists "$package_root/agents/openai.yaml"
   assert_exists "$package_root/README.md"
   assert_exists "$package_root/CONTRACT.md"
   assert_exists "$package_root/RUNBOOK.md"
@@ -109,6 +110,7 @@ assert_master_chef_package_surface() {
   assert_exists "$package_root/openclaw/README.md"
   assert_exists "$package_root/openclaw/MASTER-CHEF-RUNBOOK.md"
   assert_exists "$package_root/openclaw/MASTER-CHEF-TEST-HARNESS.md"
+  assert_contains "$package_root/agents/openai.yaml" 'display_name: "[CDD-8] Master Chef"'
 
   echo "[LocalInstall] INFO MasterChefPackage runtime={$runtime_label} package_root={$package_root} shared_contract={yes} adapters={codex,claude,openclaw}"
 }

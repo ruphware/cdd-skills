@@ -60,6 +60,7 @@ SHARED_ROOT="$PACKAGE_ROOT"
 echo "[MasterChefArtifacts] INFO SharedContractRoot path={$SHARED_ROOT}"
 for rel in \
   SKILL.md \
+  agents/openai.yaml \
   README.md \
   CONTRACT.md \
   RUNBOOK.md \
@@ -72,6 +73,8 @@ for rel in \
   CLAUDE-TEST-HARNESS.md; do
   assert_exists "$SHARED_ROOT/$rel"
 done
+assert_contains "$SHARED_ROOT/agents/openai.yaml" 'display_name: "[CDD-8] Master Chef"'
+assert_contains "$SHARED_ROOT/agents/openai.yaml" "allow_implicit_invocation: true"
 
 echo "[MasterChefArtifacts] INFO LegacyStubPaths root={$ROOT_DIR}"
 assert_exists "$ROOT_DIR/master-chef/README.md"
