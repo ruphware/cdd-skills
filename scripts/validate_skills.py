@@ -611,8 +611,83 @@ def validate_builder_skill(skill_dir: Path) -> None:
         validate_selector_labeled_options(skill_text, skill_md)
 
 
-def validate_openclaw_skill(repo_root: Path) -> None:
-    """Validate the OpenClaw-only skill package."""
+def validate_master_chef_shared_contract(repo_root: Path) -> None:
+    """Validate the shared Master Chef contract surfaces."""
+    shared_root = repo_root / "master-chef"
+    readme_md = shared_root / "README.md"
+    contract_md = shared_root / "CONTRACT.md"
+    matrix_md = shared_root / "RUNTIME-CAPABILITIES.md"
+    root_readme_md = repo_root / "README.md"
+
+    for path in (readme_md, contract_md, matrix_md, root_readme_md):
+        assert path.exists(), f"missing {path}"
+
+    readme_text = readme_md.read_text(encoding="utf-8")
+    contract_text = contract_md.read_text(encoding="utf-8")
+    matrix_text = matrix_md.read_text(encoding="utf-8")
+    root_readme_text = root_readme_md.read_text(encoding="utf-8")
+
+    assert "shared source of truth" in readme_text, (
+        f"shared Master Chef source-of-truth wording missing in {readme_md}"
+    )
+    assert "Runtime adapters consume that shared contract" in readme_text, (
+        f"runtime adapter framing missing in {readme_md}"
+    )
+    assert "`CONTRACT.md`" in readme_text and "`RUNTIME-CAPABILITIES.md`" in readme_text, (
+        f"shared contract index missing in {readme_md}"
+    )
+    assert "`openclaw/`" in readme_text, (
+        f"OpenClaw adapter reference missing in {readme_md}"
+    )
+
+    assert "runtime-agnostic source of truth" in contract_text, (
+        f"runtime-agnostic contract wording missing in {contract_md}"
+    )
+    assert ".cdd-runtime/master-chef/run.json" in contract_text, (
+        f"durable runtime state missing in {contract_md}"
+    )
+    assert "Builder default: `cdd-implement-todo` for the next runnable TODO step." in contract_text, (
+        f"default Builder routing contract missing in {contract_md}"
+    )
+    assert "One Builder run equals one approved delegated action." in contract_text, (
+        f"one-step Builder-run contract missing in {contract_md}"
+    )
+    assert "if QA rejects the Builder result" in contract_text, (
+        f"QA remediation contract missing in {contract_md}"
+    )
+    assert "restart only from the next smaller actionable TODO step" in contract_text, (
+        f"smaller-step restart contract missing in {contract_md}"
+    )
+    assert "Runtime adapters must define:" in contract_text, (
+        f"runtime adapter obligation section missing in {contract_md}"
+    )
+
+    assert "OpenClaw" in matrix_text and "Codex" in matrix_text and "Claude Code" in matrix_text, (
+        f"runtime capability matrix entries missing in {matrix_md}"
+    )
+    assert ".codex/agents/*.toml" in matrix_text, (
+        f"Codex agent surface missing in {matrix_md}"
+    )
+    assert ".claude/agents/" in matrix_text and "~/.claude/agents/" in matrix_text, (
+        f"Claude agent surfaces missing in {matrix_md}"
+    )
+    assert "--agents" in matrix_text and "--worktree" in matrix_text, (
+        f"Claude CLI capability notes missing in {matrix_md}"
+    )
+
+    assert "upgrade is a shared multi-runtime contract rooted in `master-chef/`" in root_readme_text, (
+        f"root README shared-contract framing missing in {root_readme_md}"
+    )
+    assert "`openclaw/`" in root_readme_text, (
+        f"root README OpenClaw adapter reference missing in {root_readme_md}"
+    )
+    assert "runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`" in root_readme_text, (
+        f"root README capability matrix reference missing in {root_readme_md}"
+    )
+
+
+def validate_openclaw_adapter(repo_root: Path) -> None:
+    """Validate the OpenClaw adapter package for the shared Master Chef contract."""
     skill_md = repo_root / "openclaw" / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
     skill_text = skill_md.read_text(encoding="utf-8")
@@ -630,6 +705,12 @@ def validate_openclaw_skill(repo_root: Path) -> None:
         f"cdd-master-chef should stay model-visible for implicit invocation in {skill_md}"
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
+    assert "OpenClaw adapter" in skill_text, (
+        f"OpenClaw adapter framing missing in {skill_md}"
+    )
+    assert "OpenClaw-only" not in skill_text, (
+        f"OpenClaw-only wording should not remain in {skill_md}"
+    )
     assert "The Builder runs as an OpenClaw subagent, not ACP." in skill_text, (
         f"subagent Builder contract missing in {skill_md}"
     )
@@ -719,6 +800,24 @@ def validate_openclaw_skill(repo_root: Path) -> None:
     )
     assert "after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing" in skill_text, (
         f"post-compaction resume contract missing in {skill_md}"
+    )
+    assert "OpenClaw adapter" in readme_text, (
+        f"OpenClaw adapter framing missing in {readme_md}"
+    )
+    assert "OpenClaw-only" not in readme_text, (
+        f"OpenClaw-only wording should not remain in {readme_md}"
+    )
+    assert "shared `cdd-master-chef` workflow" in readme_text, (
+        f"shared workflow framing missing in {readme_md}"
+    )
+    assert "the shared, runtime-agnostic master chef contract is no longer rooted only in `openclaw/`" in readme_text.lower(), (
+        f"shared-contract relationship missing in {readme_md}"
+    )
+    assert "OpenClaw adapter" in runbook_text, (
+        f"OpenClaw adapter framing missing in {runbook_md}"
+    )
+    assert "shared Master Chef contract" in harness_text, (
+        f"shared-contract harness framing missing in {harness_md}"
     )
     assert "### 4.4 `context-summary.md`" in runbook_text, (
         f"context-summary section missing in {runbook_md}"
@@ -844,7 +943,8 @@ def main() -> int:
         validate_builder_skill(skill_dir)
 
     validate_generated_openclaw_builder_skills(repo_root)
-    validate_openclaw_skill(repo_root)
+    validate_master_chef_shared_contract(repo_root)
+    validate_openclaw_adapter(repo_root)
     print("skill structure checks passed")
     return 0
 

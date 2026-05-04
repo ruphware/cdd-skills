@@ -1,0 +1,224 @@
+# Master Chef Shared Contract
+
+This file is the runtime-agnostic source of truth for `cdd-master-chef`.
+
+Runtime adapters must satisfy this contract without claiming runtime behavior they cannot actually provide. Adapter docs may be stricter than this shared contract, but they must not be looser.
+
+## 0) Purpose
+
+Run autonomous development with one control loop:
+
+- **Master Chef:** the main controlling session for the run
+- **Builder:** a delegated worker run that executes exactly one approved action
+- **Reporting surface:** the runtime-defined session where lifecycle updates are shown to the human
+
+Design principle: **soft reasoning, hard state**.
+
+- Keep planning, review, QA, and blocker judgment LLM-driven.
+- Keep runtime state, leases, logs, events, and recovery thresholds explicit and durable.
+
+## 1) Actors
+
+### Master Chef
+
+Master Chef owns:
+
+- repo inspection
+- choosing the skill-routing path
+- next-step selection
+- runtime initialization
+- direct use of planning-oriented `cdd-*` skills when needed
+- Builder spawn, replacement, and review
+- direct Builder health checks when the runtime allows them
+- QA gate and step-level UAT approval
+- commit and push
+- lifecycle reporting
+- final summary
+
+### Builder
+
+The Builder owns:
+
+- using the exact delegated internal `cdd-*` skill chosen by Master Chef
+- implementing exactly one approved action
+- running step validation
+- writing durable step evidence
+- returning a structured report to Master Chef
+
+One Builder run equals one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+
+### Human
+
+The human owns:
+
+- the per-run Run config
+- kickoff approval
+- final review
+- intervention when Master Chef reports a blocker or deadlock
+
+## 2) Required repo state
+
+Before autonomous work begins:
+
+1. The target workspace must be either:
+   - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
+   - a new or adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
+2. The full Run config must be known before kickoff.
+3. A pushable upstream is required before the normal autonomous commit/push loop begins.
+4. Master Chef must inspect:
+   - current git status and branch
+   - upstream branch when present
+   - active TODO file when present
+   - last completed step when present
+   - next runnable TODO step when present
+   - whether the repo first needs `cdd-init-project`
+
+## 3) Durable runtime state
+
+State is durable and repo-local:
+
+- `.cdd-runtime/master-chef/run.json`
+- `.cdd-runtime/master-chef/run.lock.json`
+- `.cdd-runtime/master-chef/master-chef.jsonl`
+- `.cdd-runtime/master-chef/builder.jsonl`
+- `.cdd-runtime/master-chef/context-summary.md`
+
+Canonical `run.json` fields:
+
+- `run_id`
+- `repo`
+- `master_model`
+- `master_thinking`
+- `builder_model`
+- `builder_thinking`
+- `builder_runtime`
+- `master_session_key`
+- `builder_session_key`
+- `active_todo_path`
+- `active_step`
+- `phase`
+- `branch`
+- `upstream`
+- `pre_step_head_sha`
+- `last_pass_head_sha`
+- `last_progress_at_utc`
+- `last_master_log_at_utc`
+- `last_builder_log_at_utc`
+- `builder_restart_count`
+- `dispute_loop_count`
+- `current_blocker`
+
+## 4) Run config
+
+The resolved `Run config` must contain:
+
+- `master_model`
+- `master_thinking`
+- `builder_model`
+- `builder_thinking`
+
+Treat the resolved `Run config` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
+
+Runtime adapters must define:
+
+- how the Run config is supplied
+- whether they support local default Run config files
+- how the model and thinking fields are honored, inherited, constrained, or downgraded
+
+## 5) Routing model
+
+Master Chef chooses the internal `cdd-*` routing model.
+
+- For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
+- Builder default: `cdd-implement-todo` for the next runnable TODO step.
+- Builder optional: `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action.
+- Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in the main session rather than being delegated to Builder.
+- Excluded from the normal flow: `cdd-audit-and-implement`, unless the process is explicitly adapted for its mixed role.
+
+Runtime adapters must define the install roots, invocation surface, and delegation mechanism for those internal workflows.
+
+## 6) Kickoff and Builder lifecycle
+
+Before implementation starts, present one kickoff approval that covers:
+
+- proposed next action
+- the approved `Run config`
+- runtime initialization under `.cdd-runtime/master-chef/`
+- run lease creation
+
+Use one-step Builder runs only.
+
+- One Builder run equals one approved delegated action.
+- After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
+- Do not treat Builder session resurrection or multi-step continuation as a normal path.
+
+Both Master Chef and Builder must append durable evidence for step start, validation, blockers, completion, and reporting.
+
+## 7) Validation, QA, and UAT
+
+Use `hard_gate` and `soft_signal` validation classes:
+
+- `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
+- `soft_signal`: discovery greps, file-presence scans, or other non-blocking heuristics
+
+Use working-tree-aware discovery checks when unstaged files matter:
+
+- `rg --files`
+- `git ls-files --cached --others --exclude-standard`
+
+For each passed step:
+
+- ensure the Builder updated only the selected step in `TODO*.md`
+- run Master Chef QA
+- if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass
+- approve step-level UAT with explicit evidence
+- commit
+- push
+- advertise `STEP_PASS` with the full result, evidence, and decision trail in the reporting surface
+- re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
+
+## 8) Reporting and recovery
+
+Report events:
+
+- `START`
+- `BUILDER_RESTARTED`
+- `STEP_PASS`
+- `STEP_BLOCKED`
+- `BLOCKER_CLEARED`
+- `RUN_STOPPED`
+- `DEADLOCK_STOPPED`
+- `RUN_COMPLETE`
+
+If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
+
+If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
+
+- stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
+- revise the situation in Master Chef before any more Builder work
+- decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
+- clean only stale runtime or build artifacts needed for a coherent retry, and never revert unrelated user work
+- restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
+
+## 9) Context compaction
+
+Manage Master Chef context explicitly during long runs:
+
+- keep Builder context fresh through one-step Builder runs; do not compact or resume Builders as the normal path
+- before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
+- compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning or refactor work, or before a known large QA or planning phase once a checkpoint is written
+- do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript
+- after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing
+
+## 10) Runtime adapter obligations
+
+Runtime adapters must define:
+
+- how Master Chef and Builder sessions are created
+- whether subagent delegation is explicit, automatic, or unavailable
+- nested delegation limits
+- how tools and MCP access are inherited or restricted
+- how child working directories are selected
+- how worktree creation and hand-off are realized or limited
+- how the reporting surface maps onto the runtime
+- any runtime-specific stop conditions or safety restrictions that are stricter than the shared contract

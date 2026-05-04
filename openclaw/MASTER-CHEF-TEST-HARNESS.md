@@ -1,4 +1,6 @@
-# cdd-master-chef Test Harness Checklist (OpenClaw-direct mode)
+# cdd-master-chef Test Harness Checklist (OpenClaw adapter)
+
+This harness validates the current OpenClaw adapter against the shared Master Chef contract.
 
 Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> direct in-session Builder checks -> in-session lifecycle reporting -> final results**.
 

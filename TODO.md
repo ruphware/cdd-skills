@@ -588,11 +588,11 @@ Make `cdd-master-chef` stop being OpenClaw-only by separating the shared Master 
 
 ### Tasks
 
-- [ ] Create a shared Master Chef source-of-truth surface that defines the runtime-agnostic contract: kickoff, routing, Builder lifecycle, QA/UAT gates, blocker handling, commit/push policy, lifecycle events, and durable runtime state.
-- [ ] Refactor the existing `openclaw/*` package so OpenClaw-specific files become an adapter layer over the shared contract instead of the only Master Chef contract.
-- [ ] Add a runtime capability matrix for OpenClaw, Codex, and Claude that records, at minimum, subagent model, nested-delegation limits, approval model, MCP/tool inheritance, child working-directory support, worktree-hand-off behavior, and startup-only versus in-session capabilities.
-- [ ] Update the repo `README.md` so Master Chef is described as a shared workflow with runtime adapters, while keeping any still-experimental status explicit.
-- [ ] Replace OpenClaw-only contract assertions with shared-contract and adapter-specific coverage that fails if the repo drifts back to OpenClaw-only wording.
+- [x] Create a shared Master Chef source-of-truth surface that defines the runtime-agnostic contract: kickoff, routing, Builder lifecycle, QA/UAT gates, blocker handling, commit/push policy, lifecycle events, and durable runtime state.
+- [x] Refactor the existing `openclaw/*` package so OpenClaw-specific files become an adapter layer over the shared contract instead of the only Master Chef contract.
+- [x] Add a runtime capability matrix for OpenClaw, Codex, and Claude that records, at minimum, subagent model, nested-delegation limits, approval model, MCP/tool inheritance, child working-directory support, worktree-hand-off behavior, and startup-only versus in-session capabilities.
+- [x] Update the repo `README.md` so Master Chef is described as a shared workflow with runtime adapters, while keeping any still-experimental status explicit.
+- [x] Replace OpenClaw-only contract assertions with shared-contract and adapter-specific coverage that fails if the repo drifts back to OpenClaw-only wording.
 
 ### Implementation notes
 
@@ -607,10 +607,10 @@ Make `cdd-master-chef` stop being OpenClaw-only by separating the shared Master 
 
 ### UAT
 
-- Confirm the repo now has a shared Master Chef contract plus runtime adapters.
-- Confirm OpenClaw docs no longer act as the only source of truth.
-- Confirm `README.md` now describes Master Chef as multi-runtime rather than OpenClaw-only.
-- Confirm the validator fails if shared rules collapse back into OpenClaw-only wording.
+- [x] Confirm the repo now has a shared Master Chef contract plus runtime adapters.
+- [x] Confirm OpenClaw docs no longer act as the only source of truth.
+- [x] Confirm `README.md` now describes Master Chef as multi-runtime rather than OpenClaw-only.
+- [x] Confirm the validator fails if shared rules collapse back into OpenClaw-only wording.
 
 ## Step 17 — Add a clean-checkout-first managed worktree and branch lifecycle
 

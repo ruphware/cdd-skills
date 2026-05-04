@@ -1,6 +1,14 @@
 # cdd-master-chef
 
-This folder is the source for the OpenClaw-only `cdd-master-chef` upgrade.
+This folder is the source for the OpenClaw adapter of the shared `cdd-master-chef` workflow.
+
+Shared contract surfaces now live in the repo-level `master-chef/` directory:
+
+- `master-chef/README.md`
+- `master-chef/CONTRACT.md`
+- `master-chef/RUNTIME-CAPABILITIES.md`
+
+This `openclaw/` folder documents how the OpenClaw runtime satisfies that shared contract and remains the current installable adapter package.
 
 Installed form:
 
@@ -11,12 +19,18 @@ Installed form:
 
 ## What it does
 
-The packaged OpenClaw workflow has two active actors:
+The packaged OpenClaw adapter has two active actors:
 
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
 - **Builder:** a fresh one-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
 There is no watchdog cron. The human supplies one explicit per-run Run config, approves kickoff once, and then mainly checks final results or critical blockers.
+
+## Relationship to the shared contract
+
+- The shared, runtime-agnostic Master Chef contract is no longer rooted only in `openclaw/`; it is defined in `master-chef/`.
+- `openclaw/` is the OpenClaw adapter over that shared contract.
+- `skills/` remains the canonical Builder workflow source for the internal `cdd-*` skills used by Master Chef and Builder.
 
 ## Prerequisites
 

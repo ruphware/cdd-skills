@@ -24,9 +24,9 @@ Start with these core commands:
 ## What's Included
 
 - Core `cdd-*` skills for the normal single-agent, human-in-the-loop CDD workflow
-- Optional `cdd-master-chef` OpenClaw package for orchestrated master-agent runs
+- Shared `cdd-master-chef` contract docs plus the current OpenClaw adapter package for orchestrated master-agent runs
 
-Details on the skill packs, manual repo install scripts, and OpenClaw setup are below.
+Details on the skill packs, shared Master Chef contract, manual repo install scripts, and the current OpenClaw adapter are below.
 
 ## 1. Core: CDD Skills
 
@@ -59,28 +59,36 @@ Golden path:
 - `$cdd-audit-and-implement` — turn audit items into TODO steps and implement the first one
 - `$cdd-refactor` — create a refactor TODO plan from the current index
 
-## 2. Upgrade: CDD Master Chef for OpenClaw
+## 2. Upgrade: CDD Master Chef (Shared Contract + Runtime Adapters)
 
-The optional upgrade is the experimental OpenClaw skill package rooted in `openclaw/`.
+The optional `cdd-master-chef` upgrade is a shared multi-runtime contract rooted in `master-chef/`, with the current installable adapter package rooted in `openclaw/`.
 
 `CDD Master Chef` is very experimental, in active development, and far from done. Treat it as a rough workflow for iteration, not a finished product.
 
 If you want useful UI output, provide strong UX mockups with the plan. Without good mockups, agents will usually produce useless AI slop.
 
-This is the master-agent workflow:
+The shared workflow is:
 
 - the human supplies one explicit per-run Run config with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
 - the human starts Master Chef in either an existing CDD-ready repo or a new project folder that should be set up in CDD form first
 - Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval
 - after kickoff, Master Chef drives the Builder automatically with fresh one-step Builder runs and the human mostly checks final results unless Master Chef reports a blocker or deadlock
 
-The Builder in this workflow is an OpenClaw subagent. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack. Those internal Builder skills are generated from the canonical repo source in `skills/` and installed into `~/.openclaw/skills` by `./scripts/install-openclaw.sh`.
+Current repo state:
+
+- shared Master Chef source of truth: `master-chef/`
+- current installable adapter package: `openclaw/`
+- runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`
+- canonical Builder workflow source still lives in `skills/`
+
+The current packaged Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack. Those internal Builder skills are generated from the canonical repo source in `skills/` and installed into `~/.openclaw/skills` by `./scripts/install-openclaw.sh`.
 
 Routing note: Master Chef chooses the path. New projects should normally start with `cdd-init-project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `cdd-implement-todo`; `cdd-index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in Master Chef; `cdd-audit-and-implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
 Source of truth:
 
-- `openclaw/`
+- `master-chef/` for the shared contract
+- `openclaw/` for the current OpenClaw adapter package
 - canonical Builder workflow source still lives in `skills/`
 
 Installed form:
@@ -92,7 +100,7 @@ Installed form:
 ## Relationship Between the Two
 
 - Start with the core `cdd-*` skills when you want the normal single-agent, human-approved CDD loop.
-- Add `cdd-master-chef` when you want OpenClaw to orchestrate the process, keep the Builder on the OpenClaw subagent runtime, and reduce the human role to kickoff plus final review.
+- Add `cdd-master-chef` when you want the shared Master Chef workflow and the current OpenClaw adapter fits your runtime, keeping the Builder on the OpenClaw subagent runtime and reducing the human role to kickoff plus final review.
 - `skills/` remains the canonical definition of the Builder workflow in both cases.
 
 ## Recommended tools
@@ -191,4 +199,3 @@ ___
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
 <sup>Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.</sup>
-

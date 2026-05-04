@@ -1,6 +1,10 @@
-# CDD Master Chef Runbook (OpenClaw-direct mode)
+# CDD Master Chef Runbook (OpenClaw adapter)
 
 ## 0) Purpose
+
+This runbook is the OpenClaw adapter over the shared Master Chef contract.
+
+Use the source repo's `master-chef/` docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
 Run autonomous development with one control loop:
 

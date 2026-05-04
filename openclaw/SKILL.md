@@ -1,6 +1,6 @@
 ---
 name: cdd-master-chef
-description: Run autonomous multi-step CDD software delivery in OpenClaw-direct mode. Use for non-trivial development in an existing CDD repo or when starting a new project that should adopt CDD first; the main session is Master Chef, the Builder runs as fresh one-step OpenClaw subagent runs, repo state lives under .cdd-runtime/master-chef, and the main session handles Builder checks and operator-facing reporting without a watchdog cron.
+description: Run the OpenClaw adapter for the shared cdd-master-chef autonomous workflow. Use for non-trivial development in an existing CDD repo or when starting a new project that should adopt CDD first; the main session is Master Chef, the Builder runs as fresh one-step OpenClaw subagent runs, repo state lives under .cdd-runtime/master-chef, and the main session handles Builder checks and operator-facing reporting without a watchdog cron.
 user-invocable: true
 homepage: https://github.com/ruphware/cdd-skills
 metadata: {"openclaw":{"requires":{"bins":["git"],"config":[]}}}
@@ -8,7 +8,13 @@ metadata: {"openclaw":{"requires":{"bins":["git"],"config":[]}}}
 
 # CDD Master Chef
 
-Use this skill for a clean OpenClaw-native autonomous workflow.
+Use this skill for the OpenClaw adapter of the shared Master Chef workflow.
+
+Adapter note:
+
+- The runtime-agnostic Master Chef contract now lives in the source repo under `master-chef/`.
+- This skill defines how OpenClaw realizes that shared contract.
+- When this file repeats a shared rule, treat the shared contract as canonical and this file as the OpenClaw runtime mapping of that rule.
 
 References:
 
