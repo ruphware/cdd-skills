@@ -16,6 +16,8 @@ jobs:
           bash -n scripts/install.sh
           bash -n scripts/install-openclaw.sh
           bash -n scripts/test_installers.sh
+          bash -n scripts/test_master_chef_artifacts.sh
+          bash -n scripts/test_master_chef_worktree.sh
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -27,3 +29,9 @@ jobs:
 
       - name: Installer smoke tests
         run: bash scripts/test_installers.sh
+
+      - name: Master Chef artifact checks
+        run: bash scripts/test_master_chef_artifacts.sh
+
+      - name: Master Chef worktree tests
+        run: bash scripts/test_master_chef_worktree.sh

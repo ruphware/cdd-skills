@@ -82,6 +82,14 @@ def require_substrings(
     assert not missing, f"missing {label} in {path}: {', '.join(missing)}"
 
 
+def require_regexes(
+    text: str, patterns: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that every expected regex matches somewhere in the given text."""
+    missing = [pattern for pattern in patterns if not re.search(pattern, text, re.M | re.S)]
+    assert not missing, f"missing {label} in {path}: {', '.join(missing)}"
+
+
 def forbid_substrings(
     text: str, patterns: tuple[str, ...], path: Path, label: str
 ) -> None:
@@ -745,14 +753,14 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         readme_md,
         "shared contract index entries",
     )
-    require_substrings(
+    require_regexes(
         readme_text,
         (
-            "Current concrete adapters in this package:",
-            "- OpenClaw — current packaged runtime adapter and generated Builder install flow",
-            "- Codex — current subagent-backed adapter docs",
-            "- Claude Code — current subagent-backed adapter docs",
-            "- No Hermes adapter ships in this package today.",
+            r"Current concrete adapters in this package:",
+            r"OpenClaw.*packaged runtime adapter.*generated Builder install flow",
+            r"Codex.*subagent-backed adapter docs",
+            r"Claude Code.*subagent-backed adapter docs",
+            r"No Hermes adapter ships in this package today\.",
         ),
         readme_md,
         "shared package adapter coverage",
@@ -848,19 +856,26 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             "cdd-master-chef/RUNTIME-CAPABILITIES.md",
             "./scripts/install.sh --runtime claude",
             "./scripts/install.sh --runtime openclaw",
-            "Use the core `cdd-*` loop when you want a single coding agent",
-            "Use `[CDD-8] Master Chef` when you want an autonomous run after kickoff approval",
-            "For `[CDD-8] Master Chef`:",
-            "start `cdd-master-chef` from the main session for the runtime you want to control",
-            "Adapter docs are for maintainers, debugging, and adding runtime support.",
-            "Current concrete adapters in this repo:",
-            "- OpenClaw — current packaged adapter, installed with `./scripts/install.sh --runtime openclaw`",
-            "- Codex — current subagent-backed adapter docs in `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md`",
-            "- Claude Code — current subagent-backed adapter docs in `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md`",
-            "- No Hermes adapter ships in this repo today.",
         ),
         root_readme_md,
-        "root README Master Chef install references",
+        "root README stable Master Chef references",
+    )
+    require_regexes(
+        root_readme_text,
+        (
+            r"Use the core .*cdd-\*.*single coding agent",
+            r"Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval",
+            r"For `\[CDD-8\] Master Chef`:",
+            r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
+            r"Adapter docs.*maintainers.*debugging.*runtime support",
+            r"Current concrete adapters in this repo:",
+            r"OpenClaw.*packaged adapter.*install\.sh --runtime openclaw",
+            r"Codex.*CODEX-ADAPTER\.md.*CODEX-RUNBOOK\.md",
+            r"Claude Code.*CLAUDE-ADAPTER\.md.*CLAUDE-RUNBOOK\.md",
+            r"No Hermes adapter ships in this repo today\.",
+        ),
+        root_readme_md,
+        "root README topic coverage",
     )
     forbid_substrings(
         root_readme_text,

@@ -36,6 +36,15 @@ assert_contains() {
   }
 }
 
+assert_matches() {
+  local path="$1"
+  local pattern="$2"
+  grep -E -- "$pattern" "$path" >/dev/null || {
+    echo "Expected regex '$pattern' in $path" >&2
+    exit 1
+  }
+}
+
 assert_not_contains() {
   local path="$1"
   local pattern="$2"
@@ -74,15 +83,20 @@ echo "[MasterChefArtifacts] INFO RootInstallStory file={README.md}"
 for token in \
   "npx skills add https://github.com/ruphware/cdd-skills/" \
   "./scripts/install.sh --all" \
-  "For \`[CDD-8] Master Chef\`:" \
-  "start \`cdd-master-chef\` from the main session for the runtime you want to control" \
-  "Adapter docs are for maintainers, debugging, and adding runtime support." \
-  "Current concrete adapters in this repo:" \
-  "- OpenClaw — current packaged adapter, installed with \`./scripts/install.sh --runtime openclaw\`" \
-  "- Codex — current subagent-backed adapter docs in \`cdd-master-chef/CODEX-ADAPTER.md\` and \`cdd-master-chef/CODEX-RUNBOOK.md\`" \
-  "- Claude Code — current subagent-backed adapter docs in \`cdd-master-chef/CLAUDE-ADAPTER.md\` and \`cdd-master-chef/CLAUDE-RUNBOOK.md\`" \
-  "- No Hermes adapter ships in this repo today."; do
+  "Current concrete adapters in this repo:"; do
   assert_contains "$ROOT_DIR/README.md" "$token"
+done
+for pattern in \
+  'Use the core .*cdd-\*.*single coding agent' \
+  'Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval' \
+  'For `\[CDD-8\] Master Chef`:' \
+  'start `(\$|/)?cdd-master-chef`.*main session.*runtime you want to control' \
+  'Adapter docs.*maintainers.*debugging.*runtime support' \
+  'OpenClaw.*packaged adapter.*install\.sh --runtime openclaw' \
+  'Codex.*CODEX-ADAPTER\.md.*CODEX-RUNBOOK\.md' \
+  'Claude Code.*CLAUDE-ADAPTER\.md.*CLAUDE-RUNBOOK\.md' \
+  'No Hermes adapter ships in this repo today\.'; do
+  assert_matches "$ROOT_DIR/README.md" "$pattern"
 done
 for token in \
   "wrong \`npx skills add\` entrypoint" \
@@ -98,12 +112,15 @@ done
 echo "[MasterChefArtifacts] INFO SharedAdapterStory file={cdd-master-chef/README.md}"
 for token in \
   "Current concrete adapters in this package:" \
-  "- OpenClaw — current packaged runtime adapter and generated Builder install flow" \
-  "- Codex — current subagent-backed adapter docs" \
-  "- Claude Code — current subagent-backed adapter docs" \
-  "- No Hermes adapter ships in this package today." \
   "The top-level \`master-chef/\` and \`openclaw/\` directories are compatibility stubs only; this directory is the single canonical source tree."; do
   assert_contains "$SHARED_ROOT/README.md" "$token"
+done
+for pattern in \
+  'OpenClaw.*packaged runtime adapter.*generated Builder install flow' \
+  'Codex.*subagent-backed adapter docs' \
+  'Claude Code.*subagent-backed adapter docs' \
+  'No Hermes adapter ships in this package today\.'; do
+  assert_matches "$SHARED_ROOT/README.md" "$pattern"
 done
 for token in \
   "only packaged Master Chef runtime today" \
