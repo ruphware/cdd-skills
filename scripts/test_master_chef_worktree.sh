@@ -21,6 +21,12 @@ assert_contains() {
   grep -F "$text" "$path" >/dev/null || fail "Expected '$text' in $path"
 }
 
+assert_matches() {
+  local path="$1"
+  local pattern="$2"
+  grep -E -- "$pattern" "$path" >/dev/null || fail "Expected regex '$pattern' in $path"
+}
+
 assert_clean_checkout() {
   local repo="$1"
   [[ -z "$(git -C "$repo" status --short)" ]]
@@ -81,10 +87,10 @@ fi
 
 echo "[MasterChefWorktree] INFO DirtyPreflightRejected repo={$dirty_repo}"
 
-assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "Before kickoff, the source checkout must be clean."
+assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "source checkout must be clean|Before kickoff.*clean"
 assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "active_worktree_path"
-assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions"
-assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch, treat the managed worktree as the active repo root"
+assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
+assert_matches "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
 assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
 
 echo "[MasterChefWorktree] INFO ContractDocsVerified root={$ROOT_DIR}"

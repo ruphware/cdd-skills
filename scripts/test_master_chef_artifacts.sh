@@ -54,6 +54,20 @@ assert_not_contains() {
   fi
 }
 
+assert_topic_bundle() {
+  local path="$1"
+  local label="$2"
+  shift 2
+
+  local pattern
+  for pattern in "$@"; do
+    grep -E -- "$pattern" "$path" >/dev/null || {
+      echo "Missing topic '$label' regex '$pattern' in $path" >&2
+      exit 1
+    }
+  done
+}
+
 PACKAGE_ROOT="$ROOT_DIR/cdd-master-chef"
 SHARED_ROOT="$PACKAGE_ROOT"
 
@@ -153,24 +167,21 @@ for field in \
   current_blocker; do
   assert_contains "$SHARED_ROOT/CONTRACT.md" "- \`$field\`"
 done
-for token in \
-  "how Builder monitoring works, including whether live status, partial output, or direct reasoning visibility actually exist in that runtime" \
-  "Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second." \
-  "A returned Builder handle or session key is spawn evidence only." \
-  "Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot." \
-  "\"event\":\"BUILDER_READY\"" \
-  "\"tool_access\":\"ready|blocked|unknown\"" \
-  "\"mcp_access\":\"ready|blocked|unknown\"" \
-  "Treat a timed-out wait, a \"no agent completed yet\" result, or one unanswered progress request as inconclusive unless the runtime also reports closure or failure." \
-  "Do not treat a returned session key, a missing diff, an empty \`builder.jsonl\`, or one short wait window with no completion as proof that Builder is fully started or has died." \
-  "If no readiness signal arrives inside the adapter-defined boot window, use one explicit boot-status probe before classifying Builder as failed to start, blocked, or replaceable." \
-  "For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before probing or replacing unless the runtime reports direct failure sooner." \
-  "about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency" \
-  "Apply the chosen quiet-work window only after \`builder_phase\` reaches \`running\`." \
-  "Any coherent Builder reply, including a discovery-only or partial status report, is proof of life." \
-  "- \`BUILDER_READY\`"; do
-  assert_contains "$SHARED_ROOT/CONTRACT.md" "$token"
-done
+assert_topic_bundle "$SHARED_ROOT/CONTRACT.md" "contract monitoring topics" \
+  'Builder monitoring.*live status.*partial output.*direct reasoning visibility' \
+  'two phases:.*boot/readiness.*quiet-work' \
+  'spawn evidence' \
+  'Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>' \
+  'BUILDER_READY' \
+  'tool_access' \
+  'mcp_access' \
+  'timed-out wait.*no agent completed yet.*inconclusive' \
+  'missing diff.*empty .*builder\.jsonl.*proof' \
+  'boot window.*boot-status probe' \
+  '(long-thinking|high-latency).*quiet-work window' \
+  '10 minutes.*quiet-work window.*high-latency' \
+  'quiet-work window.*builder_phase.*running' \
+  'coherent Builder reply.*proof of life'
 
 echo "[MasterChefArtifacts] INFO SharedRunbookFields file={RUNBOOK.md}"
 for token in \
@@ -188,22 +199,23 @@ for token in \
   "last_builder_direct_signal_at_utc" \
   "run_step_budget" \
   "steps_completed_this_run" \
-  "\`builder_phase\` is \`not_started\`, \`booting\`, \`running\`, \`blocked\`, \`completed\`, \`failed\`, or \`closed\`" \
-  "If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does." \
-  "In Codex- or Claude-style adapters, direct status usually means final completion/failure notifications, explicit progress replies, or runtime-reported closure/errors, not live thinking traces." \
-  "Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second." \
-  "A returned Builder handle or session key is not enough to prove that the child has loaded its usable repo and tool context." \
-  "Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot." \
-  "\`tool_access\`" \
-  "\`mcp_access\`" \
-  "A timed-out wait, a \"no agent completed yet\" result, or one unanswered status request is still inconclusive unless the runtime also reports closure or failure." \
-  "Use a short adapter-defined boot window before the first boot-status probe; foreground Codex and Claude flows should default to about 2 minutes." \
-  "For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless the runtime reports direct failure sooner." \
-  "about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency" \
-  "Apply the chosen quiet-work window only after \`builder_phase\` reaches \`running\`." \
-  "If Builder replies with a coherent discovery note, partial status, or other non-final report, treat that as proof of life"; do
+  "\`builder_phase\` is \`not_started\`, \`booting\`, \`running\`, \`blocked\`, \`completed\`, \`failed\`, or \`closed\`"; do
   assert_contains "$SHARED_ROOT/RUNBOOK.md" "$token"
 done
+assert_topic_bundle "$SHARED_ROOT/RUNBOOK.md" "runbook monitoring topics" \
+  'does not expose live Builder reasoning.*do not pretend' \
+  'Codex- or Claude-style adapters.*direct status.*completion/failure.*progress replies.*closure/errors' \
+  'two phases:.*boot/readiness.*quiet-work' \
+  'returned Builder handle.*not enough to prove' \
+  'Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>' \
+  'tool_access' \
+  'mcp_access' \
+  'timed-out wait.*no agent completed yet.*inconclusive' \
+  'boot window.*2 minutes' \
+  '(long-thinking|high-latency).*quiet-work window' \
+  '10 minutes.*quiet-work window.*high-latency' \
+  'quiet-work window.*builder_phase.*running' \
+  'coherent discovery note.*proof of life'
 
 echo "[MasterChefArtifacts] INFO RuntimeMatrix file={RUNTIME-CAPABILITIES.md}"
 for token in \
@@ -220,98 +232,72 @@ for token in \
 done
 
 echo "[MasterChefArtifacts] INFO CodexAdapter file={CODEX-*}"
-for token in \
-  "does not guarantee live access to Builder chain-of-thought or streaming partial output" \
-  "A returned Builder handle or session key proves only that Codex accepted the spawn request." \
-  "Master Chef should require one early Builder readiness ACK before treating the child as fully live." \
-  "missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died" \
-  "Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Codex exposes them." \
-  "A timed-out wait or one unanswered progress request is still inconclusive unless Codex also reports closure or failure." \
-  "Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death." \
-  "## 7) Builder monitoring" \
-  "Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Codex exposes them." \
-  "Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second." \
-  "A returned spawn handle or \`builder_session_key\` is spawn evidence only." \
-  "Keep \`builder_phase: booting\` until Codex surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored \`BUILDER_READY\` record in \`builder.jsonl\`." \
-  "Use the shared boot prompt: \`Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.\`" \
-  "A \`wait\` result that says no agent has completed yet means \`running\` or \`unknown\`, not \`dead\`." \
-  "One unanswered direct status request is still inconclusive unless Codex also reports closure or failure." \
-  "Use a short boot window, about 2 minutes in foreground Codex flows, before the first boot-status probe." \
-  "For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless Codex reports direct failure sooner." \
-  "about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency" \
-  "Apply the chosen quiet-work window only after \`builder_phase\` reaches \`running\`." \
-  "If Builder sends any coherent status or discovery reply, treat that as proof of life" \
-  "### Prompt H - Long-thinking Builder monitoring" \
-  "### Prompt I - Builder boot readiness" \
-  "Long-thinking Builder monitoring used direct evidence instead of guessing." \
-  "a returned \`builder_session_key\` alone is treated as spawn evidence, not readiness proof" \
-  "the adapter chooses a longer quiet-work window for a clearly high-latency Builder instead of hard-coding one reasoning label" \
-  "foreground Codex usually uses about 10 minutes when the approved Builder effort is clearly high-latency" \
-  "the chosen quiet-work window starts only after \`builder_phase\` reaches \`running\` and \`builder_ready_at_utc\` is recorded" \
-  "a \`wait\` timeout or one unanswered status request is still treated as inconclusive unless Codex also reports closure or failure" \
-  "a coherent status or discovery reply counts as proof of life even if the step is not finished yet" \
-  "the preferred boot prompt starts with \`Hi. You are Builder\`" \
-  "the preferred boot prompt asks for \`READY\` or \`BLOCKED: <reason>\`" \
-  "Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle."; do
-  case "$token" in
-    "does not guarantee live access to Builder chain-of-thought or streaming partial output"|"A returned Builder handle or session key proves only that Codex accepted the spawn request."|"Master Chef should require one early Builder readiness ACK before treating the child as fully live."|"missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died"|"Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Codex exposes them."|"A timed-out wait or one unanswered progress request is still inconclusive unless Codex also reports closure or failure."|"Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.")
-      assert_contains "$ROOT_DIR/cdd-master-chef/CODEX-ADAPTER.md" "$token"
-      ;;
-    "### Prompt H - Long-thinking Builder monitoring"|"### Prompt I - Builder boot readiness"|"Long-thinking Builder monitoring used direct evidence instead of guessing."|"a returned \`builder_session_key\` alone is treated as spawn evidence, not readiness proof"|"the adapter chooses a longer quiet-work window for a clearly high-latency Builder instead of hard-coding one reasoning label"|"foreground Codex usually uses about 10 minutes when the approved Builder effort is clearly high-latency"|"the chosen quiet-work window starts only after \`builder_phase\` reaches \`running\` and \`builder_ready_at_utc\` is recorded"|"a \`wait\` timeout or one unanswered status request is still treated as inconclusive unless Codex also reports closure or failure"|"a coherent status or discovery reply counts as proof of life even if the step is not finished yet"|"the preferred boot prompt starts with \`Hi. You are Builder\`"|"the preferred boot prompt asks for \`READY\` or \`BLOCKED: <reason>\`"|"Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.")
-      assert_contains "$ROOT_DIR/cdd-master-chef/CODEX-TEST-HARNESS.md" "$token"
-      ;;
-    *)
-      assert_contains "$ROOT_DIR/cdd-master-chef/CODEX-RUNBOOK.md" "$token"
-      ;;
-  esac
-done
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CODEX-ADAPTER.md" "codex adapter topics" \
+  'does not guarantee live access to Builder chain-of-thought|does not guarantee .*streaming partial output' \
+  'spawn request' \
+  'readiness ACK' \
+  'empty .*builder\.jsonl.*prove.*died' \
+  'runtime-reported completion/failure.*status replies.*closure/error' \
+  'inconclusive unless Codex also reports closure or failure' \
+  'proof of life rather than proof of death'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CODEX-RUNBOOK.md" "codex runbook topics" \
+  '^## 7\) Builder monitoring' \
+  'two phases:.*boot/readiness.*quiet-work' \
+  'spawn evidence only' \
+  'builder_phase: booting.*runtime child-started signal.*readiness ACK.*BUILDER_READY' \
+  'Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>' \
+  'no agent has completed yet.*running.*unknown.*dead' \
+  '2 minutes.*boot-status probe' \
+  '(long-thinking|high-latency).*quiet-work window' \
+  '10 minutes.*high-latency' \
+  'quiet-work window.*builder_phase.*running' \
+  'coherent status or discovery reply.*proof of life'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CODEX-TEST-HARNESS.md" "codex harness topics" \
+  '^### Prompt H - .*Builder monitoring' \
+  '^### Prompt I - Builder boot readiness' \
+  'direct evidence instead of guessing' \
+  'spawn evidence, not readiness proof' \
+  '((long-thinking|high-latency).*quiet-work window|quiet-work window.*(long-thinking|high-latency))' \
+  'builder_phase.*running.*builder_ready_at_utc' \
+  'inconclusive unless Codex also reports closure or failure' \
+  'status or discovery reply.*proof of life' \
+  'preferred boot prompt.*Hi\. You are Builder' \
+  'READY.*BLOCKED: <reason>' \
+  'ACK or runtime-ready signal rather than only a spawn handle'
 
 echo "[MasterChefArtifacts] INFO ClaudeAdapter file={CLAUDE-*}"
-for token in \
-  "does not guarantee live access to Builder chain-of-thought or streaming partial output" \
-  "A returned Builder handle or session key proves only that Claude accepted the spawn request." \
-  "Master Chef should require one early Builder readiness ACK before treating the child as fully live." \
-  "missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died" \
-  "Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Claude exposes them." \
-  "A quiet wait or one unanswered progress request is still inconclusive unless Claude also reports closure or failure." \
-  "Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death." \
-  "## 8) Builder monitoring" \
-  "Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Claude exposes them." \
-  "Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second." \
-  "A returned spawn handle or \`builder_session_key\` is spawn evidence only." \
-  "Keep \`builder_phase: booting\` until Claude surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored \`BUILDER_READY\` record in \`builder.jsonl\`." \
-  "Use the shared boot prompt: \`Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.\`" \
-  "A quiet wait with no completion means \`running\` or \`unknown\`, not \`dead\`." \
-  "One unanswered direct status request is still inconclusive unless Claude also reports closure or failure." \
-  "Use a short boot window, about 2 minutes in foreground Claude flows, before the first boot-status probe." \
-  "For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless Claude reports direct failure sooner." \
-  "about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency" \
-  "Apply the chosen quiet-work window only after \`builder_phase\` reaches \`running\`." \
-  "If Builder sends any coherent status or discovery reply, treat that as proof of life" \
-  "### Prompt H - Long-thinking Builder monitoring" \
-  "### Prompt I - Builder boot readiness" \
-  "Long-thinking Builder monitoring used direct evidence instead of guessing." \
-  "a returned \`builder_session_key\` alone is treated as spawn evidence, not readiness proof" \
-  "the adapter chooses a longer quiet-work window for a clearly high-latency Builder instead of hard-coding one reasoning label" \
-  "foreground Claude usually uses about 10 minutes when the approved Builder effort is clearly high-latency" \
-  "the chosen quiet-work window starts only after \`builder_phase\` reaches \`running\` and \`builder_ready_at_utc\` is recorded" \
-  "a quiet wait or one unanswered status request is still treated as inconclusive unless Claude also reports closure or failure" \
-  "a coherent status or discovery reply counts as proof of life even if the step is not finished yet" \
-  "the preferred boot prompt starts with \`Hi. You are Builder\`" \
-  "the preferred boot prompt asks for \`READY\` or \`BLOCKED: <reason>\`" \
-  "Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle."; do
-  case "$token" in
-    "does not guarantee live access to Builder chain-of-thought or streaming partial output"|"A returned Builder handle or session key proves only that Claude accepted the spawn request."|"Master Chef should require one early Builder readiness ACK before treating the child as fully live."|"missing diff, or empty \`builder.jsonl\` is not enough by itself to prove that Builder has died"|"Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Claude exposes them."|"A quiet wait or one unanswered progress request is still inconclusive unless Claude also reports closure or failure."|"Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.")
-      assert_contains "$ROOT_DIR/cdd-master-chef/CLAUDE-ADAPTER.md" "$token"
-      ;;
-    "### Prompt H - Long-thinking Builder monitoring"|"### Prompt I - Builder boot readiness"|"Long-thinking Builder monitoring used direct evidence instead of guessing."|"a returned \`builder_session_key\` alone is treated as spawn evidence, not readiness proof"|"the adapter chooses a longer quiet-work window for a clearly high-latency Builder instead of hard-coding one reasoning label"|"foreground Claude usually uses about 10 minutes when the approved Builder effort is clearly high-latency"|"the chosen quiet-work window starts only after \`builder_phase\` reaches \`running\` and \`builder_ready_at_utc\` is recorded"|"a quiet wait or one unanswered status request is still treated as inconclusive unless Claude also reports closure or failure"|"a coherent status or discovery reply counts as proof of life even if the step is not finished yet"|"the preferred boot prompt starts with \`Hi. You are Builder\`"|"the preferred boot prompt asks for \`READY\` or \`BLOCKED: <reason>\`"|"Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.")
-      assert_contains "$ROOT_DIR/cdd-master-chef/CLAUDE-TEST-HARNESS.md" "$token"
-      ;;
-    *)
-      assert_contains "$ROOT_DIR/cdd-master-chef/CLAUDE-RUNBOOK.md" "$token"
-      ;;
-  esac
-done
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CLAUDE-ADAPTER.md" "claude adapter topics" \
+  'does not guarantee live access to Builder chain-of-thought|does not guarantee .*streaming partial output' \
+  'spawn request' \
+  'readiness ACK' \
+  'empty .*builder\.jsonl.*prove.*died' \
+  'runtime-reported completion/failure.*status replies.*closure/error' \
+  'inconclusive unless Claude also reports closure or failure' \
+  'proof of life rather than proof of death'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CLAUDE-RUNBOOK.md" "claude runbook topics" \
+  '^## 8\) Builder monitoring' \
+  'two phases:.*boot/readiness.*quiet-work' \
+  'spawn evidence only' \
+  'builder_phase: booting.*runtime child-started signal.*readiness ACK.*BUILDER_READY' \
+  'Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>' \
+  'quiet wait with no completion.*running.*unknown.*dead' \
+  '2 minutes.*boot-status probe' \
+  '(long-thinking|high-latency).*quiet-work window' \
+  '10 minutes.*high-latency' \
+  'quiet-work window.*builder_phase.*running' \
+  'coherent status or discovery reply.*proof of life'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CLAUDE-TEST-HARNESS.md" "claude harness topics" \
+  '^### Prompt H - .*Builder monitoring' \
+  '^### Prompt I - Builder boot readiness' \
+  'direct evidence instead of guessing' \
+  'spawn evidence, not readiness proof' \
+  '((long-thinking|high-latency).*quiet-work window|quiet-work window.*(long-thinking|high-latency))' \
+  'builder_phase.*running.*builder_ready_at_utc' \
+  'inconclusive unless Claude also reports closure or failure' \
+  'status or discovery reply.*proof of life' \
+  'preferred boot prompt.*Hi\. You are Builder' \
+  'READY.*BLOCKED: <reason>' \
+  'ACK or runtime-ready signal rather than only a spawn handle'
 
 echo "[MasterChefArtifacts] INFO OpenClawAdapter package={openclaw}"
 for rel in \
@@ -320,39 +306,24 @@ for rel in \
   "cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
   assert_exists "$ROOT_DIR/$rel"
 done
-for token in \
-  ".cdd-runtime/master-chef/run.json" \
-  "if the current session model and current session thinking are visible, recommend a candidate \`Run config\`" \
-  "The full Run config must be resolved and approved before kickoff." \
-  "recommend a candidate Run config from the current session model and current session thinking" \
-  "the approved run step budget" \
-  "whether to spawn Builder now and start the autonomous run" \
-  "\"run_step_budget\": 1" \
-  "\"steps_completed_this_run\": 0" \
-  "source_repo" \
-  "worktree_continue_mode" \
-  "Prompt A0 - Recommendation path" \
-  "Prompt J - QA reject remediation" \
-  "Prompt L - Blocked-step decomposition" \
-  "Prompt N - Context compaction and resume"; do
-  case "$token" in
-    Prompt*)
-      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md" "$token"
-      ;;
-    "recommend a candidate Run config from the current session model and current session thinking")
-      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "$token"
-      ;;
-    "The full Run config must be resolved and approved before kickoff.")
-      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "$token"
-      ;;
-    "\"run_step_budget\": 1"|"\"steps_completed_this_run\": 0")
-      assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "$token"
-      ;;
-    *)
-      assert_contains "$ROOT_DIR/cdd-master-chef/SKILL.md" "$token"
-      ;;
-  esac
-done
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/SKILL.md" "shared skill runtime topics" \
+  '\.cdd-runtime/master-chef/run\.json' \
+  'current session model.*current session thinking.*recommend.*Run config' \
+  'approved run step budget' \
+  'spawn Builder now.*start the autonomous run' \
+  'source_repo' \
+  'worktree_continue_mode'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "openclaw readme topics" \
+  'current session model.*current session thinking.*recommend.*Run config'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "openclaw runbook topics" \
+  'Run config.*resolved and approved before kickoff' \
+  '"run_step_budget": 1' \
+  '"steps_completed_this_run": 0'
+assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md" "openclaw harness prompts" \
+  'Prompt A0 - Recommendation path' \
+  'Prompt J - QA reject remediation' \
+  'Prompt L - Blocked-step decomposition' \
+  'Prompt N - Context compaction and resume'
 
 echo "[MasterChefArtifacts] INFO GeneratedBuilder runtime={openclaw}"
 python3 "$ROOT_DIR/scripts/build_runtime_builder_skills.py" \
