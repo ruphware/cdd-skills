@@ -843,8 +843,8 @@ Make top-level `cdd-master-chef/` the only committed first-class Master Chef ski
 
 ### UAT
 
-- [ ] Confirm the repo has one committed first-class `cdd-master-chef/` package root.
-- [ ] Confirm top-level `openclaw/` no longer behaves like a separate skill package root.
+- [x] Confirm the repo has one committed first-class `cdd-master-chef/` package root.
+- [x] Confirm top-level `openclaw/` no longer behaves like a separate skill package root.
 
 ## Step 23 — Make repo-root installs and `install.sh` ship the first-class `cdd-master-chef`
 
@@ -878,9 +878,9 @@ Make repo-root `npx skills add https://github.com/ruphware/cdd-skills/` and `scr
 
 ### UAT
 
-- [ ] Confirm root install instructions point to `https://github.com/ruphware/cdd-skills/`.
-- [ ] Confirm local smoke tests install the core skills plus `cdd-master-chef` from repo-root semantics.
-- [ ] After push, confirm root `npx skills add` installs the expected skill set.
+- [x] Confirm root install instructions point to `https://github.com/ruphware/cdd-skills/`.
+- [x] Confirm local smoke tests install the core skills plus `cdd-master-chef` from repo-root semantics.
+- [x] After push, confirm root `npx skills add` installs the expected skill set.
 
 ## Step 24 — Promote first-class multi-runtime Master Chef docs and status
 
@@ -912,10 +912,10 @@ Make docs describe `cdd-master-chef` as a first-class in-development skill for C
 
 ### UAT
 
-- [ ] Confirm README no longer says Master Chef is experimental.
-- [ ] Confirm docs no longer treat OpenClaw as the only target.
-- [ ] Confirm Codex, Claude, and OpenClaw are described as current concrete adapters.
-- [ ] Confirm Hermes is not falsely claimed as a shipped adapter.
+- [x] Confirm README no longer says Master Chef is experimental.
+- [x] Confirm docs no longer treat OpenClaw as the only target.
+- [x] Confirm Codex, Claude, and OpenClaw are described as current concrete adapters.
+- [x] Confirm Hermes is not falsely claimed as a shipped adapter.
 
 ## Step 25 — Audit first-class runtime functionality and regression coverage
 
