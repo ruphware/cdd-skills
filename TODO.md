@@ -931,10 +931,10 @@ Prove the first-class `cdd-master-chef` contract, packaging, and adapter claims 
 
 ### Tasks
 
-- [ ] Extend `scripts/validate_skills.py` and/or focused smoke tests to assert canonical package-root presence, absence of conflicting top-level package surfaces, installer use of canonical package source, and non-experimental multi-runtime README claims.
-- [ ] Expand `scripts/test_master_chef_artifacts.sh` and `scripts/test-skill-audit.sh` to verify canonical package contents, Codex/Claude adapter docs in the installed package, and OpenClaw adapter/install overlays from the new layout.
-- [ ] Add narrow negative checks that fail if README drifts back to root-URL avoidance, docs-only generic Master Chef packaging, or OpenClaw-as-only-target wording.
-- [ ] Update TODO validation commands or supporting test docs to reflect the new first-class package story.
+- [x] Extend `scripts/validate_skills.py` and/or focused smoke tests to assert canonical package-root presence, absence of conflicting top-level package surfaces, installer use of canonical package source, and non-experimental multi-runtime README claims.
+- [x] Expand `scripts/test_master_chef_artifacts.sh` and `scripts/test-skill-audit.sh` to verify canonical package contents, Codex/Claude adapter docs in the installed package, and OpenClaw adapter/install overlays from the new layout.
+- [x] Add narrow negative checks that fail if README drifts back to root-URL avoidance, docs-only generic Master Chef packaging, or OpenClaw-as-only-target wording.
+- [x] Update TODO validation commands or supporting test docs to reflect the new first-class package story.
 
 ### Implementation notes
 
@@ -950,6 +950,6 @@ Prove the first-class `cdd-master-chef` contract, packaging, and adapter claims 
 
 ### UAT
 
-- [ ] Confirm drift tests fail when OpenClaw-only or docs-only wording returns.
-- [ ] Confirm local audit shows installed `cdd-master-chef` contains shared contract plus current adapters.
-- [ ] Confirm root install story and installer story match.
+- [x] Confirm drift tests fail when OpenClaw-only or docs-only wording returns.
+- [x] Confirm local audit shows installed `cdd-master-chef` contains shared contract plus current adapters.
+- [x] Confirm root install story and installer story match.

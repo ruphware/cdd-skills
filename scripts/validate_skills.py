@@ -82,6 +82,14 @@ def require_substrings(
     assert not missing, f"missing {label} in {path}: {', '.join(missing)}"
 
 
+def forbid_substrings(
+    text: str, patterns: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that none of the forbidden tokens exist in the given text."""
+    present = [pattern for pattern in patterns if pattern in text]
+    assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
+
+
 def require_headings(
     text: str, headings: tuple[str, ...], path: Path, label: str
 ) -> None:
@@ -737,6 +745,28 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         readme_md,
         "shared contract index entries",
     )
+    require_substrings(
+        readme_text,
+        (
+            "Current concrete adapters in this package:",
+            "- OpenClaw — current packaged runtime adapter and generated Builder install flow",
+            "- Codex — current subagent-backed adapter docs",
+            "- Claude Code — current subagent-backed adapter docs",
+            "- No Hermes adapter ships in this package today.",
+        ),
+        readme_md,
+        "shared package adapter coverage",
+    )
+    forbid_substrings(
+        readme_text,
+        (
+            "only packaged Master Chef runtime today",
+            "very experimental",
+            "docs-only surrogate",
+        ),
+        readme_md,
+        "outdated shared package wording",
+    )
 
     require_headings(
         contract_text,
@@ -811,6 +841,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         + (
             MASTER_CHEF_LABEL,
             "npx skills add https://github.com/ruphware/cdd-skills/",
+            "./scripts/install.sh --all",
             "cdd-master-chef/RUNBOOK.md",
             "cdd-master-chef/CODEX-ADAPTER.md",
             "cdd-master-chef/CLAUDE-ADAPTER.md",
@@ -819,9 +850,26 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             "./scripts/install.sh --runtime openclaw",
             "Use the core `cdd-*` loop when you want a single coding agent",
             "Use `[CDD-8] Master Chef` when you want an autonomous run after kickoff approval",
+            "Current concrete adapters in this repo:",
+            "- OpenClaw — current packaged adapter, installed with `./scripts/install.sh --runtime openclaw`",
+            "- Codex — current subagent-backed adapter docs in `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md`",
+            "- Claude Code — current subagent-backed adapter docs in `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md`",
+            "- No Hermes adapter ships in this repo today.",
         ),
         root_readme_md,
         "root README Master Chef install references",
+    )
+    forbid_substrings(
+        root_readme_text,
+        (
+            "wrong `npx skills add` entrypoint",
+            "docs-only surrogate",
+            "very experimental",
+            "the current OpenClaw adapter fits your runtime",
+            "only packaged Master Chef runtime",
+        ),
+        root_readme_md,
+        "outdated root README drift",
     )
     require_substrings(
         install_text,
@@ -829,10 +877,22 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             'MASTER_CHEF_SRC_ROOT="$ROOT_DIR/cdd-master-chef"',
             'OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"',
             'SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")',
+            "--all           Install, update, or uninstall across every existing default runtime home",
+            'echo "Skipping $runtime (missing runtime home: $runtime_home)" >&2',
+            'echo "No existing runtime homes found under $HOME/.agents, $HOME/.claude, or $HOME/.openclaw." >&2',
             "Generated runtime Builder skills are still copied.",
         ),
         install_sh,
         "installer Master Chef taxonomy",
+    )
+    forbid_substrings(
+        install_text,
+        (
+            'MASTER_CHEF_SRC_ROOT="$ROOT_DIR/master-chef"',
+            "emit_generic_master_chef_package",
+        ),
+        install_sh,
+        "legacy installer packaging",
     )
 
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unified local smoke-test + remote audit + heuristic explanation workflow.
+# Unified local smoke-test + remote audit + heuristic explanation workflow for
+# the core cdd-* pack and canonical cdd-master-chef package.
 #
 # Examples:
 #   bash scripts/test-skill-audit.sh
@@ -81,6 +82,35 @@ assert_exists() {
     echo "Missing expected path: $path" >&2
     exit 1
   }
+}
+
+assert_contains() {
+  local path="$1"
+  local pattern="$2"
+  grep -F -- "$pattern" "$path" >/dev/null || {
+    echo "Expected '$pattern' in $path" >&2
+    exit 1
+  }
+}
+
+assert_master_chef_package_surface() {
+  local runtime_label="$1"
+  local package_root="$2"
+
+  assert_exists "$package_root/SKILL.md"
+  assert_exists "$package_root/README.md"
+  assert_exists "$package_root/CONTRACT.md"
+  assert_exists "$package_root/RUNBOOK.md"
+  assert_exists "$package_root/RUNTIME-CAPABILITIES.md"
+  assert_exists "$package_root/CODEX-ADAPTER.md"
+  assert_exists "$package_root/CODEX-RUNBOOK.md"
+  assert_exists "$package_root/CLAUDE-ADAPTER.md"
+  assert_exists "$package_root/CLAUDE-RUNBOOK.md"
+  assert_exists "$package_root/openclaw/README.md"
+  assert_exists "$package_root/openclaw/MASTER-CHEF-RUNBOOK.md"
+  assert_exists "$package_root/openclaw/MASTER-CHEF-TEST-HARNESS.md"
+
+  echo "[LocalInstall] INFO MasterChefPackage runtime={$runtime_label} package_root={$package_root} shared_contract={yes} adapters={codex,claude,openclaw}"
 }
 
 infer_source_from_origin() {
@@ -217,17 +247,13 @@ run_local_smoke_test() {
     echo "[LocalInstall] INFO InstalledSkill name={$skill}"
   done
 
-  assert_exists "$universal_skills_dir/cdd-master-chef/SKILL.md"
-  assert_exists "$universal_skills_dir/cdd-master-chef/README.md"
-  assert_exists "$universal_skills_dir/cdd-master-chef/CODEX-ADAPTER.md"
-  assert_exists "$universal_skills_dir/cdd-master-chef/openclaw/README.md"
-  assert_exists "$claude_skills_dir/cdd-master-chef/SKILL.md"
-  assert_exists "$claude_skills_dir/cdd-master-chef/CLAUDE-ADAPTER.md"
-  assert_exists "$claude_skills_dir/cdd-master-chef/openclaw/README.md"
-  assert_exists "$openclaw_skills_dir/cdd-master-chef/SKILL.md"
-  assert_exists "$openclaw_skills_dir/cdd-master-chef/openclaw/README.md"
+  assert_master_chef_package_surface "codex" "$universal_skills_dir/cdd-master-chef"
+  assert_master_chef_package_surface "claude-code" "$claude_skills_dir/cdd-master-chef"
+  assert_master_chef_package_surface "openclaw" "$openclaw_skills_dir/cdd-master-chef"
   assert_exists "$openclaw_skills_dir/cdd-plan/SKILL.md"
-  grep -F "user-invocable: false" "$openclaw_skills_dir/cdd-plan/SKILL.md" >/dev/null
+  assert_contains "$openclaw_skills_dir/cdd-plan/SKILL.md" "user-invocable: false"
+  assert_contains "$openclaw_skills_dir/cdd-plan/SKILL.md" "Internal OpenClaw Builder variant generated from the canonical \`skills/\` pack."
+  echo "[LocalInstall] INFO OpenClawBuilderOverlay path={$openclaw_skills_dir/cdd-plan/SKILL.md} source={skills/}"
   echo "[LocalInstall] INFO InstalledSkill name={cdd-master-chef}"
 
   echo "[LocalInstall] INFO AgentRoot agent={codex} path={$universal_skills_dir}"

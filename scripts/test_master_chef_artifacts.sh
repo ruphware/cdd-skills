@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Structural smoke test for shared Master Chef contract artifacts and generated
+# Structural smoke test for the canonical cdd-master-chef package and generated
 # runtime Builder surfaces. This test is local-only and deterministic.
 #
 # Example:
@@ -36,6 +36,15 @@ assert_contains() {
   }
 }
 
+assert_not_contains() {
+  local path="$1"
+  local pattern="$2"
+  if grep -F -- "$pattern" "$path" >/dev/null; then
+    echo "Did not expect '$pattern' in $path" >&2
+    exit 1
+  fi
+}
+
 PACKAGE_ROOT="$ROOT_DIR/cdd-master-chef"
 SHARED_ROOT="$PACKAGE_ROOT"
 
@@ -60,6 +69,43 @@ assert_exists "$ROOT_DIR/master-chef/README.md"
 assert_not_exists "$ROOT_DIR/master-chef/CONTRACT.md"
 assert_exists "$ROOT_DIR/openclaw/README.md"
 assert_not_exists "$ROOT_DIR/openclaw/SKILL.md"
+
+echo "[MasterChefArtifacts] INFO RootInstallStory file={README.md}"
+for token in \
+  "npx skills add https://github.com/ruphware/cdd-skills/" \
+  "./scripts/install.sh --all" \
+  "Current concrete adapters in this repo:" \
+  "- OpenClaw — current packaged adapter, installed with \`./scripts/install.sh --runtime openclaw\`" \
+  "- Codex — current subagent-backed adapter docs in \`cdd-master-chef/CODEX-ADAPTER.md\` and \`cdd-master-chef/CODEX-RUNBOOK.md\`" \
+  "- Claude Code — current subagent-backed adapter docs in \`cdd-master-chef/CLAUDE-ADAPTER.md\` and \`cdd-master-chef/CLAUDE-RUNBOOK.md\`" \
+  "- No Hermes adapter ships in this repo today."; do
+  assert_contains "$ROOT_DIR/README.md" "$token"
+done
+for token in \
+  "wrong \`npx skills add\` entrypoint" \
+  "docs-only surrogate" \
+  "very experimental" \
+  "the current OpenClaw adapter fits your runtime" \
+  "only packaged Master Chef runtime"; do
+  assert_not_contains "$ROOT_DIR/README.md" "$token"
+done
+
+echo "[MasterChefArtifacts] INFO SharedAdapterStory file={cdd-master-chef/README.md}"
+for token in \
+  "Current concrete adapters in this package:" \
+  "- OpenClaw — current packaged runtime adapter and generated Builder install flow" \
+  "- Codex — current subagent-backed adapter docs" \
+  "- Claude Code — current subagent-backed adapter docs" \
+  "- No Hermes adapter ships in this package today." \
+  "The top-level \`master-chef/\` and \`openclaw/\` directories are compatibility stubs only; this directory is the single canonical source tree."; do
+  assert_contains "$SHARED_ROOT/README.md" "$token"
+done
+for token in \
+  "only packaged Master Chef runtime today" \
+  "very experimental" \
+  "docs-only surrogate"; do
+  assert_not_contains "$SHARED_ROOT/README.md" "$token"
+done
 
 echo "[MasterChefArtifacts] INFO SharedContractFields file={CONTRACT.md}"
 for field in \
