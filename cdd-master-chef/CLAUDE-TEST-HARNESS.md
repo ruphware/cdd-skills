@@ -119,16 +119,35 @@ If a fallback handoff is unavoidable, keep the previously approved Builder start
 ### Prompt H - Long-thinking Builder monitoring
 
 ```text
-The Builder is running with builder_thinking: xhigh.
+The Builder is running with a long-thinking or otherwise high-latency configuration.
 After one short wait there is still no diff, builder.jsonl is empty, and no completion has arrived yet.
-Explain what direct Builder status the Claude adapter can actually observe, what it cannot observe, how long it should wait before the first stale probe, and what evidence is required before replacement.
+Explain what direct Builder status the Claude adapter can actually observe, what it cannot observe, how it chooses the quiet-work window, and what evidence is required before replacement.
 ```
 
 - [ ] Expected:
   - the adapter does not claim live Builder thinking or guaranteed streaming partial output
   - a missing diff or empty `builder.jsonl` alone is not treated as stale
-  - `xhigh` Builder gets at least a 10-minute quiet window before the first stale probe
+  - the adapter chooses a longer quiet-work window for a clearly high-latency Builder instead of hard-coding one reasoning label
+  - foreground Claude usually uses about 10 minutes when the approved Builder effort is clearly high-latency
+  - a quiet wait or one unanswered status request is still treated as inconclusive unless Claude also reports closure or failure
+  - a coherent status or discovery reply counts as proof of life even if the step is not finished yet
   - replacement requires direct failure, closure, explicit blocker, or no response to a direct status probe
+
+### Prompt I - Builder boot readiness
+
+```text
+Master Chef asked Claude to spawn Builder and received a `builder_session_key`, but there is no completion yet.
+Explain what proves that Builder has actually started operating, what runtime fields should be written before and after readiness, show the preferred boot prompt, when the first boot-status probe is allowed, and when the chosen quiet-work window begins.
+```
+
+- [ ] Expected:
+  - a returned `builder_session_key` alone is treated as spawn evidence, not readiness proof
+  - `builder_phase: booting` and `builder_spawn_requested_at_utc` are recorded immediately after spawn
+  - readiness comes from a runtime child-started signal, a coherent Builder ACK, or a Builder-authored `BUILDER_READY` record
+  - the preferred boot prompt starts with `Hi. You are Builder`
+  - the preferred boot prompt asks for `READY` or `BLOCKED: <reason>`
+  - foreground Claude uses a short boot window of about 2 minutes before the first boot-status probe
+  - the chosen quiet-work window starts only after `builder_phase` reaches `running` and `builder_ready_at_utc` is recorded
 
 ## 3) Pass criteria
 
@@ -139,3 +158,4 @@ Explain what direct Builder status the Claude adapter can actually observe, what
 - [ ] Nested subagent spawning was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
+- [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.

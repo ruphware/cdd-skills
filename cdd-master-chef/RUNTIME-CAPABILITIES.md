@@ -30,6 +30,7 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 - The Codex adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
 - The Codex adapter must also define whether a managed worktree can become active in-session or only after a fallback handoff rooted in that worktree.
 - The Codex adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
+- The Codex adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
 - Current repo docs: `CODEX-ADAPTER.md`, `CODEX-RUNBOOK.md`, and `CODEX-TEST-HARNESS.md`.
 
 ### Claude Code
@@ -42,6 +43,7 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 - Adapter rules must distinguish in-session continuation from startup-time fallback handoff support.
 - The Claude adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
 - The Claude adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
+- The Claude adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
 - Current repo docs: `CLAUDE-ADAPTER.md`, `CLAUDE-RUNBOOK.md`, and `CLAUDE-TEST-HARNESS.md`.
 
 ### Future adapters

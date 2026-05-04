@@ -64,6 +64,10 @@ Keep the existing fields and add:
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `builder_phase`
+- `builder_spawn_requested_at_utc`
+- `builder_ready_at_utc`
+- `last_builder_direct_signal_at_utc`
 - `run_step_budget`
 - `steps_completed_this_run`
 
@@ -73,6 +77,10 @@ Field meanings:
 - `source_repo` is the original checkout path where the run was requested
 - `active_worktree_path` is the managed worktree path for the run
 - `worktree_continue_mode` is `in_session` or `relaunch_required`
+- `builder_phase` is `not_started`, `booting`, `running`, `blocked`, `completed`, `failed`, or `closed`
+- `builder_spawn_requested_at_utc` records when Master Chef received a Builder handle from the runtime
+- `builder_ready_at_utc` records the first direct readiness signal that proves Builder started operating
+- `last_builder_direct_signal_at_utc` tracks the latest direct Builder ACK, status reply, or runtime-native child-status signal
 - `run_step_budget` is either a positive integer step count or `until_blocked_or_complete`
 - `steps_completed_this_run` counts passed TODO steps in the current autonomous run
 
@@ -84,6 +92,7 @@ Keep the existing fields and add:
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `builder_phase`
 - `run_step_budget`
 
 ### `context-summary.md`
@@ -111,10 +120,27 @@ Adapters that support subagent-backed Builder runs should prefer `worktree_conti
 Use runtime-native Builder status surfaces before indirect repo heuristics.
 
 - If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does.
+- In Codex- or Claude-style adapters, direct status usually means final completion/failure notifications, explicit progress replies, or runtime-reported closure/errors, not live thinking traces.
+- Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
+- Immediately after spawn, record `builder_phase: booting`. A returned Builder handle or session key is not enough to prove that the child has loaded its usable repo and tool context.
+- In Codex- or Claude-style adapters, the preferred readiness signal is one early Builder ACK that confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or blocked.
+- Use this shared boot prompt:
+
+  ```text
+  Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.
+  ```
+
+- A runtime-reported child-started signal or a Builder-authored `BUILDER_READY` record in `builder.jsonl` is also acceptable readiness evidence when the adapter can expose it coherently.
+- Minimal `BUILDER_READY` evidence should include `builder_session_key`, `active_worktree_path`, `active_step`, `tool_access`, and `mcp_access`.
 - During quiet periods, report `running` or `unknown` rather than `stale` unless direct failure evidence exists.
-- A missing diff, an empty `builder.jsonl`, or a short wait with no completion is not enough to justify Builder replacement.
-- For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless the runtime reports direct failure sooner.
+- A timed-out wait, a "no agent completed yet" result, or one unanswered status request is still inconclusive unless the runtime also reports closure or failure.
+- A returned session key, a missing diff, an empty `builder.jsonl`, or a short wait with no completion is not enough to justify Builder replacement.
+- Use a short adapter-defined boot window before the first boot-status probe; foreground Codex and Claude flows should default to about 2 minutes.
+- For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless the runtime reports direct failure sooner.
+- In foreground Codex and Claude flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
+- Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
 - After that grace window, use one explicit status probe before replacement when the runtime supports it.
+- If Builder replies with a coherent discovery note, partial status, or other non-final report, treat that as proof of life and decide whether the issue is route drift or normal progress rather than declaring the Builder dead.
 
 Exact relaunch instructions must include:
 

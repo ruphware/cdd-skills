@@ -31,8 +31,8 @@ Operating contract:
 1. Use this skill for non-trivial development where Master Chef ownership is wanted.
    - Preferred path: an existing repo that is already CDD-ready with `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`
    - Allowed bootstrap path: a new or adoptable project folder that should be brought into the CDD contract first via `cdd-init-project`
-2. The main OpenClaw session is always Master Chef.
-3. The Builder runs as an OpenClaw subagent, not ACP.
+2. The current runtime's main session is always Master Chef.
+3. The Builder runs as a runtime-native subagent under the active adapter, not as a second Master Chef control loop.
 4. There is no watchdog cron or separate supervising agent; Master Chef checks Builder health directly in the main session when active.
 5. State is durable and repo-local:
    - `.cdd-runtime/master-chef/run.json`
@@ -63,13 +63,13 @@ Operating contract:
    - `[CDD-2] Plan` (`cdd-plan`) and `[CDD-5] Refactor` (`cdd-refactor`): Master Chef direct paths that stay in the main session rather than being delegated to Builder.
    - `[CDD-0] Boot` (`cdd-boot`) and `[CDD-7] Maintain` (`cdd-maintain`): installed helpers, but not part of the normal Master Chef routing flow.
    - `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`): excluded from the normal flow unless the process is explicitly adapted for its mixed role.
-   - Treat the installed `cdd-*` skills as internal OpenClaw workflows, not user slash commands.
+   - Treat the installed `cdd-*` skills as internal Master Chef workflows, not standalone user commands during an active Master Chef run.
 9. Use a managed worktree before implementation:
    - require a clean source checkout before kickoff; if dirty, stop and ask the human to stash, commit, or discard changes first
    - create a fresh per-run branch from the current branch `HEAD`
    - prefer `.cdd-runtime/master-chef/worktrees/<run-id>/` as the managed worktree path
    - record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
-   - the current OpenClaw adapter provisions the managed worktree and then stops with exact relaunch instructions rather than assuming live in-session cwd switching
+   - the active runtime adapter either continues in-session from the managed worktree or stops with exact relaunch instructions; keep `worktree_continue_mode` explicit
 10. Before implementation starts, present one kickoff approval that covers:
    - proposed next action
    - the approved `Run config`
@@ -78,12 +78,12 @@ Operating contract:
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations
-11. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, for exactly one approved delegated action, and tell it which internal `cdd-*` skill path to use.
+11. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, for exactly one approved delegated action, tell it which internal `cdd-*` skill path to use, and require an early readiness ACK before deep work.
 12. Use one-step Builder runs only.
    - One Builder run equals one approved delegated action.
    - After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
    - Do not treat Builder session resurrection or multi-step continuation as a normal path.
-13. Both Master Chef and Builder must append JSONL logs with concrete evidence for step start, validation, blockers, completion, and reporting.
+13. Both Master Chef and Builder must append JSONL logs with concrete evidence for Builder spawn, Builder readiness, step start, validation, blockers, completion, and reporting.
 14. Use `hard_gate` and `soft_signal` validation classes:
    - `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
    - `soft_signal`: discovery greps, file-presence scans, or other non-blocking heuristics
@@ -114,18 +114,27 @@ Operating contract:
    - report blockers or completion
 20. Direct Builder checks must not create a second control loop. Recovery stays in the main session, using fresh Builder replacement rather than normal session resurrection.
 21. Healthy Builder checks may stay quiet, but they do not cancel in-session lifecycle reporting for events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
-22. If the runtime does not expose live Builder thinking or streaming partial output, report Builder state as `running` or `unknown` during quiet periods rather than guessing.
-   - Do not treat a missing diff, an empty `builder.jsonl`, or one short wait window as proof that Builder has died.
-   - For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless direct failure evidence arrives sooner.
+22. Distinguish Builder boot/readiness from quiet work.
+   - Record `builder_phase: booting` as soon as the spawn request succeeds. A returned Builder session key or spawned-agent line is not enough to prove that the Builder has started operating.
+   - Keep `builder_phase: booting` until a runtime-reported child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record arrives in `builder.jsonl`.
+   - Preferred boot prompt: `Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.`
+   - The preferred readiness ACK confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
+   - Use a short boot window before the first boot-status probe; foreground Codex and Claude flows should default to about 2 minutes.
+23. If the runtime does not expose live Builder thinking or streaming partial output, report Builder state as `running` or `unknown` during quiet periods rather than guessing.
+   - Do not treat a returned session key, a missing diff, an empty `builder.jsonl`, or one short wait window as proof that Builder is fully started or has died.
+   - For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless direct failure evidence arrives sooner.
+   - In foreground Codex and Claude flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
+   - Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
    - Use one direct status probe before replacement when the runtime supports it.
-23. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
-24. If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
+   - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
+24. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
+25. If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
    - stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
    - revise the situation in Master Chef before any more Builder work
    - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
    - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
-25. Manage Master Chef context explicitly during long runs:
+26. Manage Master Chef context explicitly during long runs:
    - keep Builder context fresh through one-step Builder runs; do not compact or resume Builders as the normal path
    - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
    - compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning/refactor work, or before a known large QA/planning phase once a checkpoint is written
@@ -144,6 +153,10 @@ Canonical `run.json` fields:
 - `builder_runtime`
 - `master_session_key`
 - `builder_session_key`
+- `builder_phase`
+- `builder_spawn_requested_at_utc`
+- `builder_ready_at_utc`
+- `last_builder_direct_signal_at_utc`
 - `run_step_budget`
 - `steps_completed_this_run`
 - `active_todo_path`
@@ -168,6 +181,8 @@ Canonical `run.json` fields:
 Report events:
 
 - `START`
+- `BUILDER_SPAWNED`
+- `BUILDER_READY`
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`

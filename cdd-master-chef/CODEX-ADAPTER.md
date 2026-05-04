@@ -64,7 +64,12 @@ Adapter implication:
 - Master Chef should keep Builder work interactive when the delegated step may need fresh approvals.
 - Read-heavy sidecar agents are the safest place to use narrower sandboxes and specialized MCP/tool setups.
 - This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
+- Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Codex exposes them.
+- A returned Builder handle or session key proves only that Codex accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context.
+- Master Chef should require one early Builder readiness ACK before treating the child as fully live. That ACK should confirm the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
 - A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
+- A timed-out wait or one unanswered progress request is still inconclusive unless Codex also reports closure or failure.
+- Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
 - When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
 ## 4) Run config mapping

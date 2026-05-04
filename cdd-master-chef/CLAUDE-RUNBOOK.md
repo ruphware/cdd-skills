@@ -76,10 +76,21 @@ After that approval, Master Chef owns the Builder handoff. Do not treat "here is
 ## 8) Builder monitoring
 
 - The current Claude adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
+- Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Claude exposes them.
+- Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
+- A returned spawn handle or `builder_session_key` is spawn evidence only. It is not enough to prove that Builder has started operating.
+- Keep `builder_phase: booting` until Claude surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record in `builder.jsonl`.
+- Use the shared boot prompt: `Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.`
+- The preferred readiness ACK confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
 - A quiet wait with no completion means `running` or `unknown`, not `dead`.
+- One unanswered direct status request is still inconclusive unless Claude also reports closure or failure.
 - Do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
-- For `builder_thinking: xhigh`, allow at least a 10-minute quiet window before the first stale probe unless Claude reports direct failure sooner.
+- Use a short boot window, about 2 minutes in foreground Claude flows, before the first boot-status probe.
+- For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless Claude reports direct failure sooner.
+- In foreground Claude flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
+- Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
 - After that grace window, use one direct status request before replacement when the active Claude surface can send it coherently.
+- If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
 - Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, or no reply to that direct status probe after the grace window.
 
 ## 9) Blocked paths

@@ -97,6 +97,10 @@ Canonical `run.json` fields:
 - `builder_runtime`
 - `master_session_key`
 - `builder_session_key`
+- `builder_phase`
+- `builder_spawn_requested_at_utc`
+- `builder_ready_at_utc`
+- `last_builder_direct_signal_at_utc`
 - `run_step_budget`
 - `steps_completed_this_run`
 - `active_todo_path`
@@ -199,15 +203,37 @@ Use one-step Builder runs only.
 - One Builder run equals one approved delegated action.
 - After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
 - Do not treat Builder session resurrection or multi-step continuation as a normal path.
+- Immediately after a successful Builder spawn request, record `builder_session_key`, set `builder_phase: booting`, and write `builder_spawn_requested_at_utc`.
+- A returned Builder handle or session key is spawn evidence only. It is not proof that Builder has fully started operating in the managed worktree.
+- Before deep implementation begins, Builder must emit one early readiness signal. Preferred form: a concise ACK that confirms the active worktree path, the active TODO step, and whether required tool or MCP surfaces are available or already blocked.
+- Preferred boot prompt from Master Chef to Builder:
 
-Both Master Chef and Builder must append durable evidence for step start, validation, blockers, completion, and reporting.
+  ```text
+  Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.
+  ```
+
+- When the first readiness signal arrives, set `builder_phase: running`, write `builder_ready_at_utc`, and refresh `last_builder_direct_signal_at_utc`.
+- Minimal `BUILDER_READY` JSONL record:
+
+  ```json
+  {"ts":"<utc>","actor":"builder","event":"BUILDER_READY","run_id":"<run-id>","step":"<step>","status":"ready","summary":"Builder is ready to work.","evidence":{"builder_session_key":"<builder-session-key>","active_worktree_path":"<worktree-path>","active_step":"<step>","tool_access":"ready|blocked|unknown","mcp_access":"ready|blocked|unknown"}}
+  ```
+
+Both Master Chef and Builder must append durable evidence for Builder spawn, Builder readiness, step start, validation, blockers, completion, and reporting.
 
 Builder monitoring must use direct runtime evidence before heuristics:
 
 - If the runtime can expose direct Builder status, final messages, or explicit progress replies, use those surfaces first.
 - If the runtime cannot expose live Builder reasoning or streaming partial output, say so explicitly and report Builder state as `running` or `unknown`, not `stale`, during quiet periods.
-- Do not treat a missing diff, an empty `builder.jsonl`, or one short wait window with no completion as proof that Builder has died.
-- For long-effort Builders, especially `builder_thinking: xhigh`, allow a longer quiet window before probing or replacing unless the runtime reports direct failure sooner.
+- Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
+- Keep `builder_phase: booting` until a runtime-reported child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record lands in `builder.jsonl`.
+- Treat a timed-out wait, a "no agent completed yet" result, or one unanswered progress request as inconclusive unless the runtime also reports closure or failure.
+- Do not treat a returned session key, a missing diff, an empty `builder.jsonl`, or one short wait window with no completion as proof that Builder is fully started or has died.
+- If no readiness signal arrives inside the adapter-defined boot window, use one explicit boot-status probe before classifying Builder as failed to start, blocked, or replaceable.
+- For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before probing or replacing unless the runtime reports direct failure sooner.
+- In foreground Codex and Claude flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
+- Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
+- Any coherent Builder reply, including a discovery-only or partial status report, is proof of life. Classify it as progress, route drift, or an explicit blocker, not as a dead Builder.
 - Replace Builder only after direct failure or closure, an explicit Builder blocker, or no response to a direct status probe after the adapter-defined grace window.
 
 ## 8) Validation, QA, and UAT
@@ -241,6 +267,8 @@ For each passed step:
 Report events:
 
 - `START`
+- `BUILDER_SPAWNED`
+- `BUILDER_READY`
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`

@@ -73,7 +73,12 @@ Adapter implication:
 - Multi-step delegation must be chained by the main Master Chef session rather than delegated recursively through Builder.
 - If a Builder step needs another agent, return control to Master Chef and let the main session launch the next agent explicitly.
 - This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
+- Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Claude exposes them.
+- A returned Builder handle or session key proves only that Claude accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context.
+- Master Chef should require one early Builder readiness ACK before treating the child as fully live. That ACK should confirm the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
 - A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
+- A quiet wait or one unanswered progress request is still inconclusive unless Claude also reports closure or failure.
+- Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
 - When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
 ## 5) Run config mapping
