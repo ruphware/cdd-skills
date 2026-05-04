@@ -28,7 +28,9 @@ UPDATE=0
 UNINSTALL=0
 LINK=0
 YES=0
+ALL=0
 RUNTIME="generic"
+RUNTIME_EXPLICIT=0
 TARGETS=()
 SOURCE_PACKAGES=()
 BUILD_ROOT=""
@@ -43,7 +45,7 @@ trap cleanup EXIT
 
 usage() {
   cat <<'EOF'
-Usage: ./scripts/install.sh [--runtime NAME] [--target DIR ...] [--link] [--update] [--yes] [--uninstall]
+Usage: ./scripts/install.sh [--runtime NAME] [--target DIR ...] [--link] [--update] [--yes] [--uninstall] [--all]
 
 Install CDD skills into runtime skill directories.
 
@@ -56,6 +58,7 @@ Runtimes:
 Options:
   --runtime NAME  Select package/runtime mode; default: generic
   --target DIR    Install into DIR instead of the runtime default; may be repeated
+  --all           Install, update, or uninstall across every existing default runtime home
   --link          Symlink canonical source skill directories when possible instead of copying them
   --update        Replace existing managed installs in place and run conservative prune
   --yes, -y       Auto-confirm prune prompts during --update
@@ -83,6 +86,23 @@ runtime_default_target() {
 
 runtime_is_core() {
   [[ "$RUNTIME" == "generic" || "$RUNTIME" == "codex" || "$RUNTIME" == "claude" ]]
+}
+
+runtime_home_root() {
+  case "$RUNTIME" in
+    claude)
+      echo "$HOME/.claude"
+      ;;
+    openclaw)
+      echo "$HOME/.openclaw"
+      ;;
+    codex|generic)
+      echo "$HOME/.agents"
+      ;;
+    *)
+      fail_usage "Unsupported runtime: $RUNTIME"
+      ;;
+  esac
 }
 
 build_source_packages() {
@@ -122,6 +142,40 @@ build_source_packages() {
     [[ -f "$skill_dir/SKILL.md" ]] || continue
     SOURCE_PACKAGES+=("$skill_dir")
   done
+}
+
+install_all_runtimes() {
+  local original_runtime="$RUNTIME"
+  local found_any=0
+  local runtime
+
+  for runtime in generic claude openclaw; do
+    RUNTIME="$runtime"
+
+    local runtime_home
+    runtime_home="$(runtime_home_root)"
+    if [[ ! -d "$runtime_home" ]]; then
+      echo "Skipping $runtime (missing runtime home: $runtime_home)" >&2
+      continue
+    fi
+
+    TARGETS=("$(runtime_default_target)")
+    build_source_packages
+
+    local target
+    for target in "${TARGETS[@]}"; do
+      install_one "$target"
+    done
+
+    found_any=1
+  done
+
+  RUNTIME="$original_runtime"
+
+  if [[ $found_any -eq 0 ]]; then
+    echo "No existing runtime homes found under $HOME/.agents, $HOME/.claude, or $HOME/.openclaw." >&2
+    exit 1
+  fi
 }
 
 looks_like_skill_name() {
@@ -360,6 +414,7 @@ while [[ $# -gt 0 ]]; do
         fail_usage "Missing value for --runtime."
       fi
       RUNTIME="$2"
+      RUNTIME_EXPLICIT=1
       shift 2
       ;;
     --update)
@@ -384,6 +439,10 @@ while [[ $# -gt 0 ]]; do
       fi
       TARGETS+=("$2")
       shift 2
+      ;;
+    --all)
+      ALL=1
+      shift
       ;;
     -h|--help)
       usage
@@ -417,6 +476,14 @@ if [[ $YES -eq 1 && $UPDATE -eq 0 ]]; then
   fail_usage "--yes is only valid with --update."
 fi
 
+if [[ $ALL -eq 1 && ${#TARGETS[@]} -gt 0 ]]; then
+  fail_usage "--all cannot be combined with --target."
+fi
+
+if [[ $ALL -eq 1 && $RUNTIME_EXPLICIT -eq 1 ]]; then
+  fail_usage "--all cannot be combined with --runtime."
+fi
+
 if [[ ! -d "$SKILLS_SRC_ROOT" ]]; then
   echo "Missing source skills dir: $SKILLS_SRC_ROOT" >&2
   exit 1
@@ -447,12 +514,16 @@ if [[ $LINK -eq 1 ]]; then
   echo "Warning: --link symlinks canonical source skill directories when possible. Generated runtime Builder skills are still copied." >&2
 fi
 
-if [[ ${#TARGETS[@]} -eq 0 ]]; then
-  TARGETS+=("$(runtime_default_target)")
+if [[ $ALL -eq 1 ]]; then
+  install_all_runtimes
+else
+  if [[ ${#TARGETS[@]} -eq 0 ]]; then
+    TARGETS+=("$(runtime_default_target)")
+  fi
+
+  build_source_packages
+
+  for t in "${TARGETS[@]}"; do
+    install_one "$t"
+  done
 fi
-
-build_source_packages
-
-for t in "${TARGETS[@]}"; do
-  install_one "$t"
-done

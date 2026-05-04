@@ -4,7 +4,7 @@ CDD workflow skills for agentic software engineering.
 
 ## Quick Install
 
-Install the full repo skill set, including first-class `[CDD-8] Master Chef`, for Codex, Claude Code, Gemini CLI and others (adjust):
+Install the full repo skill set, including `[CDD-8] Master Chef`, for Codex, Claude Code, Gemini CLI and others (adjust):
 
 ```bash
 npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a claude-code -a gemini-cli -g
@@ -31,14 +31,14 @@ npx skills add https://github.com/ruphware/cdd-skills/tree/main/skills --skill '
 ## When to Use What
 
 - Use the core `cdd-*` loop when you want a single coding agent, explicit human approvals, and one approved TODO step at a time.
-- Use `[CDD-8] Master Chef` when you want an autonomous run after kickoff approval and the current OpenClaw adapter fits your runtime.
+- Use `[CDD-8] Master Chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
 
 ## What's Included
 
 - Core `[CDD-0]` through `[CDD-7]` skills for the normal single-agent, human-in-the-loop CDD workflow
-- Separate `[CDD-8] Master Chef` shared contract docs plus the current OpenClaw adapter package for orchestrated autonomous runs
+- `[CDD-8] Master Chef` package with current Codex, Claude Code, and OpenClaw adapters for orchestrated autonomous runs
 
-Details on the skill packs, canonical Master Chef package, manual repo install scripts, and the current OpenClaw adapter are below.
+Details on the skill packs, canonical Master Chef package, manual repo install scripts, and the current concrete adapters are below.
 
 ## 1. Core: `[CDD-0]` through `[CDD-7]`
 
@@ -69,9 +69,9 @@ Typical core path:
 
 ## 2. `[CDD-8] Master Chef` (Shared Contract + Runtime Adapters)
 
-The optional `[CDD-8] Master Chef` upgrade starts the autonomous development process through the canonical multi-runtime package rooted in `cdd-master-chef/`, with current OpenClaw adapter docs under `cdd-master-chef/openclaw/`.
+The optional `[CDD-8] Master Chef` package starts the autonomous development process through the canonical multi-runtime package rooted in `cdd-master-chef/`.
 
-`[CDD-8] Master Chef` is very experimental, in active development, and far from done. Treat it as a rough workflow for iteration, not a finished product.
+`[CDD-8] Master Chef` remains in active development. The contract and adapters are stable enough for iteration, but the workflow is still evolving.
 
 If you want useful UI output, provide strong UX mockups with the plan. Without good mockups, agents will usually produce useless AI slop.
 
@@ -92,7 +92,18 @@ Current repo state:
 - runtime capability matrix: `cdd-master-chef/RUNTIME-CAPABILITIES.md`
 - canonical Builder workflow source still lives in `skills/`
 
-Codex and Claude adapter docs now live in `cdd-master-chef/`, and the unified installer now ships the canonical `[CDD-8] Master Chef` package to core single-agent targets. The current packaged runnable Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack, installed into `~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`.
+Current concrete adapters in this repo:
+
+- OpenClaw — current packaged adapter, installed with `./scripts/install.sh --runtime openclaw`
+- Codex — current subagent-backed adapter docs in `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md`
+- Claude Code — current subagent-backed adapter docs in `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md`
+
+Potential future adapters:
+
+- Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters.
+- No Hermes adapter ships in this repo today.
+
+The unified installer ships `[CDD-8] Master Chef` to generic/Codex-style, Claude Code, and OpenClaw installs. On OpenClaw it also installs internal `cdd-*` Builder variants into `~/.openclaw/skills`.
 
 Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; `[CDD-4] Audit + Implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
@@ -104,14 +115,16 @@ Source of truth:
 
 Installed form:
 
-- `~/.openclaw/skills/cdd-master-chef`
+- `~/.agents/skills/cdd-master-chef` on generic and Codex-style installs
+- `~/.claude/skills/cdd-master-chef` on Claude Code installs
+- `~/.openclaw/skills/cdd-master-chef` on OpenClaw installs
 - internal OpenClaw `cdd-*` Builder skills under `~/.openclaw/skills/`
-- slash command: `/cdd-master-chef`
+- current packaged runtime command surface: `/cdd-master-chef` in OpenClaw
 
 ## Relationship Between the Two
 
 - Start with `[CDD-0]` through `[CDD-7]` when you want the normal single-agent, human-approved CDD loop.
-- Add `[CDD-8] Master Chef` when you want the shared autonomous workflow and the current OpenClaw adapter fits your runtime, keeping the Builder on the OpenClaw subagent runtime and reducing the human role to kickoff plus final review.
+- Add `[CDD-8] Master Chef` when you want the shared autonomous workflow and one of the current adapters fits your runtime. Today that means OpenClaw, Codex, or Claude Code.
 - `skills/` remains the canonical definition of the Builder workflow in both cases.
 
 ## Recommended tools
@@ -139,13 +152,19 @@ Install the core Builder skills plus the canonical `[CDD-8] Master Chef` package
 ./scripts/install.sh
 ```
 
+Install into every existing runtime home in one pass. The installer checks for `~/.agents`, `~/.claude`, and `~/.openclaw`, then installs into each matching default skills directory:
+
+```bash
+./scripts/install.sh --all
+```
+
 Install the same core pack to Claude Code's default skill root:
 
 ```bash
 ./scripts/install.sh --runtime claude
 ```
 
-Install the OpenClaw packaged adapter from the same entrypoint:
+Install the current OpenClaw adapter from the same entrypoint:
 
 ```bash
 ./scripts/install.sh --runtime openclaw
@@ -164,6 +183,7 @@ Typical combined setup when you want both workflows available:
 ```bash
 cd cdd-skills
 git pull
+./scripts/install.sh --all --update
 ./scripts/install.sh --update
 ./scripts/install.sh --runtime openclaw --update
 ```
@@ -179,6 +199,7 @@ Builder update automatically runs the conservative prune logic. Use `--yes` if y
 ## Uninstall
 
 ```bash
+./scripts/install.sh --all --uninstall
 ./scripts/install.sh --uninstall
 ./scripts/install.sh --runtime openclaw --uninstall
 ```
@@ -186,6 +207,7 @@ Builder update automatically runs the conservative prune logic. Use `--yes` if y
 Notes:
 
 - `--uninstall` lists matching installed paths and installer artifacts, asks for `y/N`, and removes them only on confirmation.
+- `./scripts/install.sh --all` installs or updates every runtime home that already exists under `~/.agents`, `~/.claude`, and `~/.openclaw`.
 - `./scripts/install.sh` installs the canonical `[CDD-8] Master Chef` package on core single-agent targets and the same package plus generated OpenClaw Builder skills on OpenClaw targets.
 - `./scripts/install-openclaw.sh` remains only as a deprecated compatibility wrapper around `./scripts/install.sh --runtime openclaw`.
 - If newly installed or updated skills do not appear, start a new session or restart the runtime.
@@ -199,7 +221,14 @@ For the core single-agent workflow:
 - use `[CDD-7] Maintain` when you want archive cleanup, support-doc review, and code-health review without entering a normal implementation step
 - use `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-3] Implement TODO`, `[CDD-5] Refactor`, and `[CDD-6] Index` directly from Codex CLI or Claude Code when you want the structured CDD loop
 
-For the experimental `[CDD-8] Master Chef` OpenClaw path:
+For current Codex or Claude Code `[CDD-8] Master Chef` adapter work:
+
+- review `cdd-master-chef/CODEX-ADAPTER.md` + `cdd-master-chef/CODEX-RUNBOOK.md` for Codex
+- review `cdd-master-chef/CLAUDE-ADAPTER.md` + `cdd-master-chef/CLAUDE-RUNBOOK.md` for Claude Code
+- treat those as the current subagent-backed adapter paths in development
+- treat other subagent-capable coding tools or autonomous systems, including Hermes-style runtimes, as future adapter targets unless and until an adapter is added to this package
+
+For the current OpenClaw `[CDD-8] Master Chef` runtime path:
 
 - install the OpenClaw adapter with `./scripts/install.sh --runtime openclaw`
 - prepare one Run config block and set the main session to `master_model` from that block with `/model <master-model>`

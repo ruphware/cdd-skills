@@ -10,6 +10,8 @@ Shared contract surfaces now live in the parent package root:
 
 This `openclaw/` folder documents how the OpenClaw runtime satisfies that shared contract.
 
+It is one current concrete adapter in this package. Codex and Claude Code adapter docs live in the package root as current subagent-backed alternatives.
+
 Installed form:
 
 - `~/.openclaw/skills/cdd-master-chef`
@@ -84,7 +86,7 @@ Link install for local iteration:
 Notes:
 
 - Canonical source skills are symlinked only when the runtime package can use them directly.
-- The generated `cdd-master-chef` package and generated internal Builder skills are still materialized as normal directories in the target root.
+- The canonical `cdd-master-chef` package is symlinked or copied from source depending on install mode, and the generated internal Builder skills are still materialized as normal directories in the target root.
 
 Update:
 

@@ -896,10 +896,10 @@ Make docs describe `cdd-master-chef` as a first-class in-development skill for C
 
 ### Tasks
 
-- [ ] Update root `README.md` and canonical `cdd-master-chef/README.md` / `SKILL.md` to describe Master Chef as first-class, in development, and multi-runtime rather than experimental, OpenClaw-only, or docs-only.
-- [ ] Replace wording that presents OpenClaw as the only runnable or packaged target with wording that presents OpenClaw as one current adapter and Codex/Claude as current subagent-backed targets.
-- [ ] Update the runtime capability matrix and adapter overviews so Codex/Claude/OpenClaw status lines match the shipped package and installer story.
-- [ ] Add explicit wording that other subagent-capable coding tools and autonomous systems can be supported through additional adapters, without claiming a shipped Hermes adapter.
+- [x] Update root `README.md` and canonical `cdd-master-chef/README.md` / `SKILL.md` to describe Master Chef as first-class, in development, and multi-runtime rather than experimental, OpenClaw-only, or docs-only.
+- [x] Replace wording that presents OpenClaw as the only runnable or packaged target with wording that presents OpenClaw as one current adapter and Codex/Claude as current subagent-backed targets.
+- [x] Update the runtime capability matrix and adapter overviews so Codex/Claude/OpenClaw status lines match the shipped package and installer story.
+- [x] Add explicit wording that other subagent-capable coding tools and autonomous systems can be supported through additional adapters, without claiming a shipped Hermes adapter.
 
 ### Implementation notes
 

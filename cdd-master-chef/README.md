@@ -1,6 +1,6 @@
 # [CDD-8] Master Chef
 
-This directory is the canonical committed package root for `[CDD-8] Master Chef`, the multi-runtime autonomous development process that sits beside the core `[CDD-0]` through `[CDD-7]` CDD skills.
+This directory is the canonical committed package root for `[CDD-8] Master Chef`, an in-development multi-runtime autonomous workflow that sits beside the core `[CDD-0]` through `[CDD-7]` CDD skills.
 
 Use these files as the canonical contract surfaces:
 
@@ -18,6 +18,17 @@ Runtime adapters consume that shared contract and define how a specific runtime 
 - `CLAUDE-ADAPTER.md` — Claude Code Builder delegation contract
 - `CLAUDE-RUNBOOK.md` — Claude Code operating path over the shared contract
 - `CLAUDE-TEST-HARNESS.md` — Claude Code adapter verification checklist
+
+Current concrete adapters in this package:
+
+- OpenClaw — current packaged runtime adapter and generated Builder install flow
+- Codex — current subagent-backed adapter docs
+- Claude Code — current subagent-backed adapter docs
+
+Potential future adapters:
+
+- Additional subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through new adapter docs and runtime packaging.
+- No Hermes adapter ships in this package today.
 
 Relationship to the rest of the repo:
 

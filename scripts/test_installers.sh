@@ -56,7 +56,7 @@ assert_command_fails_with() {
     exit 1
   fi
 
-  if ! grep -F "$expected" "$log" >/dev/null; then
+  if ! grep -F -- "$expected" "$log" >/dev/null; then
     echo "Expected failure output to contain: $expected" >&2
     cat "$log" >&2
     exit 1
@@ -70,7 +70,7 @@ assert_command_output_contains() {
   local log="$TMP_ROOT/output.log"
   "$@" >"$log" 2>&1
 
-  if ! grep -F "$expected" "$log" >/dev/null; then
+  if ! grep -F -- "$expected" "$log" >/dev/null; then
     echo "Expected command output to contain: $expected" >&2
     cat "$log" >&2
     exit 1
@@ -93,6 +93,9 @@ OPENCLAW_INSTALL="$TMP_ROOT/openclaw-install"
 OPENCLAW_UPDATE="$TMP_ROOT/openclaw-update"
 OPENCLAW_LINK="$TMP_ROOT/openclaw-link"
 OPENCLAW_UNINSTALL="$TMP_ROOT/openclaw-uninstall"
+ALL_HOME="$TMP_ROOT/all-home"
+ALL_PARTIAL_HOME="$TMP_ROOT/all-partial-home"
+ALL_REMOVE_HOME="$TMP_ROOT/all-remove-home"
 
 echo "[CI] INFO LegacyFlagMigration root={$TMP_ROOT}"
 assert_command_fails_with "Unsupported flag: --force" \
@@ -103,6 +106,10 @@ assert_command_fails_with "Unsupported flag: --force" \
   "$ROOT_DIR/scripts/install-openclaw.sh" --force
 assert_command_output_contains "Deprecated: use ./scripts/install.sh --runtime openclaw" \
   "$ROOT_DIR/scripts/install-openclaw.sh" --help
+assert_command_fails_with "--all cannot be combined with --runtime" \
+  "$ROOT_DIR/scripts/install.sh" --all --runtime claude
+assert_command_fails_with "--all cannot be combined with --target" \
+  "$ROOT_DIR/scripts/install.sh" --all --target "$TMP_ROOT/custom"
 
 echo "[CI] INFO BuilderInstallFresh root={$BUILDER_INSTALL}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_INSTALL"
@@ -280,5 +287,38 @@ assert_not_exists "$OPENCLAW_UNINSTALL/cdd-implement-todo"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
 assert_exists "$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md"
+
+echo "[CI] INFO InstallAllExistingHomes root={$ALL_HOME}"
+mkdir -p "$ALL_HOME/.agents" "$ALL_HOME/.claude" "$ALL_HOME/.openclaw"
+HOME="$ALL_HOME" "$ROOT_DIR/scripts/install.sh" --all
+assert_exists "$ALL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
+assert_exists "$ALL_HOME/.claude/skills/cdd-master-chef/SKILL.md"
+assert_exists "$ALL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
+assert_command_output_contains "user-invocable: false" sed -n '1,40p' "$ALL_HOME/.openclaw/skills/cdd-plan/SKILL.md"
+touch "$ALL_HOME/.agents/skills/cdd-master-chef/EXTRA.txt"
+touch "$ALL_HOME/.openclaw/skills/cdd-plan/EXTRA.txt"
+HOME="$ALL_HOME" "$ROOT_DIR/scripts/install.sh" --all --update
+assert_not_exists "$ALL_HOME/.agents/skills/cdd-master-chef/EXTRA.txt"
+assert_not_exists "$ALL_HOME/.openclaw/skills/cdd-plan/EXTRA.txt"
+
+echo "[CI] INFO InstallAllSkipsMissingHomes root={$ALL_PARTIAL_HOME}"
+mkdir -p "$ALL_PARTIAL_HOME/.agents" "$ALL_PARTIAL_HOME/.openclaw"
+HOME="$ALL_PARTIAL_HOME" "$ROOT_DIR/scripts/install.sh" --all
+assert_exists "$ALL_PARTIAL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
+assert_exists "$ALL_PARTIAL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
+assert_not_exists "$ALL_PARTIAL_HOME/.claude/skills"
+
+echo "[CI] INFO InstallAllUninstall root={$ALL_REMOVE_HOME}"
+mkdir -p "$ALL_REMOVE_HOME/.agents" "$ALL_REMOVE_HOME/.claude" "$ALL_REMOVE_HOME/.openclaw"
+HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all
+printf 'n\nn\nn\n' | HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all --uninstall
+assert_exists "$ALL_REMOVE_HOME/.agents/skills/cdd-master-chef/SKILL.md"
+assert_exists "$ALL_REMOVE_HOME/.claude/skills/cdd-master-chef/SKILL.md"
+assert_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
+printf 'y\ny\ny\n' | HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all --uninstall
+assert_not_exists "$ALL_REMOVE_HOME/.agents/skills/cdd-master-chef"
+assert_not_exists "$ALL_REMOVE_HOME/.claude/skills/cdd-master-chef"
+assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-master-chef"
+assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-plan"
 
 echo "[CI] INFO InstallerSmokePassed root={$TMP_ROOT}"

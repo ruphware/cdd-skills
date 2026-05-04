@@ -4,6 +4,8 @@ This file defines how the shared `cdd-master-chef` contract maps onto Claude Cod
 
 Use this adapter when the controlling runtime is Claude Code and Master Chef wants Builder delegation through Claude subagents.
 
+This is one of the current concrete subagent-backed adapters shipped in the `cdd-master-chef` package.
+
 ## 1) Delegation model
 
 - Claude Code supports built-in and custom subagents from the main Claude session.

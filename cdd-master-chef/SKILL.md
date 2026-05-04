@@ -1,6 +1,6 @@
 ---
 name: cdd-master-chef
-description: Run the current OpenClaw adapter from the canonical cdd-master-chef package. Use for non-trivial development in an existing CDD repo or when starting a new project that should adopt CDD first; the main session is Master Chef, the Builder runs as fresh one-step OpenClaw subagent runs, repo state lives under .cdd-runtime/master-chef, and the main session handles Builder checks and operator-facing reporting without a watchdog cron.
+description: Start the cdd-master-chef autonomous workflow package. Use for non-trivial development where Master Chef ownership is wanted; current concrete adapters in this package are Codex, Claude Code, and OpenClaw, with OpenClaw carrying the current packaged runtime adapter and Codex and Claude Code provided as subagent-backed adapter docs.
 user-invocable: true
 homepage: https://github.com/ruphware/cdd-skills
 metadata: {"openclaw":{"requires":{"bins":["git"],"config":[]}}}
@@ -8,12 +8,16 @@ metadata: {"openclaw":{"requires":{"bins":["git"],"config":[]}}}
 
 # [CDD-8] Master Chef
 
-Use this skill for the OpenClaw adapter of the shared `[CDD-8] Master Chef` workflow.
+Use this skill as the entrypoint for the shared `[CDD-8] Master Chef` workflow.
 
 Adapter note:
 
 - The runtime-agnostic Master Chef contract now lives beside this skill in `CONTRACT.md`, `RUNBOOK.md`, and `RUNTIME-CAPABILITIES.md`.
-- The current concrete runtime mapping in this package is the OpenClaw adapter under `openclaw/`.
+- Current concrete adapters in this package are Codex, Claude Code, and OpenClaw.
+- Codex and Claude Code are current subagent-backed adapter docs in this package.
+- OpenClaw is the current packaged runtime adapter in this package.
+- Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters, but no Hermes adapter ships here today.
+- The operating contract below describes the current OpenClaw runtime path.
 - When this file repeats a shared rule, treat the shared contract as canonical and this file as the OpenClaw runtime mapping of that rule.
 
 References:
