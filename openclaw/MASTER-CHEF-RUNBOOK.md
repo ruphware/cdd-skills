@@ -339,7 +339,7 @@ Keep this file current before any deliberate Master Chef compaction and after ma
 Use an OpenClaw subagent as the Builder.
 
 The Builder relies on the shared OpenClaw `cdd-*` skills that are installed into
-`~/.openclaw/skills` by `./scripts/install-openclaw.sh`. Those are OpenClaw-ready
+`~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`. Those are OpenClaw-ready
 internal variants generated from the canonical repo skill pack in `skills/`.
 
 ### 5.0 Routing model

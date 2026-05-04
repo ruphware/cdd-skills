@@ -734,8 +734,11 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     assert "runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`" in root_readme_text, (
         f"root README capability matrix reference missing in {root_readme_md}"
     )
-    assert "Codex and Claude adapter docs now live under `master-chef/`, but the current packaged Builder path is still the OpenClaw adapter." in root_readme_text, (
+    assert "Codex and Claude adapter docs now live under `master-chef/`, and the unified installer now ships a documentation-only `cdd-master-chef` package to core single-agent targets." in root_readme_text, (
         f"root README adapter packaging note missing in {root_readme_md}"
+    )
+    assert "./scripts/install.sh --runtime openclaw" in root_readme_text, (
+        f"root README unified OpenClaw installer path missing in {root_readme_md}"
     )
 
 
@@ -1002,6 +1005,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     assert "the shared, runtime-agnostic master chef contract is no longer rooted only in `openclaw/`" in readme_text.lower(), (
         f"shared-contract relationship missing in {readme_md}"
     )
+    assert "./scripts/install.sh --runtime openclaw" in readme_text, (
+        f"OpenClaw README unified installer path missing in {readme_md}"
+    )
     assert "OpenClaw adapter" in runbook_text, (
         f"OpenClaw adapter framing missing in {runbook_md}"
     )
@@ -1057,7 +1063,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
     """Validate the generated OpenClaw Builder variants built from skills/."""
-    generator = repo_root / "scripts" / "build_openclaw_builder_skills.py"
+    generator = repo_root / "scripts" / "build_runtime_builder_skills.py"
     assert generator.exists(), f"missing {generator}"
 
     skills_root = repo_root / "skills"
@@ -1067,7 +1073,7 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
     with tempfile.TemporaryDirectory(prefix="cdd-openclaw-builder-") as tmp_dir:
         output_root = Path(tmp_dir) / "generated"
         subprocess.run(
-            [sys.executable, str(generator), "--output", str(output_root)],
+            [sys.executable, str(generator), "--runtime", "openclaw", "--output", str(output_root)],
             check=True,
             capture_output=True,
             text=True,

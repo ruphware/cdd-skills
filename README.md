@@ -84,7 +84,7 @@ Current repo state:
 - runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`
 - canonical Builder workflow source still lives in `skills/`
 
-Codex and Claude adapter docs now live under `master-chef/`, but the current packaged Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack. Those internal Builder skills are generated from the canonical repo source in `skills/` and installed into `~/.openclaw/skills` by `./scripts/install-openclaw.sh`.
+Codex and Claude adapter docs now live under `master-chef/`, and the unified installer now ships a documentation-only `cdd-master-chef` package to core single-agent targets. The current packaged runnable Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack, installed into `~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`.
 
 Routing note: Master Chef chooses the path. New projects should normally start with `cdd-init-project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `cdd-implement-todo`; `cdd-index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in Master Chef; `cdd-audit-and-implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
@@ -125,23 +125,30 @@ git clone git@github.com:ruphware/cdd-skills.git
 cd cdd-skills
 ```
 
-Install the core Builder skills for Codex CLI or similar single-agent runtimes:
+Install the core Builder skills plus the documentation-only `cdd-master-chef` package for Codex CLI or similar single-agent runtimes:
 
 ```bash
 ./scripts/install.sh
 ```
 
-Install the OpenClaw package:
+Install the same core pack to Claude Code's default skill root:
 
 ```bash
-./scripts/install-openclaw.sh
+./scripts/install.sh --runtime claude
+```
+
+Install the OpenClaw packaged adapter from the same entrypoint:
+
+```bash
+./scripts/install.sh --runtime openclaw
 ```
 
 Typical combined setup when you want both workflows available:
 
 ```bash
 ./scripts/install.sh --target ~/.agents/skills
-./scripts/install-openclaw.sh --target ~/.openclaw/skills
+./scripts/install.sh --runtime claude --target ~/.claude/skills
+./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 ```
 
 ## Update
@@ -150,7 +157,7 @@ Typical combined setup when you want both workflows available:
 cd cdd-skills
 git pull
 ./scripts/install.sh --update
-./scripts/install-openclaw.sh --update
+./scripts/install.sh --runtime openclaw --update
 ```
 
 If the install target already contains one of the managed skill directories, rerunning the installer without `--update` fails by design.
@@ -165,13 +172,14 @@ Builder update automatically runs the conservative prune logic. Use `--yes` if y
 
 ```bash
 ./scripts/install.sh --uninstall
-./scripts/install-openclaw.sh --uninstall
+./scripts/install.sh --runtime openclaw --uninstall
 ```
 
 Notes:
 
 - `--uninstall` lists matching installed paths and installer artifacts, asks for `y/N`, and removes them only on confirmation.
-- `./scripts/install-openclaw.sh` manages both `cdd-master-chef` and the internal OpenClaw Builder `cdd-*` skills in the target root.
+- `./scripts/install.sh` installs a documentation-only `cdd-master-chef` package on core single-agent targets and the runnable OpenClaw adapter on OpenClaw targets.
+- `./scripts/install-openclaw.sh` remains only as a deprecated compatibility wrapper around `./scripts/install.sh --runtime openclaw`.
 - If newly installed or updated skills do not appear, start a new session or restart the runtime.
 
 ## Start Here
@@ -185,7 +193,7 @@ For the core single-agent workflow:
 
 For the experimental Master Chef OpenClaw skill:
 
-- install the OpenClaw package
+- install the OpenClaw adapter with `./scripts/install.sh --runtime openclaw`
 - prepare one Run config block and set the main session to `master_model` from that block with `/model <master-model>`
 - launch `/cdd-master-chef` from the OpenClaw session you want to use as Master Chef
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins

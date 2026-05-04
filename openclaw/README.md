@@ -15,7 +15,7 @@ Installed form:
 - `~/.openclaw/skills/cdd-master-chef`
 - `/cdd-master-chef`
 
-`./scripts/install-openclaw.sh` also installs OpenClaw-ready internal Builder variants of the full `cdd-*` skill pack into `~/.openclaw/skills`. Those Builder skills are generated from the canonical repo source in `skills/` and are meant for Master Chef and the Builder subagent, not for direct user invocation.
+`./scripts/install.sh --runtime openclaw` installs this adapter plus OpenClaw-ready internal Builder variants of the full `cdd-*` skill pack into `~/.openclaw/skills`. Those Builder skills are generated from the canonical repo source in `skills/` and are meant for Master Chef and the Builder subagent, not for direct user invocation.
 
 ## What it does
 
@@ -48,48 +48,48 @@ There is no watchdog cron. The human supplies one explicit per-run Run config, a
   - a new/adoptable project folder that should be initialized into CDD first
 - a pushable upstream branch is required before the normal autonomous commit/push loop begins
 
-You do not need a separate Codex or ACP skill install for this OpenClaw package. `./scripts/install-openclaw.sh` installs both `cdd-master-chef` and the internal OpenClaw Builder `cdd-*` skills into `~/.openclaw/skills`.
+You do not need a separate Codex or ACP skill install for this OpenClaw package. `./scripts/install.sh --runtime openclaw` installs both `cdd-master-chef` and the internal OpenClaw Builder `cdd-*` skills into `~/.openclaw/skills`.
 
 ## Install
 
 From the repo root:
 
 ```bash
-./scripts/install-openclaw.sh
+./scripts/install.sh --runtime openclaw
 ```
 
 Explicit target example:
 
 ```bash
-./scripts/install-openclaw.sh --target ~/.openclaw/skills
+./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 ```
 
 Link install for local iteration:
 
 ```bash
-./scripts/install-openclaw.sh --link --update
+./scripts/install.sh --runtime openclaw --link --update
 ```
 
 Notes:
 
-- `--link` symlinks `cdd-master-chef` itself.
-- The generated internal Builder skills are still materialized as normal directories in the target root.
+- Canonical source skills are symlinked only when the runtime package can use them directly.
+- The generated `cdd-master-chef` package and generated internal Builder skills are still materialized as normal directories in the target root.
 
 Update:
 
 ```bash
-./scripts/install-openclaw.sh --update
+./scripts/install.sh --runtime openclaw --update
 ```
 
 Uninstall:
 
 ```bash
-./scripts/install-openclaw.sh --uninstall
+./scripts/install.sh --runtime openclaw --uninstall
 ```
 
 ## What gets installed
 
-`./scripts/install-openclaw.sh` installs:
+`./scripts/install.sh --runtime openclaw` installs:
 
 - `cdd-master-chef`
 - `cdd-boot`

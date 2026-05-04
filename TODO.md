@@ -707,11 +707,11 @@ Make the normal installer own Master Chef packaging across runtimes so the repo 
 
 ### Tasks
 
-- [ ] Extend `scripts/install.sh` so it can install the shared Master Chef package and any runtime-specific adapter assets into the appropriate target roots, including `~/.agents/skills`, `~/.claude/skills`, and any retained OpenClaw target.
-- [ ] Remove `scripts/install-openclaw.sh` after `install.sh` reaches feature parity, or reduce it to a temporary shim that exits with migration guidance if immediate removal would be too disruptive.
-- [ ] Update `scripts/test_installers.sh` so installer smoke tests verify the unified Master Chef packaging path and no longer require a separate OpenClaw installer test matrix.
-- [ ] Rename or generalize any OpenClaw-only generator/build script that remains necessary so its purpose matches the new multi-runtime packaging model.
-- [ ] Update `README.md` install, update, and uninstall instructions so Master Chef is documented through the unified installer path.
+- [x] Extend `scripts/install.sh` so it can install the shared Master Chef package and any runtime-specific adapter assets into the appropriate target roots, including `~/.agents/skills`, `~/.claude/skills`, and any retained OpenClaw target.
+- [x] Remove `scripts/install-openclaw.sh` after `install.sh` reaches feature parity, or reduce it to a temporary shim that exits with migration guidance if immediate removal would be too disruptive.
+- [x] Update `scripts/test_installers.sh` so installer smoke tests verify the unified Master Chef packaging path and no longer require a separate OpenClaw installer test matrix.
+- [x] Rename or generalize any OpenClaw-only generator/build script that remains necessary so its purpose matches the new multi-runtime packaging model.
+- [x] Update `README.md` install, update, and uninstall instructions so Master Chef is documented through the unified installer path.
 
 ### Implementation notes
 
@@ -726,10 +726,10 @@ Make the normal installer own Master Chef packaging across runtimes so the repo 
 
 ### UAT
 
-- Confirm Codex/Claude install docs now include Master Chef.
-- Confirm installer smoke tests cover the new Master Chef packaging.
-- Confirm validator coverage extends beyond OpenClaw.
-- Confirm the repo no longer implies that Master Chef can only be installed through `install-openclaw.sh`.
+- [x] Confirm Codex/Claude install docs now include Master Chef.
+- [x] Confirm installer smoke tests cover the new Master Chef packaging.
+- [x] Confirm validator coverage extends beyond OpenClaw.
+- [x] Confirm the repo no longer implies that Master Chef can only be installed through `install-openclaw.sh`.
 
 ## Step 20 — Replace weak literal-text validation with structural and executable contract tests
 
