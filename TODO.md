@@ -860,10 +860,10 @@ Make repo-root `npx skills add https://github.com/ruphware/cdd-skills/` and `scr
 
 ### Tasks
 
-- [ ] Update `scripts/install.sh` so generic/Codex/Claude installs package the committed canonical `cdd-master-chef/` skill rather than synthesizing a docs-only surrogate from `master-chef/`.
-- [ ] Update OpenClaw install assembly so `--runtime openclaw` installs the canonical `cdd-master-chef` skill plus any required OpenClaw-specific overlays/generated Builder skills from the new adapter subtree.
-- [ ] Update installer smoke tests and local install-audit scripts to assert the canonical package is installed for generic, Claude, and OpenClaw targets and that installed contents match the new root package layout.
-- [ ] Update `README.md` quick-install instructions so the root repo URL is the primary `npx skills add` entrypoint and no longer warns users away from it.
+- [x] Update `scripts/install.sh` so generic/Codex/Claude installs package the committed canonical `cdd-master-chef/` skill rather than synthesizing a docs-only surrogate from `master-chef/`.
+- [x] Update OpenClaw install assembly so `--runtime openclaw` installs the canonical `cdd-master-chef` skill plus any required OpenClaw-specific overlays/generated Builder skills from the new adapter subtree.
+- [x] Update installer smoke tests and local install-audit scripts to assert the canonical package is installed for generic, Claude, and OpenClaw targets and that installed contents match the new root package layout.
+- [x] Update `README.md` quick-install instructions so the root repo URL is the primary `npx skills add` entrypoint and no longer warns users away from it.
 
 ### Implementation notes
 

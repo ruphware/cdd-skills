@@ -150,6 +150,10 @@ collect_skill_names_csv() {
     names+=("$name")
   done
 
+  if [[ -f "$ROOT_DIR/cdd-master-chef/SKILL.md" ]]; then
+    names+=("cdd-master-chef")
+  fi
+
   if [[ ${#names[@]} -eq 0 ]]; then
     echo "No skills found under: $ROOT_DIR/skills" >&2
     exit 1
@@ -177,10 +181,12 @@ run_local_smoke_test() {
 
   local home_dir="$sandbox_root/home"
   local claude_config_dir="$sandbox_root/claude-home"
+  local openclaw_home_dir="$sandbox_root/openclaw-home"
   local universal_skills_dir="$home_dir/.agents/skills"
   local claude_skills_dir="$claude_config_dir/skills"
+  local openclaw_skills_dir="$openclaw_home_dir/skills"
 
-  mkdir -p "$home_dir" "$claude_config_dir"
+  mkdir -p "$home_dir" "$claude_config_dir" "$openclaw_home_dir"
 
   local skills=()
   local skill_dir
@@ -201,6 +207,7 @@ run_local_smoke_test() {
 
   "$ROOT_DIR/scripts/install.sh" --target "$universal_skills_dir"
   "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$claude_skills_dir"
+  "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$openclaw_skills_dir"
   bash "$ROOT_DIR/scripts/test_master_chef_artifacts.sh"
 
   local skill
@@ -213,14 +220,21 @@ run_local_smoke_test() {
   assert_exists "$universal_skills_dir/cdd-master-chef/SKILL.md"
   assert_exists "$universal_skills_dir/cdd-master-chef/README.md"
   assert_exists "$universal_skills_dir/cdd-master-chef/CODEX-ADAPTER.md"
+  assert_exists "$universal_skills_dir/cdd-master-chef/openclaw/README.md"
   assert_exists "$claude_skills_dir/cdd-master-chef/SKILL.md"
   assert_exists "$claude_skills_dir/cdd-master-chef/CLAUDE-ADAPTER.md"
+  assert_exists "$claude_skills_dir/cdd-master-chef/openclaw/README.md"
+  assert_exists "$openclaw_skills_dir/cdd-master-chef/SKILL.md"
+  assert_exists "$openclaw_skills_dir/cdd-master-chef/openclaw/README.md"
+  assert_exists "$openclaw_skills_dir/cdd-plan/SKILL.md"
+  grep -F "user-invocable: false" "$openclaw_skills_dir/cdd-plan/SKILL.md" >/dev/null
   echo "[LocalInstall] INFO InstalledSkill name={cdd-master-chef}"
 
   echo "[LocalInstall] INFO AgentRoot agent={codex} path={$universal_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={claude-code} path={$claude_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={gemini-cli} path={$universal_skills_dir}"
-  echo "[LocalInstall] INFO InstallVerified skills={$((${#skills[@]} + 1))} agents={3}"
+  echo "[LocalInstall] INFO AgentRoot agent={openclaw} path={$openclaw_skills_dir}"
+  echo "[LocalInstall] INFO InstallVerified skills={$((${#skills[@]} + 1))} agents={4}"
 }
 
 echo "[SkillAudit] INFO Repo root={$ROOT_DIR}"
@@ -444,6 +458,9 @@ def print_explainer():
     skill_map = {}
     for skill_md in sorted((root / "skills").glob("*/SKILL.md")):
         skill_map[read_skill_name(skill_md)] = skill_md
+    master_chef_skill_md = root / "cdd-master-chef" / "SKILL.md"
+    if master_chef_skill_md.exists():
+        skill_map[read_skill_name(master_chef_skill_md)] = master_chef_skill_md
 
     flagged_names = [name for name in sorted(payload) if is_flagged(payload.get(name))]
     if only_flagged:

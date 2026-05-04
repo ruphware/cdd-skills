@@ -810,6 +810,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         CDD_CORE_LABELS
         + (
             MASTER_CHEF_LABEL,
+            "npx skills add https://github.com/ruphware/cdd-skills/",
             "cdd-master-chef/RUNBOOK.md",
             "cdd-master-chef/CODEX-ADAPTER.md",
             "cdd-master-chef/CLAUDE-ADAPTER.md",
@@ -825,9 +826,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_substrings(
         install_text,
         (
-            '[CDD-8] Master Chef shared contract reference package for ${label}.',
-            "# [CDD-8] Master Chef",
-            "This package is the shared \\`[CDD-8] Master Chef\\` contract and adapter documentation bundle.",
+            'MASTER_CHEF_SRC_ROOT="$ROOT_DIR/cdd-master-chef"',
+            'OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"',
+            'SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")',
+            "Generated runtime Builder skills are still copied.",
         ),
         install_sh,
         "installer Master Chef taxonomy",

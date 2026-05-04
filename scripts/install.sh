@@ -48,10 +48,10 @@ Usage: ./scripts/install.sh [--runtime NAME] [--target DIR ...] [--link] [--upda
 Install CDD skills into runtime skill directories.
 
 Runtimes:
-  generic     Canonical cdd-* skills plus a documentation-only cdd-master-chef package
+  generic     Canonical cdd-* skills plus the canonical cdd-master-chef package
   codex       Alias for generic with ~/.agents/skills as the default target
-  claude      Canonical cdd-* skills plus a documentation-only cdd-master-chef package, default target ~/.claude/skills
-  openclaw    OpenClaw cdd-master-chef adapter plus generated internal Builder skills
+  claude      Canonical cdd-* skills plus the canonical cdd-master-chef package, default target ~/.claude/skills
+  openclaw    Canonical cdd-master-chef package plus generated internal OpenClaw Builder skills
 
 Options:
   --runtime NAME  Select package/runtime mode; default: generic
@@ -85,72 +85,7 @@ runtime_is_core() {
   [[ "$RUNTIME" == "generic" || "$RUNTIME" == "codex" || "$RUNTIME" == "claude" ]]
 }
 
-runtime_label() {
-  case "$RUNTIME" in
-    claude)
-      echo "Claude Code and related single-agent runtimes"
-      ;;
-    codex)
-      echo "Codex and related single-agent runtimes"
-      ;;
-    generic)
-      echo "Codex, Claude Code, and related single-agent runtimes"
-      ;;
-    openclaw)
-      echo "OpenClaw"
-      ;;
-    *)
-      fail_usage "Unsupported runtime: $RUNTIME"
-      ;;
-  esac
-}
-
-emit_generic_master_chef_package() {
-  local dest_dir="$1"
-  local label
-  label="$(runtime_label)"
-
-  mkdir -p "$dest_dir"
-  cp -a "$MASTER_CHEF_SRC_ROOT/." "$dest_dir/"
-
-cat >"$dest_dir/SKILL.md" <<EOF
----
-name: cdd-master-chef
-description: "[CDD-8] Master Chef shared contract reference package for ${label}. Documentation-only install; use the included shared contract and runtime adapter docs."
-disable-model-invocation: true
----
-# [CDD-8] Master Chef
-
-This package is the shared \`[CDD-8] Master Chef\` contract and adapter documentation bundle.
-
-- It is documentation-only in this runtime target today.
-- The packaged runnable adapter currently remains the OpenClaw runtime.
-- Use the included contract, runbook, capability matrix, and runtime adapter docs as the source of truth.
-
-Included docs:
-
-- \`README.md\`
-- \`CONTRACT.md\`
-- \`RUNBOOK.md\`
-- \`RUNTIME-CAPABILITIES.md\`
-- \`CODEX-ADAPTER.md\`
-- \`CODEX-RUNBOOK.md\`
-- \`CODEX-TEST-HARNESS.md\`
-- \`CLAUDE-ADAPTER.md\`
-- \`CLAUDE-RUNBOOK.md\`
-- \`CLAUDE-TEST-HARNESS.md\`
-EOF
-}
-
-emit_openclaw_master_chef_package() {
-  local dest_dir="$1"
-
-  mkdir -p "$dest_dir"
-  cp -a "$MASTER_CHEF_SRC_ROOT/." "$dest_dir/"
-}
-
 build_source_packages() {
-  BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/cdd-skills-build.XXXXXX")"
   SOURCE_PACKAGES=()
 
   if runtime_is_core; then
@@ -160,14 +95,16 @@ build_source_packages() {
       [[ -f "$skill_dir/SKILL.md" ]] || continue
       SOURCE_PACKAGES+=("$skill_dir")
     done
-    emit_generic_master_chef_package "$BUILD_ROOT/cdd-master-chef"
-    SOURCE_PACKAGES+=("$BUILD_ROOT/cdd-master-chef")
+    SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")
     return 0
   fi
 
   if [[ "$RUNTIME" != "openclaw" ]]; then
     fail_usage "Unsupported runtime: $RUNTIME"
   fi
+
+  SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")
+  BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/cdd-skills-build.XXXXXX")"
 
   if ! command -v python3 >/dev/null 2>&1; then
     echo "Missing required binary: python3" >&2
@@ -179,12 +116,7 @@ build_source_packages() {
     exit 1
   fi
 
-  emit_openclaw_master_chef_package "$BUILD_ROOT/cdd-master-chef"
   python3 "$RUNTIME_BUILDER_GENERATOR" --runtime openclaw --output "$BUILD_ROOT/openclaw-builder" >/dev/null
-
-  SOURCE_PACKAGES+=("$BUILD_ROOT/cdd-master-chef")
-
-  local skill_dir
   for skill_dir in "$BUILD_ROOT/openclaw-builder"/*; do
     [[ -d "$skill_dir" ]] || continue
     [[ -f "$skill_dir/SKILL.md" ]] || continue
@@ -358,7 +290,7 @@ uninstall_from_target() {
 
 should_link_source() {
   local source_dir="$1"
-  [[ $LINK -eq 1 && "$source_dir" == "$SKILLS_SRC_ROOT"/* ]]
+  [[ $LINK -eq 1 && ( "$source_dir" == "$SKILLS_SRC_ROOT"/* || "$source_dir" == "$MASTER_CHEF_SRC_ROOT" ) ]]
 }
 
 install_one() {
@@ -512,7 +444,7 @@ if [[ "$RUNTIME" == "openclaw" ]]; then
 fi
 
 if [[ $LINK -eq 1 ]]; then
-  echo "Warning: --link symlinks only canonical source skill directories when possible. Generated cdd-master-chef packages and generated runtime Builder skills are still copied." >&2
+  echo "Warning: --link symlinks canonical source skill directories when possible. Generated runtime Builder skills are still copied." >&2
 fi
 
 if [[ ${#TARGETS[@]} -eq 0 ]]; then

@@ -114,6 +114,7 @@ assert_exists "$BUILDER_INSTALL/cdd-master-chef/SKILL.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/README.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/CODEX-ADAPTER.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/CLAUDE-ADAPTER.md"
+assert_exists "$BUILDER_INSTALL/cdd-master-chef/openclaw/README.md"
 assert_command_fails_with "Rerun with --update" \
   "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_INSTALL"
 
@@ -131,9 +132,10 @@ assert_no_match "$BUILDER_UPDATE" 'cdd-plan.bak.*'
 echo "[CI] INFO BuilderInstallLink root={$BUILDER_LINK}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_LINK" --link
 assert_symlink "$BUILDER_LINK/cdd-plan"
-assert_exists "$BUILDER_LINK/cdd-master-chef/SKILL.md"
+assert_symlink "$BUILDER_LINK/cdd-master-chef"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_LINK" --link --update
 assert_symlink "$BUILDER_LINK/cdd-plan"
+assert_symlink "$BUILDER_LINK/cdd-master-chef"
 assert_exists "$BUILDER_LINK/cdd-master-chef/CODEX-RUNBOOK.md"
 
 echo "[CI] INFO BuilderInstallPrune root={$BUILDER_PRUNE}"
@@ -209,6 +211,7 @@ echo "[CI] INFO ClaudeInstallFresh root={$CLAUDE_INSTALL}"
 assert_exists "$CLAUDE_INSTALL/cdd-plan/SKILL.md"
 assert_exists "$CLAUDE_INSTALL/cdd-master-chef/SKILL.md"
 assert_exists "$CLAUDE_INSTALL/cdd-master-chef/CLAUDE-ADAPTER.md"
+assert_exists "$CLAUDE_INSTALL/cdd-master-chef/openclaw/README.md"
 assert_command_fails_with "Rerun with --update" \
   "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$CLAUDE_INSTALL"
 
@@ -242,12 +245,12 @@ assert_no_match "$OPENCLAW_UPDATE" 'cdd-plan.bak.*'
 
 echo "[CI] INFO OpenClawInstallLink root={$OPENCLAW_LINK}"
 "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_LINK" --link
-assert_exists "$OPENCLAW_LINK/cdd-master-chef/SKILL.md"
+assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
 assert_exists "$OPENCLAW_LINK/cdd-master-chef/RUNBOOK.md"
 assert_exists "$OPENCLAW_LINK/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md"
 assert_exists "$OPENCLAW_LINK/cdd-plan/SKILL.md"
 "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_LINK" --link --update
-assert_exists "$OPENCLAW_LINK/cdd-master-chef/SKILL.md"
+assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
 assert_exists "$OPENCLAW_LINK/cdd-implement-todo/SKILL.md"
 
 echo "[CI] INFO OpenClawUninstall root={$OPENCLAW_UNINSTALL}"

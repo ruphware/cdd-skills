@@ -4,13 +4,17 @@ CDD workflow skills for agentic software engineering.
 
 ## Quick Install
 
-Install the core `skills/` pack for Codex, Claude Code, Gemini CLI and others (adjust):
+Install the full repo skill set, including first-class `[CDD-8] Master Chef`, for Codex, Claude Code, Gemini CLI and others (adjust):
+
+```bash
+npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a claude-code -a gemini-cli -g
+```
+
+If you want only the core `[CDD-0]` through `[CDD-7]` pack, install from `skills/` directly:
 
 ```bash
 npx skills add https://github.com/ruphware/cdd-skills/tree/main/skills --skill '*' -a codex -a claude-code -a gemini-cli -g
 ```
-
-The repo now also carries the canonical top-level `cdd-master-chef/` package. Use the explicit `skills/` path here when you want only the core `[CDD-0]` through `[CDD-7]` pack.
 
 ## Skill Map
 
@@ -88,7 +92,7 @@ Current repo state:
 - runtime capability matrix: `cdd-master-chef/RUNTIME-CAPABILITIES.md`
 - canonical Builder workflow source still lives in `skills/`
 
-Codex and Claude adapter docs now live in `cdd-master-chef/`, and the unified installer now ships a documentation-only `[CDD-8] Master Chef` package to core single-agent targets. The current packaged runnable Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack, installed into `~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`.
+Codex and Claude adapter docs now live in `cdd-master-chef/`, and the unified installer now ships the canonical `[CDD-8] Master Chef` package to core single-agent targets. The current packaged runnable Builder path is still the OpenClaw adapter. It uses OpenClaw-ready internal variants of the full `cdd-*` skill pack, installed into `~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`.
 
 Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; `[CDD-4] Audit + Implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
@@ -129,7 +133,7 @@ git clone git@github.com:ruphware/cdd-skills.git
 cd cdd-skills
 ```
 
-Install the core Builder skills plus the documentation-only `[CDD-8] Master Chef` package for Codex CLI or similar single-agent runtimes:
+Install the core Builder skills plus the canonical `[CDD-8] Master Chef` package for Codex CLI or similar single-agent runtimes:
 
 ```bash
 ./scripts/install.sh
@@ -182,7 +186,7 @@ Builder update automatically runs the conservative prune logic. Use `--yes` if y
 Notes:
 
 - `--uninstall` lists matching installed paths and installer artifacts, asks for `y/N`, and removes them only on confirmation.
-- `./scripts/install.sh` installs a documentation-only `[CDD-8] Master Chef` package on core single-agent targets and the runnable OpenClaw adapter on OpenClaw targets.
+- `./scripts/install.sh` installs the canonical `[CDD-8] Master Chef` package on core single-agent targets and the same package plus generated OpenClaw Builder skills on OpenClaw targets.
 - `./scripts/install-openclaw.sh` remains only as a deprecated compatibility wrapper around `./scripts/install.sh --runtime openclaw`.
 - If newly installed or updated skills do not appear, start a new session or restart the runtime.
 
