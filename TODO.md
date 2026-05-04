@@ -572,3 +572,201 @@ Make `cdd-init-project` preserve and adopt the newer boilerplate contract for st
 - Confirm it now accounts for repo-local `.agents/skills/*/SKILL.md` files when present.
 - Confirm it does not require `JOURNAL-next.md` and does not precreate split-journal files in unsplit repos.
 - Confirm the validator fails if `cdd-init-project` drops either the split-journal or repo-local-skill rule.
+
+## Step 16 — Split `cdd-master-chef` into a shared orchestration contract with runtime adapters
+
+### Goal
+
+Make `cdd-master-chef` stop being OpenClaw-only by separating the shared Master Chef orchestration contract from runtime-specific adapter rules for OpenClaw, Codex, and Claude Code.
+
+### Constraints
+
+- Preserve the existing OpenClaw autonomous loop semantics: kickoff, one-step Builder runs, QA remediation, blocker handling, compaction, commit/push, and in-session lifecycle reporting.
+- Do not describe any runtime as supporting subagent, approval, MCP, or worktree behavior that its current docs or current local CLI surface do not support.
+- Keep shared orchestration rules distinct from runtime adapter rules so test coverage can fail on either layer independently.
+- `README.md` must stop presenting Master Chef as an OpenClaw-only upgrade once the new contract lands.
+
+### Tasks
+
+- [ ] Create a shared Master Chef source-of-truth surface that defines the runtime-agnostic contract: kickoff, routing, Builder lifecycle, QA/UAT gates, blocker handling, commit/push policy, lifecycle events, and durable runtime state.
+- [ ] Refactor the existing `openclaw/*` package so OpenClaw-specific files become an adapter layer over the shared contract instead of the only Master Chef contract.
+- [ ] Add a runtime capability matrix for OpenClaw, Codex, and Claude that records, at minimum, subagent model, nested-delegation limits, approval model, MCP/tool inheritance, child working-directory support, worktree-hand-off behavior, and startup-only versus in-session capabilities.
+- [ ] Update the repo `README.md` so Master Chef is described as a shared workflow with runtime adapters, while keeping any still-experimental status explicit.
+- [ ] Replace OpenClaw-only contract assertions with shared-contract and adapter-specific coverage that fails if the repo drifts back to OpenClaw-only wording.
+
+### Implementation notes
+
+- Prefer a new shared directory such as `master-chef/` or equivalent adapter-neutral surface rather than continuing to treat `openclaw/` as the canonical source.
+- Keep the current OpenClaw files readable during the migration, but no longer canonical.
+- Encode capability differences as first-class contract data, not as incidental prose hidden in one runtime README.
+- Claude `2.1.126` now exposes `--agent`, `--agents`, `agents`, and `--worktree`; write those facts into the Claude adapter instead of relying on older assumptions.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm the repo now has a shared Master Chef contract plus runtime adapters.
+- Confirm OpenClaw docs no longer act as the only source of truth.
+- Confirm `README.md` now describes Master Chef as multi-runtime rather than OpenClaw-only.
+- Confirm the validator fails if shared rules collapse back into OpenClaw-only wording.
+
+## Step 17 — Add a clean-checkout-first managed worktree and branch lifecycle
+
+### Goal
+
+Make Master Chef provision work on a new branch in a new git worktree under a clean-checkout-first safety policy, with explicit runtime fallback rules when autonomous continuation from that worktree is not possible.
+
+### Constraints
+
+- Before kickoff, the source checkout must be clean; if it is dirty, Master Chef must stop and ask the human to stash, commit, or discard changes first.
+- v1 must not promise dirty-state transfer into the managed worktree.
+- The managed worktree must start from the current branch `HEAD` and create a fresh per-run branch rather than mutating the source checkout branch in place.
+- The contract must respect Git’s one-branch-per-worktree rule and must not tell users to check out the same branch in multiple worktrees.
+- Cleanup must not remove user branches, commits, or worktrees without explicit approval.
+
+### Tasks
+
+- [ ] Define the managed worktree lifecycle: preflight cleanliness check, worktree path selection, branch naming, worktree creation, runtime-state initialization, active-worktree recording, and cleanup/archival behavior.
+- [ ] Define where Master Chef stores worktree metadata and the active worktree path in runtime state, including any additions needed in `run.json`, `run.lock.json`, and `context-summary.md`.
+- [ ] Define the runtime decision rule for “continue inside the worktree” versus “provision worktree and stop with exact relaunch instructions” when the adapter cannot safely keep Builder and Master Chef operating from the new worktree.
+- [ ] Update the shared runbook and runtime adapters so commit, push, QA, and TODO inspection are performed against the managed worktree once it becomes active.
+- [ ] Add executable test coverage for the clean-checkout-first rule, new-branch/new-worktree rule, and fallback behavior.
+
+### Implementation notes
+
+- Prefer a repo-local managed location such as `.cdd-runtime/master-chef/worktrees/<run-id>/` for adapters that control their own worktree path, unless an adapter is intentionally documented as using a runtime-managed external location instead.
+- Record the source checkout path separately from the active worktree path so resume logic can reason about both.
+- Claude’s current `--worktree` flag suggests a startup-time worktree path is viable there; do not treat that as proof of safe in-session worktree switching.
+- If a runtime cannot safely re-root the active control loop into the new worktree, the contract should stop after provisioning and emit exact restart or handoff instructions instead of improvising shell-level path switching.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm Master Chef refuses kickoff from a dirty source checkout.
+- Confirm the contract now requires a fresh branch in a fresh worktree for the run.
+- Confirm runtime state records the active worktree path.
+- Confirm the docs state when Master Chef continues in the worktree versus when it stops and asks for a relaunch/handoff.
+
+## Step 18 — Add Codex and Claude adapter contracts for Builder delegation
+
+### Goal
+
+Make `cdd-master-chef` support Codex and Claude Code subagent delegation using each runtime’s real subagent model, approval behavior, and context-management limits.
+
+### Constraints
+
+- Codex adapter rules must align with explicit subagent workflows and Codex agent configuration rather than assuming automatic delegation.
+- Claude adapter rules must state that subagents cannot spawn subagents.
+- Claude background subagent flows must not rely on MCP tools or interactive approval recovery.
+- The shared Builder contract still requires one approved delegated action per Builder run, but the adapter may choose foreground-only delegation when background execution is unsafe.
+- Do not require per-run model overrides in a way the target runtime cannot actually materialize during a normal skill invocation; any downgrade or startup-only mapping must be explicit.
+
+### Tasks
+
+- [ ] Add a Codex adapter contract that defines how Master Chef uses Codex subagents for Builder, exploration, QA support, and read-heavy sidecar work, including when built-in agent roles are sufficient and when project-scoped `.codex/agents/*.toml` surfaces are required.
+- [ ] Add a Claude adapter contract that defines how Master Chef uses Claude subagents, including foreground-vs-background policy, non-nesting limits, permission-mode expectations, configured-agent surfaces, and when Builder work must remain foreground to keep approvals and tool access coherent.
+- [ ] For both adapters, define how the approved `Run config` maps onto real runtime capabilities: exact support, inherited-model fallback, startup-only application, or adapter-specific constrained behavior.
+- [ ] Add runtime-specific runbook and test-harness coverage for Codex and Claude, including explicit blocked paths for unsupported delegation patterns.
+- [ ] Update shared docs so OpenClaw remains one adapter among three rather than the implied default control plane.
+
+### Implementation notes
+
+- Codex supports explicit subagent workflows and project-scoped `.codex/agents/*.toml`.
+- Claude `2.1.126` exposes `--agent`, `--agents`, `agents`, `--worktree`, `--tmux`, `--effort`, and `--permission-mode auto`; use those current facts in the adapter contract.
+- Treat “Builder may continue automatically” as adapter-specific, not universal.
+- If per-run Builder model selection cannot be made reliable in Codex or Claude v1, codify the limitation and keep the run config field visible as desired state rather than silently ignoring it.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm the Codex adapter uses explicit subagent semantics and does not claim automatic spawning.
+- Confirm the Claude adapter states the non-nesting rule and background MCP limitation.
+- Confirm both adapters explain how `Run config` fields are honored or downgraded.
+- Confirm the validator fails if either adapter reintroduces unsupported runtime claims.
+
+## Step 19 — Collapse Master Chef packaging into `install.sh` and retire `install-openclaw.sh`
+
+### Goal
+
+Make the normal installer own Master Chef packaging across runtimes so the repo no longer depends on a separate `install-openclaw.sh` path for Master Chef delivery.
+
+### Constraints
+
+- Preserve the current core `cdd-*` install behavior for Codex, Claude, and Gemini users.
+- Keep runtime-specific adapter artifacts installable to the correct target roots without forcing a second installer.
+- The packaging model must still allow any generated adapter-specific Builder variants that remain necessary after the shared-contract split.
+- Do not leave README or smoke tests referring to `install-openclaw.sh` as the primary path once the unified installer lands.
+
+### Tasks
+
+- [ ] Extend `scripts/install.sh` so it can install the shared Master Chef package and any runtime-specific adapter assets into the appropriate target roots, including `~/.agents/skills`, `~/.claude/skills`, and any retained OpenClaw target.
+- [ ] Remove `scripts/install-openclaw.sh` after `install.sh` reaches feature parity, or reduce it to a temporary shim that exits with migration guidance if immediate removal would be too disruptive.
+- [ ] Update `scripts/test_installers.sh` so installer smoke tests verify the unified Master Chef packaging path and no longer require a separate OpenClaw installer test matrix.
+- [ ] Rename or generalize any OpenClaw-only generator/build script that remains necessary so its purpose matches the new multi-runtime packaging model.
+- [ ] Update `README.md` install, update, and uninstall instructions so Master Chef is documented through the unified installer path.
+
+### Implementation notes
+
+- Touch `scripts/install.sh`, `scripts/test_installers.sh`, `README.md`, and any surviving adapter-generation script by default.
+- If OpenClaw still needs a distinct target root, that should be expressed as an installer target or mode, not a completely separate installer entrypoint.
+- Keep the final user story simple: one installer path, multiple targets.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- Confirm Codex/Claude install docs now include Master Chef.
+- Confirm installer smoke tests cover the new Master Chef packaging.
+- Confirm validator coverage extends beyond OpenClaw.
+- Confirm the repo no longer implies that Master Chef can only be installed through `install-openclaw.sh`.
+
+## Step 20 — Replace weak literal-text validation with structural and executable contract tests
+
+### Goal
+
+Replace the current phrase-by-phrase `scripts/validate_skills.py` approach with stronger structural checks and executable smoke tests so Master Chef behavior is validated by artifacts, packaging, and runtime-facing fixtures rather than fragile wording matches.
+
+### Constraints
+
+- Do not delete useful coverage before an equal or stronger replacement exists.
+- Keep any remaining Python validation focused on structural invariants such as frontmatter, required files, generated artifact shape, and schema-like checks.
+- Behavioral contract coverage should move toward executable tests, fixture validation, installer smoke tests, and generated-surface assertions rather than raw substring matches.
+- The new coverage must validate the shared contract, runtime adapters, installer outputs, and managed-worktree metadata expectations.
+
+### Tasks
+
+- [ ] Audit `scripts/validate_skills.py` and classify each current assertion as structural, generated-artifact, or fragile prose match.
+- [ ] Remove or shrink the fragile prose-match layer after equivalent stronger coverage exists in shell tests, fixture-based tests, or narrower schema checks.
+- [ ] Add executable coverage for Master Chef packaging and contract artifacts, using `scripts/test_installers.sh`, `scripts/test-skill-audit.sh`, and any new focused smoke-test script needed for shared Master Chef surfaces.
+- [ ] Ensure the remaining validation checks generated adapter artifacts, required frontmatter, installer outputs, runtime-state field presence, and any deterministic capability-matrix surface instead of exact explanatory sentences.
+- [ ] Update `TODO.md` validation commands for the new test split if `python3 scripts/validate_skills.py` is no longer the primary contract gate.
+
+### Implementation notes
+
+- Prefer “prove the artifact exists and has the required machine-readable fields” over “prove this sentence exists verbatim.”
+- A smaller `validate_skills.py` is acceptable if stronger shell or fixture tests replace the removed coverage.
+- Keep local deterministic execution as a requirement; avoid network-dependent behavioral tests.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+
+### UAT
+
+- Confirm fragile literal text assertions are no longer the primary contract gate.
+- Confirm remaining Python validation is structural rather than prose-driven.
+- Confirm executable tests cover installer outputs and shared Master Chef artifacts.
+- Confirm the documented validation flow still runs locally without network access.
