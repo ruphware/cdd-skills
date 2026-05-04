@@ -1,5 +1,5 @@
 interface:
-  display_name: "CDD 07 Maintain"
+  display_name: "[CDD-7] Maintain"
   short_description: "Codebase maintenance: Archive CDD files, audit support-doc drift, doctor the codebase"
   default_prompt: "Use $cdd-maintain to archive long TODO and journal files, audit support-doc drift including README.md and docs/specs, propose any documentation updates for approval, and doctor the codebase for refactor severity plus dead or orphaned code."
 policy:

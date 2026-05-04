@@ -1,6 +1,6 @@
-# CDD Master Chef
+# [CDD-8] Master Chef
 
-This directory is the shared source of truth for the multi-runtime `cdd-master-chef` workflow.
+This directory is the shared source of truth for `[CDD-8] Master Chef`, the multi-runtime autonomous development process that sits beside the core `[CDD-0]` through `[CDD-7]` CDD skills.
 
 Use these files as the canonical contract surfaces:
 
@@ -20,7 +20,7 @@ Runtime adapters consume that shared contract and define how a specific runtime 
 
 Relationship to the rest of the repo:
 
-- `skills/` remains the canonical Builder workflow source for the `cdd-*` skills.
-- `openclaw/` is one adapter over the shared contract defined here; it is no longer the only Master Chef source of truth.
+- `skills/` remains the canonical Builder workflow source for the core `[CDD-0]` through `[CDD-7]` `cdd-*` skills.
+- `openclaw/` is one adapter over the shared `[CDD-8] Master Chef` contract defined here; it is no longer the only Master Chef source of truth.
 - Codex and Claude adapter docs live in `master-chef/` today even though OpenClaw remains the only packaged installer path for the current repo state.
 - Packaging and installer unification are separate follow-on work. This directory defines the shared behavior first so adapter and packaging work can follow a stable contract.

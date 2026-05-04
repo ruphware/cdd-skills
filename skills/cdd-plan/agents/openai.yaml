@@ -1,5 +1,5 @@
 interface:
-  display_name: "CDD 02 Plan"
+  display_name: "[CDD-2] Plan"
   short_description: "Interactive planning → propose contract/TODO edits → approval → apply"
 policy:
   allow_implicit_invocation: false

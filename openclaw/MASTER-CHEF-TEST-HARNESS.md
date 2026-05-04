@@ -1,4 +1,4 @@
-# cdd-master-chef Test Harness Checklist (OpenClaw adapter)
+# [CDD-8] Master Chef Test Harness Checklist (OpenClaw adapter)
 
 This harness validates the current OpenClaw adapter against the shared Master Chef contract.
 
@@ -160,21 +160,21 @@ Refuse to start a duplicate run and report the active lease owner.
 
 ```text
 /cdd-master-chef TEST ONLY: explain the routing choice for the current repo state.
-Use Builder via cdd-implement-todo for a normal runnable TODO step.
-Use Builder via cdd-index only when an index refresh is the delegated action.
-Explain why cdd-boot is a manual helper rather than part of the normal flow.
-Explain why cdd-maintain is a manual helper rather than part of the normal flow.
-Use cdd-init-project, cdd-plan, or cdd-refactor directly in Master Chef when setup, planning, or refactor decomposition is needed.
-Explain why cdd-audit-and-implement is excluded from the normal flow.
+Use Builder via [CDD-3] Implement TODO (`cdd-implement-todo`) for a normal runnable TODO step.
+Use Builder via [CDD-6] Index (`cdd-index`) only when an index refresh is the delegated action.
+Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
+Explain why [CDD-7] Maintain (`cdd-maintain`) is a manual helper rather than part of the normal flow.
+Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), or [CDD-5] Refactor (`cdd-refactor`) directly in Master Chef when setup, planning, or refactor decomposition is needed.
+Explain why [CDD-4] Audit + Implement (`cdd-audit-and-implement`) is excluded from the normal flow.
 ```
 
 - [ ] Expected:
-  - `cdd-boot` is called out as a manual / non-routed helper
-  - `cdd-maintain` is called out as a manual / non-routed helper
-  - `cdd-implement-todo` is the default Builder path
-  - `cdd-index` is treated as a delegated exception, not the default
-  - `cdd-init-project`, `cdd-plan`, and `cdd-refactor` are treated as Master-Chef-direct skills
-  - `cdd-audit-and-implement` is called out as excluded / non-default
+  - `[CDD-0] Boot` is called out as a manual / non-routed helper
+  - `[CDD-7] Maintain` is called out as a manual / non-routed helper
+  - `[CDD-3] Implement TODO` is the default Builder path
+  - `[CDD-6] Index` is treated as a delegated exception, not the default
+  - `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` are treated as Master-Chef-direct skills
+  - `[CDD-4] Audit + Implement` is called out as excluded / non-default
 
 ### Prompt I - Continue the run
 

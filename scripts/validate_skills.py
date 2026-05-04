@@ -26,6 +26,29 @@ import tempfile
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
 MULTILINE_VALUE_RE = re.compile(r"^[a-zA-Z0-9_-]+:\s*[|>]\s*$", re.M)
 
+CDD_DISPLAY_NAMES = {
+    "cdd-boot": "[CDD-0] Boot",
+    "cdd-init-project": "[CDD-1] Init Project",
+    "cdd-plan": "[CDD-2] Plan",
+    "cdd-implement-todo": "[CDD-3] Implement TODO",
+    "cdd-audit-and-implement": "[CDD-4] Audit + Implement",
+    "cdd-refactor": "[CDD-5] Refactor",
+    "cdd-index": "[CDD-6] Index",
+    "cdd-maintain": "[CDD-7] Maintain",
+}
+CDD_CORE_LABELS = tuple(CDD_DISPLAY_NAMES.values())
+MASTER_CHEF_LABEL = "[CDD-8] Master Chef"
+OPENCLAW_ROUTING_LABELS = (
+    "[CDD-0] Boot",
+    "[CDD-1] Init Project",
+    "[CDD-2] Plan",
+    "[CDD-3] Implement TODO",
+    "[CDD-4] Audit + Implement",
+    "[CDD-5] Refactor",
+    "[CDD-6] Index",
+    "[CDD-7] Maintain",
+)
+
 
 def frontmatter(path: Path) -> str:
     """Return frontmatter text for a SKILL.md file or raise with a clear error."""
@@ -618,6 +641,11 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     openai_yaml = skill_dir / "agents" / "openai.yaml"
     assert openai_yaml.exists(), f"missing {openai_yaml}"
     yaml_text = openai_yaml.read_text(encoding="utf-8")
+    expected_display_name = CDD_DISPLAY_NAMES.get(skill_dir.name)
+    assert expected_display_name, f"missing display-name mapping for {skill_dir.name}"
+    assert f'display_name: "{expected_display_name}"' in yaml_text, (
+        f"unexpected display name in {openai_yaml}"
+    )
     assert "allow_implicit_invocation: false" in yaml_text, (
         f"implicit invocation not disabled in {openai_yaml}"
     )
@@ -665,8 +693,9 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     runbook_md = shared_root / "RUNBOOK.md"
     matrix_md = shared_root / "RUNTIME-CAPABILITIES.md"
     root_readme_md = repo_root / "README.md"
+    install_sh = repo_root / "scripts" / "install.sh"
 
-    for path in (readme_md, contract_md, runbook_md, matrix_md, root_readme_md):
+    for path in (readme_md, contract_md, runbook_md, matrix_md, root_readme_md, install_sh):
         assert path.exists(), f"missing {path}"
 
     readme_text = readme_md.read_text(encoding="utf-8")
@@ -674,16 +703,19 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     runbook_text = runbook_md.read_text(encoding="utf-8")
     matrix_text = matrix_md.read_text(encoding="utf-8")
     root_readme_text = root_readme_md.read_text(encoding="utf-8")
+    install_text = install_sh.read_text(encoding="utf-8")
 
     require_substrings(
         readme_text,
         (
+            MASTER_CHEF_LABEL,
             "`CONTRACT.md`",
             "`RUNBOOK.md`",
             "`RUNTIME-CAPABILITIES.md`",
             "`CODEX-ADAPTER.md`",
             "`CLAUDE-ADAPTER.md`",
             "`openclaw/`",
+            "`skills/` remains the canonical Builder workflow source for the core `[CDD-0]` through `[CDD-7]` `cdd-*` skills.",
         ),
         readme_md,
         "shared contract index entries",
@@ -758,16 +790,30 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
 
     require_substrings(
         root_readme_text,
-        (
+        CDD_CORE_LABELS
+        + (
+            MASTER_CHEF_LABEL,
             "master-chef/RUNBOOK.md",
             "master-chef/CODEX-ADAPTER.md",
             "master-chef/CLAUDE-ADAPTER.md",
             "master-chef/RUNTIME-CAPABILITIES.md",
             "./scripts/install.sh --runtime claude",
             "./scripts/install.sh --runtime openclaw",
+            "Use the core `cdd-*` loop when you want a single coding agent",
+            "Use `[CDD-8] Master Chef` when you want an autonomous run after kickoff approval",
         ),
         root_readme_md,
         "root README Master Chef install references",
+    )
+    require_substrings(
+        install_text,
+        (
+            '[CDD-8] Master Chef shared contract reference package for ${label}.',
+            "# [CDD-8] Master Chef",
+            "This package is the shared \\`[CDD-8] Master Chef\\` contract and adapter documentation bundle.",
+        ),
+        install_sh,
+        "installer Master Chef taxonomy",
     )
 
 
@@ -942,7 +988,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_headings(
         skill_text,
         (
-            "# CDD Master Chef",
+            "# [CDD-8] Master Chef",
             "Canonical `run.json` fields:",
             "Report events:",
             "Reporting surface:",
@@ -959,7 +1005,8 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             "- `worktree_continue_mode`",
             "- `STEP_PASS`",
             "- `DEADLOCK_STOPPED`",
-        ),
+        )
+        + OPENCLAW_ROUTING_LABELS,
         skill_md,
         "OpenClaw skill runtime tokens",
     )
@@ -978,11 +1025,13 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_substrings(
         runbook_text,
         (
+            MASTER_CHEF_LABEL,
             "~/.openclaw/skills/cdd-master-chef",
             "./scripts/install.sh --runtime openclaw",
             "worktree_continue_mode",
             "context-summary.md",
-        ),
+        )
+        + OPENCLAW_ROUTING_LABELS,
         runbook_md,
         "OpenClaw runbook runtime tokens",
     )
@@ -990,11 +1039,13 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_substrings(
         readme_text,
         (
+            MASTER_CHEF_LABEL,
             "~/.openclaw/skills/cdd-master-chef",
             "./scripts/install.sh --runtime openclaw",
             ".cdd-runtime/master-chef/context-summary.md",
             "STEP_PASS",
-        ),
+        )
+        + OPENCLAW_ROUTING_LABELS,
         readme_md,
         "OpenClaw README runtime references",
     )
@@ -1002,11 +1053,13 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_substrings(
         harness_text,
         (
+            MASTER_CHEF_LABEL,
             "Prompt J - QA reject remediation",
             "Prompt L - Blocked-step decomposition",
             "Prompt N - Context compaction and resume",
             "Dirty checkout refusal",
-        ),
+        )
+        + OPENCLAW_ROUTING_LABELS,
         harness_md,
         "OpenClaw harness coverage",
     )

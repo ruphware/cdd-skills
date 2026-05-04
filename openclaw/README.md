@@ -1,6 +1,6 @@
-# cdd-master-chef
+# [CDD-8] Master Chef
 
-This folder is the source for the OpenClaw adapter of the shared `cdd-master-chef` workflow.
+This folder is the source for the current OpenClaw adapter of `[CDD-8] Master Chef`.
 
 Shared contract surfaces now live in the repo-level `master-chef/` directory:
 
@@ -16,6 +16,17 @@ Installed form:
 - `/cdd-master-chef`
 
 `./scripts/install.sh --runtime openclaw` installs this adapter plus OpenClaw-ready internal Builder variants of the full `cdd-*` skill pack into `~/.openclaw/skills`. Those Builder skills are generated from the canonical repo source in `skills/` and are meant for Master Chef and the Builder subagent, not for direct user invocation.
+
+The internal Builder routing map stays aligned with the core skill pack:
+
+- `[CDD-0] Boot` -> `cdd-boot`
+- `[CDD-1] Init Project` -> `cdd-init-project`
+- `[CDD-2] Plan` -> `cdd-plan`
+- `[CDD-3] Implement TODO` -> `cdd-implement-todo`
+- `[CDD-4] Audit + Implement` -> `cdd-audit-and-implement`
+- `[CDD-5] Refactor` -> `cdd-refactor`
+- `[CDD-6] Index` -> `cdd-index`
+- `[CDD-7] Maintain` -> `cdd-maintain`
 
 ## What it does
 
@@ -91,15 +102,15 @@ Uninstall:
 
 `./scripts/install.sh --runtime openclaw` installs:
 
-- `cdd-master-chef`
-- `cdd-boot`
-- `cdd-maintain`
-- `cdd-init-project`
-- `cdd-plan`
-- `cdd-implement-todo`
-- `cdd-index`
-- `cdd-audit-and-implement`
-- `cdd-refactor`
+- `[CDD-8] Master Chef` -> `cdd-master-chef`
+- `[CDD-0] Boot` -> `cdd-boot`
+- `[CDD-7] Maintain` -> `cdd-maintain`
+- `[CDD-1] Init Project` -> `cdd-init-project`
+- `[CDD-2] Plan` -> `cdd-plan`
+- `[CDD-3] Implement TODO` -> `cdd-implement-todo`
+- `[CDD-6] Index` -> `cdd-index`
+- `[CDD-4] Audit + Implement` -> `cdd-audit-and-implement`
+- `[CDD-5] Refactor` -> `cdd-refactor`
 
 The internal Builder variants are model-visible to OpenClaw agent runs and hidden from the user slash-command surface.
 
@@ -115,7 +126,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    /model <master-model>
    ```
 
-4. Start Master Chef in the target repo or new project folder:
+4. Start `[CDD-8] Master Chef` in the target repo or new project folder:
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
@@ -127,7 +138,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 5. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
-   - choose the routing path: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master-Chef-direct planning or refactor work
+   - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct planning or refactor work
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
      - the proposed next action and routing path
@@ -179,7 +190,7 @@ Master Chef chooses the internal routing path.
 Default delegated path:
 
 - Master Chef chooses the next runnable TODO step
-- Builder uses the internal OpenClaw `cdd-implement-todo` skill for that step in a fresh one-step run
+- Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step in a fresh one-step run
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
 - If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
@@ -189,22 +200,22 @@ Default delegated path:
 
 Delegated exception:
 
-- `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action
+- `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh as the delegated action
 
 Manual helper:
 
-- `cdd-boot` for best-effort repo context ingestion when a human wants a vanilla `AGENTS.md` boot; it is installed in the shared pack but is not part of the normal Master Chef routing flow
-- `cdd-maintain` for archive cleanup, support-doc drift review, and code-health review; it is installed in the shared pack but is not part of the normal Master Chef routing flow
+- `[CDD-0] Boot` (`cdd-boot`) for best-effort repo context ingestion when a human wants a vanilla `AGENTS.md` boot; it is installed in the shared pack but is not part of the normal Master Chef routing flow
+- `[CDD-7] Maintain` (`cdd-maintain`) for archive cleanup, support-doc drift review, and code-health review; it is installed in the shared pack but is not part of the normal Master Chef routing flow
 
 Master-Chef-direct path:
 
-- `cdd-init-project`, especially when the user wants a new project to start in CDD form
-- `cdd-plan`
-- `cdd-refactor`
+- `[CDD-1] Init Project` (`cdd-init-project`), especially when the user wants a new project to start in CDD form
+- `[CDD-2] Plan` (`cdd-plan`)
+- `[CDD-5] Refactor` (`cdd-refactor`)
 
 Excluded from the normal flow:
 
-- `cdd-audit-and-implement`, because it mixes roles in a way that does not fit the clean Master Chef / Builder split
+- `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`), because it mixes roles in a way that does not fit the clean Master Chef / Builder split
 
 ## Validation
 

@@ -1,5 +1,5 @@
 interface:
-  display_name: "CDD 03 Implement TODO"
+  display_name: "[CDD-3] Implement TODO"
   short_description: "Implement one TODO step → checks → mark TODO done → report"
 policy:
   allow_implicit_invocation: false

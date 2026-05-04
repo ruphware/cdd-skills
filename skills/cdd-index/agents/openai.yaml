@@ -1,5 +1,5 @@
 interface:
-  display_name: "CDD 06 Index"
+  display_name: "[CDD-6] Index"
   short_description: "Plan, refresh, validate, and review docs/INDEX.md"
 policy:
   allow_implicit_invocation: false

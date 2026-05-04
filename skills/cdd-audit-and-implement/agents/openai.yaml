@@ -1,5 +1,5 @@
 interface:
-  display_name: "CDD 04 Audit + Implement"
+  display_name: "[CDD-4] Audit + Implement"
   short_description: "Interactive audit planning → TODO steps → implement first step (two approvals)"
 policy:
   allow_implicit_invocation: false

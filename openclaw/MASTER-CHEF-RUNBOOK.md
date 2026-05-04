@@ -1,8 +1,8 @@
-# CDD Master Chef Runbook (OpenClaw adapter)
+# [CDD-8] Master Chef Runbook (OpenClaw adapter)
 
 ## 0) Purpose
 
-This runbook is the OpenClaw adapter over the shared Master Chef contract.
+This runbook is the OpenClaw adapter over the shared `[CDD-8] Master Chef` contract.
 
 Use the source repo's `master-chef/` docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
@@ -157,11 +157,11 @@ On the first `/cdd-master-chef` turn:
    - obvious blockers in the working tree
    - whether the repo first needs `cdd-init-project`
 3. Choose the next action and route it through the right internal skill:
-   - bootstrap path: `cdd-init-project` in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
-   - default delegated path: next runnable TODO step handled through `cdd-implement-todo`
-   - delegated exception: `cdd-index` when Master Chef explicitly wants an index refresh
-   - Master Chef direct: `cdd-init-project`, `cdd-plan`, or `cdd-refactor` when the repo needs setup, plan repair, or refactor decomposition before Builder work
-   - excluded by default: `cdd-audit-and-implement`, unless the process is intentionally adapted for its mixed role
+   - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
+   - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+   - delegated exception: `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh
+   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), or `[CDD-5] Refactor` (`cdd-refactor`) when the repo needs setup, plan repair, or refactor decomposition before Builder work
+   - excluded by default: `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`), unless the process is intentionally adapted for its mixed role
 4. Confirm the approved Run config:
    - `master_model`
    - `master_thinking`
@@ -348,23 +348,23 @@ Master Chef chooses the routing path.
 
 **Builder delegated by default:**
 
-- `cdd-implement-todo` — normal path for one approved runnable TODO step
-- `cdd-index` — allowed when Master Chef explicitly wants an index refresh as the delegated action
+- `[CDD-3] Implement TODO` (`cdd-implement-todo`) — normal path for one approved runnable TODO step
+- `[CDD-6] Index` (`cdd-index`) — allowed when Master Chef explicitly wants an index refresh as the delegated action
 
 **Manual / non-routed helper:**
 
-- `cdd-boot` — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
-- `cdd-maintain` — archive cleanup, support-doc drift review, and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `[CDD-0] Boot` (`cdd-boot`) — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `[CDD-7] Maintain` (`cdd-maintain`) — archive cleanup, support-doc drift review, and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
 
 **Master Chef direct:**
 
-- `cdd-init-project`
-- `cdd-plan`
-- `cdd-refactor`
+- `[CDD-1] Init Project` (`cdd-init-project`)
+- `[CDD-2] Plan` (`cdd-plan`)
+- `[CDD-5] Refactor` (`cdd-refactor`)
 
 **Excluded from the normal flow:**
 
-- `cdd-audit-and-implement` — avoid by default because it mixes roles in a way that conflicts with the clean Master Chef / Builder split
+- `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`) — avoid by default because it mixes roles in a way that conflicts with the clean Master Chef / Builder split
 
 Default spawn shape:
 

@@ -787,12 +787,12 @@ Organize the visible CDD skill map as `[CDD-0]` through `[CDD-8]`, with `[CDD-8]
 
 ### Tasks
 
-- [ ] Update `README.md` so the primary skill map lists `[CDD-0] Boot` through `[CDD-8] Master Chef`, removes redundant Basic Commands / Golden path drift, and states when to use the core loop versus Master Chef.
-- [ ] Update `skills/*/agents/openai.yaml` display names to `[CDD-0]` through `[CDD-7]` and keep short descriptions aligned with the public skill map.
-- [ ] Update `master-chef/README.md` so it identifies Master Chef as `[CDD-8] Master Chef` and clarifies that it is a separate shared contract for autonomous development.
-- [ ] Update `openclaw/SKILL.md`, `openclaw/README.md`, `openclaw/MASTER-CHEF-RUNBOOK.md`, and `openclaw/MASTER-CHEF-TEST-HARNESS.md` so OpenClaw docs use the same `[CDD-8] Master Chef` label and show the internal `[CDD-0]` through `[CDD-7]` routing map where skill routing is explained.
-- [ ] Update `scripts/install.sh` so the generated documentation-only `cdd-master-chef` package introduces itself as `[CDD-8] Master Chef`.
-- [ ] Extend `scripts/validate_skills.py` to assert the numbered taxonomy in README, core skill display metadata, Master Chef docs, and OpenClaw routing/test harness coverage.
+- [x] Update `README.md` so the primary skill map lists `[CDD-0] Boot` through `[CDD-8] Master Chef`, removes redundant Basic Commands / Golden path drift, and states when to use the core loop versus Master Chef.
+- [x] Update `skills/*/agents/openai.yaml` display names to `[CDD-0]` through `[CDD-7]` and keep short descriptions aligned with the public skill map.
+- [x] Update `master-chef/README.md` so it identifies Master Chef as `[CDD-8] Master Chef` and clarifies that it is a separate shared contract for autonomous development.
+- [x] Update `openclaw/SKILL.md`, `openclaw/README.md`, `openclaw/MASTER-CHEF-RUNBOOK.md`, and `openclaw/MASTER-CHEF-TEST-HARNESS.md` so OpenClaw docs use the same `[CDD-8] Master Chef` label and show the internal `[CDD-0]` through `[CDD-7]` routing map where skill routing is explained.
+- [x] Update `scripts/install.sh` so the generated documentation-only `cdd-master-chef` package introduces itself as `[CDD-8] Master Chef`.
+- [x] Extend `scripts/validate_skills.py` to assert the numbered taxonomy in README, core skill display metadata, Master Chef docs, and OpenClaw routing/test harness coverage.
 
 ### Implementation notes
 
@@ -807,6 +807,6 @@ Use this exact public map:
 
 ### UAT
 
-- [ ] Confirm `README.md` shows the full `[CDD-0]` through `[CDD-8]` map.
-- [ ] Confirm Master Chef is visibly separate and described as starting autonomous development.
-- [ ] Confirm OpenClaw routing docs and test harness use the same labels without changing behavior.
+- [x] Confirm `README.md` shows the full `[CDD-0]` through `[CDD-8]` map.
+- [x] Confirm Master Chef is visibly separate and described as starting autonomous development.
+- [x] Confirm OpenClaw routing docs and test harness use the same labels without changing behavior.

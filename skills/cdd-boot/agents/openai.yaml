@@ -1,5 +1,5 @@
 interface:
-  display_name: "CDD 00 Boot"
+  display_name: "[CDD-0] Boot"
   short_description: "Vanilla role (AGENTS.md), project (README.md, ...), development (journal entrypoint + split journals) boot"
   default_prompt: "Use $cdd-boot to ingest AGENTS.md and assume the role. Read README.md, docs/INDEX.md, and docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them."
 policy:

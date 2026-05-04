@@ -113,15 +113,15 @@ emit_generic_master_chef_package() {
   mkdir -p "$dest_dir"
   cp -a "$MASTER_CHEF_SRC_ROOT/." "$dest_dir/"
 
-  cat >"$dest_dir/SKILL.md" <<EOF
+cat >"$dest_dir/SKILL.md" <<EOF
 ---
 name: cdd-master-chef
-description: Shared cdd-master-chef contract reference package for ${label}. Documentation-only install; use the included shared contract and runtime adapter docs.
+description: "[CDD-8] Master Chef shared contract reference package for ${label}. Documentation-only install; use the included shared contract and runtime adapter docs."
 disable-model-invocation: true
 ---
-# cdd-master-chef
+# [CDD-8] Master Chef
 
-This package is the shared \`cdd-master-chef\` contract and adapter documentation bundle.
+This package is the shared \`[CDD-8] Master Chef\` contract and adapter documentation bundle.
 
 - It is documentation-only in this runtime target today.
 - The packaged runnable adapter currently remains the OpenClaw runtime.
