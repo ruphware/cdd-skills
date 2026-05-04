@@ -1,19 +1,13 @@
 # CDD Skills
 
-CDD workflow skills for agentic software engineering.
+Chat Driven Development workflow skills for controlled agentic software engineering.
 
 ## Quick Install
 
-Install the full repo skill set, including `[CDD-8] Master Chef`, for Codex, Claude Code, Gemini CLI and others (adjust):
+Install the full repo skill set, for Codex, Claude Code, Gemini CLI and others (adjust):
 
 ```bash
 npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a claude-code -a gemini-cli -g
-```
-
-If you want only the core `[CDD-0]` through `[CDD-7]` pack, install from `skills/` directly:
-
-```bash
-npx skills add https://github.com/ruphware/cdd-skills/tree/main/skills --skill '*' -a codex -a claude-code -a gemini-cli -g
 ```
 
 ## Skill Map
@@ -30,8 +24,8 @@ npx skills add https://github.com/ruphware/cdd-skills/tree/main/skills --skill '
 
 ## When to Use What
 
-- Use the core `cdd-*` loop when you want a single coding agent, explicit human approvals, and one approved TODO step at a time.
-- Use `[CDD-8] Master Chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
+- Use the core `$cdd-*` loop when you want a single coding agent, explicit human approvals, and one approved TODO step at a time.
+- Use `$cdd-master-chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
 
 ## What's Included
 
@@ -221,20 +215,16 @@ For the core single-agent workflow:
 - use `[CDD-7] Maintain` when you want archive cleanup, support-doc review, and code-health review without entering a normal implementation step
 - use `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-3] Implement TODO`, `[CDD-5] Refactor`, and `[CDD-6] Index` directly from Codex CLI or Claude Code when you want the structured CDD loop
 
-For current Codex or Claude Code `[CDD-8] Master Chef` adapter work:
+For `[CDD-8] Master Chef`:
 
-- review `cdd-master-chef/CODEX-ADAPTER.md` + `cdd-master-chef/CODEX-RUNBOOK.md` for Codex
-- review `cdd-master-chef/CLAUDE-ADAPTER.md` + `cdd-master-chef/CLAUDE-RUNBOOK.md` for Claude Code
-- treat those as the current subagent-backed adapter paths in development
-- treat other subagent-capable coding tools or autonomous systems, including Hermes-style runtimes, as future adapter targets unless and until an adapter is added to this package
-
-For the current OpenClaw `[CDD-8] Master Chef` runtime path:
-
-- install the OpenClaw adapter with `./scripts/install.sh --runtime openclaw`
-- prepare one Run config block and set the main session to `master_model` from that block with `/model <master-model>`
-- launch `/cdd-master-chef` from the OpenClaw session you want to use as `[CDD-8] Master Chef`
+- install the full repo skill set for Codex or Claude Code with `npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a claude-code -g`, or use `./scripts/install.sh --all`
+- for OpenClaw, use `./scripts/install.sh --runtime openclaw` or `./scripts/install.sh --all` so the internal Builder skills are generated too
+- start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw
+- provide one Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
 - let Master Chef inspect the repo, propose the next TODO step, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
-- after kickoff, expect Master Chef to handle Builder checks directly in the main session, replace stale Builders quickly with fresh one-step runs, avoid normal session resurrection, stop after repeated failed replacements, and keep lifecycle reporting in that same session
+- after kickoff, expect Master Chef to manage one-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting in the main session
+
+Adapter docs are for maintainers, debugging, and adding runtime support. Use `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md` for Codex-specific adapter behavior, `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md` for Claude Code-specific adapter behavior, and `cdd-master-chef/openclaw/` for the OpenClaw adapter.
 
 
 ## License

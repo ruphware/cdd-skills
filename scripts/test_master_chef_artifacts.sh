@@ -74,6 +74,9 @@ echo "[MasterChefArtifacts] INFO RootInstallStory file={README.md}"
 for token in \
   "npx skills add https://github.com/ruphware/cdd-skills/" \
   "./scripts/install.sh --all" \
+  "For \`[CDD-8] Master Chef\`:" \
+  "start \`cdd-master-chef\` from the main session for the runtime you want to control" \
+  "Adapter docs are for maintainers, debugging, and adding runtime support." \
   "Current concrete adapters in this repo:" \
   "- OpenClaw — current packaged adapter, installed with \`./scripts/install.sh --runtime openclaw\`" \
   "- Codex — current subagent-backed adapter docs in \`cdd-master-chef/CODEX-ADAPTER.md\` and \`cdd-master-chef/CODEX-RUNBOOK.md\`" \
@@ -86,7 +89,9 @@ for token in \
   "docs-only surrogate" \
   "very experimental" \
   "the current OpenClaw adapter fits your runtime" \
-  "only packaged Master Chef runtime"; do
+  "only packaged Master Chef runtime" \
+  "For current Codex or Claude Code \`[CDD-8] Master Chef\` adapter work:" \
+  "treat those as the current subagent-backed adapter paths in development"; do
   assert_not_contains "$ROOT_DIR/README.md" "$token"
 done
 
