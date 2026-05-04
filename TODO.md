@@ -746,11 +746,11 @@ Replace the current phrase-by-phrase `scripts/validate_skills.py` approach with 
 
 ### Tasks
 
-- [ ] Audit `scripts/validate_skills.py` and classify each current assertion as structural, generated-artifact, or fragile prose match.
-- [ ] Remove or shrink the fragile prose-match layer after equivalent stronger coverage exists in shell tests, fixture-based tests, or narrower schema checks.
-- [ ] Add executable coverage for Master Chef packaging and contract artifacts, using `scripts/test_installers.sh`, `scripts/test-skill-audit.sh`, and any new focused smoke-test script needed for shared Master Chef surfaces.
-- [ ] Ensure the remaining validation checks generated adapter artifacts, required frontmatter, installer outputs, runtime-state field presence, and any deterministic capability-matrix surface instead of exact explanatory sentences.
-- [ ] Update `TODO.md` validation commands for the new test split if `python3 scripts/validate_skills.py` is no longer the primary contract gate.
+- [x] Audit `scripts/validate_skills.py` and classify each current assertion as structural, generated-artifact, or fragile prose match.
+- [x] Remove or shrink the fragile prose-match layer after equivalent stronger coverage exists in shell tests, fixture-based tests, or narrower schema checks.
+- [x] Add executable coverage for Master Chef packaging and contract artifacts, using `scripts/test_installers.sh`, `scripts/test-skill-audit.sh`, and any new focused smoke-test script needed for shared Master Chef surfaces.
+- [x] Ensure the remaining validation checks generated adapter artifacts, required frontmatter, installer outputs, runtime-state field presence, and any deterministic capability-matrix surface instead of exact explanatory sentences.
+- [x] Update `TODO.md` validation commands for the new test split if `python3 scripts/validate_skills.py` is no longer the primary contract gate.
 
 ### Implementation notes
 
@@ -761,12 +761,13 @@ Replace the current phrase-by-phrase `scripts/validate_skills.py` approach with 
 ### Automated checks
 
 - `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
 - `bash scripts/test_installers.sh`
 - `bash scripts/test-skill-audit.sh --skip-remote`
 
 ### UAT
 
-- Confirm fragile literal text assertions are no longer the primary contract gate.
-- Confirm remaining Python validation is structural rather than prose-driven.
-- Confirm executable tests cover installer outputs and shared Master Chef artifacts.
-- Confirm the documented validation flow still runs locally without network access.
+- [x] Confirm fragile literal text assertions are no longer the primary contract gate.
+- [x] Confirm remaining Python validation is structural rather than prose-driven.
+- [x] Confirm executable tests cover installer outputs and shared Master Chef artifacts.
+- [x] Confirm the documented validation flow still runs locally without network access.

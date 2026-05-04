@@ -1,11 +1,21 @@
-"""Validate Builder and OpenClaw skill structure for this repo.
+"""Validate CDD skill, generator, and contract structure for this repo.
 
 Example:
   python3 scripts/validate_skills.py
+
+Validation layers:
+  - Structural checks: default. Frontmatter, required files, generated artifact
+    shape, markdown headings, installer/runtime file references.
+  - Generated-artifact checks: default. Runtime Builder generation and package
+    layout invariants.
+  - Legacy prose checks: opt-in with ``--include-legacy-prose``. These preserve
+    older exact-sentence contract assertions for canonical skill bodies, but
+    they are no longer the primary contract gate.
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import re
 import subprocess
@@ -39,6 +49,41 @@ def require_any_substring(
 ) -> None:
     """Assert that at least one expected phrase exists in the given skill text."""
     assert any(phrase in skill_text for phrase in phrases), f"missing {label} in {path}"
+
+
+def require_substrings(
+    text: str, patterns: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that every expected token exists in the given text."""
+    missing = [pattern for pattern in patterns if pattern not in text]
+    assert not missing, f"missing {label} in {path}: {', '.join(missing)}"
+
+
+def require_headings(
+    text: str, headings: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that the markdown text contains the required headings."""
+    require_substrings(text, headings, path, label)
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI args for structural versus legacy validation modes."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Validate repo-local CDD skills, generators, and Master Chef contract "
+            "artifacts. Default mode is structural/generated only."
+        )
+    )
+    parser.add_argument(
+        "--include-legacy-prose",
+        action="store_true",
+        help=(
+            "Also run older exact-sentence contract assertions for canonical skill "
+            "bodies. These are retained for spot-checking, but are not the primary "
+            "gate."
+        ),
+    )
+    return parser.parse_args(argv)
 
 
 def validate_coarse_step_planning(skill_text: str, skill_md: Path) -> None:
@@ -555,7 +600,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
     )
 
 
-def validate_builder_skill(skill_dir: Path) -> None:
+def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     """Validate one Builder skill directory under skills/."""
     skill_md = skill_dir / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
@@ -577,42 +622,43 @@ def validate_builder_skill(skill_dir: Path) -> None:
         f"implicit invocation not disabled in {openai_yaml}"
     )
 
-    if skill_dir.name == "cdd-implement-todo":
-        assert "update only the selected step in the active `TODO*.md` file" in skill_text, (
-            f"TODO completion writeback missing in {skill_md}"
-        )
-        assert "Do not add a new step-level `Status:` field" in skill_text, (
-            f"TODO completion guardrail missing in {skill_md}"
-        )
-        validate_implement_todo_skill_text(skill_text, skill_md)
-    if skill_dir.name == "cdd-boot":
-        validate_boot_skill_text(skill_text, skill_md)
-        assert "development (journal entrypoint + split journals) boot" in yaml_text, (
-            f"boot prompt short description missing split-journal wording in {openai_yaml}"
-        )
-        assert "Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them." in yaml_text, (
-            f"boot default prompt missing split-journal wording in {openai_yaml}"
-        )
-    if skill_dir.name == "cdd-maintain":
-        validate_maintain_skill_text(skill_text, skill_md)
-    if skill_dir.name == "cdd-init-project":
-        validate_init_project_skill_text(skill_text, skill_md)
-    if skill_dir.name in {"cdd-plan", "cdd-audit-and-implement"}:
-        validate_coarse_step_planning(skill_text, skill_md)
-        validate_reviewed_contract_artifacts(skill_text, skill_md)
-    if skill_dir.name == "cdd-audit-and-implement":
-        validate_audit_and_implement_skill_text(skill_text, skill_md)
-    if skill_dir.name in {
-        "cdd-plan",
-        "cdd-init-project",
-        "cdd-refactor",
-        "cdd-audit-and-implement",
-    }:
-        validate_selector_labeled_options(skill_text, skill_md)
+    if include_legacy_prose:
+        if skill_dir.name == "cdd-implement-todo":
+            assert "update only the selected step in the active `TODO*.md` file" in skill_text, (
+                f"TODO completion writeback missing in {skill_md}"
+            )
+            assert "Do not add a new step-level `Status:` field" in skill_text, (
+                f"TODO completion guardrail missing in {skill_md}"
+            )
+            validate_implement_todo_skill_text(skill_text, skill_md)
+        if skill_dir.name == "cdd-boot":
+            validate_boot_skill_text(skill_text, skill_md)
+            assert "development (journal entrypoint + split journals) boot" in yaml_text, (
+                f"boot prompt short description missing split-journal wording in {openai_yaml}"
+            )
+            assert "Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them." in yaml_text, (
+                f"boot default prompt missing split-journal wording in {openai_yaml}"
+            )
+        if skill_dir.name == "cdd-maintain":
+            validate_maintain_skill_text(skill_text, skill_md)
+        if skill_dir.name == "cdd-init-project":
+            validate_init_project_skill_text(skill_text, skill_md)
+        if skill_dir.name in {"cdd-plan", "cdd-audit-and-implement"}:
+            validate_coarse_step_planning(skill_text, skill_md)
+            validate_reviewed_contract_artifacts(skill_text, skill_md)
+        if skill_dir.name == "cdd-audit-and-implement":
+            validate_audit_and_implement_skill_text(skill_text, skill_md)
+        if skill_dir.name in {
+            "cdd-plan",
+            "cdd-init-project",
+            "cdd-refactor",
+            "cdd-audit-and-implement",
+        }:
+            validate_selector_labeled_options(skill_text, skill_md)
 
 
 def validate_master_chef_shared_contract(repo_root: Path) -> None:
-    """Validate the shared Master Chef contract surfaces."""
+    """Validate shared Master Chef contract artifacts structurally."""
     shared_root = repo_root / "master-chef"
     readme_md = shared_root / "README.md"
     contract_md = shared_root / "CONTRACT.md"
@@ -629,121 +675,104 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     matrix_text = matrix_md.read_text(encoding="utf-8")
     root_readme_text = root_readme_md.read_text(encoding="utf-8")
 
-    assert "shared source of truth" in readme_text, (
-        f"shared Master Chef source-of-truth wording missing in {readme_md}"
-    )
-    assert "Runtime adapters consume that shared contract" in readme_text, (
-        f"runtime adapter framing missing in {readme_md}"
-    )
-    assert "`CONTRACT.md`" in readme_text and "`RUNTIME-CAPABILITIES.md`" in readme_text, (
-        f"shared contract index missing in {readme_md}"
-    )
-    assert "`RUNBOOK.md`" in readme_text, (
-        f"shared runbook index missing in {readme_md}"
-    )
-    assert "`openclaw/`" in readme_text, (
-        f"OpenClaw adapter reference missing in {readme_md}"
-    )
-    assert "`CODEX-ADAPTER.md`" in readme_text and "`CODEX-RUNBOOK.md`" in readme_text, (
-        f"Codex adapter index missing in {readme_md}"
-    )
-    assert "`CLAUDE-ADAPTER.md`" in readme_text and "`CLAUDE-RUNBOOK.md`" in readme_text, (
-        f"Claude adapter index missing in {readme_md}"
-    )
-    assert "OpenClaw remains the only packaged installer path" in readme_text, (
-        f"adapter-packaging relationship missing in {readme_md}"
+    require_substrings(
+        readme_text,
+        (
+            "`CONTRACT.md`",
+            "`RUNBOOK.md`",
+            "`RUNTIME-CAPABILITIES.md`",
+            "`CODEX-ADAPTER.md`",
+            "`CLAUDE-ADAPTER.md`",
+            "`openclaw/`",
+        ),
+        readme_md,
+        "shared contract index entries",
     )
 
-    assert "runtime-agnostic source of truth" in contract_text, (
-        f"runtime-agnostic contract wording missing in {contract_md}"
+    require_headings(
+        contract_text,
+        (
+            "## 3) Durable runtime state",
+            "## 6) Managed worktree lifecycle",
+            "## 11) Runtime adapter obligations",
+        ),
+        contract_md,
+        "shared contract headings",
     )
-    assert ".cdd-runtime/master-chef/run.json" in contract_text, (
-        f"durable runtime state missing in {contract_md}"
-    )
-    assert "Builder default: `cdd-implement-todo` for the next runnable TODO step." in contract_text, (
-        f"default Builder routing contract missing in {contract_md}"
-    )
-    assert "One Builder run equals one approved delegated action." in contract_text, (
-        f"one-step Builder-run contract missing in {contract_md}"
-    )
-    assert "managed worktree" in contract_text, (
-        f"managed worktree contract missing in {contract_md}"
-    )
-    assert "source_repo" in contract_text and "active_worktree_path" in contract_text, (
-        f"worktree runtime-state fields missing in {contract_md}"
-    )
-    assert "worktree_continue_mode" in contract_text, (
-        f"worktree continuation mode missing in {contract_md}"
-    )
-    assert "if QA rejects the Builder result" in contract_text, (
-        f"QA remediation contract missing in {contract_md}"
-    )
-    assert "restart only from the next smaller actionable TODO step" in contract_text, (
-        f"smaller-step restart contract missing in {contract_md}"
-    )
-    assert "Runtime adapters must define:" in contract_text, (
-        f"runtime adapter obligation section missing in {contract_md}"
-    )
-    assert "Before kickoff, the source checkout must be clean." in runbook_text, (
-        f"clean-checkout preflight missing in {runbook_md}"
-    )
-    assert ".cdd-runtime/master-chef/worktrees/<run-id>/" in runbook_text, (
-        f"managed worktree path rule missing in {runbook_md}"
-    )
-    assert "stop with exact relaunch instructions" in runbook_text, (
-        f"relaunch-required rule missing in {runbook_md}"
-    )
-    assert "source_repo" in runbook_text and "active_worktree_path" in runbook_text, (
-        f"worktree metadata fields missing in {runbook_md}"
+    require_substrings(
+        contract_text,
+        (
+            ".cdd-runtime/master-chef/run.json",
+            "- `source_repo`",
+            "- `active_worktree_path`",
+            "- `worktree_continue_mode`",
+            "- `builder_restart_count`",
+            "- `current_blocker`",
+            "- `STEP_PASS`",
+            "- `RUN_COMPLETE`",
+        ),
+        contract_md,
+        "shared contract runtime-state fields",
     )
 
-    assert "OpenClaw" in matrix_text and "Codex" in matrix_text and "Claude Code" in matrix_text, (
-        f"runtime capability matrix entries missing in {matrix_md}"
+    require_headings(
+        runbook_text,
+        (
+            "## 1) Managed worktree policy",
+            "## 2) Runtime-state additions",
+            "## 3) Continuation decision rule",
+            "## 4) Active worktree behavior",
+            "## 5) Cleanup",
+        ),
+        runbook_md,
+        "shared runbook headings",
     )
-    assert ".codex/agents/*.toml" in matrix_text, (
-        f"Codex agent surface missing in {matrix_md}"
-    )
-    assert ".claude/agents/" in matrix_text and "~/.claude/agents/" in matrix_text, (
-        f"Claude agent surfaces missing in {matrix_md}"
-    )
-    assert "--agents" in matrix_text and "--worktree" in matrix_text, (
-        f"Claude CLI capability notes missing in {matrix_md}"
-    )
-    assert "stop with relaunch instructions" in matrix_text, (
-        f"OpenClaw worktree continuation rule missing in {matrix_md}"
-    )
-    assert "`CODEX-ADAPTER.md`" in matrix_text and "`CLAUDE-ADAPTER.md`" in matrix_text, (
-        f"runtime adapter doc references missing in {matrix_md}"
+    require_substrings(
+        runbook_text,
+        (
+            ".cdd-runtime/master-chef/worktrees/<run-id>/",
+            "master-chef/<run-id>",
+            "- `source_repo`",
+            "- `active_worktree_path`",
+            "- `worktree_continue_mode`",
+        ),
+        runbook_md,
+        "shared runbook worktree fields",
     )
 
-    assert "upgrade is a shared multi-runtime contract rooted in `master-chef/`" in root_readme_text, (
-        f"root README shared-contract framing missing in {root_readme_md}"
+    require_substrings(
+        matrix_text,
+        (
+            "| OpenClaw |",
+            "| Codex |",
+            "| Claude Code |",
+            ".codex/agents/*.toml",
+            ".claude/agents/",
+            "~/.claude/agents/",
+            "`CODEX-ADAPTER.md`",
+            "`CLAUDE-ADAPTER.md`",
+        ),
+        matrix_md,
+        "runtime capability matrix entries",
     )
-    assert "shared operational runbook: `master-chef/RUNBOOK.md`" in root_readme_text, (
-        f"root README shared runbook reference missing in {root_readme_md}"
-    )
-    assert "Codex adapter docs: `master-chef/CODEX-ADAPTER.md` and `master-chef/CODEX-RUNBOOK.md`" in root_readme_text, (
-        f"root README Codex adapter reference missing in {root_readme_md}"
-    )
-    assert "Claude Code adapter docs: `master-chef/CLAUDE-ADAPTER.md` and `master-chef/CLAUDE-RUNBOOK.md`" in root_readme_text, (
-        f"root README Claude adapter reference missing in {root_readme_md}"
-    )
-    assert "`openclaw/`" in root_readme_text, (
-        f"root README OpenClaw adapter reference missing in {root_readme_md}"
-    )
-    assert "runtime capability matrix: `master-chef/RUNTIME-CAPABILITIES.md`" in root_readme_text, (
-        f"root README capability matrix reference missing in {root_readme_md}"
-    )
-    assert "Codex and Claude adapter docs now live under `master-chef/`, and the unified installer now ships a documentation-only `cdd-master-chef` package to core single-agent targets." in root_readme_text, (
-        f"root README adapter packaging note missing in {root_readme_md}"
-    )
-    assert "./scripts/install.sh --runtime openclaw" in root_readme_text, (
-        f"root README unified OpenClaw installer path missing in {root_readme_md}"
+
+    require_substrings(
+        root_readme_text,
+        (
+            "master-chef/RUNBOOK.md",
+            "master-chef/CODEX-ADAPTER.md",
+            "master-chef/CLAUDE-ADAPTER.md",
+            "master-chef/RUNTIME-CAPABILITIES.md",
+            "./scripts/install.sh --runtime claude",
+            "./scripts/install.sh --runtime openclaw",
+        ),
+        root_readme_md,
+        "root README Master Chef install references",
     )
 
 
 def validate_codex_adapter(repo_root: Path) -> None:
-    """Validate the Codex adapter contract, runbook, and harness."""
+    """Validate the Codex adapter artifacts structurally."""
     adapter_md = repo_root / "master-chef" / "CODEX-ADAPTER.md"
     runbook_md = repo_root / "master-chef" / "CODEX-RUNBOOK.md"
     harness_md = repo_root / "master-chef" / "CODEX-TEST-HARNESS.md"
@@ -755,51 +784,66 @@ def validate_codex_adapter(repo_root: Path) -> None:
     runbook_text = runbook_md.read_text(encoding="utf-8")
     harness_text = harness_md.read_text(encoding="utf-8")
 
-    assert "Codex only spawns subagents when you explicitly ask it to." in adapter_text, (
-        f"explicit Codex subagent trigger rule missing in {adapter_md}"
+    require_headings(
+        adapter_text,
+        (
+            "## 1) Delegation model",
+            "## 2) Built-in vs custom agents",
+            "## 4) Run config mapping",
+            "## 6) Worktree handling",
+            "## 7) Unsupported or blocked patterns",
+        ),
+        adapter_md,
+        "Codex adapter headings",
     )
-    assert "`worker`" in adapter_text and "`explorer`" in adapter_text, (
-        f"Codex built-in agent coverage missing in {adapter_md}"
-    )
-    assert ".codex/agents/*.toml" in adapter_text, (
-        f"Codex project-agent surface missing in {adapter_md}"
-    )
-    assert "Startup-only application" in adapter_text, (
-        f"Codex startup-only run-config outcome missing in {adapter_md}"
-    )
-    assert "Do not claim that Codex will spawn Builder automatically without explicit delegation instructions." in adapter_text, (
-        f"Codex automatic-spawn guardrail missing in {adapter_md}"
-    )
-    assert "Do not promise that Codex app worktree behavior and Codex CLI worktree behavior are identical without adapter-specific proof." in adapter_text, (
-        f"Codex worktree-proof guardrail missing in {adapter_md}"
-    )
-
-    assert "Treat Builder delegation as explicit." in runbook_text, (
-        f"Codex explicit-delegation runbook rule missing in {runbook_md}"
-    )
-    assert ".codex/agents/*.toml" in runbook_text, (
-        f"Codex runbook project-agent surface missing in {runbook_md}"
-    )
-    assert "`exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior`" in runbook_text, (
-        f"Codex runbook Builder classification rule missing in {runbook_md}"
-    )
-    assert "relaunch with `-C <active_worktree_path>`" in runbook_text, (
-        f"Codex runbook worktree relaunch rule missing in {runbook_md}"
+    require_substrings(
+        adapter_text,
+        (
+            "`worker`",
+            "`explorer`",
+            ".codex/agents/*.toml",
+            "Startup-only application",
+        ),
+        adapter_md,
+        "Codex adapter runtime tokens",
     )
 
-    assert "Prompt E - Unsupported patterns" in harness_text, (
-        f"Codex harness unsupported-pattern case missing in {harness_md}"
+    require_headings(
+        runbook_text,
+        (
+            "## 1) Session shape",
+            "## 2) Builder selection",
+            "## 3) Run config handling",
+            "## 5) Worktree hand-off",
+        ),
+        runbook_md,
+        "Codex runbook headings",
     )
-    assert "automatic Builder spawning is not claimed" in harness_text, (
-        f"Codex harness automatic-spawn expectation missing in {harness_md}"
+    require_substrings(
+        runbook_text,
+        (
+            "-C <active_worktree_path>",
+            ".codex/agents/*.toml",
+            "`exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior`",
+        ),
+        runbook_md,
+        "Codex runbook structural tokens",
     )
-    assert "Recursive default fan-out was rejected." in harness_text, (
-        f"Codex harness recursive-fanout pass criterion missing in {harness_md}"
+
+    require_substrings(
+        harness_text,
+        (
+            "### Prompt E - Unsupported patterns",
+            "### Prompt F - Worktree continuation",
+            "Recursive default fan-out was rejected.",
+        ),
+        harness_md,
+        "Codex harness coverage",
     )
 
 
 def validate_claude_adapter(repo_root: Path) -> None:
-    """Validate the Claude Code adapter contract, runbook, and harness."""
+    """Validate the Claude Code adapter artifacts structurally."""
     adapter_md = repo_root / "master-chef" / "CLAUDE-ADAPTER.md"
     runbook_md = repo_root / "master-chef" / "CLAUDE-RUNBOOK.md"
     harness_md = repo_root / "master-chef" / "CLAUDE-TEST-HARNESS.md"
@@ -811,60 +855,73 @@ def validate_claude_adapter(repo_root: Path) -> None:
     runbook_text = runbook_md.read_text(encoding="utf-8")
     harness_text = harness_md.read_text(encoding="utf-8")
 
-    assert "Claude can delegate automatically" in adapter_text, (
-        f"Claude automatic-delegation capability note missing in {adapter_md}"
+    require_headings(
+        adapter_text,
+        (
+            "## 1) Delegation model",
+            "## 2) Agent surfaces",
+            "## 3) Foreground vs background policy",
+            "## 4) Non-nesting and tool inheritance",
+            "## 5) Run config mapping",
+            "## 6) Worktree handling",
+        ),
+        adapter_md,
+        "Claude adapter headings",
     )
-    assert "--agents <json>" in adapter_text and "--agent <name>" in adapter_text, (
-        f"Claude session-agent surfaces missing in {adapter_md}"
-    )
-    assert ".claude/agents/" in adapter_text and "~/.claude/agents/" in adapter_text, (
-        f"Claude file-agent surfaces missing in {adapter_md}"
-    )
-    assert "Subagents cannot spawn other subagents." in adapter_text, (
-        f"Claude non-nesting rule missing in {adapter_md}"
-    )
-    assert "Once a background subagent is running, it inherits the pre-approved permissions and auto-denies anything that was not approved before launch." in adapter_text, (
-        f"Claude background permission rule missing in {adapter_md}"
-    )
-    assert "Do not rely on background Builder flows for MCP-dependent or approval-heavy work" in adapter_text, (
-        f"Claude background-MCP guardrail missing in {adapter_md}"
-    )
-    assert "`builder_thinking` is not assumed to have a stable per-subagent override surface in this adapter." in adapter_text, (
-        f"Claude builder-thinking constraint missing in {adapter_md}"
-    )
-    assert "Startup-only application" in adapter_text, (
-        f"Claude startup-only run-config outcome missing in {adapter_md}"
-    )
-
-    assert "--effort <master_thinking>" in runbook_text, (
-        f"Claude runbook effort mapping missing in {runbook_md}"
-    )
-    assert "Subagents cannot spawn other subagents" in runbook_text, (
-        f"Claude runbook non-nesting rule missing in {runbook_md}"
-    )
-    assert "Once a background subagent starts, it inherits the approved permissions and auto-denies anything not approved before launch." in runbook_text, (
-        f"Claude runbook background permission rule missing in {runbook_md}"
-    )
-    assert "Do not rely on background Builder work for MCP-dependent or approval-heavy tasks." in runbook_text, (
-        f"Claude runbook background-MCP guardrail missing in {runbook_md}"
-    )
-    assert "Treat `--worktree` as a startup-time or relaunch-time tool" in runbook_text, (
-        f"Claude runbook worktree startup-only rule missing in {runbook_md}"
+    require_substrings(
+        adapter_text,
+        (
+            "--agents <json>",
+            "--agent <name>",
+            ".claude/agents/",
+            "~/.claude/agents/",
+            "Subagents cannot spawn other subagents.",
+            "Startup-only application",
+        ),
+        adapter_md,
+        "Claude adapter runtime tokens",
     )
 
-    assert "Prompt E - Non-nesting rule" in harness_text, (
-        f"Claude harness non-nesting case missing in {harness_md}"
+    require_headings(
+        runbook_text,
+        (
+            "## 1) Session shape",
+            "## 2) Builder selection",
+            "## 3) Run config handling",
+            "## 4) Foreground and background policy",
+            "## 5) Tool and MCP policy",
+            "## 6) Worktree hand-off",
+        ),
+        runbook_md,
+        "Claude runbook headings",
     )
-    assert "Permission-heavy Builder work stayed foreground." in harness_text, (
-        f"Claude harness foreground pass criterion missing in {harness_md}"
+    require_substrings(
+        runbook_text,
+        (
+            "--effort <master_thinking>",
+            "Subagents cannot spawn other subagents",
+            "Do not rely on background Builder work for MCP-dependent or approval-heavy tasks.",
+            "Treat `--worktree` as a startup-time or relaunch-time tool",
+        ),
+        runbook_md,
+        "Claude runbook structural tokens",
     )
-    assert "Nested subagent spawning was rejected." in harness_text, (
-        f"Claude harness nested-spawn pass criterion missing in {harness_md}"
+
+    require_substrings(
+        harness_text,
+        (
+            "### Prompt E - Non-nesting rule",
+            "### Prompt F - Worktree continuation",
+            "Permission-heavy Builder work stayed foreground.",
+            "Nested subagent spawning was rejected.",
+        ),
+        harness_md,
+        "Claude harness coverage",
     )
 
 
 def validate_openclaw_adapter(repo_root: Path) -> None:
-    """Validate the OpenClaw adapter package for the shared Master Chef contract."""
+    """Validate the OpenClaw adapter package structurally."""
     skill_md = repo_root / "openclaw" / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
     skill_text = skill_md.read_text(encoding="utf-8")
@@ -882,186 +939,82 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         f"cdd-master-chef should stay model-visible for implicit invocation in {skill_md}"
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
-    assert "OpenClaw adapter" in skill_text, (
-        f"OpenClaw adapter framing missing in {skill_md}"
+    require_headings(
+        skill_text,
+        (
+            "# CDD Master Chef",
+            "Canonical `run.json` fields:",
+            "Report events:",
+            "Reporting surface:",
+        ),
+        skill_md,
+        "OpenClaw skill headings",
     )
-    assert "OpenClaw-only" not in skill_text, (
-        f"OpenClaw-only wording should not remain in {skill_md}"
+    require_substrings(
+        skill_text,
+        (
+            ".cdd-runtime/master-chef/run.json",
+            "- `source_repo`",
+            "- `active_worktree_path`",
+            "- `worktree_continue_mode`",
+            "- `STEP_PASS`",
+            "- `DEADLOCK_STOPPED`",
+        ),
+        skill_md,
+        "OpenClaw skill runtime tokens",
     )
-    assert "The Builder runs as an OpenClaw subagent, not ACP." in skill_text, (
-        f"subagent Builder contract missing in {skill_md}"
+
+    require_headings(
+        runbook_text,
+        (
+            "## 3) Kickoff flow",
+            "### 3.1 Managed worktree kickoff",
+            "### 4.4 `context-summary.md`",
+            "## 8) Master Chef context compaction",
+        ),
+        runbook_md,
+        "OpenClaw runbook headings",
     )
-    assert "require a clean source checkout before kickoff" in skill_text, (
-        f"clean-checkout rule missing in {skill_md}"
+    require_substrings(
+        runbook_text,
+        (
+            "~/.openclaw/skills/cdd-master-chef",
+            "./scripts/install.sh --runtime openclaw",
+            "worktree_continue_mode",
+            "context-summary.md",
+        ),
+        runbook_md,
+        "OpenClaw runbook runtime tokens",
     )
-    assert "managed worktree" in skill_text and "relaunch instructions" in skill_text, (
-        f"managed worktree relaunch contract missing in {skill_md}"
+
+    require_substrings(
+        readme_text,
+        (
+            "~/.openclaw/skills/cdd-master-chef",
+            "./scripts/install.sh --runtime openclaw",
+            ".cdd-runtime/master-chef/context-summary.md",
+            "STEP_PASS",
+        ),
+        readme_md,
+        "OpenClaw README runtime references",
     )
-    assert "There is no watchdog cron or separate supervising agent; Master Chef checks Builder health directly in the main session when active." in skill_text, (
-        f"direct main-session Builder-check contract missing in {skill_md}"
-    )
-    assert "Use one-step Builder runs only." in skill_text, (
-        f"one-step Builder-run contract missing in {skill_md}"
-    )
-    assert "Do not treat Builder session resurrection or multi-step continuation as a normal path." in skill_text, (
-        f"Builder session-resurrection guardrail missing in {skill_md}"
-    )
-    assert ".cdd-runtime/master-chef/run.json" in skill_text, (
-        f"durable runtime state missing in {skill_md}"
-    )
-    assert "Master Chef chooses the internal `cdd-*` routing model." in skill_text, (
-        f"OpenClaw routing model contract missing in {skill_md}"
-    )
-    assert "Treat the installed `cdd-*` skills as internal OpenClaw workflows, not user slash commands." in skill_text, (
-        f"internal OpenClaw workflow contract missing in {skill_md}"
-    )
-    assert "Builder default: `cdd-implement-todo` for the next runnable TODO step." in skill_text, (
-        f"default Builder routing contract missing in {skill_md}"
-    )
-    assert "Allowed bootstrap path: a new or adoptable project folder that should be brought into the CDD contract first via `cdd-init-project`" in skill_text, (
-        f"new-project CDD bootstrap contract missing in {skill_md}"
-    )
-    assert "if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass" in skill_text, (
-        f"Master Chef QA remediation contract missing in {skill_md}"
-    )
-    assert "advertise `STEP_PASS` with the full result, evidence, and decision trail in the current Master Chef session" in skill_text, (
-        f"session-native STEP_PASS advertising missing in {skill_md}"
-    )
-    assert "re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains" in skill_text, (
-        f"automatic TODO continuation contract missing in {skill_md}"
-    )
-    assert "After relaunch into the managed worktree, treat that worktree as the active repo root for QA, TODO inspection, commit, and push." in skill_text, (
-        f"active worktree operation rule missing in {skill_md}"
-    )
-    assert "When Master Chef rejects Builder output during QA" in runbook_text, (
-        f"QA rejection procedure missing in {runbook_md}"
-    )
-    assert "cannot be passed, committed, pushed, or advertised as `STEP_PASS`" in runbook_text, (
-        f"pre-remediation pass guardrail missing in {runbook_md}"
-    )
-    assert "then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes" in runbook_text, (
-        f"QA remediation continuation path missing in {runbook_md}"
-    )
-    assert "Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation" in readme_text, (
-        f"user-facing STEP_PASS advertising missing in {readme_md}"
-    )
-    assert "Prompt J - QA reject remediation" in harness_text, (
-        f"QA reject remediation harness case missing in {harness_md}"
-    )
-    assert "QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation." in harness_text, (
-        f"QA remediation pass criterion missing in {harness_md}"
-    )
-    assert "If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:" in skill_text, (
-        f"blocked-step recovery contract missing in {skill_md}"
-    )
-    assert "decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair" in skill_text, (
-        f"blocked-step TODO decomposition contract missing in {skill_md}"
-    )
-    assert "restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged" in skill_text, (
-        f"smaller-step restart contract missing in {skill_md}"
-    )
-    assert "When a step is blocked by a hard gate, ambiguous scope, missing implementation decisions, or repeated failed Builder replacements" in runbook_text, (
-        f"blocked-step recovery procedure missing in {runbook_md}"
-    )
-    assert "Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence." in runbook_text, (
-        f"blocked-step cleanup guardrail missing in {runbook_md}"
-    )
-    assert "if a step is blocked, Master Chef stops the autonomous loop, reports the blocker in-session, decomposes the work into smaller TODO steps when possible, cleans only stale retry artifacts, and restarts from the next smaller actionable step" in readme_text, (
-        f"user-facing blocked-step behavior missing in {readme_md}"
-    )
-    assert "Prompt L - Blocked-step decomposition" in harness_text, (
-        f"blocked-step decomposition harness case missing in {harness_md}"
-    )
-    assert "Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step." in harness_text, (
-        f"blocked-step decomposition pass criterion missing in {harness_md}"
-    )
-    assert ".cdd-runtime/master-chef/context-summary.md" in skill_text, (
-        f"Master Chef context checkpoint file missing in {skill_md}"
-    )
-    assert "before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`" in skill_text, (
-        f"pre-compaction checkpoint contract missing in {skill_md}"
-    )
-    assert "do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript" in skill_text, (
-        f"unsafe compaction guardrail missing in {skill_md}"
-    )
-    assert "after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing" in skill_text, (
-        f"post-compaction resume contract missing in {skill_md}"
-    )
-    assert "OpenClaw adapter" in readme_text, (
-        f"OpenClaw adapter framing missing in {readme_md}"
-    )
-    assert "OpenClaw-only" not in readme_text, (
-        f"OpenClaw-only wording should not remain in {readme_md}"
-    )
-    assert "shared `cdd-master-chef` workflow" in readme_text, (
-        f"shared workflow framing missing in {readme_md}"
-    )
-    assert "source checkout must be clean before kickoff" in readme_text.lower(), (
-        f"clean-checkout user-facing rule missing in {readme_md}"
-    )
-    assert "stops with exact relaunch instructions" in readme_text, (
-        f"relaunch user-facing rule missing in {readme_md}"
-    )
-    assert "the shared, runtime-agnostic master chef contract is no longer rooted only in `openclaw/`" in readme_text.lower(), (
-        f"shared-contract relationship missing in {readme_md}"
-    )
-    assert "./scripts/install.sh --runtime openclaw" in readme_text, (
-        f"OpenClaw README unified installer path missing in {readme_md}"
-    )
-    assert "OpenClaw adapter" in runbook_text, (
-        f"OpenClaw adapter framing missing in {runbook_md}"
-    )
-    assert "Require a clean source checkout." in runbook_text, (
-        f"runbook clean-checkout procedure missing in {runbook_md}"
-    )
-    assert "worktree_continue_mode" in runbook_text, (
-        f"runbook worktree metadata missing in {runbook_md}"
-    )
-    assert "relaunch instructions" in runbook_text, (
-        f"runbook relaunch instructions missing in {runbook_md}"
-    )
-    assert "shared Master Chef contract" in harness_text, (
-        f"shared-contract harness framing missing in {harness_md}"
-    )
-    assert "Dirty checkout refusal" in harness_text, (
-        f"dirty-checkout harness case missing in {harness_md}"
-    )
-    assert "managed worktree" in harness_text and "relaunch instructions" in harness_text, (
-        f"worktree relaunch harness coverage missing in {harness_md}"
-    )
-    assert "### 4.4 `context-summary.md`" in runbook_text, (
-        f"context-summary section missing in {runbook_md}"
-    )
-    assert "Use `context-summary.md` as the durable Master Chef checkpoint for long runs and context compaction." in runbook_text, (
-        f"context-summary purpose missing in {runbook_md}"
-    )
-    assert "## 8) Master Chef context compaction" in runbook_text, (
-        f"context compaction procedure missing in {runbook_md}"
-    )
-    assert "Master Chef may compact only after durable state is written to `run.json`, `run.lock.json` when applicable, `master-chef.jsonl`, `builder.jsonl`, and `context-summary.md`." in runbook_text, (
-        f"safe compaction boundary missing in {runbook_md}"
-    )
-    assert "Do not compact:" in runbook_text and "while QA findings or UAT decisions are only in the live transcript" in runbook_text, (
-        f"unsafe compaction windows missing in {runbook_md}"
-    )
-    assert "After compaction, Master Chef must reconstruct state from durable sources instead of trusting transcript memory:" in runbook_text, (
-        f"compaction resume procedure missing in {runbook_md}"
-    )
-    assert "Master Chef checkpoints long-run memory in `.cdd-runtime/master-chef/context-summary.md` before deliberate compaction." in readme_text, (
-        f"user-facing context checkpoint behavior missing in {readme_md}"
-    )
-    assert "Prompt N - Context compaction and resume" in harness_text, (
-        f"context compaction harness case missing in {harness_md}"
-    )
-    assert "`context-summary.md` records run, state, recent decisions, current diff, pending proof, and next action" in harness_text, (
-        f"context summary harness expectation missing in {harness_md}"
-    )
-    assert "Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state." in harness_text, (
-        f"context compaction pass criterion missing in {harness_md}"
+
+    require_substrings(
+        harness_text,
+        (
+            "Prompt J - QA reject remediation",
+            "Prompt L - Blocked-step decomposition",
+            "Prompt N - Context compaction and resume",
+            "Dirty checkout refusal",
+        ),
+        harness_md,
+        "OpenClaw harness coverage",
     )
 
 
-def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
+def validate_generated_openclaw_builder_skills(
+    repo_root: Path, include_legacy_prose: bool
+) -> None:
     """Validate the generated OpenClaw Builder variants built from skills/."""
     generator = repo_root / "scripts" / "build_runtime_builder_skills.py"
     assert generator.exists(), f"missing {generator}"
@@ -1113,35 +1066,36 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
                 f"Master Chef approval routing missing in {skill_md}"
             )
 
-            if skill_name == "cdd-implement-todo":
-                assert "update only the selected step in the active `TODO*.md` file" in skill_text, (
-                    f"generated TODO completion writeback missing in {skill_md}"
-                )
-                assert "Do not add a new step-level `Status:` field" in skill_text, (
-                    f"generated TODO completion guardrail missing in {skill_md}"
-                )
-                validate_implement_todo_skill_text(skill_text, skill_md)
-            if skill_name == "cdd-boot":
-                validate_boot_skill_text(skill_text, skill_md)
-            if skill_name == "cdd-maintain":
-                validate_maintain_skill_text(skill_text, skill_md)
-            if skill_name == "cdd-init-project":
-                validate_init_project_skill_text(skill_text, skill_md)
-            if skill_name in {"cdd-plan", "cdd-audit-and-implement"}:
-                validate_coarse_step_planning(skill_text, skill_md)
-            if skill_name == "cdd-audit-and-implement":
-                validate_audit_and_implement_skill_text(skill_text, skill_md)
-            if skill_name in {
-                "cdd-plan",
-                "cdd-init-project",
-                "cdd-refactor",
-                "cdd-audit-and-implement",
-            }:
-                validate_selector_labeled_options(skill_text, skill_md)
+            if include_legacy_prose:
+                if skill_name == "cdd-implement-todo":
+                    assert "update only the selected step in the active `TODO*.md` file" in skill_text, (
+                        f"generated TODO completion writeback missing in {skill_md}"
+                    )
+                    assert "Do not add a new step-level `Status:` field" in skill_text, (
+                        f"generated TODO completion guardrail missing in {skill_md}"
+                    )
+                    validate_implement_todo_skill_text(skill_text, skill_md)
+                if skill_name == "cdd-boot":
+                    validate_boot_skill_text(skill_text, skill_md)
+                if skill_name == "cdd-maintain":
+                    validate_maintain_skill_text(skill_text, skill_md)
+                if skill_name == "cdd-init-project":
+                    validate_init_project_skill_text(skill_text, skill_md)
+                if skill_name in {"cdd-plan", "cdd-audit-and-implement"}:
+                    validate_coarse_step_planning(skill_text, skill_md)
+                if skill_name == "cdd-audit-and-implement":
+                    validate_audit_and_implement_skill_text(skill_text, skill_md)
+                if skill_name in {
+                    "cdd-plan",
+                    "cdd-init-project",
+                    "cdd-refactor",
+                    "cdd-audit-and-implement",
+                }:
+                    validate_selector_labeled_options(skill_text, skill_md)
 
-
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """Validate the current repository layout and print a success marker."""
+    args = parse_args(argv)
     repo_root = Path(__file__).resolve().parent.parent
     skills_root = repo_root / "skills"
     assert skills_root.exists(), f"missing {skills_root}"
@@ -1150,14 +1104,17 @@ def main() -> int:
     assert skill_dirs, f"no Builder skill directories found in {skills_root}"
 
     for skill_dir in skill_dirs:
-        validate_builder_skill(skill_dir)
+        validate_builder_skill(skill_dir, args.include_legacy_prose)
 
-    validate_generated_openclaw_builder_skills(repo_root)
+    validate_generated_openclaw_builder_skills(repo_root, args.include_legacy_prose)
     validate_master_chef_shared_contract(repo_root)
     validate_codex_adapter(repo_root)
     validate_claude_adapter(repo_root)
     validate_openclaw_adapter(repo_root)
-    print("skill structure checks passed")
+    if args.include_legacy_prose:
+        print("skill structure checks passed (structural + legacy prose)")
+    else:
+        print("skill structure checks passed (structural)")
     return 0
 
 

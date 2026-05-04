@@ -5,6 +5,7 @@ set -euo pipefail
 #
 # Examples:
 #   bash scripts/test-skill-audit.sh
+#   bash scripts/test-skill-audit.sh --skip-remote
 #   bash scripts/test-skill-audit.sh --skip-local --only-flagged
 #   bash scripts/test-skill-audit.sh --source ruphware/cdd-skills --keep-sandbox
 
@@ -20,12 +21,12 @@ usage() {
   cat <<'EOF'
 Usage: bash scripts/test-skill-audit.sh [options]
 
-Run the local install smoke test, fetch the live remote skill audit, and print
-local heuristic explanations for flagged results.
+Run the local installer/artifact smoke test, fetch the live remote skill audit,
+and print local heuristic explanations for flagged results.
 
 Options:
   --source owner/repo  Override the GitHub source repo used for the remote audit
-  --skip-local         Skip the local install smoke test
+  --skip-local         Skip the local offline installer/artifact smoke test
   --skip-remote        Skip the remote audit fetch and explanation
   --only-flagged       Show only non-safe/non-low findings in remote output and explanation
   --keep-sandbox       Preserve the local smoke-test sandbox directory
@@ -170,25 +171,16 @@ cleanup_local_sandbox() {
 }
 
 run_local_smoke_test() {
-  if ! command -v npx >/dev/null 2>&1; then
-    echo "Missing required command: npx" >&2
-    exit 1
-  fi
-
   local sandbox_root
   sandbox_root="$(mktemp -d "${TMPDIR:-/tmp}/cdd-skills-local-install.XXXXXX")"
   LOCAL_SANDBOX_ROOT="$sandbox_root"
 
   local home_dir="$sandbox_root/home"
-  local xdg_config_home="$sandbox_root/xdg-config"
-  local codex_home="$sandbox_root/codex-home"
   local claude_config_dir="$sandbox_root/claude-home"
-  local run_dir="$sandbox_root/run"
-  local npm_cache_dir="$sandbox_root/npm-cache"
   local universal_skills_dir="$home_dir/.agents/skills"
   local claude_skills_dir="$claude_config_dir/skills"
 
-  mkdir -p "$home_dir" "$xdg_config_home" "$codex_home" "$claude_config_dir" "$run_dir" "$npm_cache_dir"
+  mkdir -p "$home_dir" "$claude_config_dir"
 
   local skills=()
   local skill_dir
@@ -205,34 +197,11 @@ run_local_smoke_test() {
 
   echo "[LocalInstall] INFO SandboxCreated root={$sandbox_root}"
   echo "[LocalInstall] INFO SkillSource root={$ROOT_DIR/skills} count={${#skills[@]}}"
-  echo "[LocalInstall] INFO AuditMode mode={skipped} reason={local path source does not request remote audit}"
+  echo "[LocalInstall] INFO AuditMode mode={offline} reason={local repo installer plus local artifact smoke test}"
 
-  local install_cmd=(
-    npx
-    --yes
-    skills
-    add
-    "$ROOT_DIR/skills"
-    --skill
-    "*"
-    --agent
-    codex
-    claude-code
-    gemini-cli
-    --global
-    --yes
-    --copy
-  )
-
-  (
-    cd "$run_dir"
-    HOME="$home_dir" \
-    XDG_CONFIG_HOME="$xdg_config_home" \
-    CODEX_HOME="$codex_home" \
-    CLAUDE_CONFIG_DIR="$claude_config_dir" \
-    NPM_CONFIG_CACHE="$npm_cache_dir" \
-    "${install_cmd[@]}"
-  )
+  "$ROOT_DIR/scripts/install.sh" --target "$universal_skills_dir"
+  "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$claude_skills_dir"
+  bash "$ROOT_DIR/scripts/test_master_chef_artifacts.sh"
 
   local skill
   for skill in "${skills[@]}"; do
@@ -241,10 +210,17 @@ run_local_smoke_test() {
     echo "[LocalInstall] INFO InstalledSkill name={$skill}"
   done
 
+  assert_exists "$universal_skills_dir/cdd-master-chef/SKILL.md"
+  assert_exists "$universal_skills_dir/cdd-master-chef/README.md"
+  assert_exists "$universal_skills_dir/cdd-master-chef/CODEX-ADAPTER.md"
+  assert_exists "$claude_skills_dir/cdd-master-chef/SKILL.md"
+  assert_exists "$claude_skills_dir/cdd-master-chef/CLAUDE-ADAPTER.md"
+  echo "[LocalInstall] INFO InstalledSkill name={cdd-master-chef}"
+
   echo "[LocalInstall] INFO AgentRoot agent={codex} path={$universal_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={claude-code} path={$claude_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={gemini-cli} path={$universal_skills_dir}"
-  echo "[LocalInstall] INFO InstallVerified skills={${#skills[@]}} agents={3}"
+  echo "[LocalInstall] INFO InstallVerified skills={$((${#skills[@]} + 1))} agents={3}"
 }
 
 echo "[SkillAudit] INFO Repo root={$ROOT_DIR}"
