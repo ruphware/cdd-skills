@@ -810,3 +810,146 @@ Use this exact public map:
 - [x] Confirm `README.md` shows the full `[CDD-0]` through `[CDD-8]` map.
 - [x] Confirm Master Chef is visibly separate and described as starting autonomous development.
 - [x] Confirm OpenClaw routing docs and test harness use the same labels without changing behavior.
+
+## Step 22 — Canonicalize `cdd-master-chef/` as the committed source package
+
+### Goal
+
+Make top-level `cdd-master-chef/` the only committed first-class Master Chef skill package visible to repo-root skill installers.
+
+### Constraints
+
+- Do not rename the `cdd-master-chef` skill or command.
+- Avoid duplicate canonical shared-contract trees.
+- Preserve shared docs for Codex, Claude Code, and OpenClaw adapters.
+- Demote top-level `openclaw/` from package-scanned root surface so repo-root skill discovery no longer treats it as a peer installable skill.
+
+### Tasks
+
+- [ ] Create a committed top-level `cdd-master-chef/` package surface with `SKILL.md`, `README.md`, shared contract docs, and current concrete adapter docs/artifacts now split across `master-chef/` and `openclaw/`.
+- [ ] Move or rewrite source-of-truth references so shared contract docs point to `cdd-master-chef/` as canonical and top-level `master-chef/` / `openclaw/` no longer act as parallel canonical package roots.
+- [ ] Re-home OpenClaw adapter files under the canonical package or another non-root-scanned adapter subtree and remove any top-level `SKILL.md` surface that would cause repo-root skill discovery to treat the old `openclaw/` path as a separate installable skill.
+- [ ] Update local scripts/tests that read from `MASTER_CHEF_SRC_ROOT` or `OPENCLAW_SRC_ROOT` to follow the new canonical package layout.
+
+### Implementation notes
+
+- Prefer one canonical committed package tree under `cdd-master-chef/`.
+- If compatibility stubs remain in `master-chef/` or `openclaw/`, they must be explicitly non-canonical and non-package-scanned.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- [ ] Confirm the repo has one committed first-class `cdd-master-chef/` package root.
+- [ ] Confirm top-level `openclaw/` no longer behaves like a separate skill package root.
+
+## Step 23 — Make repo-root installs and `install.sh` ship the first-class `cdd-master-chef`
+
+### Goal
+
+Make repo-root `npx skills add https://github.com/ruphware/cdd-skills/` and `scripts/install.sh` install all skills, including first-class `cdd-master-chef`, from the canonical package layout.
+
+### Constraints
+
+- Preserve existing core `[CDD-0]` through `[CDD-7]` installs.
+- Keep OpenClaw-specific Builder generation only where the runtime actually needs it.
+- Generic/Codex/Claude targets must not receive a docs-only surrogate if the canonical package can ship directly.
+
+### Tasks
+
+- [ ] Update `scripts/install.sh` so generic/Codex/Claude installs package the committed canonical `cdd-master-chef/` skill rather than synthesizing a docs-only surrogate from `master-chef/`.
+- [ ] Update OpenClaw install assembly so `--runtime openclaw` installs the canonical `cdd-master-chef` skill plus any required OpenClaw-specific overlays/generated Builder skills from the new adapter subtree.
+- [ ] Update installer smoke tests and local install-audit scripts to assert the canonical package is installed for generic, Claude, and OpenClaw targets and that installed contents match the new root package layout.
+- [ ] Update `README.md` quick-install instructions so the root repo URL is the primary `npx skills add` entrypoint and no longer warns users away from it.
+
+### Implementation notes
+
+- Remove or minimize generated-package-only behavior in `emit_generic_master_chef_package`; prefer copying committed package source.
+- Keep local proof deterministic; remote root-URL verification may remain UAT after push.
+
+### Automated checks
+
+- `bash scripts/test_installers.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [ ] Confirm root install instructions point to `https://github.com/ruphware/cdd-skills/`.
+- [ ] Confirm local smoke tests install the core skills plus `cdd-master-chef` from repo-root semantics.
+- [ ] After push, confirm root `npx skills add` installs the expected skill set.
+
+## Step 24 — Promote first-class multi-runtime Master Chef docs and status
+
+### Goal
+
+Make docs describe `cdd-master-chef` as a first-class in-development skill for Codex, Claude Code, OpenClaw, and other compatible adapter-based runtimes, without treating OpenClaw as the only target or calling the skill experimental.
+
+### Constraints
+
+- Only claim concrete runtime behavior already covered by current shared contract/adapters.
+- Hermes and similar autonomous systems may be described only as potential adapter targets in this pass.
+- README must distinguish current concrete adapters from future adapter targets.
+
+### Tasks
+
+- [ ] Update root `README.md` and canonical `cdd-master-chef/README.md` / `SKILL.md` to describe Master Chef as first-class, in development, and multi-runtime rather than experimental, OpenClaw-only, or docs-only.
+- [ ] Replace wording that presents OpenClaw as the only runnable or packaged target with wording that presents OpenClaw as one current adapter and Codex/Claude as current subagent-backed targets.
+- [ ] Update the runtime capability matrix and adapter overviews so Codex/Claude/OpenClaw status lines match the shipped package and installer story.
+- [ ] Add explicit wording that other subagent-capable coding tools and autonomous systems can be supported through additional adapters, without claiming a shipped Hermes adapter.
+
+### Implementation notes
+
+- Touch `README.md`, canonical `cdd-master-chef/README.md`, `cdd-master-chef/SKILL.md`, `RUNTIME-CAPABILITIES.md`, and any adapter overviews that still say “only packaged target” or “experimental”.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- [ ] Confirm README no longer says Master Chef is experimental.
+- [ ] Confirm docs no longer treat OpenClaw as the only target.
+- [ ] Confirm Codex, Claude, and OpenClaw are described as current concrete adapters.
+- [ ] Confirm Hermes is not falsely claimed as a shipped adapter.
+
+## Step 25 — Audit first-class runtime functionality and regression coverage
+
+### Goal
+
+Prove the first-class `cdd-master-chef` contract, packaging, and adapter claims hold across concrete runtime targets and fail when drift reintroduces docs-only or OpenClaw-only assumptions.
+
+### Constraints
+
+- Keep checks local and deterministic by default.
+- Audit only concrete shipped targets in this pass: Codex, Claude Code, and OpenClaw.
+- Do not depend on live external services as the primary gate.
+
+### Tasks
+
+- [ ] Extend `scripts/validate_skills.py` and/or focused smoke tests to assert canonical package-root presence, absence of conflicting top-level package surfaces, installer use of canonical package source, and non-experimental multi-runtime README claims.
+- [ ] Expand `scripts/test_master_chef_artifacts.sh` and `scripts/test-skill-audit.sh` to verify canonical package contents, Codex/Claude adapter docs in the installed package, and OpenClaw adapter/install overlays from the new layout.
+- [ ] Add narrow negative checks that fail if README drifts back to root-URL avoidance, docs-only generic Master Chef packaging, or OpenClaw-as-only-target wording.
+- [ ] Update TODO validation commands or supporting test docs to reflect the new first-class package story.
+
+### Implementation notes
+
+- Prefer structural package-surface assertions over exact prose checks, except for critical user-facing claims like root install URL and status wording.
+- If compatibility shims remain, tests must prove they are non-canonical.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+
+### UAT
+
+- [ ] Confirm drift tests fail when OpenClaw-only or docs-only wording returns.
+- [ ] Confirm local audit shows installed `cdd-master-chef` contains shared contract plus current adapters.
+- [ ] Confirm root install story and installer story match.
