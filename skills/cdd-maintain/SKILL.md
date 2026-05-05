@@ -45,21 +45,15 @@ Read:
 
 ## TODO archive rules
 - Check `TODO.md` and adjacent `TODO*.md` files.
-- Treat a step as archiveable only when its task list is fully complete under the repo's current TODO style.
-- If step completion is ambiguous, leave that step in place and report it.
-- Preserve top-to-bottom TODO history: archive only from the oldest contiguous archiveable block near the top of the active step list.
-- Never archive a step from the middle or tail of the active TODO file.
-- Do not leapfrog an older incomplete or ambiguous step in order to archive later completed steps below it.
-- Retain the newest 3 step headings in each active TODO file.
-- Archive older completed steps when a TODO file is long enough to need trimming.
-- Treat a TODO file as long when it has more than 6 step headings or clearly accumulated completed historical steps beyond the retained active window.
+- Treat a step as archiveable only when its task list is fully complete under the repo's current TODO style. If step completion is ambiguous, leave that step in place and report it.
+- Preserve top-to-bottom TODO history: archive only from the oldest contiguous archiveable block near the top of the active step list. Never archive a step from the middle or tail of the active TODO file. Do not leapfrog an older incomplete or ambiguous step in order to archive later completed steps below it.
+- Retain the newest 3 step headings in each active TODO file. Archive older completed steps when a TODO file is long enough to need trimming. Treat a TODO file as long when it has more than 6 step headings or clearly accumulated completed historical steps beyond the retained active window.
 - Move archived sections into `docs/archive/`.
 - Use archive filenames:
   - `TODO.md` -> `docs/archive/TODO_YYYY-MM-DD.md`
   - `TODO-foo.md` -> `docs/archive/TODO-foo_YYYY-MM-DD.md`
 - If the same-day archive file already exists, append the newly archived sections instead of overwriting it.
-- If older incomplete or ambiguous steps block a clean top trim, do not archive later completed steps; report archival as blocked by non-contiguous active history.
-- After archiving, keep the active TODO file focused on the retained newest 3 step headings plus any older incomplete or ambiguous steps that could not be archived safely.
+- If older incomplete or ambiguous steps block a clean top trim, do not archive later completed steps; report archival as blocked by non-contiguous active history. After archiving, keep the active TODO file focused on the retained newest 3 step headings plus any older incomplete or ambiguous steps that could not be archived safely.
 
 ## Stale adjacent TODO file handling
 - For adjacent `TODO*.md` files, check last activity using `git log -1` timestamp when available.
@@ -68,15 +62,12 @@ Read:
 - Group all such stale-file deletions into one approval request.
 
 ## Journal archive rules
-- Read the journal layout plus archive or rotation guidance at the top of `docs/JOURNAL.md` first.
-- Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos.
+- Read the journal layout plus archive or rotation guidance at the top of `docs/JOURNAL.md` first. Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos.
 - In split-journal mode, expect the top of `docs/JOURNAL.md` to remain a short, clear current-state index/header for the active journal layout; if it no longer clearly routes readers to `docs/journal/*`, report it as drift.
 - If no active implementation `TODO-<area>.md` exists, treat the repo as single-journal mode and archive `docs/JOURNAL.md` only according to the rules defined there.
-- When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal.
-- In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
+- When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal. In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
 - Do not precreate split-journal files before split-journal mode is active.
-- In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present.
-- If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
+- In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present. If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
 
 ## Mode A — Doc drift
 - Treat `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files as canonical support docs.
