@@ -35,7 +35,7 @@ The internal Builder routing map stays aligned with the core skill pack:
 The packaged OpenClaw adapter has two active actors:
 
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
-- **Builder:** a fresh one-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
+- **Builder:** a fresh single-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
 There is no watchdog cron. The human approves one per-run Run config, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks final results or critical blockers.
 
@@ -133,7 +133,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
-   Inspect where development is at, propose the next runnable TODO step, and wait for my kickoff approval before creating runtime state or spawning the Builder.
+   Inspect where development is at, propose the next runnable TODO step, or split an oversized one first, and wait for my kickoff approval before creating runtime state or spawning the Builder.
    ```
 
    If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval. Otherwise, if the current session model and current session thinking are visible, it should recommend a candidate Run config that copies them into all four fields, show it back to the human, and wait for approval or edits before kickoff. If it cannot observe both values, it should stop and ask for a Run config.
@@ -141,10 +141,11 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 5. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
+   - if the next runnable top-level TODO step is oversized for one Builder run, split it first
    - inspect the remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - if this is a fresh run from a long-lived branch, suggest a descriptive feature branch before managed worktree kickoff
    - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct planning or refactor work
-   - when that top-level step count is finite, recommend that exact count as the default/max step budget, meaning all remaining steps
+   - when that top-level step count is finite, recommend that exact count as the default/max step budget, meaning all remaining steps, after any step split
    - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
    - ask whether to spawn Builder now and start the autonomous run
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
@@ -173,7 +174,7 @@ Builder-check policy:
 
 - no watchdog cron or timer-based heartbeat loop
 - Master Chef checks runtime files, Builder health, and current progress directly in the main session
-- if the Builder is stale during an active check, Master Chef replaces it quickly with a fresh one-step subagent run
+- if the Builder is stale during an active check, Master Chef replaces it quickly with a fresh single-step subagent run
 - do not use Builder session resurrection as the normal continuation or recovery path
 - if 2 replacement attempts fail without forward progress, stop the run instead of limping on
 - lifecycle reporting still happens in-session even without a watchdog
@@ -190,7 +191,7 @@ Keep these runtime files out of git, preferably via `.git/info/exclude`.
 
 Context-limit policy:
 
-- Builder stays fresh through one-step runs, normally booted with `cdd-implement-todo`.
+- Builder stays fresh through single-step runs, normally booted with `cdd-implement-todo`.
 - Master Chef checkpoints long-run memory in `.cdd-runtime/master-chef/context-summary.md` before deliberate compaction.
 - Master Chef compacts only at safe workflow boundaries and resumes from runtime files, active TODO, and git state rather than transcript memory.
 
@@ -201,7 +202,8 @@ Master Chef chooses the internal routing path.
 Default delegated path:
 
 - Master Chef chooses the next runnable TODO step
-- Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step in a fresh one-step run
+- if that top-level TODO step is oversized for one Builder run, Master Chef splits it first and delegates the first new runnable step
+- Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step in a fresh single-step run
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
 - If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass

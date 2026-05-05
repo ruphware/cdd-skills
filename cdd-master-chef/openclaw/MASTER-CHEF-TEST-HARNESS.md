@@ -82,8 +82,22 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
   - proposed next runnable step
   - remaining unfinished top-level TODO step-heading count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
+  - an oversized top-level step is split in Master Chef before Builder handoff
   - explicit routing choice: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master Chef direct for setup/planning/refactor work
   - explicit kickoff approval request
+
+### Prompt A1 - Oversized-step split before Builder handoff
+
+```text
+/cdd-master-chef TEST ONLY: assume the next top-level TODO step is oversized for one Builder run.
+Split that step into smaller decision-complete TODO steps before delegation, recompute the remaining unfinished top-level TODO step-heading count, and then ask for kickoff approval on the first new runnable step.
+```
+
+- [ ] Expected:
+  - Master Chef does not hand the oversized step to Builder unchanged
+  - the TODO split happens in the main session before any Builder spawn
+  - the remaining top-level-step count is recomputed after the split
+  - kickoff approval targets the first new runnable step
 
 ### Prompt B - Kickoff approval
 
@@ -209,7 +223,7 @@ If the run is complete, send the final results summary.
   - this prompt is run from the managed worktree after the relaunch step
   - Master Chef reviews Builder output
   - the delegated path matches the routing choice rather than defaulting blindly
-  - if another runnable delegated step exists, Master Chef starts a fresh one-step Builder run for it, normally via `cdd-implement-todo`
+  - if another runnable delegated step exists, Master Chef starts a fresh single-step Builder run for it, normally via `cdd-implement-todo`
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
   - lifecycle events such as `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are reported clearly in the current session
 
@@ -223,7 +237,7 @@ Keep the same TODO step active, record concrete QA findings, choose either a fre
 - [ ] Expected:
   - no `STEP_PASS`, commit, or push happens before remediation and re-run QA
   - QA findings are recorded in `master-chef.jsonl`
-  - remediation uses either a fresh one-step Builder run for the same step or a direct Master Chef fix
+  - remediation uses either a fresh single-step Builder run for the same step or a direct Master Chef fix
   - after QA passes, `STEP_PASS` is advertised in the current Master Chef session before TODO re-inspection and automatic continuation
 
 ### Prompt K - Deadlock
@@ -249,7 +263,7 @@ Stop the autonomous loop, report STEP_BLOCKED in the current session, inspect ru
   - `STEP_BLOCKED` is reported in the current Master Chef session with concrete evidence
   - TODO planning is repaired into smaller decision-complete steps before another implementation attempt
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
-  - restart uses a fresh one-step Builder run for the next smaller actionable TODO step
+  - restart uses a fresh single-step Builder run for the next smaller actionable TODO step
 
 ### Prompt M - In-session reporting contract
 
@@ -273,7 +287,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Expected:
   - `context-summary.md` records run, state, recent decisions, current diff, pending proof, and next action
   - no compaction happens while QA, commit, push, blocker strategy, or next-action details exist only in transcript
-  - Builder context remains fresh through one-step Builder runs rather than Builder compaction or session resurrection
+  - Builder context remains fresh through single-step Builder runs rather than Builder compaction or session resurrection
   - resumed Master Chef state is verified against `TODO*.md`, runtime files, logs, and `git status`
 
 ---

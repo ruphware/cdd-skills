@@ -75,8 +75,8 @@ The shared workflow is:
 - on a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch; when the active TODO has a finite remaining unfinished top-level step-heading count, it recommends that exact count as the default/max step budget
 - the human also approves how many TODO steps this run should cover and whether Master Chef should spawn Builder now and start the autonomous run
 - the human starts Master Chef in either an existing CDD-ready repo or a new project folder that should be set up in CDD form first
-- Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval
-- after kickoff, Master Chef drives the Builder automatically with fresh one-step Builder runs and the human mostly checks final results unless Master Chef reports a blocker or deadlock
+- Master Chef inspects where development is at, proposes the next runnable TODO step, may split an oversized top-level step before Builder handoff, initializes runtime state, and asks for kickoff approval
+- after kickoff, Master Chef drives the Builder automatically with fresh single-step Builder runs and the human mostly checks final results unless Master Chef reports a blocker or deadlock
 
 Current repo state:
 
@@ -101,7 +101,7 @@ Potential future adapters:
 
 The unified installer ships `[CDD-8] Master Chef` to generic/Codex-style, Claude Code, and OpenClaw installs. On OpenClaw it also installs internal `cdd-*` Builder variants into `~/.openclaw/skills`.
 
-Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; `[CDD-4] Audit + Implement` is excluded from the normal flow because it mixes roles. One Builder run equals one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
+Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; `[CDD-4] Audit + Implement` is excluded from the normal flow because it mixes roles. Each Builder run covers exactly one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
 Source of truth:
 
@@ -223,8 +223,8 @@ For `[CDD-8] Master Chef`:
 - for OpenClaw, use `./scripts/install.sh --runtime openclaw` or `./scripts/install.sh --all` so the internal Builder skills are generated too
 - start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw
 - provide one Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, or omit it and let Master Chef recommend one from the current session model and thinking, then approve or edit that recommendation before kickoff
-- let Master Chef inspect the repo, propose the next TODO step, ask how many TODO steps this run should cover, ask whether it should spawn Builder now, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
-- after kickoff, expect Master Chef to manage one-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting in the main session
+- let Master Chef inspect the repo, propose the next TODO step, split it first if it is oversized for one Builder run, ask how many TODO steps this run should cover, ask whether it should spawn Builder now, set up `.cdd-runtime/master-chef/`, and ask for kickoff confirmation before autonomous execution begins
+- after kickoff, expect Master Chef to manage single-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting in the main session
 
 Adapter docs are for maintainers, debugging, and adding runtime support. Use `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md` for Codex-specific adapter behavior, `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md` for Claude Code-specific adapter behavior, and `cdd-master-chef/openclaw/` for the OpenClaw adapter.
 

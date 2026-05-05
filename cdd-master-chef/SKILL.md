@@ -54,6 +54,7 @@ Operating contract:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - whether the next runnable top-level TODO step is oversized for one Builder run
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - whether this looks like a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - whether the repo first needs `cdd-init-project` before the normal TODO loop can start
@@ -61,6 +62,7 @@ Operating contract:
 8. Master Chef chooses the internal `cdd-*` routing model for the core `[CDD-0]` through `[CDD-7]` skills.
    - `[CDD-1] Init Project` (`cdd-init-project`): for a new or not-yet-CDD project, propose and normally start here in the main session before any autonomous TODO execution.
    - `[CDD-3] Implement TODO` (`cdd-implement-todo`): Builder default for the next runnable TODO step.
+   - If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Recompute the remaining unfinished top-level TODO step-heading count after the split, then treat the first new runnable step as the proposed delegated action.
    - `[CDD-6] Index` (`cdd-index`): Builder optional when Master Chef explicitly wants an index refresh as the delegated action.
    - `[CDD-2] Plan` (`cdd-plan`) and `[CDD-5] Refactor` (`cdd-refactor`): Master Chef direct paths that stay in the main session rather than being delegated to Builder.
    - `[CDD-0] Boot` (`cdd-boot`) and `[CDD-7] Maintain` (`cdd-maintain`): installed helpers, but not part of the normal Master Chef routing flow.
@@ -84,8 +86,8 @@ Operating contract:
    - run lease creation
    - managed worktree creation and relaunch expectations
 11. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, for exactly one approved delegated action, tell it which internal `cdd-*` skill path to use, and require an early readiness ACK before deep work.
-12. Use one-step Builder runs only.
-   - One Builder run equals one approved delegated action.
+12. Use single-step Builder runs only.
+   - Each Builder run covers exactly one approved delegated action.
    - After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
    - Do not treat Builder session resurrection or multi-step continuation as a normal path.
 13. Both Master Chef and Builder must append JSONL logs with concrete evidence for Builder spawn, Builder readiness, step start, validation, blockers, completion, and reporting.
@@ -133,14 +135,14 @@ Operating contract:
    - Use one direct status probe before replacement when the runtime supports it.
    - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
 24. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
-25. If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
+25. If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
    - stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
    - revise the situation in Master Chef before any more Builder work
    - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
    - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
 26. Manage Master Chef context explicitly during long runs:
-   - keep Builder context fresh through one-step Builder runs; do not compact or resume Builders as the normal path
+   - keep Builder context fresh through single-step Builder runs; do not compact or resume Builders as the normal path
    - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
    - compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning/refactor work, or before a known large QA/planning phase once a checkpoint is written
    - do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript

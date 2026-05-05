@@ -45,7 +45,7 @@ The Builder owns:
 - writing durable step evidence
 - returning a structured report to Master Chef
 
-One Builder run equals one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+Each Builder run covers exactly one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
 
 ### Human
 
@@ -72,6 +72,7 @@ Before autonomous work begins:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - whether the next runnable top-level TODO step is oversized for one Builder run
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - whether the repo first needs `cdd-init-project`
@@ -166,6 +167,7 @@ Master Chef chooses the internal `cdd-*` routing model.
 
 - For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
 - Builder default: `cdd-implement-todo` for the next runnable TODO step.
+- If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Recompute the remaining unfinished top-level TODO step-heading count after the split, then delegate the first new runnable step.
 - Builder optional: `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action.
 - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in the main session rather than being delegated to Builder.
 - Excluded from the normal flow: `cdd-audit-and-implement`, unless the process is explicitly adapted for its mixed role.
@@ -206,9 +208,9 @@ Before implementation starts, present one kickoff approval that covers:
 - runtime initialization under `.cdd-runtime/master-chef/`
 - run lease creation
 
-Use one-step Builder runs only.
+Use single-step Builder runs only.
 
-- One Builder run equals one approved delegated action.
+- Each Builder run covers exactly one approved delegated action.
 - After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
 - Do not treat Builder session resurrection or multi-step continuation as a normal path.
 - Immediately after a successful Builder spawn request, record `builder_session_key`, set `builder_phase: booting`, and write `builder_spawn_requested_at_utc`.
@@ -287,7 +289,7 @@ Report events:
 
 If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 
-If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed Builder replacements:
+If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
 
 - stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
 - revise the situation in Master Chef before any more Builder work
@@ -299,7 +301,7 @@ If a TODO step is blocked by a hard blocker, ambiguous scope, or repeated failed
 
 Manage Master Chef context explicitly during long runs:
 
-- keep Builder context fresh through one-step Builder runs; do not compact or resume Builders as the normal path
+- keep Builder context fresh through single-step Builder runs; do not compact or resume Builders as the normal path
 - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
 - compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning or refactor work, or before a known large QA or planning phase once a checkpoint is written
 - do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript

@@ -19,7 +19,7 @@ Typical launch controls:
 
 ## 2) Builder selection
 
-Use one-step Builder runs only.
+Use single-step Builder runs only.
 
 - For main implementation, prefer a project-scoped `.claude/agents/` Builder agent or an explicit named agent selection.
 - For read-heavy exploration, use `Explore` or a custom read-only agent.
@@ -47,6 +47,7 @@ Do not start implementation until Master Chef has named which of `exact support`
 Before autonomous implementation starts, Master Chef should ask for one explicit kickoff approval that covers:
 
 - the next runnable TODO step or other chosen routing action
+- any pre-delegation split of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count
 - the approved `Run config`
 - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
 - the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`

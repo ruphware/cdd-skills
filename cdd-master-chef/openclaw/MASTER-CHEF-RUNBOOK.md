@@ -49,7 +49,7 @@ The Builder is an OpenClaw subagent. It owns:
 - writing `builder.jsonl`
 - returning a structured report to Master Chef
 
-One Builder run equals one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+Each Builder run covers exactly one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
 
 There is no watchdog actor, cron wake-up, second control loop, or normal Builder-session resurrection path.
 
@@ -157,6 +157,7 @@ On the first `/cdd-master-chef` turn:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - whether the next runnable top-level TODO step is oversized for one Builder run
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - obvious blockers in the working tree
@@ -164,6 +165,7 @@ On the first `/cdd-master-chef` turn:
 3. Choose the next action and route it through the right internal skill:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+   - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
    - delegated exception: `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), or `[CDD-5] Refactor` (`cdd-refactor`) when the repo needs setup, plan repair, or refactor decomposition before Builder work
    - excluded by default: `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`), unless the process is intentionally adapted for its mixed role
@@ -197,7 +199,7 @@ Before implementation starts:
    - If `git status --short` shows tracked or staged changes, stop and ask the human to stash, commit, or discard changes first.
 2. Record the source checkout path, source branch, and source `HEAD` SHA.
 3. If this is a fresh run from a long-lived branch and kickoff approved a descriptive feature branch, create that feature branch in the source checkout first and refresh `source_branch` and `source_head_sha`.
-4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max run step budget, meaning "all remaining steps".
+4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max run step budget, meaning "all remaining steps", after any step split.
 5. Choose a managed worktree path under:
 
    ```text
@@ -393,7 +395,7 @@ Why `run` for the normal flow:
 - easier replacement
 - fewer stale-session edge cases
 
-Do not use long-lived Builder sessions or session resurrection as the normal path. If exceptional manual debugging ever requires session reuse, treat it as outside the standard contract and return to fresh one-step Builder runs immediately after.
+Do not use long-lived Builder sessions or session resurrection as the normal path. If exceptional manual debugging ever requires session reuse, treat it as outside the standard contract and return to fresh single-step Builder runs immediately after.
 
 ### 5.1 Builder contract
 
@@ -423,7 +425,7 @@ After kickoff approval:
 4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, or `cdd-refactor`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
 6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
-7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh one-step Builder run for the same step, and update runtime/log evidence immediately.
+7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh single-step Builder run for the same step, and update runtime/log evidence immediately.
 8. Run Master Chef QA and step-level UAT.
 9. If Master Chef QA rejects the Builder result:
    - record the QA findings in `master-chef.jsonl`
@@ -493,7 +495,7 @@ If stale:
 - update runtime files and logs
 - send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
 
-Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, or returned without a usable report, replace it with a fresh one-step Builder run for the same step.
+Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, or returned without a usable report, replace it with a fresh single-step Builder run for the same step.
 
 If repeated replacements fail without forward progress:
 
@@ -512,7 +514,7 @@ Blocked-step recovery procedure:
 3. Decide whether the blocker is external input, repo state, or an oversized or underspecified TODO step.
 4. If the blocker is plan-shaped, use Master-Chef-direct planning or TODO repair before any new Builder spawn, and decompose the work into smaller decision-complete TODO steps with clear checks and UAT.
 5. Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence.
-6. Re-inspect TODO state and restart only from the next smaller actionable TODO step with a fresh one-step Builder run.
+6. Re-inspect TODO state and restart only from the next smaller actionable TODO step with a fresh single-step Builder run.
 7. If the blocker requires human input or cannot be decomposed safely, keep the run stopped and report the exact decision needed.
 
 Default thresholds:
@@ -524,7 +526,7 @@ Default thresholds:
 
 ## 8) Master Chef context compaction
 
-Builder context stays simple: every normal delegated TODO action gets a fresh one-step Builder run, normally through `cdd-implement-todo`. Master Chef is long-lived, so it must make its own memory durable before compaction.
+Builder context stays simple: every normal delegated TODO action gets a fresh single-step Builder run, normally through `cdd-implement-todo`. Master Chef is long-lived, so it must make its own memory durable before compaction.
 
 ### Safe compaction points
 
@@ -612,7 +614,7 @@ A step is not passed unless all are true:
 
 ### QA rejection path
 
-When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either a fresh one-step Builder run for the same step or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
+When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either a fresh single-step Builder run for the same step or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
 
 ---
 
@@ -655,7 +657,7 @@ Runtime obligations:
 
 ### If Builder fails or stalls
 
-1. replace Builder quickly with a fresh one-step subagent run for the same step
+1. replace Builder quickly with a fresh single-step subagent run for the same step
 2. do not use session resurrection as the normal recovery path
 3. if 2 replacements fail without progress, stop the step, report the blocker, and repair or decompose TODO before restarting from a smaller actionable step
 

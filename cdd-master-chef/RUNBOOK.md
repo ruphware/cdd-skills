@@ -56,13 +56,14 @@ If the human approves that suggestion:
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
-3. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps".
-4. Choose the managed worktree path and fresh per-run branch name.
-5. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
-6. Initialize runtime state in the managed worktree.
-7. Record the active worktree path and continuation mode in runtime state.
-8. Continue in the managed worktree only if the runtime adapter can safely re-root Master Chef and Builder there.
-9. Otherwise, stop with exact relaunch instructions that point the next Master Chef session at the managed worktree path.
+3. If the next runnable top-level TODO step is oversized for one Builder run, split it first and refresh the proposed next action.
+4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
+5. Choose the managed worktree path and fresh per-run branch name.
+6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
+7. Initialize runtime state in the managed worktree.
+8. Record the active worktree path and continuation mode in runtime state.
+9. Continue in the managed worktree only if the runtime adapter can safely re-root Master Chef and Builder there.
+10. Otherwise, stop with exact relaunch instructions that point the next Master Chef session at the managed worktree path.
 
 ## 2) Runtime-state additions
 

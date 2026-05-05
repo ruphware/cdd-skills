@@ -108,6 +108,7 @@ for pattern in \
   'Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval' \
   'remaining unfinished top-level step-heading count.*default/max step budget' \
   'fresh run from a long-lived branch.*descriptive feature branch' \
+  'split an oversized top-level step before (Builder handoff|delegation)' \
   'For `\[CDD-8\] Master Chef`:' \
   'start `(\$|/)?cdd-master-chef`.*main session.*runtime you want to control' \
   'Run config block.*current session model.*thinking.*approve or edit' \
@@ -171,9 +172,11 @@ for field in \
 done
 assert_topic_bundle "$SHARED_ROOT/CONTRACT.md" "contract monitoring topics" \
   'unfinished top-level TODO step-heading count' \
+  'oversized for one Builder run' \
   'descriptive feature branch' \
   'nested checkboxes or sub-tasks' \
   'default/max run step budget.*all remaining steps' \
+  'oversized for one Builder run.*split.*smaller decision-complete TODO steps' \
   'Builder monitoring.*live status.*partial output.*direct reasoning visibility' \
   'two phases:.*boot/readiness.*quiet-work' \
   'spawn evidence' \
@@ -211,6 +214,7 @@ for token in \
 done
 assert_topic_bundle "$SHARED_ROOT/RUNBOOK.md" "runbook monitoring topics" \
   'fresh run.*long-lived branch.*descriptive feature branch' \
+  'oversized for one Builder run.*split it first' \
   'unfinished top-level TODO step-heading count' \
   'default/max .*run_step_budget.*all remaining steps' \
   'does not expose live Builder reasoning.*do not pretend' \
@@ -253,6 +257,7 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CODEX-ADAPTER.md" "codex adapter 
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CODEX-RUNBOOK.md" "codex runbook topics" \
   '^## 7\) Builder monitoring' \
   'shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget' \
+  'oversized next top-level TODO step' \
   'two phases:.*boot/readiness.*quiet-work' \
   'spawn evidence only' \
   'builder_phase: booting.*runtime child-started signal.*readiness ACK.*BUILDER_READY' \
@@ -268,6 +273,7 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CODEX-TEST-HARNESS.md" "codex har
   '^### Prompt I - Builder boot readiness' \
   'remaining top-level-step count is stated when finite' \
   'feature-branch suggestion is surfaced when applicable' \
+  'oversized top-level step is split in Master Chef before Builder handoff' \
   'exact remaining top-level-step count when that count is finite' \
   'direct evidence instead of guessing' \
   'spawn evidence, not readiness proof' \
@@ -291,6 +297,7 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CLAUDE-ADAPTER.md" "claude adapte
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CLAUDE-RUNBOOK.md" "claude runbook topics" \
   '^## 8\) Builder monitoring' \
   'shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget' \
+  'oversized next top-level TODO step' \
   'two phases:.*boot/readiness.*quiet-work' \
   'spawn evidence only' \
   'builder_phase: booting.*runtime child-started signal.*readiness ACK.*BUILDER_READY' \
@@ -306,6 +313,7 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/CLAUDE-TEST-HARNESS.md" "claude h
   '^### Prompt I - Builder boot readiness' \
   'remaining top-level-step count is stated when finite' \
   'feature-branch suggestion is surfaced when applicable' \
+  'oversized top-level step is split in Master Chef before Builder handoff' \
   'exact remaining top-level-step count when that count is finite' \
   'direct evidence instead of guessing' \
   'spawn evidence, not readiness proof' \
@@ -330,6 +338,7 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/SKILL.md" "shared skill runtime t
   'approved run step budget' \
   'unfinished top-level TODO step-heading count' \
   'descriptive feature branch' \
+  'oversized for one Builder run' \
   'spawn Builder now.*start the autonomous run' \
   'source_repo' \
   'worktree_continue_mode'
@@ -337,20 +346,24 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "openclaw rea
   'current session model.*current session thinking.*recommend.*Run config' \
   'top-level TODO step-heading count' \
   'descriptive feature branch' \
+  'oversized for one Builder run' \
   'default/max step budget'
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "openclaw runbook topics" \
   'Run config.*resolved and approved before kickoff' \
   'unfinished top-level TODO step-heading count' \
+  'oversized for one Builder run.*split it in Master Chef first' \
   'shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget' \
   '"run_step_budget": 1' \
   '"steps_completed_this_run": 0'
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md" "openclaw harness prompts" \
   'Prompt A0 - Recommendation path' \
+  'Prompt A1 - Oversized-step split before Builder handoff' \
   'Prompt J - QA reject remediation' \
   'Prompt L - Blocked-step decomposition' \
   'Prompt N - Context compaction and resume' \
   'remaining unfinished top-level TODO step-heading count is stated when finite' \
   'fresh-start feature-branch suggestion' \
+  'remaining top-level-step count is recomputed after the split' \
   'exact remaining top-level-step count when that count is finite'
 
 echo "[MasterChefArtifacts] INFO GeneratedBuilder runtime={openclaw}"
