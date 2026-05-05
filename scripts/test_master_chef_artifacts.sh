@@ -114,7 +114,7 @@ for pattern in \
   'split an oversized top-level step before (Builder handoff|delegation)' \
   'For `\[CDD-6\] Master Chef`:' \
   'start `(\$|/)?cdd-master-chef`.*main session.*runtime you want to control' \
-  'Run config block.*current session model.*thinking.*approve or edit' \
+  'current session model and thinking automatically.*Builder override' \
   'how many TODO steps this run should cover' \
   'whether (Master Chef|it) should spawn Builder now' \
   'No-clone upgrade path:' \
@@ -350,7 +350,8 @@ for rel in \
 done
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/SKILL.md" "shared skill runtime topics" \
   '\.cdd-runtime/master-chef/run\.json' \
-  'current session model.*current session thinking.*recommend.*Run config' \
+  'read the current session model and thinking directly' \
+  'default Builder to inherit' \
   'approved run step budget' \
   'unfinished top-level TODO step-heading count' \
   'descriptive feature branch' \
@@ -359,20 +360,22 @@ assert_topic_bundle "$ROOT_DIR/cdd-master-chef/SKILL.md" "shared skill runtime t
   'source_repo' \
   'worktree_continue_mode'
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "openclaw readme topics" \
-  'current session model.*current session thinking.*recommend.*Run config' \
+  'current session model and thinking directly.*Master Chef facts' \
+  'apply a `Builder override` only when one is supplied' \
   'top-level TODO step-heading count' \
   'descriptive feature branch' \
   'oversized for one Builder run' \
   'default/max step budget'
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "openclaw runbook topics" \
-  'Run config.*resolved and approved before kickoff' \
+  'current session model and thinking must both be visible enough to mirror into runtime state before kickoff' \
+  'optional `Builder override` must be resolved before kickoff' \
   'unfinished top-level TODO step-heading count' \
   'oversized for one Builder run.*split it in Master Chef first' \
   'shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget' \
   '"run_step_budget": 1' \
   '"steps_completed_this_run": 0'
 assert_topic_bundle "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md" "openclaw harness prompts" \
-  'Prompt A0 - Recommendation path' \
+  'Prompt A0 - Session-settings path' \
   'Prompt A1 - Oversized-step split before Builder handoff' \
   'Prompt J - QA reject remediation' \
   'Prompt L - Blocked-step decomposition' \
