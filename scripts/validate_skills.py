@@ -66,6 +66,30 @@ MASTER_CHEF_KICKOFF_HARNESS_REGEXES = (
     r"selector-based options rather than a free-form approval question",
     r"replying with just `A`, `B`, or `C` would be enough",
 )
+REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
+MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
+MASTER_CHEF_RUNBOOK_WORKTREE_ROOT = (
+    "<source-repo>/.cdd-runtime/worktrees/<run-id>/"
+)
+LEGACY_MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/master-chef/worktrees/<run-id>/"
+BOOT_SELECTOR_FOLLOWUP_REGEXES = (
+    r"repo-local `AGENTS\.md` response-format guidance.*authoritative.*follow-up presentation",
+    r"repo-local `NEXT` section.*selector-labeled choices",
+    r"no repo-local `NEXT` contract.*final `\*\*Options\*\*` section",
+    r"recommended option first",
+    r"`\.cdd-runtime/worktrees/<branch-or-tag>/`",
+    r"create or move into a worktree first",
+    r"continue in the current worktree",
+    r"clear next runnable TODO step.*`\$?cdd-implement-todo <step>`",
+    r"do not offer to start implementation directly from boot",
+)
+BOOT_YAML_REGEXES = (
+    r"worktree boot",
+    r"docs/JOURNAL\.md.*journal entrypoint.*split-journal files",
+    r"AGENTS\.md next-action formatting.*selector-based next-step choices",
+    r"\.cdd-runtime/worktrees/<branch-or-tag>/",
+    r"clear next runnable TODO step.*cdd-implement-todo <step>",
+)
 
 
 def frontmatter(path: Path) -> str:
@@ -316,19 +340,32 @@ def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
             r"`docs/JOURNAL\.md`.*split-journal mode.*`docs/journal/JOURNAL-<area>\.md`.*`docs/journal/SUMMARY\.md`",
             r"split-journal mode is active.*cross-cutting notes.*older condensed context",
             r"top of `docs/JOURNAL\.md`.*do not ingest full history unless the user explicitly asks",
+            *BOOT_SELECTOR_FOLLOWUP_REGEXES,
             r"repo is Git-backed.*main worktree or a linked worktree",
             r"current checkout is already a linked worktree.*recommend staying in that worktree",
             r"current checkout is the main worktree.*recommend moving feature development into a worktree",
-            r"recommends moving feature development into a worktree.*`Next action`.*offer creating a worktree and continuing development there as one of the options",
+            r"creating or moving into a worktree first.*`\.cdd-runtime/worktrees/<branch-or-tag>/`",
+            r"create or move into a worktree first.*continue in the current worktree",
             r"staying in the main folder is acceptable|Otherwise.*staying in the main folder is acceptable",
             r"Do not create, switch, remove, or clean worktrees during boot",
             r"`Worktree`.*stay in the main folder or move into a worktree",
-            r"`Next action`.*worktree migration is recommended.*creating a worktree and continuing there one of them",
+            r"`Next action`.*selector-labeled choices.*repo-local `NEXT` section|`Next action`.*final `\*\*Options\*\*` section",
+            r"`Next action`.*`\.cdd-runtime/worktrees/<branch-or-tag>/`.*`\$?cdd-implement-todo <step>`",
             r"Do not write or modify repo files",
             r"recommend continuing in vanilla AGENTS-driven mode",
         ),
         skill_md,
         "boot skill topics",
+    )
+
+
+def validate_boot_followup_contract(skill_text: str, skill_md: Path) -> None:
+    """Assert the boot skill keeps selector-driven next-step routing."""
+    require_topic_bundle(
+        skill_text,
+        BOOT_SELECTOR_FOLLOWUP_REGEXES,
+        skill_md,
+        "boot follow-up topics",
     )
 
 
@@ -539,6 +576,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     )
 
     if skill_dir.name in {
+        "cdd-boot",
         "cdd-plan",
         "cdd-implementation-audit",
         "cdd-init-project",
@@ -546,6 +584,9 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         "cdd-implement-todo",
     }:
         validate_selector_labeled_options(skill_text, skill_md)
+    if skill_dir.name == "cdd-boot":
+        validate_boot_followup_contract(skill_text, skill_md)
+        require_regexes(yaml_text, BOOT_YAML_REGEXES, openai_yaml, "boot YAML topics")
     if skill_dir.name in {
         "cdd-plan",
         "cdd-init-project",
@@ -570,17 +611,6 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
             validate_implement_todo_skill_text(skill_text, skill_md)
         if skill_dir.name == "cdd-boot":
             validate_boot_skill_text(skill_text, skill_md)
-            require_regexes(
-                yaml_text,
-                (
-                    r"worktree boot",
-                    r"docs/JOURNAL\.md.*journal entrypoint.*split-journal files",
-                    r"worktree status.*stay in the main folder or move into a worktree",
-                    r"[Nn]ext action.*creat.*worktree.*continu.*there",
-                ),
-                openai_yaml,
-                "boot YAML topics",
-            )
         if skill_dir.name == "cdd-maintain":
             validate_maintain_skill_text(skill_text, skill_md)
         if skill_dir.name == "cdd-init-project":
@@ -661,7 +691,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_substrings(
         skill_text,
         (
-            ".cdd-runtime/worktrees/<run-id>/",
+            MASTER_CHEF_WORKTREE_ROOT,
             ".cdd-runtime/master-chef/",
         ),
         skill_md,
@@ -669,13 +699,13 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     )
     forbid_substrings(
         skill_text,
-        (".cdd-runtime/master-chef/worktrees/<run-id>/",),
+        (LEGACY_MASTER_CHEF_WORKTREE_ROOT,),
         skill_md,
         "old shared package worktree root",
     )
     require_substrings(
         gitignore_text,
-        (".cdd-runtime/",),
+        (REPO_LOCAL_RUNTIME_IGNORE,),
         gitignore_md,
         "repo-local runtime ignore rule",
     )
@@ -694,7 +724,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         contract_text,
         (
             ".cdd-runtime/master-chef/run.json",
-            ".cdd-runtime/worktrees/<run-id>/",
+            MASTER_CHEF_WORKTREE_ROOT,
             "The full Run config must be resolved and approved before kickoff.",
             "- the per-run step budget",
             "unfinished top-level TODO step-heading count",
@@ -725,7 +755,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     )
     forbid_substrings(
         contract_text,
-        (".cdd-runtime/master-chef/worktrees/<run-id>/",),
+        (LEGACY_MASTER_CHEF_WORKTREE_ROOT,),
         contract_md,
         "old shared contract worktree root",
     )
@@ -774,7 +804,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_substrings(
         runbook_text,
         (
-            "<source-repo>/.cdd-runtime/worktrees/<run-id>/",
+            MASTER_CHEF_RUNBOOK_WORKTREE_ROOT,
             "master-chef/<run-id>",
             "### Fresh-start feature branch suggestion",
             "unfinished top-level TODO step-heading count",
@@ -799,7 +829,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     )
     forbid_substrings(
         runbook_text,
-        (".cdd-runtime/master-chef/worktrees/<run-id>/",),
+        (LEGACY_MASTER_CHEF_WORKTREE_ROOT,),
         runbook_md,
         "old shared runbook worktree root",
     )
@@ -1473,6 +1503,7 @@ def validate_generated_openclaw_builder_skills(
                 "generated Builder wrapper topics",
             )
             if skill_name in {
+                "cdd-boot",
                 "cdd-plan",
                 "cdd-implementation-audit",
                 "cdd-init-project",
@@ -1480,6 +1511,8 @@ def validate_generated_openclaw_builder_skills(
                 "cdd-implement-todo",
             }:
                 validate_selector_labeled_options(skill_text, skill_md)
+            if skill_name == "cdd-boot":
+                validate_boot_followup_contract(skill_text, skill_md)
             if skill_name in {
                 "cdd-plan",
                 "cdd-init-project",

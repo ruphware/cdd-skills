@@ -1121,10 +1121,10 @@ Make `cdd-boot` emit selector-labeled next actions, recommend repo-local worktre
 
 ### Tasks
 
-- [ ] Update `skills/cdd-boot/SKILL.md` so any follow-up surface uses selector-labeled choices aligned to repo-local `AGENTS.md`; when no repo-local `NEXT` contract exists, fall back to a final `**Options**` section with 2-4 concrete choices and the recommended option first.
-- [ ] Update `skills/cdd-boot/SKILL.md` so worktree-migration recommendations use `.cdd-runtime/worktrees/<branch-or-tag>/` and explicitly distinguish "create or move into a worktree first" from "continue in the current worktree."
-- [ ] Update `skills/cdd-boot/SKILL.md` so when a clear next runnable TODO step exists, the recommended follow-up names `$cdd-implement-todo <step>` rather than offering to start the step directly; if the user first needs a worktree, the recommended option should chain that path with continuing via `$cdd-implement-todo`.
-- [ ] Update `skills/cdd-boot/agents/openai.yaml` and `scripts/validate_skills.py` so the boot metadata and regression coverage enforce the selector contract, the new worktree root, and the `$cdd-implement-todo` handoff rule.
+- [x] Update `skills/cdd-boot/SKILL.md` so any follow-up surface uses selector-labeled choices aligned to repo-local `AGENTS.md`; when no repo-local `NEXT` contract exists, fall back to a final `**Options**` section with 2-4 concrete choices and the recommended option first.
+- [x] Update `skills/cdd-boot/SKILL.md` so worktree-migration recommendations use `.cdd-runtime/worktrees/<branch-or-tag>/` and explicitly distinguish "create or move into a worktree first" from "continue in the current worktree."
+- [x] Update `skills/cdd-boot/SKILL.md` so when a clear next runnable TODO step exists, the recommended follow-up names `$cdd-implement-todo <step>` rather than offering to start the step directly; if the user first needs a worktree, the recommended option should chain that path with continuing via `$cdd-implement-todo`.
+- [x] Update `skills/cdd-boot/agents/openai.yaml` and `scripts/validate_skills.py` so the boot metadata and regression coverage enforce the selector contract, the new worktree root, and the `$cdd-implement-todo` handoff rule.
 
 ### Implementation notes
 

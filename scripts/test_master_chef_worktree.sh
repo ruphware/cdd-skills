@@ -48,6 +48,8 @@ echo "[MasterChefWorktree] INFO TestStart root={$TMP_ROOT}"
 
 clean_repo="$TMP_ROOT/clean-repo"
 create_repo "$clean_repo"
+expected_worktree_root=".cdd-runtime/worktrees/<run-id>/"
+expected_runbook_worktree_root="<source-repo>/.cdd-runtime/worktrees/<run-id>/"
 
 echo "[MasterChefWorktree] INFO CleanRepoPrepared repo={$clean_repo}"
 assert_clean_checkout "$clean_repo"
@@ -89,11 +91,11 @@ echo "[MasterChefWorktree] INFO DirtyPreflightRejected repo={$dirty_repo}"
 
 assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "source checkout must be clean|Before kickoff.*clean"
 assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "active_worktree_path"
-assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" ".cdd-runtime/worktrees/<run-id>/"
+assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "$expected_worktree_root"
 assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
-assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "<source-repo>/.cdd-runtime/worktrees/<run-id>/"
+assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "$expected_runbook_worktree_root"
 assert_matches "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
-assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" ".cdd-runtime/worktrees/<run-id>/"
+assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "$expected_worktree_root"
 assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
 assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 
