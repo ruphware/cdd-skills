@@ -1,6 +1,6 @@
 ---
 name: cdd-maintain
-description: "Maintain a CDD repo by handling doc drift, approval-gated codebase cleanup, docs/INDEX refresh, and refactor architecture audit, plus archive and local-runtime upkeep (explicit-only)."
+description: "Maintain a CDD repo through doc drift, approval-gated codebase cleanup, docs/INDEX refresh, refactor architecture audit, and archive/runtime upkeep (explicit-only)."
 disable-model-invocation: true
 ---
 
@@ -13,12 +13,9 @@ Read:
 - `AGENTS.md`
 - `README.md`
 - `TODO.md` and adjacent `TODO*.md`
-- `docs/JOURNAL.md` as the stable journal entrypoint
-- `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active
+- `docs/JOURNAL.md` as the stable journal entrypoint, plus `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active
 - `docs/INDEX.md`
-- `docs/specs/prd.md`
-- `docs/specs/blueprint.md`
-- connected `docs/specs/*-definition.md` files when present
+- `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files when present
 - `docs/prompts/PROMPT-INDEX.md` if present
 - repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces
 - repo-local `.cdd-runtime/` when present, especially `.cdd-runtime/master-chef/`
@@ -26,19 +23,15 @@ Read:
 
 ## Mode selection
 - If the user request already clearly maps to one mode, use it directly.
-- Otherwise ask one substantive question and wait:
+- Otherwise ask one substantive question and wait. Put choices at the bottom under a final `**Options**` section:
   - `A. doc drift`
   - `B. codebase cleanup`
   - `C. index`
   - `D. refactor`
   - `do all`
-- Put interactive choices at the bottom under a final `**Options**` section.
-- Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key.
-- default to letters: `A.`, `B.`, `C.`.
-- use numbers only when the surrounding context is already numeric and that would be clearer.
+- Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters: `A.`, `B.`, `C.`. Use numbers only when the surrounding context is already numeric and that would be clearer.
 - When practical, tell the user they can reply with just the selector.
-- Allow selecting more than one option in the same reply.
-- If the user says `do all` or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
+- Allow selecting more than one option in the same reply. If the user says `do all` or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
 - Keep the mode-specific write scope tight. Do not widen from one mode into another without asking.
 
 ## Safe write behavior
@@ -89,11 +82,9 @@ Read:
 - Treat `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files as canonical support docs.
 - Also review `docs/INDEX.md` and `docs/prompts/PROMPT-INDEX.md` when present as support-doc navigation surfaces.
 - Treat repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces tied to the repo's documented workflow.
-- Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs.
-- When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract.
+- Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs. When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract.
 - Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, doc-role boundaries, journal topology, and workflow-skill expectations still match the repo.
-- For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression.
-- If `README.md` includes a CDD contract note, keep it as a low-visibility bottom footer.
+- For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression. If `README.md` includes a CDD contract note, keep it as a low-visibility bottom footer.
 - If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
 - For `docs/specs/prd.md`: treat it as the product-manager view.
 - For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec.
@@ -101,10 +92,8 @@ Read:
 - Classify each support doc as `current`, `drifted`, `missing`, or `unclear`.
 - Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear`.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
-- If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything.
-- Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files.
-- Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?`
-- Keep documentation approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything. Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files.
+- Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?` Keep documentation approval separate from stale TODO deletion approval and runtime-cleanup approval.
 - If the user approves, apply only the approved support-doc edits and then report them.
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
@@ -162,19 +151,16 @@ Regenerate `docs/INDEX.md` as a single-file update after approval.
 ## Mode D — Refactor
 - Use refactor mode for a read-only architecture audit, not TODO authoring or direct implementation edits.
 - Refactor mode requires a fresh `docs/INDEX.md`.
-- If the current selection already includes `C. index`, complete that refreshed index first and run the refactor audit against the post-index repo state.
-- If `docs/INDEX.md` is missing, `stale`, or `very stale` and `C. index` is not part of the current selection, stop and ask whether to add `C. index` before continuing.
+- If the current selection already includes `C. index`, complete that refreshed index first and run the refactor audit against the post-index repo state. If `docs/INDEX.md` is missing, `stale`, or `very stale` and `C. index` is not part of the current selection, stop and ask whether to add `C. index` before continuing.
 - Candidate sources:
   - `docs/INDEX.md` file inventory rows tagged `refactor-candidate` when present
   - explicit refactor notes already in `docs/INDEX.md` or `TODO*.md`
   - refactor pressure discovered during maintain-mode review
-- Review the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context so the audit reflects the real implementation state.
-- When multiple modes are selected, run refactor mode against the repo state after any approved `doc drift`, `codebase cleanup`, and `index` work has completed.
+- Review the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context so the audit reflects the real implementation state. When multiple modes are selected, run refactor mode against the repo state after any approved `doc drift`, `codebase cleanup`, and `index` work has completed.
 - Stay read-only in this mode. Do not rewrite implementation directly and do not write `TODO-refactor-<tag>.md` files here.
 - Normalize findings around architecture boundaries, design pressure, duplicated responsibility, unclear ownership, oversized files, brittle seams, and other concrete refactor drivers.
 - Ask at most one substantive clarification or decision question per message.
-- Present 2-3 context-specific refactor options under a final `**Options**` section with `A.`, `B.`, and `C.` selectors.
-- Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.
+- Present 2-3 context-specific refactor options under a final `**Options**` section with `A.`, `B.`, and `C.` selectors. Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.
 - Keep the options KISS: minimal scope first, no speculative cleanup, no pattern cargo-culting.
 - Finish with an architecture audit report and recommend `cdd-plan` as the next step for any selected or preferred refactor direction.
 

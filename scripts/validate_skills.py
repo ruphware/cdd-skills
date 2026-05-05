@@ -241,8 +241,8 @@ def validate_selector_labeled_options(skill_text: str, skill_md: Path) -> None:
         skill_text,
         (
             r"visible selector.*label itself.*selectable key",
-            r"default to letters:\s*`A\.`, `B\.`, `C\.`",
-            r"use numbers only when the surrounding context is already numeric",
+            r"[Dd]efault to letters:\s*`A\.`, `B\.`, `C\.`",
+            r"[Uu]se numbers only when the surrounding context is already numeric",
             r"reply with just the selector",
         ),
         skill_md,
