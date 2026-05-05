@@ -1068,3 +1068,78 @@ Make `cdd-maintain` the single upkeep skill for doc drift, codebase cleanup, `do
 - [x] Confirm `cdd-index` and `cdd-refactor` are no longer shipped as standalone skills.
 - [x] Confirm `[CDD-5] Maintain` covers doc drift, codebase cleanup, index refresh, and refactor architecture audit.
 - [x] Confirm `[CDD-6] Master Chef` docs and tests no longer reference standalone `cdd-index` or `cdd-refactor`.
+
+## Step 29 — Unify repo-local worktree root under `.cdd-runtime/worktrees/`
+
+### Goal
+
+Make `.cdd-runtime/worktrees/` the single repo-wide root for managed worktrees while keeping Master Chef runtime files and metadata under `.cdd-runtime/master-chef/`.
+
+### Constraints
+
+- Preserve clean-checkout-first kickoff, fresh per-run branches, Git's one-branch-per-worktree rule, and approval-gated cleanup.
+- `active_worktree_path` must move to `.cdd-runtime/worktrees/<run-id>/`, but runtime files must still live under the active worktree's `.cdd-runtime/master-chef/`.
+- Root `.gitignore` must ignore `.cdd-runtime/`, and init/adoption flows must preserve or add that rule safely.
+
+### Tasks
+
+- [x] Update the shared Master Chef contract and runbook surfaces in `cdd-master-chef/` so every managed worktree path changes from `.cdd-runtime/master-chef/worktrees/<run-id>/` to `.cdd-runtime/worktrees/<run-id>/`, while runtime-state field meanings and runtime-file locations stay under `.cdd-runtime/master-chef/`.
+- [x] Update adapter-facing docs and harnesses that currently hardcode the old path, including the OpenClaw runbook and README, so relaunch instructions, examples, and JSON examples all use the new worktree root.
+- [x] Update the executable and structural validation surfaces, including `scripts/test_master_chef_worktree.sh`, `scripts/test_master_chef_artifacts.sh`, and `scripts/validate_skills.py`, so validation fails if the old nested worktree root returns.
+- [x] Update this repo's root `.gitignore` to ignore `.cdd-runtime/`, and update `skills/cdd-init-project/SKILL.md` so fresh/bootstrap and adoption flows treat `.cdd-runtime/` as a required local ignore surface for target repos.
+
+### Implementation notes
+
+- Keep the semantic split explicit: worktrees under `.cdd-runtime/worktrees/`, durable Master Chef metadata under `.cdd-runtime/master-chef/`.
+- Remove the old `.cdd-runtime/master-chef/worktrees/` wording from docs, tests, and examples rather than supporting both paths.
+- Do not widen this step into `cdd-boot` behavior; that stays in Step 30.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_master_chef_worktree.sh`
+
+### UAT
+
+- Confirm shared and adapter docs now point managed worktrees at `.cdd-runtime/worktrees/<run-id>/`.
+- Confirm runtime metadata and runtime files still live under `.cdd-runtime/master-chef/`.
+- Confirm root `.gitignore` includes `.cdd-runtime/`.
+- Confirm worktree smoke coverage still rejects same-branch reuse and dirty-source preflight failures.
+
+## Step 30 — Make `cdd-boot` use selector next actions and `$cdd-implement-todo` handoff
+
+### Goal
+
+Make `cdd-boot` emit selector-labeled next actions, recommend repo-local worktree paths under `.cdd-runtime/worktrees/`, and route clear runnable TODO follow-up through `$cdd-implement-todo` instead of direct implementation offers.
+
+### Constraints
+
+- `cdd-boot` remains read-only and must not create worktrees, switch directories, or start implementation.
+- Repo-local `AGENTS.md` response-format guidance remains authoritative for `NEXT` or selector-style follow-up.
+- Worktree recommendations must use the Step 29 path contract.
+
+### Tasks
+
+- [ ] Update `skills/cdd-boot/SKILL.md` so any follow-up surface uses selector-labeled choices aligned to repo-local `AGENTS.md`; when no repo-local `NEXT` contract exists, fall back to a final `**Options**` section with 2-4 concrete choices and the recommended option first.
+- [ ] Update `skills/cdd-boot/SKILL.md` so worktree-migration recommendations use `.cdd-runtime/worktrees/<branch-or-tag>/` and explicitly distinguish "create or move into a worktree first" from "continue in the current worktree."
+- [ ] Update `skills/cdd-boot/SKILL.md` so when a clear next runnable TODO step exists, the recommended follow-up names `$cdd-implement-todo <step>` rather than offering to start the step directly; if the user first needs a worktree, the recommended option should chain that path with continuing via `$cdd-implement-todo`.
+- [ ] Update `skills/cdd-boot/agents/openai.yaml` and `scripts/validate_skills.py` so the boot metadata and regression coverage enforce the selector contract, the new worktree root, and the `$cdd-implement-todo` handoff rule.
+
+### Implementation notes
+
+- Keep selector choices as navigation or clarification only; do not turn boot into an approval-gated apply skill.
+- Use the target branch or approved workstream tag as the default manual-worktree leaf name so boot recommendations are path-stable and predictable.
+- Preserve the existing graceful-fallback and split-journal boot behavior.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Confirm boot reports now show selector-labeled next actions instead of plain bullets in repos whose `AGENTS.md` expects optioned follow-up.
+- Confirm boot worktree recommendations now point at `.cdd-runtime/worktrees/<branch-or-tag>/`.
+- Confirm a clear runnable TODO step now produces a `$cdd-implement-todo <step>` recommendation rather than "I can start it directly."
+- Confirm validation fails if `cdd-boot` drifts back to the old worktree root or unlabeled/direct-implementation follow-up wording.

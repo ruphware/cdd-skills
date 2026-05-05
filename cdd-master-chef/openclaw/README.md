@@ -40,7 +40,7 @@ There is no watchdog cron. The human approves one per-run Run config, approves h
 ## Managed worktree policy
 
 - The source checkout must be clean before kickoff. If it is dirty, Master Chef stops and asks the human to stash, commit, or discard changes first.
-- The OpenClaw adapter provisions a fresh per-run branch in a managed worktree rooted under `.cdd-runtime/master-chef/worktrees/<run-id>/`.
+- The OpenClaw adapter provisions a fresh per-run branch in a managed worktree rooted under `.cdd-runtime/worktrees/<run-id>/`.
 - The current OpenClaw adapter then stops with exact relaunch instructions rather than assuming safe live cwd switching inside the already-running session.
 - After relaunch, treat the managed worktree as the active repo root for TODO inspection, QA, commit, and push.
 

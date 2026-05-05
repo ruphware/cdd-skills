@@ -23,7 +23,7 @@ Before kickoff, the source checkout must be clean.
 Preferred managed location:
 
 ```text
-<source-repo>/.cdd-runtime/master-chef/worktrees/<run-id>/
+<source-repo>/.cdd-runtime/worktrees/<run-id>/
 ```
 
 Adapters may use a runtime-managed external location only if they document that choice explicitly.

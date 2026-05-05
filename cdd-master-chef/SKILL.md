@@ -74,7 +74,7 @@ Operating contract:
    - require a clean source checkout before kickoff; if dirty, stop and ask the human to stash, commit, or discard changes first
    - if this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, suggest a descriptive feature branch first; if approved, create it in the source checkout before the per-run worktree branch
    - create a fresh per-run branch from the current branch `HEAD`
-   - prefer `.cdd-runtime/master-chef/worktrees/<run-id>/` as the managed worktree path
+   - prefer `.cdd-runtime/worktrees/<run-id>/` as the managed worktree path
    - record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
    - the active runtime adapter either continues in-session from the managed worktree or stops with exact relaunch instructions; keep `worktree_continue_mode` explicit
 10. Before implementation starts, present one selector-driven kickoff approval that covers:

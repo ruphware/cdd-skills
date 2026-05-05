@@ -199,7 +199,7 @@ Master Chef runs against a managed worktree rather than mutating the source chec
 Prefer a managed worktree path under:
 
 ```text
-.cdd-runtime/master-chef/worktrees/<run-id>/
+.cdd-runtime/worktrees/<run-id>/
 ```
 
 Runtime adapters may use a different location only if they document that choice explicitly.

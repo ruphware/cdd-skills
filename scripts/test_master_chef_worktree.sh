@@ -54,7 +54,7 @@ assert_clean_checkout "$clean_repo"
 
 run_id="run-001"
 worktree_branch="master-chef/$run_id"
-worktree_path="$clean_repo/.cdd-runtime/master-chef/worktrees/$run_id"
+worktree_path="$clean_repo/.cdd-runtime/worktrees/$run_id"
 
 git -C "$clean_repo" worktree add "$worktree_path" -b "$worktree_branch" HEAD >/dev/null
 assert_exists "$worktree_path/.git"
@@ -71,7 +71,7 @@ worktree_head="$(git -C "$worktree_path" rev-parse HEAD)"
 
 echo "[MasterChefWorktree] INFO WorktreeCreated branch={$worktree_branch} path={$worktree_path}"
 
-second_path="$clean_repo/.cdd-runtime/master-chef/worktrees/run-002"
+second_path="$clean_repo/.cdd-runtime/worktrees/run-002"
 if git -C "$clean_repo" worktree add "$second_path" "$worktree_branch" >/dev/null 2>&1; then
   fail "Expected same-branch second worktree creation to fail"
 fi
@@ -89,9 +89,13 @@ echo "[MasterChefWorktree] INFO DirtyPreflightRejected repo={$dirty_repo}"
 
 assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "source checkout must be clean|Before kickoff.*clean"
 assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "active_worktree_path"
+assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" ".cdd-runtime/worktrees/<run-id>/"
 assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
+assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "<source-repo>/.cdd-runtime/worktrees/<run-id>/"
 assert_matches "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
+assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" ".cdd-runtime/worktrees/<run-id>/"
 assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
+assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 
 echo "[MasterChefWorktree] INFO ContractDocsVerified root={$ROOT_DIR}"
 echo "[MasterChefWorktree] INFO TestPassed root={$TMP_ROOT}"

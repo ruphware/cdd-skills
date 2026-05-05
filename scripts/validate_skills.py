@@ -469,13 +469,16 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
             r"`docs/journal/\*`.*only when split-journal mode is active",
             r"`docs/prompts/PROMPT-INDEX\.md`.*preserve its role",
             r"`\.agents/skills/\*/SKILL\.md`.*preserve repo-local project skills when present",
+            r"`\.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `\.cdd-runtime/` is ignored",
             r"`README\.md`, `docs/specs/prd\.md`, and `docs/specs/blueprint\.md` are repo-specific outputs",
+            r"Ignore non-substantive paths.*`\.cdd-runtime/`",
             r"Inventory existing docs.*repo-local `\.agents/skills/\*/SKILL\.md`",
             r"repo-specific planning to `TODO\.md`",
             r"preserve the boilerplate header, Step 00, and Step template",
             r"append repo-specific Step 01\+ work.*docs/INDEX\.md.*PROMPT-INDEX.*cdd-maintain.*`index` mode",
             r"`TODO\.md`, `docs/JOURNAL\.md`, and `docs/prompts/PROMPT-INDEX\.md`.*materialize from `https://github\.com/ruphware/cdd-boilerplate`",
             r"`\.agents/skills/\*/SKILL\.md`: when present.*do not import user-home skills",
+            r"update `\.gitignore` if needed so repo-local `\.cdd-runtime/` is ignored without dropping existing ignore rules",
             r"AGENTS\.md.*`NEXT`.*otherwise.*`\*\*Options\*\*`",
             r"selected option itself is the approval",
             r"[Dd]o not append a separate free-form approval question after selector options",
@@ -594,24 +597,27 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     """Validate shared Master Chef contract artifacts structurally."""
     shared_root = repo_root / "cdd-master-chef"
     readme_md = shared_root / "README.md"
+    skill_md = shared_root / "SKILL.md"
     contract_md = shared_root / "CONTRACT.md"
     runbook_md = shared_root / "RUNBOOK.md"
     matrix_md = shared_root / "RUNTIME-CAPABILITIES.md"
     root_readme_md = repo_root / "README.md"
+    gitignore_md = repo_root / ".gitignore"
     install_sh = repo_root / "scripts" / "install.sh"
 
-    for path in (readme_md, contract_md, runbook_md, matrix_md, root_readme_md, install_sh):
+    for path in (readme_md, skill_md, contract_md, runbook_md, matrix_md, root_readme_md, gitignore_md, install_sh):
         assert path.exists(), f"missing {path}"
 
-    assert (shared_root / "SKILL.md").exists(), f"missing {shared_root / 'SKILL.md'}"
     assert not (repo_root / "master-chef").exists(), "legacy top-level master-chef stub should be removed"
     assert not (repo_root / "openclaw").exists(), "legacy top-level openclaw stub should be removed"
 
     readme_text = readme_md.read_text(encoding="utf-8")
+    skill_text = skill_md.read_text(encoding="utf-8")
     contract_text = contract_md.read_text(encoding="utf-8")
     runbook_text = runbook_md.read_text(encoding="utf-8")
     matrix_text = matrix_md.read_text(encoding="utf-8")
     root_readme_text = root_readme_md.read_text(encoding="utf-8")
+    gitignore_text = gitignore_md.read_text(encoding="utf-8")
     install_text = install_sh.read_text(encoding="utf-8")
 
     require_substrings(
@@ -652,6 +658,27 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         readme_md,
         "outdated shared package wording",
     )
+    require_substrings(
+        skill_text,
+        (
+            ".cdd-runtime/worktrees/<run-id>/",
+            ".cdd-runtime/master-chef/",
+        ),
+        skill_md,
+        "shared package worktree contract",
+    )
+    forbid_substrings(
+        skill_text,
+        (".cdd-runtime/master-chef/worktrees/<run-id>/",),
+        skill_md,
+        "old shared package worktree root",
+    )
+    require_substrings(
+        gitignore_text,
+        (".cdd-runtime/",),
+        gitignore_md,
+        "repo-local runtime ignore rule",
+    )
 
     require_headings(
         contract_text,
@@ -667,6 +694,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         contract_text,
         (
             ".cdd-runtime/master-chef/run.json",
+            ".cdd-runtime/worktrees/<run-id>/",
             "The full Run config must be resolved and approved before kickoff.",
             "- the per-run step budget",
             "unfinished top-level TODO step-heading count",
@@ -694,6 +722,12 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         ),
         contract_md,
         "shared contract runtime-state fields",
+    )
+    forbid_substrings(
+        contract_text,
+        (".cdd-runtime/master-chef/worktrees/<run-id>/",),
+        contract_md,
+        "old shared contract worktree root",
     )
     require_regexes(
         contract_text,
@@ -740,7 +774,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_substrings(
         runbook_text,
         (
-            ".cdd-runtime/master-chef/worktrees/<run-id>/",
+            "<source-repo>/.cdd-runtime/worktrees/<run-id>/",
             "master-chef/<run-id>",
             "### Fresh-start feature branch suggestion",
             "unfinished top-level TODO step-heading count",
@@ -762,6 +796,12 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         ),
         runbook_md,
         "shared runbook worktree fields",
+    )
+    forbid_substrings(
+        runbook_text,
+        (".cdd-runtime/master-chef/worktrees/<run-id>/",),
+        runbook_md,
+        "old shared runbook worktree root",
     )
     require_regexes(
         runbook_text,

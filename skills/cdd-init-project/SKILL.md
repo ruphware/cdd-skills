@@ -73,6 +73,7 @@ ___
   - `.agents/skills/*/SKILL.md`
 - Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:
   - `README.md`
+  - `.gitignore`
   - `docs/specs/prd.md`
   - `docs/specs/blueprint.md`
 - `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology.
@@ -81,6 +82,7 @@ ___
 - `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and keep split-journal mode once it starts.
 - `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt.
 - `.agents/skills/*/SKILL.md`: preserve repo-local project skills when present. Treat them as project-level workflow surfaces tied to the repo's documented process. Preserve them during bootstrap or adoption; do not require them when absent and do not pull user-home skills into the repo.
+- `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored in fresh/bootstrap and adoption outputs.
 - `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
 
 ## Interactive planning contract
@@ -112,6 +114,7 @@ Use this precedence order; stop on the first matching state:
 
 0) Ignore non-substantive paths when classifying:
    - `.git/`, `.github/`, `.gitignore`, `.gitattributes`, `.editorconfig`
+   - `.cdd-runtime/`
    - editor/OS noise such as `.DS_Store`, `.idea/`, `.vscode/`
    - `LICENSE`, empty directories, and CI-only files
 
@@ -184,6 +187,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file) to:
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
@@ -231,6 +235,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
     - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 11) Draft proposed edits (grouped by file) to:
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
@@ -254,6 +259,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 6) Draft proposed edits (grouped by file) to:
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
@@ -290,6 +296,7 @@ Draft a patch proposal grouped by file, including:
    - `AGENTS.md`: start from the boilerplate contract and allow only bounded repo-fit edits that do not change the CDD methodology
    - `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint/index, rewritten as a short current-state index after split activation, and split-journal `docs/journal/*` topology preserved only when active
    - `.agents/skills/*/SKILL.md`: when present in the source or target repo, preserve them as repo-local workflow surfaces tied to the repo's documented process; do not require them when absent and do not import user-home skills
+   - `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored
    - `docs/specs/prd.md` and `docs/specs/blueprint.md`: fill from the actual repo rather than copying boilerplate placeholders forward
 2) Reorganize docs:
    - keep `README.md` as the runbook entrypoint

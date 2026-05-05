@@ -155,6 +155,17 @@ for token in \
 done
 
 echo "[MasterChefArtifacts] INFO SharedContractFields file={CONTRACT.md}"
+assert_contains "$SHARED_ROOT/SKILL.md" ".cdd-runtime/worktrees/<run-id>/"
+assert_not_contains "$SHARED_ROOT/SKILL.md" ".cdd-runtime/master-chef/worktrees/<run-id>/"
+assert_contains "$SHARED_ROOT/CONTRACT.md" ".cdd-runtime/worktrees/<run-id>/"
+assert_not_contains "$SHARED_ROOT/CONTRACT.md" ".cdd-runtime/master-chef/worktrees/<run-id>/"
+assert_contains "$SHARED_ROOT/RUNBOOK.md" "<source-repo>/.cdd-runtime/worktrees/<run-id>/"
+assert_not_contains "$SHARED_ROOT/RUNBOOK.md" ".cdd-runtime/master-chef/worktrees/<run-id>/"
+assert_contains "$SHARED_ROOT/openclaw/README.md" ".cdd-runtime/worktrees/<run-id>/"
+assert_not_contains "$SHARED_ROOT/openclaw/README.md" ".cdd-runtime/master-chef/worktrees/<run-id>/"
+assert_contains "$SHARED_ROOT/openclaw/MASTER-CHEF-RUNBOOK.md" ".cdd-runtime/worktrees/<run-id>/"
+assert_not_contains "$SHARED_ROOT/openclaw/MASTER-CHEF-RUNBOOK.md" ".cdd-runtime/master-chef/worktrees/<run-id>/"
+assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 for field in \
   run_id \
   repo \

@@ -210,7 +210,7 @@ Before implementation starts:
 5. Choose a managed worktree path under:
 
    ```text
-   .cdd-runtime/master-chef/worktrees/<run-id>/
+   .cdd-runtime/worktrees/<run-id>/
    ```
 
 6. Create a fresh per-run branch from the current branch `HEAD`, preferably:
@@ -265,7 +265,7 @@ Suggested shape:
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
   "source_branch": "<source-branch>",
   "source_head_sha": "<source-sha>",
-  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/master-chef/worktrees/<run-id>",
+  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
   "worktree_branch": "<worktree-branch>",
   "worktree_continue_mode": "relaunch_required|in_session",
   "branch": "<branch>",
@@ -295,7 +295,7 @@ Suggested shape:
   "builder_session_key": "<builder-session-key>",
   "repo": "/abs/path/to/repo",
   "source_repo": "/abs/path/to/source-repo",
-  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/master-chef/worktrees/<run-id>",
+  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
   "worktree_branch": "<worktree-branch>",
   "worktree_continue_mode": "relaunch_required|in_session",
   "started_at_utc": "<ts>",
