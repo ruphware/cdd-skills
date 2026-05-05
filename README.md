@@ -10,7 +10,7 @@ Skills never run autonomously; the developer invokes each skill surgically, when
 
 - **[CDD-0] Boot**  
   *`cdd-boot`*  
-  Ingest `AGENTS.md`, project docs, and current work context; decide whether to remain in the main folder or use a worktree.
+  Ingest `AGENTS.md`, project docs, and current work context; decide whether to stay in the current checkout, continue in a linked worktree, or create a branch-backed worktree under `.cdd-runtime/worktrees/`.
 
 - **[CDD-1] Init Project**  
   *`cdd-init-project`*  
@@ -68,7 +68,7 @@ Current concrete adapters in this repo:
 ## General Workflow
 
 - Use the core `$cdd-*` loop when you want a single coding agent, explicit human approvals, and one approved TODO step at a time.
-- Start with `[CDD-0] Boot` to load `AGENTS.md`, project docs, and current work context.
+- Start with `[CDD-0] Boot` to load `AGENTS.md`, project docs, and current work context, then decide whether to keep working in the current checkout or move into a branch-backed worktree.
 - Use `[CDD-1] Init Project` for new or newly adopted repos; use `[CDD-2] Plan` plus `[CDD-3] Implement TODO` for feature work.
 - Use `[CDD-4] Implementation Audit` plus `[CDD-2] Plan` when audit findings should become TODO work.
 - Use `[CDD-5] Maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review.
