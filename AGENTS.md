@@ -65,8 +65,8 @@ EXECUTION:
 - Validation plan (exact commands)
 
 NEXT:
-- If codebase was changed suggest commit message (one-liner, past tense, lower case, no prefix)
-- Immediate next step if continuation needed
+- If codebase is changed suggest commit message on whole git diff (one-liner, past tense, lower case, no prefix)
+- Immediate next step if continuation makes sense
 
 
 ## Logging Conventions

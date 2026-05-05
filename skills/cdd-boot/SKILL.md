@@ -49,11 +49,19 @@ Development:
 - Do not ask for approval.
 - Ask a question only when the repo layout is genuinely ambiguous and the ambiguity would materially change the boot summary.
 
+## Worktree check
+- If the repo is Git-backed, inspect whether the current checkout is the main worktree or a linked worktree before finishing the boot report.
+- If the current checkout is already a linked worktree, recommend staying in that worktree for development.
+- If the current checkout is the main worktree and linked worktrees or repo-local managed worktree paths already exist, recommend moving feature development into a worktree rather than the main folder.
+- Otherwise, say that staying in the main folder is acceptable unless the user wants parallel or isolated development.
+- Do not create, switch, remove, or clean worktrees during boot.
+
 ## Output
 Return a concise boot report that includes:
 - `Role` — confirm the `AGENTS.md` role was assumed
 - `Project` — summarize the project using canonical files or fallbacks
 - `Development` — summarize current implementation context from the journal top or fallbacks
+- `Worktree` — summarize whether development should stay in the main folder or move into a worktree
 - `Sources used` — list the files actually read
 - `Missing expected files` — list only the missing canonical docs
 - `Next action` — recommend the best follow-up

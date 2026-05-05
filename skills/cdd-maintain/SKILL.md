@@ -21,6 +21,7 @@ Read:
 - connected `docs/specs/*-definition.md` files when present
 - `docs/prompts/PROMPT-INDEX.md` if present
 - repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces
+- repo-local `.cdd-runtime/` when present, especially `.cdd-runtime/master-chef/`
 - repo manifests, entrypoints, and test/lint/typecheck config as needed for code-health checks
 
 ## Safe archive behavior
@@ -97,6 +98,18 @@ Read:
   - `stale` for 15-30 days
   - `very stale` for over 30 days or clearly older than current TODO or journal activity
 
+## Local runtime cleanup review
+- Inspect repo-local `.cdd-runtime/` when present, especially `.cdd-runtime/master-chef/`.
+- If the repo is Git-backed, use local worktree state to classify runtime artifacts as `live`, `stale`, or `unclear`.
+- Treat currently linked worktrees, clearly active runtime locks, and current run state as `live`.
+- Treat abandoned managed worktree directories, orphaned runtime logs, stale context snapshots, and old run directories not tied to live worktrees as `stale`.
+- If runtime state is unclear, leave it in place and report it as `unclear`.
+- Do not silently delete `.cdd-runtime/` content.
+- Ask once for runtime-cleanup approval using a grouped confirmation such as: `Approve cleanup of stale local runtime artifacts under .cdd-runtime/?`
+- Keep runtime-cleanup approval separate from support-document approval and stale TODO deletion approval.
+- If the user approves, remove only `stale` repo-local runtime artifacts and managed worktrees.
+- Never remove the current worktree, the current run state, or any runtime surface still tied to a `live` linked worktree.
+
 ## Codebase doctoring
 - Check the severity of files and areas that appear to need refactoring.
 - Use repo-native lint, typecheck, or unused-code tooling when present.
@@ -116,6 +129,8 @@ Return a maintenance report that includes:
 - `Archive actions applied`
 - `Deletion approval needed`
 - `Journal archive status`
+- `Local runtime cleanup status`
+- `Runtime cleanup approval needed`
 - `Support documentation status`
 - `Documentation updates proposed` or `Documentation updates applied`
 - `Documentation approval needed`

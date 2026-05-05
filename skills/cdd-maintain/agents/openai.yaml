@@ -1,6 +1,6 @@
 interface:
   display_name: "[CDD-7] Maintain"
-  short_description: "Codebase maintenance: Archive CDD files, audit support-doc drift, doctor the codebase"
-  default_prompt: "Use $cdd-maintain to archive long TODO and journal files, audit support-doc drift including README.md and docs/specs, propose any documentation updates for approval, and doctor the codebase for refactor severity plus dead or orphaned code."
+  short_description: "Codebase maintenance: Archive CDD files, audit docs, review local runtime cleanup, doctor code"
+  default_prompt: "Use $cdd-maintain to archive long TODO and journal files, audit support-doc drift including README.md and docs/specs, inspect repo-local .cdd-runtime for stale runtime artifacts or old managed worktrees, propose any cleanup or documentation updates for approval, and doctor the codebase for refactor severity plus dead or orphaned code."
 policy:
   allow_implicit_invocation: false

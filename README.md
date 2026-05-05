@@ -12,14 +12,14 @@ npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a c
 
 ## Skill Map
 
-- `[CDD-0] Boot` — `cdd-boot` — ingest `AGENTS.md` plus project and development docs for vanilla AGENTS-driven work when no other `cdd-*` skill will be used
+- `[CDD-0] Boot` — `cdd-boot` — ingest `AGENTS.md` plus project and development docs for vanilla AGENTS-driven work and recommend whether to stay in the main folder or move into a worktree
 - `[CDD-1] Init Project` — `cdd-init-project` — init or adopt the CDD workflow in the current folder
 - `[CDD-2] Plan` — `cdd-plan` — plan changes and TODO steps
 - `[CDD-3] Implement TODO` — `cdd-implement-todo` — implement exactly one TODO step and mark that step done on success
 - `[CDD-4] Audit + Implement` — `cdd-audit-and-implement` — turn audit items into TODO steps and implement the first dependency-ordered step
 - `[CDD-5] Refactor` — `cdd-refactor` — create a refactor TODO plan from the current index
 - `[CDD-6] Index` — `cdd-index` — regenerate `docs/INDEX.md`
-- `[CDD-7] Maintain` — `cdd-maintain` — archive long CDD files, audit support-doc drift, propose README/spec refreshes for approval, and doctor the codebase for refactor and dead-code signals
+- `[CDD-7] Maintain` — `cdd-maintain` — archive long CDD files, audit support-doc drift, review repo-local runtime cleanup for approval, and doctor the codebase for refactor and dead-code signals
 - `[CDD-8] Master Chef` — `cdd-master-chef` — start the autonomous development process through the canonical Master Chef package and its current runtime adapters
 
 ## When to Use What
