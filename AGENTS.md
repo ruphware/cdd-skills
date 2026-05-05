@@ -66,8 +66,8 @@ EXECUTION:
 - Validation plan (exact commands)
 
 NEXT (can be omitted; offer options for user when present):
-A. If codebase is dirty, suggest to commit, and display a commit msg for the whole git diff (one-liner, past tense, lowercase, no prefix)
-B. Suggest an immediate next step (can be none or more than one option) 
+  - A. If codebase is dirty, suggest to commit, and display a commit msg for the whole git diff (one-liner, past tense, lowercase, no prefix)
+  - B. Suggest an immediate next step (can be none or more than one option) 
 
 
 ## Logging Conventions

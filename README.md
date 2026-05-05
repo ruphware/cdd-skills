@@ -1,20 +1,42 @@
 # Chat Driven Development (CDD) Skills
 
-These skills support a human-in-the-loop development workflow, ensuring controlled agentic software engineering.
+These skills support a human-in-the-loop development workflow, ensuring controlled agentic software engineering, respecting the simple project structure defined by [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate).
 
 Skills never run autonomously; the developer invokes each skill surgically, when needed.
 
 ## Skill Map
 
-| Track | Command | Best for |
-| --- | --- | --- |
-| `[CDD-0] Boot` | `cdd-boot` | Ingest `AGENTS.md`, project docs, and current work context; decide whether to remain in the main folder or use a worktree |
-| `[CDD-1] Init Project` | `cdd-init-project` | Initialize or adopt CDD in the current repo; `gh` is a great tool to have when the repo is GitHub-backed |
-| `[CDD-2] Plan` | `cdd-plan` | Convert change requests or audit findings into implementation-ready TODO steps |
-| `[CDD-3] Implement TODO` | `cdd-implement-todo` | Implement exactly one approved TODO step and mark it done |
-| `[CDD-4] Implementation Audit` | `cdd-implementation-audit` | Audit spec, code, tests, complexity, and docs, then route approved follow-up into planning |
-| `[CDD-5] Maintain` | `cdd-maintain` | Address doc drift, refresh indexes, sweep approved leftovers, and plan cleanup or refactors |
-| `[CDD-6] Master Chef` | `cdd-master-chef` | Run the autonomous multi-step workflow through the canonical Master Chef skill and runtime adapters |
+**Core workflow**
+
+- **[CDD-0] Boot**  
+  *`cdd-boot`*  
+  Ingest `AGENTS.md`, project docs, and current work context; decide whether to remain in the main folder or use a worktree.
+
+- **[CDD-1] Init Project**  
+  *`cdd-init-project`*  
+  Initialize or adopt CDD in the current repo. *`gh` is a great tool to have when the repo is GitHub-backed.*
+
+- **[CDD-2] Plan**  
+  *`cdd-plan`*  
+  Convert change requests or audit findings into implementation-ready TODO steps.
+
+- **[CDD-3] Implement TODO**  
+  *`cdd-implement-todo`*  
+  Implement exactly one approved TODO step and mark it done.
+
+- **[CDD-4] Implementation Audit**  
+  *`cdd-implementation-audit`*  
+  Audit spec, code, tests, complexity, and docs, then route approved follow-up into planning.
+
+- **[CDD-5] Maintain**  
+  *`cdd-maintain`*  
+  Address doc drift, refresh indexes, sweep approved leftovers, and plan cleanup or refactors.
+
+**Autonomous workflow**
+
+- **[CDD-6] Master Chef**  
+  *`cdd-master-chef`*  
+  Run the autonomous multi-step workflow through the canonical Master Chef skill and runtime adapters.
 
 ## Quick Install (and Uninstall)
 
