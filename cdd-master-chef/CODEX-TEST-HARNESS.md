@@ -32,12 +32,15 @@ Goal: validate **explicit Builder delegation -> kickoff approval with step budge
 
 ```text
 Use the shared Master Chef contract for this repo under the Codex adapter.
-Inspect the repo, choose the next runnable TODO step, and tell me which explicit Builder path you would use.
+Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and tell me which explicit Builder path you would use.
+If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive feature branch before managed worktree kickoff.
 If the Builder path is standard implementation work, name the built-in worker agent or the exact custom `.codex/agents/*.toml` agent instead of assuming automatic delegation.
 ```
 
 - [ ] Expected:
   - the routing choice is explicit
+  - the remaining top-level-step count is stated when finite
+  - a fresh-start feature-branch suggestion is surfaced when applicable
   - automatic Builder spawning is not claimed
   - read-heavy sidecars are separated from the main Builder role
 
@@ -60,11 +63,13 @@ Do not start implementation yet.
 ```text
 The next runnable TODO step is known.
 Ask for kickoff approval that includes the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
+If the active TODO has a finite remaining unfinished top-level step-heading count, recommend that exact count as the default/max budget.
 Do not hand the Builder-start decision back to me as a manual Codex command.
 ```
 
 - [ ] Expected:
   - kickoff approval asks for a step budget such as `1`, `3`, or `until_blocked_or_complete`
+  - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - kickoff approval asks whether to spawn Builder now
   - the adapter does not treat a manual `codex -C ...` command as the normal Builder-start path
 

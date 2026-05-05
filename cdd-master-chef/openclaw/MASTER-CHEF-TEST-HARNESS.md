@@ -80,6 +80,8 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
   - branch/upstream check
   - TODO inspection
   - proposed next runnable step
+  - remaining unfinished top-level TODO step-heading count is stated when finite
+  - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
   - explicit routing choice: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master Chef direct for setup/planning/refactor work
   - explicit kickoff approval request
 
@@ -94,10 +96,12 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
 
 - [ ] Expected:
   - the source checkout is refused if dirty
+  - any approved fresh-start feature branch is created before managed worktree creation
   - a managed worktree is created on a fresh branch from the current `HEAD`
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
   - `run.json` records the exact approved Run config, the approved run step budget, and source/worktree metadata
+  - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - no watchdog cron is created
   - the OpenClaw adapter stops with exact relaunch instructions before delegated implementation starts
   - the routing choice is named explicitly in the handoff or main-session action

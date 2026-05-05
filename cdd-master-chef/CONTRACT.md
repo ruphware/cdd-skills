@@ -72,6 +72,8 @@ Before autonomous work begins:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
+   - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - whether the repo first needs `cdd-init-project`
 5. Before kickoff, the source checkout must be clean. If it is dirty, stop and ask the human to stash, commit, or discard changes before managed worktree creation.
 
@@ -154,6 +156,8 @@ Before kickoff, the run must also resolve an approved step budget for the curren
 - a positive integer TODO-step count such as `1` or `3`, or
 - `until_blocked_or_complete`
 
+For this rule, "steps left" means unfinished top-level TODO step headings only; do not count nested checkboxes or sub-tasks. When that count is finite, Master Chef must recommend that exact count as the default/max run step budget, meaning "all remaining steps". `until_blocked_or_complete` remains available when the human wants no numeric cap or no finite top-level step count is available.
+
 Runtime adapters must ask for that step budget explicitly and record it in runtime state before implementation begins.
 
 ## 5) Routing model
@@ -172,6 +176,8 @@ Runtime adapters must define the install roots, invocation surface, and delegati
 
 Master Chef runs against a managed worktree rather than mutating the source checkout in place.
 
+- If this is a fresh run from a long-lived branch such as `main`, `master`, or `trunk`, and no existing managed worktree is being resumed, suggest creating a descriptive feature branch in the source checkout first.
+- If the human approves that suggestion, create the feature branch in the source checkout and then create the managed worktree from that feature branch `HEAD`.
 - Create the managed worktree from the current branch `HEAD`.
 - Use a fresh per-run branch rather than reusing the source checkout branch.
 - Record the source checkout path separately from the active worktree path.
@@ -193,6 +199,8 @@ Before implementation starts, present one kickoff approval that covers:
 
 - proposed next action
 - the approved `Run config`
+- any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
+- the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
 - the approved run step budget
 - whether to spawn Builder now and start the autonomous run
 - runtime initialization under `.cdd-runtime/master-chef/`

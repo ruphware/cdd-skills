@@ -72,6 +72,7 @@ If you want useful UI output, provide strong UX mockups with the plan. Without g
 The shared workflow is:
 
 - the human approves one per-run Run config with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, supplied inline, loaded from a local default, or recommended from the current session model and thinking when the runtime can surface them concretely
+- on a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch; when the active TODO has a finite remaining unfinished top-level step-heading count, it recommends that exact count as the default/max step budget
 - the human also approves how many TODO steps this run should cover and whether Master Chef should spawn Builder now and start the autonomous run
 - the human starts Master Chef in either an existing CDD-ready repo or a new project folder that should be set up in CDD form first
 - Master Chef inspects where development is at, proposes the next runnable TODO step, initializes runtime state, and asks for kickoff approval

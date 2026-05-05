@@ -48,6 +48,7 @@ Before autonomous implementation starts, Master Chef should ask for one explicit
 
 - the next runnable TODO step or other chosen routing action
 - the approved `Run config`
+- the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
 - the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
 - whether to spawn Builder now and start the autonomous run
 
@@ -69,6 +70,7 @@ After that approval, Master Chef owns the Builder handoff. Do not treat "here is
 ## 7) Worktree hand-off
 
 - Follow the shared clean-checkout-first worktree contract.
+- If the shared kickoff rule approved a feature branch, create it in the source checkout first; then provision the managed worktree from that branch `HEAD`.
 - Prefer `worktree_continue_mode: in_session` when the active Claude surface can keep Master Chef and Builder coherently rooted at `active_worktree_path`.
 - Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.
 - If a relaunch or restart is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.

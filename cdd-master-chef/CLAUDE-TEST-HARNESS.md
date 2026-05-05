@@ -34,12 +34,15 @@ Goal: validate **explicit Builder selection -> kickoff approval with step budget
 
 ```text
 Use the shared Master Chef contract for this repo under the Claude Code adapter.
-Inspect the repo, choose the next runnable TODO step, and name the explicit Builder path you would use.
+Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and name the explicit Builder path you would use.
+If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive feature branch before managed worktree kickoff.
 Do not rely only on automatic delegation for the main Builder handoff.
 ```
 
 - [ ] Expected:
   - the Builder path is explicit
+  - the remaining top-level-step count is stated when finite
+  - a fresh-start feature-branch suggestion is surfaced when applicable
   - automatic delegation is not treated as the only control mechanism
   - the answer distinguishes Builder from exploration or planning sidecars
 
@@ -63,11 +66,13 @@ Do not start implementation yet.
 ```text
 The next runnable TODO step is known.
 Ask for kickoff approval that includes the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
+If the active TODO has a finite remaining unfinished top-level step-heading count, recommend that exact count as the default/max budget.
 Do not hand the Builder-start decision back to me as a manual Claude relaunch command.
 ```
 
 - [ ] Expected:
   - kickoff approval asks for a step budget such as `1`, `3`, or `until_blocked_or_complete`
+  - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - kickoff approval asks whether to spawn Builder now
   - the adapter does not treat a manual `claude --worktree ...` command as the normal Builder-start path
 

@@ -157,6 +157,8 @@ On the first `/cdd-master-chef` turn:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
+   - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - obvious blockers in the working tree
    - whether the repo first needs `cdd-init-project`
 3. Choose the next action and route it through the right internal skill:
@@ -177,6 +179,7 @@ On the first `/cdd-master-chef` turn:
    - repo state summary
    - proposed next action
    - the approved Run config
+   - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
    - the approved run step budget
    - whether to spawn Builder now and start the autonomous run
    - runtime initialization
@@ -193,23 +196,25 @@ Before implementation starts:
 1. Require a clean source checkout.
    - If `git status --short` shows tracked or staged changes, stop and ask the human to stash, commit, or discard changes first.
 2. Record the source checkout path, source branch, and source `HEAD` SHA.
-3. Choose a managed worktree path under:
+3. If this is a fresh run from a long-lived branch and kickoff approved a descriptive feature branch, create that feature branch in the source checkout first and refresh `source_branch` and `source_head_sha`.
+4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max run step budget, meaning "all remaining steps".
+5. Choose a managed worktree path under:
 
    ```text
    .cdd-runtime/master-chef/worktrees/<run-id>/
    ```
 
-4. Create a fresh per-run branch from the current branch `HEAD`, preferably:
+6. Create a fresh per-run branch from the current branch `HEAD`, preferably:
 
    ```text
    master-chef/<run-id>
    ```
 
-5. Create the managed worktree from the source checkout with that fresh branch.
-6. Initialize runtime files inside the managed worktree so `.cdd-runtime/master-chef/` is relative to the active repo root after relaunch.
-7. Record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
-8. The current OpenClaw adapter must set `worktree_continue_mode` to `relaunch_required`, then stop with exact relaunch instructions before any delegated implementation starts.
-9. After relaunch into the managed worktree, treat that path as the active repo root for QA, TODO inspection, commit, push, and runtime files.
+7. Create the managed worktree from the source checkout with that fresh branch.
+8. Initialize runtime files inside the managed worktree so `.cdd-runtime/master-chef/` is relative to the active repo root after relaunch.
+9. Record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
+10. The current OpenClaw adapter must set `worktree_continue_mode` to `relaunch_required`, then stop with exact relaunch instructions before any delegated implementation starts.
+11. After relaunch into the managed worktree, treat that path as the active repo root for QA, TODO inspection, commit, push, and runtime files.
 
 ---
 

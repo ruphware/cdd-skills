@@ -54,6 +54,8 @@ Operating contract:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
+   - whether this looks like a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - whether the repo first needs `cdd-init-project` before the normal TODO loop can start
    - whether the source checkout is clean enough for managed worktree creation
 8. Master Chef chooses the internal `cdd-*` routing model for the core `[CDD-0]` through `[CDD-7]` skills.
@@ -66,6 +68,7 @@ Operating contract:
    - Treat the installed `cdd-*` skills as internal Master Chef workflows, not standalone user commands during an active Master Chef run.
 9. Use a managed worktree before implementation:
    - require a clean source checkout before kickoff; if dirty, stop and ask the human to stash, commit, or discard changes first
+   - if this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, suggest a descriptive feature branch first; if approved, create it in the source checkout before the per-run worktree branch
    - create a fresh per-run branch from the current branch `HEAD`
    - prefer `.cdd-runtime/master-chef/worktrees/<run-id>/` as the managed worktree path
    - record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
@@ -73,6 +76,8 @@ Operating contract:
 10. Before implementation starts, present one kickoff approval that covers:
    - proposed next action
    - the approved `Run config`
+   - any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
+   - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
    - the approved run step budget
    - whether to spawn Builder now and start the autonomous run
    - runtime initialization under `.cdd-runtime/master-chef/`

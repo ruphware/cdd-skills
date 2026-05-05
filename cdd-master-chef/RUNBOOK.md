@@ -42,15 +42,27 @@ Rules:
 - respect Git's one-branch-per-worktree rule
 - do not tell the human or runtime to check out the same branch in multiple worktrees
 
+### Fresh-start feature branch suggestion
+
+If this is a fresh run and the source checkout is still on a long-lived branch such as `main`, `master`, or `trunk`, suggest creating a descriptive feature branch before provisioning the managed worktree.
+
+If the human approves that suggestion:
+
+- create the feature branch in the source checkout first
+- treat that feature branch as `source_branch` for the run
+- still create a separate per-run managed worktree branch such as `master-chef/<run-id>`
+
 ### Creation sequence
 
-1. Record the source checkout path, branch, and `HEAD` SHA.
-2. Choose the managed worktree path and fresh per-run branch name.
-3. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
-4. Initialize runtime state in the managed worktree.
-5. Record the active worktree path and continuation mode in runtime state.
-6. Continue in the managed worktree only if the runtime adapter can safely re-root Master Chef and Builder there.
-7. Otherwise, stop with exact relaunch instructions that point the next Master Chef session at the managed worktree path.
+1. Inspect the source checkout path, branch, and `HEAD` SHA.
+2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
+3. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps".
+4. Choose the managed worktree path and fresh per-run branch name.
+5. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
+6. Initialize runtime state in the managed worktree.
+7. Record the active worktree path and continuation mode in runtime state.
+8. Continue in the managed worktree only if the runtime adapter can safely re-root Master Chef and Builder there.
+9. Otherwise, stop with exact relaunch instructions that point the next Master Chef session at the managed worktree path.
 
 ## 2) Runtime-state additions
 
@@ -105,6 +117,7 @@ The durable checkpoint must now also record:
 - worktree continuation mode
 - whether relaunch is still pending or the worktree session is active
 - the approved run step budget and how many steps have already passed in this run
+- the remaining top-level TODO step count when it drove the default budget recommendation
 
 ## 3) Continuation decision rule
 

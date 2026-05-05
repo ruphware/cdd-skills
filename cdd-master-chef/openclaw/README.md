@@ -141,16 +141,20 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 5. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
+   - inspect the remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
+   - if this is a fresh run from a long-lived branch, suggest a descriptive feature branch before managed worktree kickoff
    - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct planning or refactor work
+   - when that top-level step count is finite, recommend that exact count as the default/max step budget, meaning all remaining steps
    - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
    - ask whether to spawn Builder now and start the autonomous run
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - ask for one approval covering:
-     - the proposed next action and routing path
-     - the approved Run config
-     - the approved run step budget
-     - whether to spawn Builder now
-     - Builder handoff plus in-session reporting expectations
+      - the proposed next action and routing path
+      - the approved Run config
+     - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
+      - the approved run step budget
+      - whether to spawn Builder now
+      - Builder handoff plus in-session reporting expectations
 
 After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
 
