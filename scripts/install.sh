@@ -224,10 +224,24 @@ prune_backup_dir() {
   echo "${path}.pruned.$(timestamp_utc)"
 }
 
+delete_retired_audit_artifacts_in_target() {
+  local dest_root="$1"
+  local d
+  for d in \
+    "$dest_root"/cdd-audit-and-implement \
+    "$dest_root"/cdd-audit-and-implement.pruned.*; do
+    path_exists "$d" || continue
+    echo "Deleting retired skill artifact: $d" >&2
+    rm -rf "$d"
+  done
+}
+
 prune_deprecated_in_target() {
   local dest_root="$1"
   local src_set
   src_set="$(source_skill_names || true)"
+
+  delete_retired_audit_artifacts_in_target "$dest_root"
 
   local d
   for d in "$dest_root"/cdd-*; do

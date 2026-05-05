@@ -187,7 +187,7 @@ git pull
 
 If the install target already contains one of the managed skill directories, rerunning the installer without `--update` fails by design.
 
-Builder update automatically runs the conservative prune logic. Use `--yes` if you want to auto-confirm prune prompts in non-interactive contexts:
+Builder update automatically runs the conservative prune logic. It also deletes retired `cdd-audit-and-implement` leftovers, including visible `cdd-audit-and-implement.pruned.*` artifacts. Use `--yes` if you want to auto-confirm prune prompts in non-interactive contexts:
 
 ```bash
 ./scripts/install.sh --update --yes
@@ -239,4 +239,4 @@ ___
 [![CDD Project](https://img.shields.io/badge/CDD-Project-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-boilerplate)
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
-<sup>Start with `[CDD-0] Boot`. Use `[CDD-2] Plan` + `[CDD-3] Implement TODO` for feature work, `[CDD-7] Maintain` for upkeep and drift control, and `[CDD-5] Refactor` for structured refactors.</sup>
+<sup>Start with `[CDD-0] Boot`. Use `[CDD-4] Implementation Audit` for implementation or codebase audits, `[CDD-2] Plan` + `[CDD-3] Implement TODO` for feature work, `[CDD-7] Maintain` for upkeep and drift control, and `[CDD-5] Refactor` for structured refactors.</sup>

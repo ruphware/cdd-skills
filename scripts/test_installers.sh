@@ -151,6 +151,15 @@ assert_exists "$BUILDER_LINK/cdd-master-chef/CODEX-RUNBOOK.md"
 
 echo "[CI] INFO BuilderInstallPrune root={$BUILDER_PRUNE}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_PRUNE"
+mkdir -p "$BUILDER_PRUNE/cdd-audit-and-implement"
+cat >"$BUILDER_PRUNE/cdd-audit-and-implement/SKILL.md" <<'EOF'
+---
+name: cdd-audit-and-implement
+description: retired skill
+disable-model-invocation: true
+---
+EOF
+echo "cdd_skills_origin=ruphware/cdd-skills" >"$BUILDER_PRUNE/cdd-audit-and-implement/.cdd-skills-origin"
 mkdir -p "$BUILDER_PRUNE/cdd-obsolete"
 cat >"$BUILDER_PRUNE/cdd-obsolete/SKILL.md" <<'EOF'
 ---
@@ -162,6 +171,8 @@ EOF
 echo "cdd_skills_origin=ruphware/cdd-skills" >"$BUILDER_PRUNE/cdd-obsolete/.cdd-skills-origin"
 mkdir -p "$BUILDER_PRUNE/cdd-invalid"
 touch "$BUILDER_PRUNE/cdd-invalid/NOT_SKILL.txt"
+mkdir -p "$BUILDER_PRUNE/cdd-audit-and-implement.pruned.20260505T080008Z"
+touch "$BUILDER_PRUNE/cdd-audit-and-implement.pruned.20260505T080008Z/SKILL.md"
 mkdir -p "$BUILDER_PRUNE/cdd-foreign"
 cat >"$BUILDER_PRUNE/cdd-foreign/SKILL.md" <<'EOF'
 ---
@@ -173,6 +184,8 @@ EOF
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_PRUNE" --update --yes
 assert_exists "$(find_one "$BUILDER_PRUNE" 'cdd-obsolete.pruned.*')"
 assert_exists "$(find_one "$BUILDER_PRUNE" 'cdd-invalid.pruned.*')"
+assert_not_exists "$BUILDER_PRUNE/cdd-audit-and-implement"
+assert_no_match "$BUILDER_PRUNE" 'cdd-audit-and-implement.pruned.*'
 assert_exists "$BUILDER_PRUNE/cdd-foreign/SKILL.md"
 assert_exists "$BUILDER_PRUNE/cdd-refactor/SKILL.md"
 
@@ -316,9 +329,21 @@ assert_exists "$ALL_HOME/.openclaw/skills/cdd-implementation-audit/SKILL.md"
 assert_command_output_contains "user-invocable: false" sed -n '1,40p' "$ALL_HOME/.openclaw/skills/cdd-plan/SKILL.md"
 touch "$ALL_HOME/.agents/skills/cdd-master-chef/EXTRA.txt"
 touch "$ALL_HOME/.openclaw/skills/cdd-plan/EXTRA.txt"
+mkdir -p "$ALL_HOME/.agents/skills/cdd-audit-and-implement"
+cat >"$ALL_HOME/.agents/skills/cdd-audit-and-implement/SKILL.md" <<'EOF'
+---
+name: cdd-audit-and-implement
+description: retired skill
+disable-model-invocation: true
+---
+EOF
+echo "cdd_skills_origin=ruphware/cdd-skills" >"$ALL_HOME/.agents/skills/cdd-audit-and-implement/.cdd-skills-origin"
+mkdir -p "$ALL_HOME/.agents/skills/cdd-audit-and-implement.pruned.20260505T080008Z"
 HOME="$ALL_HOME" "$ROOT_DIR/scripts/install.sh" --all --update
 assert_not_exists "$ALL_HOME/.agents/skills/cdd-master-chef/EXTRA.txt"
 assert_not_exists "$ALL_HOME/.openclaw/skills/cdd-plan/EXTRA.txt"
+assert_not_exists "$ALL_HOME/.agents/skills/cdd-audit-and-implement"
+assert_no_match "$ALL_HOME/.agents/skills" 'cdd-audit-and-implement.pruned.*'
 
 echo "[CI] INFO InstallAllSkipsMissingHomes root={$ALL_PARTIAL_HOME}"
 mkdir -p "$ALL_PARTIAL_HOME/.agents" "$ALL_PARTIAL_HOME/.openclaw"

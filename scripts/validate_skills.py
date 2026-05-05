@@ -367,7 +367,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
             r"\[!\[CDD Project\]",
             r"\[!\[CDD Skills\]",
             r"This repo follows the \[`CDD Project`\].*\[`AGENTS\.md`\]",
-            r"Start with .*cdd-boot.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*cdd-refactor",
+            r"Start with .*cdd-boot.*cdd-implementation-audit.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*cdd-refactor",
             r"existing-repo adoption.*explicit confirmation.*README\.md edit",
             r"Avoid duplicating the block if it or its badges already exist",
             r"source of truth for the CDD contract.*existing repo",
