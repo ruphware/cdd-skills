@@ -67,15 +67,18 @@ Do not start implementation yet.
 
 ```text
 The next runnable TODO step is known.
-Ask for kickoff approval that includes the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
+Present visible `A.`, `B.`, `C.` kickoff options that cover the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
 If the active TODO has a finite remaining unfinished top-level step-heading count, recommend that exact count as the default/max budget.
 Do not hand the Builder-start decision back to me as a manual Claude relaunch command.
+Make the selected option itself the kickoff approval.
 ```
 
 - [ ] Expected:
+  - kickoff approval is presented as selector-based options rather than a free-form approval question
   - kickoff approval asks for a step budget such as `1`, `3`, or `until_blocked_or_complete`
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - kickoff approval asks whether to spawn Builder now
+  - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
   - the adapter does not treat a manual `claude --worktree ...` command as the normal Builder-start path
 
 ### Prompt D - Foreground Builder path
@@ -160,7 +163,7 @@ Explain what proves that Builder has actually started operating, what runtime fi
 
 - [ ] The Claude adapter required an explicit Builder path when determinism mattered.
 - [ ] Builder Run config support was classified clearly before implementation.
-- [ ] Kickoff approval asked for a run step budget and whether to spawn Builder now.
+- [ ] Kickoff approval used selector-based options and asked for a run step budget plus whether to spawn Builder now.
 - [ ] Permission-heavy Builder work stayed foreground.
 - [ ] Nested subagent spawning was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.

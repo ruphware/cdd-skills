@@ -115,7 +115,11 @@ Rules:
 
 - This block is the only place per-run model settings are set.
 - The user may either paste the block directly into the kickoff prompt, let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`, or let Master Chef recommend it from the current session model and thinking when no explicit block or local default is used.
-- A current-session recommendation must copy one concrete current session model and one concrete current session thinking value into all four fields, show the candidate block back to the human, and wait for approval or edits before kickoff.
+- A current-session recommendation must copy one concrete current session model and one concrete current session thinking value into all four fields and show the candidate block back to the human before kickoff.
+- Use the shared selector contract.
+- `A. use this Run config`
+- `B. edit this Run config`
+- `C. stop before kickoff`
 - Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
 - After kickoff, copy the approved values into `.cdd-runtime/master-chef/run.json`. That file is the durable mirror of the approved Run config, not a second config source.
 - If the human wants different models on a given run, change only this block for that run.
@@ -133,7 +137,7 @@ Resolution order:
 
 1. If the kickoff prompt includes `Run config`, use that.
 2. Otherwise, if the local default file exists, read it and show the resolved config back to the human before kickoff.
-3. Otherwise, if the current session model and current session thinking are visible, recommend a candidate Run config that copies them into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, show it back to the human, and wait for approval or edits before kickoff.
+3. Otherwise, if the current session model and current session thinking are visible, recommend a candidate Run config that copies them into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, show it back to the human before kickoff, and use the shared selector contract.
 4. Otherwise, stop and ask the human for a Run config.
 
 Privacy rule:
@@ -174,7 +178,7 @@ On the first `/cdd-master-chef` turn:
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
-8. Present one kickoff approval that includes:
+8. Present one selector-driven kickoff approval that includes:
    - repo state summary
    - proposed next action
    - the approved Run config
@@ -185,6 +189,12 @@ On the first `/cdd-master-chef` turn:
    - run lease
    - in-session reporting expectations
 9. Do not spawn the Builder until the user approves kickoff.
+
+Use the shared selector contract.
+
+- `A. approve kickoff and start the autonomous run now`
+- `B. approve kickoff but do not spawn Builder yet`
+- `C. revise the next action, Run config, or step budget before kickoff`
 
 After kickoff approval, the run becomes autonomous.
 

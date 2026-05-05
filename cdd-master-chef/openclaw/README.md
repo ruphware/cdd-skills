@@ -129,10 +129,10 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
-   Inspect where development is at, propose the next runnable TODO step, or split an oversized one first, and wait for my kickoff approval before creating runtime state or spawning the Builder.
+   Inspect where development is at, propose the next runnable TODO step, or split an oversized one first, and present selector-driven kickoff options before creating runtime state or spawning the Builder.
    ```
 
-   If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval. Otherwise, if the current session model and current session thinking are visible, it should recommend a candidate Run config that copies them into all four fields, show it back to the human, and wait for approval or edits before kickoff. If it cannot observe both values, it should stop and ask for a Run config.
+   If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval. Otherwise, if the current session model and current session thinking are visible, it should recommend a candidate Run config that copies them into all four fields, show it back to the human, and use selector-based `A.`, `B.`, `C.` options for approval or edits before kickoff. If it cannot observe both values, it should stop and ask for a Run config.
 
 5. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
@@ -146,13 +146,16 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
    - ask whether to spawn Builder now and start the autonomous run
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
-   - ask for one approval covering:
+   - present one selector-driven kickoff approval covering:
       - the proposed next action and routing path
       - the approved Run config
-     - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
+      - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
       - the approved run step budget
       - whether to spawn Builder now
       - Builder handoff plus in-session reporting expectations
+   - follow the shared selector contract
+   - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, and `C. revise the next action, Run config, or step budget before kickoff`
+   - replying with just `A`, `B`, or `C` is enough
 
 After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
 

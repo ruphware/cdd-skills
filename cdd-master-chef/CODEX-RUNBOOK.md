@@ -42,7 +42,7 @@ Do not start implementation until Master Chef has named which of `exact support`
 
 ## 4) Kickoff approval and run budget
 
-Before autonomous implementation starts, Master Chef should ask for one explicit kickoff approval that covers:
+Before autonomous implementation starts, Master Chef should present one selector-driven kickoff approval that covers:
 
 - the next runnable TODO step or other chosen routing action
 - any pre-delegation split of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count
@@ -51,7 +51,13 @@ Before autonomous implementation starts, Master Chef should ask for one explicit
 - the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
 - whether to spawn Builder now and start the autonomous run
 
-After that approval, Master Chef owns the Builder handoff. Do not treat "here is a `codex -C ...` command for you to run" as the normal Builder-start path.
+Follow the shared selector contract.
+
+- `A. approve kickoff and start the autonomous run now`
+- `B. approve kickoff but do not spawn Builder yet`
+- `C. revise the next action, Run config, or step budget before kickoff`
+
+After that selector-based approval, Master Chef owns the Builder handoff. Do not treat "here is a `codex -C ...` command for you to run" as the normal Builder-start path.
 
 ## 5) Approval and sidecar policy
 

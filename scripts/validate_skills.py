@@ -44,6 +44,28 @@ OPENCLAW_ROUTING_LABELS = (
     "[CDD-4] Implementation Audit",
     "[CDD-5] Maintain",
 )
+MASTER_CHEF_RUN_CONFIG_OPTION_REGEXES = (
+    r"`A\.\s*use this Run config`",
+    r"`B\.\s*edit this Run config`",
+    r"`C\.\s*stop before kickoff`",
+)
+MASTER_CHEF_KICKOFF_OPTION_STRINGS = (
+    "`A. approve kickoff and start the autonomous run now`",
+    "`B. approve kickoff but do not spawn Builder yet`",
+    "`C. revise the next action, Run config, or step budget before kickoff`",
+)
+MASTER_CHEF_KICKOFF_OPTION_REGEXES = (
+    r"`A\.\s*approve kickoff and start the autonomous run now`",
+    r"`B\.\s*approve kickoff but do not spawn Builder yet`",
+    r"`C\.\s*revise the next action, Run config, or step budget before kickoff`",
+)
+MASTER_CHEF_KICKOFF_HARNESS_SUMMARY = (
+    "Kickoff approval used selector-based options and asked for a run step budget plus whether to spawn Builder now."
+)
+MASTER_CHEF_KICKOFF_HARNESS_REGEXES = (
+    r"selector-based options rather than a free-form approval question",
+    r"replying with just `A`, `B`, or `C` would be enough",
+)
 
 
 def frontmatter(path: Path) -> str:
@@ -677,7 +699,11 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         contract_text,
         (
             r"recommended candidate.*current session model and thinking",
-            r"approval or edits before kickoff",
+            r"selector-based choices.*free-form approval question",
+            r"selected option itself (?:is|count(?:s)? as) the approval",
+            *MASTER_CHEF_RUN_CONFIG_OPTION_REGEXES,
+            r"selected option itself (?:is|count(?:s)? as) the kickoff approval",
+            *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
             r"fresh run from a long-lived branch.*descriptive feature branch",
             r"unfinished top-level TODO step headings only.*nested checkboxes or sub-tasks",
             r"default/max run step budget.*all remaining steps",
@@ -732,6 +758,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             "`builder_phase` is `not_started`, `booting`, `running`, `blocked`, `completed`, `failed`, or `closed`",
             "`tool_access`",
             "`mcp_access`",
+            "reply with just the selector",
         ),
         runbook_md,
         "shared runbook worktree fields",
@@ -932,13 +959,16 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "Do not treat \"here is a `codex -C ...` command for you to run\" as the normal Builder-start path.",
             ".codex/agents/*.toml",
             "`exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior`",
-        ),
+            "Follow the shared selector contract.",
+        )
+        + MASTER_CHEF_KICKOFF_OPTION_STRINGS,
         runbook_md,
         "Codex runbook structural tokens",
     )
     require_regexes(
         runbook_text,
         (
+            r"selector-driven kickoff approval",
             r"should not claim live access to Builder thinking.*streaming partial output",
             r"completion/failure notifications.*status replies.*closure/errors",
             r"two phases:.*boot/readiness.*quiet-work",
@@ -969,7 +999,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "feature-branch suggestion is surfaced when applicable",
             "oversized top-level step is split in Master Chef before Builder handoff",
             "exact remaining top-level-step count when that count is finite",
-            "Kickoff approval asked for a run step budget and whether to spawn Builder now.",
+            MASTER_CHEF_KICKOFF_HARNESS_SUMMARY,
             "Recursive default fan-out was rejected.",
         ),
         harness_md,
@@ -977,7 +1007,8 @@ def validate_codex_adapter(repo_root: Path) -> None:
     )
     require_regexes(
         harness_text,
-        (
+        MASTER_CHEF_KICKOFF_HARNESS_REGEXES
+        + (
             r"direct evidence instead of guessing",
             r"spawn evidence, not readiness proof",
             r"(long-thinking|high-latency).*quiet-work window|quiet-work window.*(long-thinking|high-latency)",
@@ -1075,13 +1106,16 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "Subagents cannot spawn other subagents",
             "Do not rely on background Builder work for MCP-dependent or approval-heavy tasks.",
             "Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.",
-        ),
+            "Follow the shared selector contract.",
+        )
+        + MASTER_CHEF_KICKOFF_OPTION_STRINGS,
         runbook_md,
         "Claude runbook structural tokens",
     )
     require_regexes(
         runbook_text,
         (
+            r"selector-driven kickoff approval",
             r"should not claim live access to Builder thinking.*streaming partial output",
             r"completion/failure notifications.*status replies.*closure/errors",
             r"two phases:.*boot/readiness.*quiet-work",
@@ -1112,7 +1146,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "feature-branch suggestion is surfaced when applicable",
             "oversized top-level step is split in Master Chef before Builder handoff",
             "exact remaining top-level-step count when that count is finite",
-            "Kickoff approval asked for a run step budget and whether to spawn Builder now.",
+            MASTER_CHEF_KICKOFF_HARNESS_SUMMARY,
             "Permission-heavy Builder work stayed foreground.",
             "Nested subagent spawning was rejected.",
         ),
@@ -1121,7 +1155,8 @@ def validate_claude_adapter(repo_root: Path) -> None:
     )
     require_regexes(
         harness_text,
-        (
+        MASTER_CHEF_KICKOFF_HARNESS_REGEXES
+        + (
             r"direct evidence instead of guessing",
             r"spawn evidence, not readiness proof",
             r"(long-thinking|high-latency).*quiet-work window|quiet-work window.*(long-thinking|high-latency)",
@@ -1208,6 +1243,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         (
             r"current session model.*current session thinking.*recommend.*`Run config`",
             r"approves or edits it",
+            r"selector-based options.*`A\.`, `B\.`, `C\.`",
+            r"selected option itself should count as the approval",
+            MASTER_CHEF_KICKOFF_OPTION_REGEXES[0],
             r"fresh run from a long-lived branch.*descriptive feature branch",
             r"oversized for one Builder run.*split.*smaller decision-complete TODO steps",
             r"default/max run step-budget recommendation",
@@ -1261,7 +1299,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         runbook_text,
         (
             r"recommend it from the current session model and thinking",
-            r"approval or edits before kickoff",
+            r"shared selector contract",
+            *MASTER_CHEF_RUN_CONFIG_OPTION_REGEXES,
+            *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
             r"oversized for one Builder run.*split.*smaller decision-complete TODO steps",
         ),
         runbook_md,
@@ -1291,7 +1331,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         readme_text,
         (
             r"recommend a candidate Run config from the current session model and current session thinking",
-            r"approval or edits before kickoff",
+            r"selector-based `A\.`, `B\.`, `C\.` options for approval or edits before kickoff",
+            r"replying with just `A`, `B`, or `C` is enough",
+            r"present selector-driven kickoff options before creating runtime state or spawning the Builder",
             r"split an oversized one first",
         ),
         readme_md,
@@ -1304,6 +1346,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_LABEL,
             "Prompt A0 - Recommendation path",
             "Prompt A1 - Oversized-step split before Builder handoff",
+            "Prompt B - Selector-driven kickoff approval",
             "Prompt J - QA reject remediation",
             "Prompt L - Blocked-step decomposition",
             "Prompt N - Context compaction and resume",
@@ -1313,10 +1356,23 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             "fresh-start feature-branch suggestion",
             "remaining top-level-step count is recomputed after the split",
             "exact remaining top-level-step count when that count is finite",
+            "replying with just `A`, `B`, or `C` would be enough to approve, edit, or stop before kickoff",
         )
         + OPENCLAW_ROUTING_LABELS,
         harness_md,
         "OpenClaw harness coverage",
+    )
+    require_regexes(
+        harness_text,
+        (
+            r"(selector-based|visible) `A\.`, `B\.`, `C\.` options for approval or edits before kickoff",
+            r"pending selector-based approval or edits",
+            r"replying with just `A`, `B`, or `C` would be enough",
+            r"selector-driven kickoff options",
+            r"selected option itself should count as the approval",
+        ),
+        harness_md,
+        "OpenClaw harness selector topics",
     )
 
 

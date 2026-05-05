@@ -18,6 +18,7 @@ Adapter note:
 - OpenClaw is the current packaged runtime adapter in this package.
 - Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters, but no Hermes adapter ships here today.
 - Codex and Claude Code adapters should ask for the run step budget and whether to spawn Builder now, then own that Builder handoff rather than pushing the Builder-start decision back to the human.
+- Master Chef approval requests should use visible selector-based options, defaulting to `A.`, `B.`, `C.` when practical, and the selected option itself should count as the approval.
 - The operating contract below describes the current OpenClaw runtime path.
 - When this file repeats a shared rule, treat the shared contract as canonical and this file as the OpenClaw runtime mapping of that rule.
 
@@ -76,7 +77,7 @@ Operating contract:
    - prefer `.cdd-runtime/master-chef/worktrees/<run-id>/` as the managed worktree path
    - record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
    - the active runtime adapter either continues in-session from the managed worktree or stops with exact relaunch instructions; keep `worktree_continue_mode` explicit
-10. Before implementation starts, present one kickoff approval that covers:
+10. Before implementation starts, present one selector-driven kickoff approval that covers:
    - proposed next action
    - the approved `Run config`
    - any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
@@ -86,6 +87,7 @@ Operating contract:
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations
+   - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, `C. revise the next action, Run config, or step budget before kickoff`
 11. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, for exactly one approved delegated action, tell it which internal `cdd-*` skill path to use, and require an early readiness ACK before deep work.
 12. Use single-step Builder runs only.
    - Each Builder run covers exactly one approved delegated action.

@@ -55,7 +55,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 ```text
 /cdd-master-chef Use the Master Chef process for repo <REPO>.
 Do not use any local default Run config file for this test.
-If Run config is missing, recommend one that copies the current session model and current session thinking into master_model, master_thinking, builder_model, and builder_thinking, then wait for my approval or edits before kickoff.
+If Run config is missing, recommend one that copies the current session model and current session thinking into master_model, master_thinking, builder_model, and builder_thinking, then present visible `A.`, `B.`, `C.` options for approval or edits before kickoff.
 ```
 
 - [ ] Expected:
@@ -63,7 +63,8 @@ If Run config is missing, recommend one that copies the current session model an
   - `master_model`, `master_thinking`, `builder_model`, and `builder_thinking` all mirror the current session values
   - no runtime state is created yet
   - no Builder is spawned yet
-  - the recommendation is treated as pending approval or edits, not as an implicit fallback
+  - the recommendation is treated as pending selector-based approval or edits, not as an implicit fallback
+  - replying with just `A`, `B`, or `C` would be enough to approve, edit, or stop before kickoff
 
 ### Prompt A - Inspection only
 
@@ -71,7 +72,7 @@ If Run config is missing, recommend one that copies the current session model an
 /cdd-master-chef Use the Master Chef process for repo <REPO>.
 Run config:
 <RUN_CONFIG>
-Inspect the repo, tell me which TODO step is next, and wait for kickoff approval before creating runtime state or spawning the Builder.
+Inspect the repo, tell me which TODO step is next, and prepare selector-driven kickoff options before creating runtime state or spawning the Builder.
 ```
 
 - [ ] Expected:
@@ -83,13 +84,13 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
   - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
   - an oversized top-level step is split in Master Chef before Builder handoff
   - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
-  - explicit kickoff approval request
+  - explicit selector-driven kickoff approval request
 
 ### Prompt A1 - Oversized-step split before Builder handoff
 
 ```text
 /cdd-master-chef TEST ONLY: assume the next top-level TODO step is oversized for one Builder run.
-Split that step into smaller decision-complete TODO steps before delegation, recompute the remaining unfinished top-level TODO step-heading count, and then ask for kickoff approval on the first new runnable step.
+Split that step into smaller decision-complete TODO steps before delegation, recompute the remaining unfinished top-level TODO step-heading count, and then present selector-driven kickoff options on the first new runnable step.
 ```
 
 - [ ] Expected:
@@ -98,10 +99,10 @@ Split that step into smaller decision-complete TODO steps before delegation, rec
   - the remaining top-level-step count is recomputed after the split
   - kickoff approval targets the first new runnable step
 
-### Prompt B - Kickoff approval
+### Prompt B - Selector-driven kickoff approval
 
 ```text
-/cdd-master-chef Approve the proposed next action.
+/cdd-master-chef Present kickoff options with visible `A.`, `B.`, `C.` selectors. The selected option itself should count as the approval.
 Run config:
 <RUN_CONFIG>
 Require a clean source checkout, create the managed worktree and fresh branch, initialize runtime state there, acquire the run lease, and stop with exact relaunch instructions if the adapter cannot safely continue in-session.
@@ -114,7 +115,9 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
   - `run.json` records the exact approved Run config, the approved run step budget, and source/worktree metadata
+  - kickoff approval is presented with selector-based options rather than a free-form approval question
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
+  - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
   - no watchdog cron is created
   - the OpenClaw adapter stops with exact relaunch instructions before delegated implementation starts
   - the routing choice is named explicitly in the handoff or main-session action

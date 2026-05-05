@@ -140,7 +140,15 @@ Runtime adapters may help resolve the `Run config` in one of three ways:
 - a local default Run config file when the adapter supports one
 - a recommended candidate derived from the current session model and thinking when the runtime can surface both concretely
 
-A current-session recommendation must copy those current session values into all four Run config fields, show the full candidate block back to the human, and wait for explicit approval or edits before kickoff. Do not silently assume current session settings.
+A current-session recommendation must copy those current session values into all four Run config fields and show the full candidate block back to the human before kickoff. Do not silently assume current session settings.
+
+When Master Chef asks the human to approve or edit a recommended `Run config`, present selector-based choices rather than a free-form approval question.
+
+Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can reply with just the selector, and let the selected option itself count as the approval.
+
+- `A. use this Run config`
+- `B. edit this Run config`
+- `C. stop before kickoff`
 
 Treat the resolved `Run config` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
 
@@ -208,6 +216,14 @@ Before implementation starts, present one kickoff approval that covers:
 - whether to spawn Builder now and start the autonomous run
 - runtime initialization under `.cdd-runtime/master-chef/`
 - run lease creation
+
+Present that kickoff decision with selector-based options rather than a free-form approval question.
+
+Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can reply with just the selector, and let the selected option itself count as the kickoff approval.
+
+- `A. approve kickoff and start the autonomous run now`
+- `B. approve kickoff but do not spawn Builder yet`
+- `C. revise the next action, Run config, or step budget before kickoff`
 
 Use single-step Builder runs only.
 
