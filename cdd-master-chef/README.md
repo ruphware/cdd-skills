@@ -1,6 +1,6 @@
-# [CDD-8] Master Chef
+# [CDD-6] Master Chef
 
-This directory is the canonical committed package root for `[CDD-8] Master Chef`, an in-development multi-runtime autonomous workflow that sits beside the core `[CDD-0]` through `[CDD-7]` CDD skills.
+This directory is the canonical committed package root for `[CDD-6] Master Chef`, an in-development multi-runtime autonomous workflow that sits beside the core `[CDD-0]` through `[CDD-5]` CDD skills.
 
 Use these files as the canonical contract surfaces:
 
@@ -32,7 +32,7 @@ Potential future adapters:
 
 Relationship to the rest of the repo:
 
-- `skills/` remains the canonical Builder workflow source for the core `[CDD-0]` through `[CDD-7]` `cdd-*` skills.
-- `openclaw/` inside this package is one adapter over the shared `[CDD-8] Master Chef` contract defined here.
+- `skills/` remains the canonical Builder workflow source for the core `[CDD-0]` through `[CDD-5]` `cdd-*` skills.
+- `openclaw/` inside this package is one adapter over the shared `[CDD-6] Master Chef` contract defined here.
 - Codex and Claude adapter docs now live directly in this package root.
 - This directory is the single canonical source tree.

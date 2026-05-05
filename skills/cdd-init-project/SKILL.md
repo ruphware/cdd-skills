@@ -52,7 +52,7 @@ ___
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
-<sup>Start with `$cdd-boot`. Use `$cdd-implementation-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.</sup>
+<sup>Start with `$cdd-boot`. Use `$cdd-implementation-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement-todo` for feature work, and `$cdd-maintain` for doc drift, index refresh, codebase cleanup, refactor planning, and upkeep.</sup>
 ```
 
 - For existing-repo adoption, ask the user for explicit confirmation before proposing or applying that README.md edit; only then consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`.
@@ -294,10 +294,10 @@ Draft a patch proposal grouped by file, including:
    - move/normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links
 3) Add repo-specific planning to `TODO.md`:
    - preserve the boilerplate header, Step 00, and Step template
-   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-index`)
+   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-maintain` in `index` mode)
 
 ### Phase 3 — Apply
 1) Ask: **Approve and apply this migration plan?**
 2) If the approved plan includes clone, remote creation, git initialization, push, or path-moving operations, ask a second confirmation listing those exact operations before executing them.
 3) Apply only the approved changes.
-4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-index` as the next action.
+4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-maintain` in `index` mode as the next action.

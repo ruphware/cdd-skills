@@ -1,4 +1,4 @@
-# [CDD-8] Master Chef
+# [CDD-6] Master Chef
 
 This folder contains the current OpenClaw adapter docs inside the canonical `cdd-master-chef/` package.
 
@@ -26,9 +26,7 @@ The internal Builder routing map stays aligned with the core skill pack:
 - `[CDD-2] Plan` -> `cdd-plan`
 - `[CDD-3] Implement TODO` -> `cdd-implement-todo`
 - `[CDD-4] Implementation Audit` -> `cdd-implementation-audit`
-- `[CDD-5] Refactor` -> `cdd-refactor`
-- `[CDD-6] Index` -> `cdd-index`
-- `[CDD-7] Maintain` -> `cdd-maintain`
+- `[CDD-5] Maintain` -> `cdd-maintain`
 
 ## What it does
 
@@ -104,15 +102,13 @@ Uninstall:
 
 `./scripts/install.sh --runtime openclaw` installs:
 
-- `[CDD-8] Master Chef` -> `cdd-master-chef`
+- `[CDD-6] Master Chef` -> `cdd-master-chef`
 - `[CDD-0] Boot` -> `cdd-boot`
-- `[CDD-7] Maintain` -> `cdd-maintain`
+- `[CDD-5] Maintain` -> `cdd-maintain`
 - `[CDD-1] Init Project` -> `cdd-init-project`
 - `[CDD-2] Plan` -> `cdd-plan`
 - `[CDD-3] Implement TODO` -> `cdd-implement-todo`
 - `[CDD-4] Implementation Audit` -> `cdd-implementation-audit`
-- `[CDD-6] Index` -> `cdd-index`
-- `[CDD-5] Refactor` -> `cdd-refactor`
 
 The internal Builder variants are model-visible to OpenClaw agent runs and hidden from the user slash-command surface.
 
@@ -129,7 +125,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    /model <master-model>
    ```
 
-4. Start `[CDD-8] Master Chef` in the target repo or new project folder:
+4. Start `[CDD-6] Master Chef` in the target repo or new project folder:
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
@@ -144,7 +140,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - if the next runnable top-level TODO step is oversized for one Builder run, split it first
    - inspect the remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - if this is a fresh run from a long-lived branch, suggest a descriptive feature branch before managed worktree kickoff
-   - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct setup, planning, audit, or refactor work
+   - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, otherwise Master-Chef-direct setup, planning, audit, or maintain work
    - route approved findings from `[CDD-4] Implementation Audit` or external review through `[CDD-2] Plan` before any delegated implementation
    - when that top-level step count is finite, recommend that exact count as the default/max step budget, meaning all remaining steps, after any step split
    - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
@@ -212,21 +208,17 @@ Default delegated path:
 - if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
 - if a step is blocked, Master Chef stops the autonomous loop, reports the blocker in-session, decomposes the work into smaller TODO steps when possible, cleans only stale retry artifacts, and restarts from the next smaller actionable step
 
-Delegated exception:
-
-- `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh as the delegated action
-
 Manual helper:
 
 - `[CDD-0] Boot` (`cdd-boot`) for best-effort repo context ingestion when a human wants a vanilla `AGENTS.md` boot; it is installed in the shared pack but is not part of the normal Master Chef routing flow
-- `[CDD-7] Maintain` (`cdd-maintain`) for archive cleanup, support-doc drift review, and code-health review; it is installed in the shared pack but is not part of the normal Master Chef routing flow
+- `[CDD-5] Maintain` (`cdd-maintain`) for doc drift, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, or local runtime cleanup review; it is installed in the shared pack and used directly in the main session when one of those tasks is the actual next action
 
 Master-Chef-direct path:
 
 - `[CDD-1] Init Project` (`cdd-init-project`), especially when the user wants a new project to start in CDD form
 - `[CDD-2] Plan` (`cdd-plan`)
 - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
-- `[CDD-5] Refactor` (`cdd-refactor`)
+- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, index refresh, cleanup, or refactor planning before delegated implementation
 
 Audit findings:
 

@@ -1,5 +1,5 @@
 interface:
-  display_name: "[CDD-8] Master Chef"
+  display_name: "[CDD-6] Master Chef"
   short_description: "Start the autonomous development process through the shared multi-runtime Master Chef package"
 policy:
   allow_implicit_invocation: true

@@ -1,4 +1,4 @@
-# [CDD-8] Master Chef Test Harness Checklist (OpenClaw adapter)
+# [CDD-6] Master Chef Test Harness Checklist (OpenClaw adapter)
 
 This harness validates the current OpenClaw adapter against the shared Master Chef contract.
 
@@ -15,8 +15,6 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   ls ~/.openclaw/skills/cdd-plan/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-implement-todo/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-implementation-audit/SKILL.md >/dev/null
-  ls ~/.openclaw/skills/cdd-index/SKILL.md >/dev/null
-  ls ~/.openclaw/skills/cdd-refactor/SKILL.md >/dev/null
   ```
 
 - [ ] Repo is CDD-ready:
@@ -84,7 +82,7 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
   - remaining unfinished top-level TODO step-heading count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
   - an oversized top-level step is split in Master Chef before Builder handoff
-  - explicit routing choice: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master Chef direct for setup/planning/audit/refactor work
+  - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
   - explicit kickoff approval request
 
 ### Prompt A1 - Oversized-step split before Builder handoff
@@ -197,19 +195,17 @@ Refuse to start a duplicate run and report the active lease owner.
 ```text
 /cdd-master-chef TEST ONLY: explain the routing choice for the current repo state.
 Use Builder via [CDD-3] Implement TODO (`cdd-implement-todo`) for a normal runnable TODO step.
-Use Builder via [CDD-6] Index (`cdd-index`) only when an index refresh is the delegated action.
 Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
-Explain why [CDD-7] Maintain (`cdd-maintain`) is a manual helper rather than part of the normal flow.
-Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Implementation Audit (`cdd-implementation-audit`), or [CDD-5] Refactor (`cdd-refactor`) directly in Master Chef when setup, planning, implementation audit, or refactor decomposition is needed.
+Explain why [CDD-5] Maintain (`cdd-maintain`) is used directly when the repo specifically needs doc drift review, docs/INDEX.md refresh, codebase cleanup, or refactor planning.
+Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Implementation Audit (`cdd-implementation-audit`), or [CDD-5] Maintain (`cdd-maintain`) directly in Master Chef when setup, planning, implementation audit, or maintenance work is needed.
 Explain how approved findings from [CDD-4] Implementation Audit or external review should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation.
 ```
 
 - [ ] Expected:
   - `[CDD-0] Boot` is called out as a manual / non-routed helper
-  - `[CDD-7] Maintain` is called out as a manual / non-routed helper
+  - `[CDD-5] Maintain` is called out as a direct maintenance helper
   - `[CDD-3] Implement TODO` is the default Builder path
-  - `[CDD-6] Index` is treated as a delegated exception, not the default
-  - `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` are treated as Master-Chef-direct skills
+  - `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-4] Implementation Audit`, and `[CDD-5] Maintain` are treated as Master-Chef-direct skills
   - audit findings are routed through `[CDD-2] Plan` before delegated implementation
 
 ### Prompt I - Continue the run

@@ -32,21 +32,17 @@ CDD_DISPLAY_NAMES = {
     "cdd-plan": "[CDD-2] Plan",
     "cdd-implement-todo": "[CDD-3] Implement TODO",
     "cdd-implementation-audit": "[CDD-4] Implementation Audit",
-    "cdd-refactor": "[CDD-5] Refactor",
-    "cdd-index": "[CDD-6] Index",
-    "cdd-maintain": "[CDD-7] Maintain",
+    "cdd-maintain": "[CDD-5] Maintain",
 }
 CDD_CORE_LABELS = tuple(CDD_DISPLAY_NAMES.values())
-MASTER_CHEF_LABEL = "[CDD-8] Master Chef"
+MASTER_CHEF_LABEL = "[CDD-6] Master Chef"
 OPENCLAW_ROUTING_LABELS = (
     "[CDD-0] Boot",
     "[CDD-1] Init Project",
     "[CDD-2] Plan",
     "[CDD-3] Implement TODO",
     "[CDD-4] Implementation Audit",
-    "[CDD-5] Refactor",
-    "[CDD-6] Index",
-    "[CDD-7] Maintain",
+    "[CDD-5] Maintain",
 )
 
 
@@ -307,8 +303,14 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
     require_topic_bundle(
         skill_text,
         (
+            r"Mode selection",
+            r"`A\. doc drift`.*`B\. index`.*`C\. codebase cleanup`.*`D\. refactor`",
+            r"Keep the mode-specific write scope tight",
             r"Apply safe archive moves immediately",
             r"Ask before deleting stale adjacent `TODO\*\.md` files",
+            r"In `index` mode, write only `docs/INDEX\.md`",
+            r"In `codebase cleanup` mode, remove only clearly approved dead or obsolete code and artifacts",
+            r"In `refactor` mode, do not rewrite implementation directly",
             r"Retain the newest 3 step headings",
             r"oldest contiguous archiveable block near the top",
             r"Never archive a step from the middle or tail",
@@ -326,6 +328,12 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
             r"README\.md.*user-approved compaction",
             r"`docs/specs/prd\.md`.*product-manager view",
             r"`docs/specs/blueprint\.md`.*anchor technical spec",
+            r"Approve and apply these documentation updates",
+            r"documentation approval separate from stale TODO deletion approval.*runtime-cleanup approval",
+            r"Write only `docs/INDEX\.md` in this mode",
+            r"Approve and apply this single-file docs/INDEX\.md update",
+            r"[Ss]elf-grade.*0-12.*11\.5",
+            r"refactor-candidate",
             r"repo-local `\.cdd-runtime/`.*`\.cdd-runtime/master-chef/`",
             r"Git-backed.*local worktree state.*`live`, `stale`, or `unclear`",
             r"currently linked worktrees.*current run state as `live`",
@@ -336,14 +344,21 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
             r"runtime-cleanup approval separate from support-document approval.*stale TODO deletion approval",
             r"remove only `stale` repo-local runtime artifacts and managed worktrees",
             r"Never remove the current worktree.*current run state.*`live` linked worktree",
-            r"repo history.*not justification for stale support-doc content",
+            r"confirmed_cleanup.*probable_cleanup.*unclear",
+            r"Do not remove anything classified as `unclear`",
+            r"Group approved removals into one cleanup patch",
+            r"Approve and apply this codebase cleanup patch",
+            r"[Rr]epo history.*not justification for stale support-doc content",
             r"Classify each support doc as `current`, `drifted`, `missing`, or `unclear`",
             r"Do not silently refresh `README\.md`.*`docs/prompts/PROMPT-INDEX\.md`.*`\.agents/skills/\*/SKILL\.md`",
-            r"Approve and apply these documentation updates",
-            r"documentation approval separate from stale TODO deletion approval",
+            r"TODO-refactor-<tag>\.md",
+            r"Approve and apply these refactor-plan changes",
             r"Report the exact age in days",
-            r"Never auto-delete code",
-            r"Do not create TODO or refactor files automatically",
+            r"`Mode`",
+            r"`Index update status`",
+            r"`Codebase cleanup status`",
+            r"`Cleanup approval needed`",
+            r"`Refactor plan status`",
             r"`Local runtime cleanup status`",
             r"`Runtime cleanup approval needed`",
         ),
@@ -367,7 +382,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
             r"\[!\[CDD Project\]",
             r"\[!\[CDD Skills\]",
             r"This repo follows the \[`CDD Project`\].*\[`AGENTS\.md`\]",
-            r"Start with .*cdd-boot.*cdd-implementation-audit.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*cdd-refactor",
+            r"Start with .*cdd-boot.*cdd-implementation-audit.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*doc drift.*index refresh.*codebase cleanup.*refactor planning",
             r"existing-repo adoption.*explicit confirmation.*README\.md edit",
             r"Avoid duplicating the block if it or its badges already exist",
             r"source of truth for the CDD contract.*existing repo",
@@ -388,7 +403,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
             r"Inventory existing docs.*repo-local `\.agents/skills/\*/SKILL\.md`",
             r"repo-specific planning to `TODO\.md`",
             r"preserve the boilerplate header, Step 00, and Step template",
-            r"append repo-specific Step 01\+ work.*docs/INDEX\.md.*PROMPT-INDEX.*cdd-index",
+            r"append repo-specific Step 01\+ work.*docs/INDEX\.md.*PROMPT-INDEX.*cdd-maintain.*`index` mode",
             r"`TODO\.md`, `docs/JOURNAL\.md`, and `docs/prompts/PROMPT-INDEX\.md`.*materialize from `https://github\.com/ruphware/cdd-boilerplate`",
             r"`\.agents/skills/\*/SKILL\.md`: when present.*do not import user-home skills",
         ),
@@ -478,7 +493,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
             "cdd-plan",
             "cdd-implementation-audit",
             "cdd-init-project",
-            "cdd-refactor",
+            "cdd-maintain",
         }:
             validate_selector_labeled_options(skill_text, skill_md)
 
@@ -525,7 +540,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_regexes(
         readme_text,
         (
-            r"`skills/`.*canonical Builder workflow source.*`\[CDD-0\]`.*`\[CDD-7\]`.*`cdd-\*` skills",
+            r"`skills/`.*canonical Builder workflow source.*`\[CDD-0\]`.*`\[CDD-5\]`.*`cdd-\*` skills",
             r"Current concrete adapters in this package:",
             r"OpenClaw.*packaged runtime adapter.*generated Builder install flow",
             r"Codex.*subagent-backed adapter docs",
@@ -713,8 +728,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         root_readme_text,
         (
             r"Use the core .*cdd-\*.*single coding agent",
-            r"Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval",
-            r"For `\[CDD-8\] Master Chef`:",
+            r"Use .*(cdd-master-chef|\[CDD-6\] Master Chef).*kickoff approval",
+            r"For `\[CDD-6\] Master Chef`:",
             r"remaining unfinished top-level step-heading count.*default/max step budget",
             r"fresh run from a long-lived branch.*descriptive feature branch",
             r"split an oversized top-level step before (?:Builder handoff|delegation)",
@@ -742,7 +757,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             "very experimental",
             "the current OpenClaw adapter fits your runtime",
             "only packaged Master Chef runtime",
-            "For current Codex or Claude Code `[CDD-8] Master Chef` adapter work:",
+            "For current Codex or Claude Code `[CDD-6] Master Chef` adapter work:",
             "treat those as the current subagent-backed adapter paths in development",
         ),
         root_readme_md,
@@ -1075,7 +1090,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         f"cdd-master-chef should stay model-visible for implicit invocation in {skill_md}"
     )
     require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
-    assert 'display_name: "[CDD-8] Master Chef"' in yaml_text, (
+    assert 'display_name: "[CDD-6] Master Chef"' in yaml_text, (
         f"unexpected display name in {openai_yaml}"
     )
     assert "allow_implicit_invocation: true" in yaml_text, (
@@ -1084,7 +1099,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_headings(
         skill_text,
         (
-            "# [CDD-8] Master Chef",
+            "# [CDD-6] Master Chef",
             "Canonical `run.json` fields:",
             "Report events:",
             "Reporting surface:",
@@ -1320,7 +1335,7 @@ def validate_generated_openclaw_builder_skills(
                     "cdd-plan",
                     "cdd-implementation-audit",
                     "cdd-init-project",
-                    "cdd-refactor",
+                    "cdd-maintain",
                 }:
                     validate_selector_labeled_options(skill_text, skill_md)
 

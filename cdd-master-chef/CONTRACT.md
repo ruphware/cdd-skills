@@ -168,8 +168,8 @@ Master Chef chooses the internal `cdd-*` routing model.
 - For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
 - Builder default: `cdd-implement-todo` for the next runnable TODO step.
 - If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Recompute the remaining unfinished top-level TODO step-heading count after the split, then delegate the first new runnable step.
-- Builder optional: `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action.
-- Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in the main session rather than being delegated to Builder.
+- Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-maintain` stay in the main session rather than being delegated to Builder.
+- Use `cdd-maintain` directly when the repo specifically needs doc drift review, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, or local runtime cleanup review before the normal TODO loop continues.
 - `cdd-implementation-audit` is an installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `cdd-plan` in the main session before any delegated implementation begins.
 - External audit findings and review-derived work packages must be normalized through `cdd-plan` in the main session before any delegated implementation begins.
 

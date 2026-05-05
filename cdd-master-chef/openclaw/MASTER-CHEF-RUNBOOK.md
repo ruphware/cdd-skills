@@ -1,8 +1,8 @@
-# [CDD-8] Master Chef Runbook (OpenClaw adapter)
+# [CDD-6] Master Chef Runbook (OpenClaw adapter)
 
 ## 0) Purpose
 
-This runbook is the OpenClaw adapter over the shared `[CDD-8] Master Chef` contract.
+This runbook is the OpenClaw adapter over the shared `[CDD-6] Master Chef` contract.
 
 Use the parent `cdd-master-chef/` package docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
@@ -85,8 +85,6 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-plan`
    - `~/.openclaw/skills/cdd-implement-todo`
    - `~/.openclaw/skills/cdd-implementation-audit`
-   - `~/.openclaw/skills/cdd-index`
-   - `~/.openclaw/skills/cdd-refactor`
 6. Confirm the Run config includes:
    - `master_model`
    - `master_thinking`
@@ -166,8 +164,7 @@ On the first `/cdd-master-chef` turn:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
    - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
-   - delegated exception: `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh
-   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Refactor` (`cdd-refactor`) when the repo needs setup, planning, implementation audit, or refactor decomposition before Builder work
+   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, `docs/INDEX.md` refresh, codebase cleanup, or refactor planning before Builder work
    - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Confirm the approved Run config:
    - `master_model`
@@ -363,19 +360,18 @@ Master Chef chooses the routing path.
 **Builder delegated by default:**
 
 - `[CDD-3] Implement TODO` (`cdd-implement-todo`) — normal path for one approved runnable TODO step
-- `[CDD-6] Index` (`cdd-index`) — allowed when Master Chef explicitly wants an index refresh as the delegated action
 
 **Manual / non-routed helper:**
 
 - `[CDD-0] Boot` (`cdd-boot`) — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
-- `[CDD-7] Maintain` (`cdd-maintain`) — archive cleanup, support-doc drift review, and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `[CDD-5] Maintain` (`cdd-maintain`) — direct maintenance helper for doc drift, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, or local runtime cleanup review when one of those tasks is the actual next action
 
 **Master Chef direct:**
 
 - `[CDD-1] Init Project` (`cdd-init-project`)
 - `[CDD-2] Plan` (`cdd-plan`)
 - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
-- `[CDD-5] Refactor` (`cdd-refactor`)
+- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, index refresh, cleanup, or refactor planning before delegated implementation
 
 **Audit findings:**
 
@@ -404,8 +400,7 @@ The Builder must:
 
 - use the exact internal `cdd-*` skill chosen by Master Chef
 - default to `cdd-implement-todo` for a normal approved runnable TODO step
-- use `cdd-index` only when Master Chef explicitly delegates that action
-- not switch itself into planning or refactor mode; if the delegated path no longer fits, return a blocker instead
+- not switch itself into planning or maintain mode; if the delegated path no longer fits, return a blocker instead
 - implement exactly one approved action
 - end after that one approved action instead of continuing into the next TODO step
 - avoid scope creep
@@ -423,7 +418,7 @@ After kickoff approval:
 1. Initialize or refresh runtime files.
 2. Write `run.json` and `run.lock.json`.
 3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
-4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-implementation-audit`, or `cdd-refactor`), run it in the main session before any Builder spawn.
+4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-implementation-audit`, or `cdd-maintain`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
 6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
 7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh single-step Builder run for the same step, and update runtime/log evidence immediately.

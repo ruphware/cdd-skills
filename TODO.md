@@ -1029,3 +1029,42 @@ Add a new audit-only core skill at `[CDD-4]` that audits a selected implementati
 - [x] Confirm `[CDD-4] Implementation Audit` appears in the live root README skill map.
 - [x] Confirm the new skill accepts implementation-scope audit inputs and ends by recommending `cdd-plan`.
 - [x] Confirm installer smoke tests now ship `cdd-implementation-audit` across builder, Claude, and OpenClaw targets.
+
+## Step 28 — Collapse `cdd-index` and `cdd-refactor` into `cdd-maintain`
+
+### Goal
+
+Make `cdd-maintain` the single upkeep skill for doc drift, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, and local runtime cleanup review.
+
+### Constraints
+
+- Hard-remove standalone `cdd-index` and `cdd-refactor`.
+- Renumber `cdd-maintain` to `[CDD-5]` and `cdd-master-chef` to `[CDD-6]`.
+- Keep `[CDD-4] cdd-implementation-audit` as the scoped audit skill.
+- Allow `codebase cleanup` to remove approved dead code or legacy artifacts directly, but keep `refactor` planning-only.
+
+### Tasks
+
+- [x] Update `skills/cdd-maintain/*` so the skill starts with `A. doc drift`, `B. index`, `C. codebase cleanup`, `D. refactor` when intent is unclear and so each mode has the correct write scope.
+- [x] Remove `skills/cdd-index/` and `skills/cdd-refactor/` from the canonical skill pack.
+- [x] Update `README.md`, `skills/cdd-init-project/SKILL.md`, and `cdd-master-chef/*` so the public taxonomy, recommendations, and routing use `[CDD-5] Maintain` and `[CDD-6] Master Chef`.
+- [x] Update `scripts/validate_skills.py`, `scripts/test_installers.sh`, and `scripts/test_master_chef_artifacts.sh` so validation fails if the retired standalone skills return or numbering drifts back.
+
+### Implementation notes
+
+- Keep `index` mode narrow: it may write only `docs/INDEX.md`.
+- Keep `codebase cleanup` approval-gated and evidence-driven; remove only approved dead code, dead folders, duplicate retired paths, and legacy leftovers.
+- Treat `Maintain` as the Master Chef direct maintenance helper when index refresh, cleanup, or refactor planning is the real task.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- [x] Confirm `cdd-maintain` asks the new A/B/C/D mode question when invoked without a clear task.
+- [x] Confirm `cdd-index` and `cdd-refactor` are no longer shipped as standalone skills.
+- [x] Confirm `[CDD-5] Maintain` covers doc drift, index refresh, codebase cleanup, and refactor planning.
+- [x] Confirm `[CDD-6] Master Chef` docs and tests no longer reference standalone `cdd-index` or `cdd-refactor`.

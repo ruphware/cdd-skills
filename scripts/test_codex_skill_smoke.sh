@@ -4,7 +4,7 @@ set -euo pipefail
 # Tiny local Codex smoke runner for installed CDD skills.
 #
 # This is intentionally small and read-only:
-# - explicit `[CDD-8] Master Chef` invocation
+# - explicit `[CDD-6] Master Chef` invocation
 # - implicit autonomous-run request
 # - negative control that should not drift into Master Chef kickoff
 #

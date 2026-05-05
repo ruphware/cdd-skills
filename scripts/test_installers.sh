@@ -128,7 +128,9 @@ assert_exists "$BUILDER_INSTALL/cdd-master-chef/README.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/CODEX-ADAPTER.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/CLAUDE-ADAPTER.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/openclaw/README.md"
-assert_command_output_contains 'display_name: "[CDD-8] Master Chef"' sed -n '1,20p' "$BUILDER_INSTALL/cdd-master-chef/agents/openai.yaml"
+assert_command_output_contains 'display_name: "[CDD-6] Master Chef"' sed -n '1,20p' "$BUILDER_INSTALL/cdd-master-chef/agents/openai.yaml"
+assert_not_exists "$BUILDER_INSTALL/cdd-index"
+assert_not_exists "$BUILDER_INSTALL/cdd-refactor"
 assert_command_fails_with "Rerun with --update" \
   "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_INSTALL"
 
@@ -190,7 +192,8 @@ assert_exists "$(find_one "$BUILDER_PRUNE" 'cdd-invalid.pruned.*')"
 assert_not_exists "$BUILDER_PRUNE/cdd-audit-and-implement"
 assert_no_match "$BUILDER_PRUNE" 'cdd-audit-and-implement.pruned.*'
 assert_exists "$BUILDER_PRUNE/cdd-foreign/SKILL.md"
-assert_exists "$BUILDER_PRUNE/cdd-refactor/SKILL.md"
+assert_not_exists "$BUILDER_PRUNE/cdd-index"
+assert_not_exists "$BUILDER_PRUNE/cdd-refactor"
 
 echo "[CI] INFO BuilderUninstall root={$BUILDER_UNINSTALL}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_UNINSTALL"

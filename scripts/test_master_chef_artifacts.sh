@@ -87,7 +87,7 @@ for rel in \
   CLAUDE-TEST-HARNESS.md; do
   assert_exists "$SHARED_ROOT/$rel"
 done
-assert_contains "$SHARED_ROOT/agents/openai.yaml" 'display_name: "[CDD-8] Master Chef"'
+assert_contains "$SHARED_ROOT/agents/openai.yaml" 'display_name: "[CDD-6] Master Chef"'
 assert_contains "$SHARED_ROOT/agents/openai.yaml" "allow_implicit_invocation: true"
 
 echo "[MasterChefArtifacts] INFO LegacyStubPaths root={$ROOT_DIR}"
@@ -105,11 +105,11 @@ for token in \
 done
 for pattern in \
   'Use the core .*cdd-\*.*single coding agent' \
-  'Use .*(cdd-master-chef|\[CDD-8\] Master Chef).*kickoff approval' \
+  'Use .*(cdd-master-chef|\[CDD-6\] Master Chef).*kickoff approval' \
   'remaining unfinished top-level step-heading count.*default/max step budget' \
   'fresh run from a long-lived branch.*descriptive feature branch' \
   'split an oversized top-level step before (Builder handoff|delegation)' \
-  'For `\[CDD-8\] Master Chef`:' \
+  'For `\[CDD-6\] Master Chef`:' \
   'start `(\$|/)?cdd-master-chef`.*main session.*runtime you want to control' \
   'Run config block.*current session model.*thinking.*approve or edit' \
   'how many TODO steps this run should cover' \
@@ -129,7 +129,7 @@ for token in \
   "very experimental" \
   "the current OpenClaw adapter fits your runtime" \
   "only packaged Master Chef runtime" \
-  "For current Codex or Claude Code \`[CDD-8] Master Chef\` adapter work:" \
+  "For current Codex or Claude Code \`[CDD-6] Master Chef\` adapter work:" \
   "treat those as the current subagent-backed adapter paths in development"; do
   assert_not_contains "$ROOT_DIR/README.md" "$token"
 done

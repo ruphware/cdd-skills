@@ -1,5 +1,0 @@
-interface:
-  display_name: "[CDD-5] Refactor"
-  short_description: "Interactive refactor planning → TODO refactor plan"
-policy:
-  allow_implicit_invocation: false
