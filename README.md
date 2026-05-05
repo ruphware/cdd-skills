@@ -30,7 +30,7 @@ Skills never run autonomously; the developer invokes each skill surgically, when
 
 - **[CDD-5] Maintain**  
   *`cdd-maintain`*  
-  Address doc drift, refresh indexes, sweep approved leftovers, and plan cleanup or refactors.
+  Review doc drift and repo upkeep, run source cleanup sweeps, refresh indexes, and audit refactor candidates.
 
 **Autonomous workflow**
 
@@ -71,7 +71,7 @@ Current concrete adapters in this repo:
 - Start with `[CDD-0] Boot` to load `AGENTS.md`, project docs, and current work context, then decide whether to keep working in the current checkout or move into a branch-backed worktree.
 - Use `[CDD-1] Init Project` for new or newly adopted repos; use `[CDD-2] Plan` plus `[CDD-3] Implement TODO` for feature work.
 - Use `[CDD-4] Implementation Audit` plus `[CDD-2] Plan` when audit findings should become TODO work.
-- Use `[CDD-5] Maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review.
+- Use `[CDD-5] Maintain` for doc drift + upkeep, source cleanup, index refresh, or refactor architecture audit.
 - Use `cdd-master-chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
 
 For `[CDD-6] Master Chef`:
@@ -162,4 +162,4 @@ ___
 [![CDD Project](https://img.shields.io/badge/CDD-Project-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-boilerplate)
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
-<sup>Start with `[CDD-0] Boot`. Use `[CDD-4] Implementation Audit` for implementation or codebase audits, `[CDD-2] Plan` + `[CDD-3] Implement TODO` for feature work, and `[CDD-5] Maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, and upkeep.</sup>
+<sup>Start with `[CDD-0] Boot`. Use `[CDD-4] Implementation Audit` for implementation or codebase audits, `[CDD-2] Plan` + `[CDD-3] Implement TODO` for feature work, and `[CDD-5] Maintain` for doc drift + upkeep, source cleanup, index refresh, and refactor architecture audit.</sup>

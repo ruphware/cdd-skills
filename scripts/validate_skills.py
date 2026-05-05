@@ -90,6 +90,17 @@ BOOT_YAML_REGEXES = (
     r"\.cdd-runtime/worktrees/<branch-or-tag>/",
     r"clear next runnable TODO step.*cdd-implement-todo <step>",
 )
+MAINTAIN_YAML_REGEXES = (
+    r"A\. doc drift \+ upkeep",
+    r"B\. source cleanup",
+    r"fixed order A -> B -> C -> D",
+    r"A responsible for support-doc drift plus TODO/journal/archive/runtime upkeep",
+    r"B from tracked source/tests/configs/manifests/entrypoints",
+    r"docs or runtime only as candidate-specific proof",
+    r"docs/INDEX\.md only in index mode",
+    r"approved source-cleanup removals",
+    r"read-only architecture audit.*cdd-plan",
+)
 
 
 def frontmatter(path: Path) -> str:
@@ -396,20 +407,62 @@ def validate_implement_todo_skill_text(skill_text: str, skill_md: Path) -> None:
     )
 
 
-def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the maintain skill keeps its archive and doctoring contract."""
+def validate_maintain_mode_boundaries(skill_text: str, skill_md: Path) -> None:
+    """Assert the maintain skill keeps upkeep in A and tracked cleanup in B."""
     require_topic_bundle(
         skill_text,
         (
             r"Mode selection",
-            r"`A\. doc drift`.*`B\. codebase cleanup`.*`C\. index`.*`D\. refactor`.*`do all`",
+            r"`A\. doc drift \+ upkeep`.*`B\. source cleanup`.*`C\. index`.*`D\. refactor`.*`do all`",
+            r"Shared routing read",
+            r"Read `AGENTS\.md` first",
+            r"Do not front-load support-doc, journal, or runtime review when the selected mode does not require it",
+            r"Mode-scoped read discipline",
+            r"`A\. doc drift \+ upkeep`:.*`README\.md`.*`TODO\.md`.*`docs/JOURNAL\.md`.*`docs/journal/JOURNAL\.md`.*`docs/journal/JOURNAL-<area>\.md`.*`docs/journal/SUMMARY\.md`.*`docs/journal/archive/`.*`docs/INDEX\.md`.*`docs/specs/prd\.md`.*`docs/specs/blueprint\.md`.*`docs/prompts/PROMPT-INDEX\.md`.*`\.agents/skills/\*/SKILL\.md`.*`\.cdd-runtime/`",
+            r"`B\. source cleanup`: start from tracked source, tests, configs, manifests, and entrypoints",
+            r"Read `README\.md`, `TODO\*\.md`, journal surfaces, repo-local `\.agents/skills/\*/SKILL\.md`, or `\.cdd-runtime/` only when one of those surfaces is needed as proof for a specific cleanup candidate",
+            r"## Mode A — Doc drift \+ upkeep",
+            r"support-doc drift and repo upkeep: TODO archive review, stale adjacent TODO review, journal archive review, and repo-local runtime cleanup review",
+            r"TODO archive rules.*only in this mode",
+            r"journal archive rules.*only in this mode",
+            r"local runtime cleanup review rules.*only in this mode",
+            r"## Mode B — Source cleanup",
+            r"tracked-code cleanup pass, not a broad repo-maintenance audit",
+            r"dead modules or orphaned tracked files",
+            r"dead or unreachable code branches",
+            r"duplicate retired implementation paths",
+            r"stale feature code no longer wired into entrypoints",
+            r"obsolete generated leftovers",
+            r"unused exports when the evidence is strong",
+            r"Return a mode-scoped maintenance report",
+            r"Always include:.*`Mode`.*`Recommended next action`",
+            r"Include only the sections for the selected mode or modes, in execution order",
+            r"For `A`:.*`Archive actions applied`.*`Deletion approval needed`.*`Journal archive status`.*`Local runtime cleanup status`.*`Runtime cleanup approval needed`.*`Support documentation status`.*`Documentation updates proposed` or `Documentation updates applied`.*`Documentation approval needed`",
+            r"For `B`:.*`Source cleanup status`.*`Cleanup approval needed`",
+            r"For `C`:.*`INDEX freshness`.*`Index update status`",
+            r"For `D`:.*`INDEX freshness`.*`Refactor audit status`.*`Refactor options proposed`",
+            r"pure `B` pass.*cleanup findings, proof, approval need, and validation only",
+            r"omit archive, journal, runtime, and support-doc status blocks unless one of those surfaces was used as proof",
+            r"multiple modes are selected.*Omit non-selected mode status blocks",
+        ),
+        skill_md,
+        "maintain mode boundaries",
+    )
+
+
+def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the maintain skill keeps its upkeep and cleanup contract."""
+    validate_maintain_mode_boundaries(skill_text, skill_md)
+    require_topic_bundle(
+        skill_text,
+        (
             r"Allow selecting more than one option",
             r"`do all`.*fixed order `A -> B -> C -> D`",
             r"Keep the mode-specific write scope tight",
             r"Apply safe archive moves immediately",
             r"Ask before deleting stale adjacent `TODO\*\.md` files",
             r"In `index` mode, write only `docs/INDEX\.md`",
-            r"In `codebase cleanup` mode, remove only clearly approved dead or obsolete code and artifacts",
+            r"In `source cleanup` mode, remove only clearly approved dead or obsolete code and artifacts",
             r"In `refactor` mode, do not rewrite implementation directly.*architecture audit.*refactor options.*recommendation to use `cdd-plan`",
             r"Retain the newest 3 step headings",
             r"oldest contiguous archiveable block near the top",
@@ -460,14 +513,6 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
             r"Each option should identify the target boundary.*intended design direction.*key benefits.*main risks.*validation evidence",
             r"Finish with an architecture audit report and recommend `cdd-plan`",
             r"Report the exact age in days",
-            r"`Mode`",
-            r"`Index update status`",
-            r"`Codebase cleanup status`",
-            r"`Cleanup approval needed`",
-            r"`Refactor audit status`",
-            r"`Refactor options proposed`",
-            r"`Local runtime cleanup status`",
-            r"`Runtime cleanup approval needed`",
         ),
         skill_md,
         "maintain skill topics",
@@ -587,6 +632,9 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     if skill_dir.name == "cdd-boot":
         validate_boot_followup_contract(skill_text, skill_md)
         require_regexes(yaml_text, BOOT_YAML_REGEXES, openai_yaml, "boot YAML topics")
+    if skill_dir.name == "cdd-maintain":
+        validate_maintain_mode_boundaries(skill_text, skill_md)
+        require_regexes(yaml_text, MAINTAIN_YAML_REGEXES, openai_yaml, "maintain YAML topics")
     if skill_dir.name in {
         "cdd-plan",
         "cdd-init-project",
@@ -894,6 +942,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_regexes(
         root_readme_text,
         (
+            r"\[CDD-5\] Maintain.*doc drift.*repo upkeep.*source cleanup",
+            r"Use `\[CDD-5\] Maintain` for doc drift \+ upkeep, source cleanup, index refresh, or refactor architecture audit\.",
             r"Use the core .*cdd-\*.*single coding agent",
             r"Use .*(cdd-master-chef|\[CDD-6\] Master Chef).*kickoff approval",
             r"For `\[CDD-6\] Master Chef`:",

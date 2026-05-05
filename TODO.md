@@ -1143,3 +1143,45 @@ Make `cdd-boot` emit selector-labeled next actions, recommend repo-local worktre
 - Confirm boot worktree recommendations now point at `.cdd-runtime/worktrees/<branch-or-tag>/`.
 - Confirm a clear runnable TODO step now produces a `$cdd-implement-todo <step>` recommendation rather than "I can start it directly."
 - Confirm validation fails if `cdd-boot` drifts back to the old worktree root or unlabeled/direct-implementation follow-up wording.
+
+## Step 31 — Narrow `cdd-maintain` B to source cleanup and fold upkeep into A
+
+### Goal
+
+Make `cdd-maintain` treat `A` as doc drift plus repo upkeep, and treat `B` as a tracked source-code cleanup pass focused on dead code, dead branches, stale wiring, duplicate retired paths, and related removals.
+
+### Constraints
+
+- Keep the existing four-mode selector shape; do not add a separate upkeep mode.
+- `A` must own support-doc drift, TODO archive review, stale adjacent TODO review, journal archive review, and repo-local runtime cleanup review.
+- `B` must default to tracked source, tests, configs, manifests, and entrypoints; it may read `README.md`, `TODO*.md`, journal, repo-local skills, or `.cdd-runtime/` only when one of those surfaces is needed as proof for a specific cleanup candidate.
+- Keep cleanup removals approval-gated and evidence-driven.
+- Keep `C` as `docs/INDEX.md`-only and keep `D` read-only and audit-only.
+
+### Tasks
+
+- [x] Update `skills/cdd-maintain/SKILL.md` so the mode selector and mode headings make `A` the doc-drift-plus-upkeep lane and make `B` the source-cleanup lane, with user-facing wording that reduces the current ambiguity.
+- [x] Rewrite `skills/cdd-maintain/SKILL.md` so TODO archive rules, stale adjacent `TODO*.md` handling, journal archive rules, and repo-local `.cdd-runtime/` cleanup review move under `A` instead of behaving like repo-wide default work for every maintain pass.
+- [x] Rewrite `skills/cdd-maintain/SKILL.md` so `B` starts from repo-native dead-code or unused-code tooling when present, otherwise scans tracked source/tests/configs/manifests/entrypoints for dead modules, unreachable branches, duplicate retired paths, stale feature wiring, obsolete generated leftovers, and strong unused exports.
+- [x] Update `skills/cdd-maintain/SKILL.md` so pure `B` reports are mode-scoped: they should report cleanup findings, proof, approval need, and validation only, rather than always emitting TODO/journal/runtime/support-doc status blocks.
+- [x] Update `skills/cdd-maintain/agents/openai.yaml` and `README.md` so the public prompt and workflow wording match the new `A` and `B` boundaries.
+- [x] Extend `scripts/validate_skills.py` so validation fails if `B` drifts back to broad upkeep review, if `A` stops owning upkeep surfaces, or if pure `B` output again requires runtime/archive/doc-status sections by default.
+
+### Implementation notes
+
+- Prefer clearer visible labels such as `A. doc drift + upkeep` and `B. source cleanup` without widening the skill taxonomy.
+- Keep the mode-specific read scope near the top of the skill so the runtime does not front-load docs or `.cdd-runtime/` inspection before the selected mode requires it.
+- Allow `B` to cite `README.md`, `TODO*.md`, or journal evidence only to prove whether a tracked-code candidate is truly dead or intentionally retained.
+- Keep runtime cleanup approval separate inside `A` when stale `.cdd-runtime/` artifacts are found.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- [x] Invoke `cdd-maintain`, reply `B`, and confirm the investigation starts from tracked code/tests/configs/entrypoints rather than TODO, journal, or runtime surfaces.
+- [x] Confirm a pure `B` report no longer includes TODO/journal/archive/runtime status sections unless one of those surfaces is needed as proof for a specific cleanup candidate.
+- [x] Confirm `B` can still surface dead branches, unwired modules, duplicate retired paths, or obsolete generated leftovers with explicit proof and approval-gated removals.
+- [x] Invoke `cdd-maintain`, reply `A`, and confirm doc drift plus TODO/journal/archive/runtime upkeep all live under that mode, including separate approval surfaces where required.
