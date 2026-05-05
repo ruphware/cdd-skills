@@ -53,6 +53,7 @@ Development:
 - If the repo is Git-backed, inspect whether the current checkout is the main worktree or a linked worktree before finishing the boot report.
 - If the current checkout is already a linked worktree, recommend staying in that worktree for development.
 - If the current checkout is the main worktree and linked worktrees or repo-local managed worktree paths already exist, recommend moving feature development into a worktree rather than the main folder.
+- When the boot report recommends moving feature development into a worktree, `Next action` must offer creating a worktree and continuing development there as one of the options.
 - Otherwise, say that staying in the main folder is acceptable unless the user wants parallel or isolated development.
 - Do not create, switch, remove, or clean worktrees during boot.
 
@@ -64,7 +65,7 @@ Return a concise boot report that includes:
 - `Worktree` — summarize whether development should stay in the main folder or move into a worktree
 - `Sources used` — list the files actually read
 - `Missing expected files` — list only the missing canonical docs
-- `Next action` — recommend the best follow-up
+- `Next action` — recommend the best follow-up; when worktree migration is recommended, include options and make creating a worktree and continuing there one of them
 
 On success, recommend continuing in vanilla AGENTS-driven mode.
 

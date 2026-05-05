@@ -1,10 +1,22 @@
-# Chat Driven Development Skills
+# Chat Driven Development (CDD) Skills
 
-These skills support a human-in-the-loop development workflow. Results are better when agentic software engineering is controlled.
+These skills support a human-in-the-loop development workflow, ensuring controlled agentic software engineering.
 
-No skill runs on its own. The driver stays in control and invokes the skill they need, when they need it.
+Skills never run autonomously; the developer invokes each skill surgically, when needed.
 
-## Quick Install
+## Skill Map
+
+| Track | Command | Best for |
+| --- | --- | --- |
+| `[CDD-0] Boot` | `cdd-boot` | Ingest `AGENTS.md`, project docs, and current work context; decide whether to remain in the main folder or use a worktree |
+| `[CDD-1] Init Project` | `cdd-init-project` | Initialize or adopt CDD in the current repo; `gh` is a great tool to have when the repo is GitHub-backed |
+| `[CDD-2] Plan` | `cdd-plan` | Convert change requests or audit findings into implementation-ready TODO steps |
+| `[CDD-3] Implement TODO` | `cdd-implement-todo` | Implement exactly one approved TODO step and mark it done |
+| `[CDD-4] Implementation Audit` | `cdd-implementation-audit` | Audit spec, code, tests, complexity, and docs, then route approved follow-up into planning |
+| `[CDD-5] Maintain` | `cdd-maintain` | Address doc drift, refresh indexes, sweep approved leftovers, and plan cleanup or refactors |
+| `[CDD-6] Master Chef` | `cdd-master-chef` | Run the autonomous multi-step workflow through the canonical Master Chef skill and runtime adapters |
+
+## Quick Install (and Uninstall)
 
 Install or upgrade through the repo-managed no-clone wrapper:
 
@@ -12,23 +24,11 @@ Install or upgrade through the repo-managed no-clone wrapper:
 bash <(curl -fsSL https://raw.githubusercontent.com/ruphware/cdd-skills/main/install-remote.sh) --all
 ```
 
-## Quick Uninstall
-
-Remove managed installs through the matching no-clone wrapper:
+Uninstall through the matching no-clone wrapper:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/ruphware/cdd-skills/main/uninstall-remote.sh) --all
 ```
-
-## Skill Map
-
-- `[CDD-0] Boot` — `cdd-boot` — ingest `AGENTS.md` plus project and development docs for vanilla AGENTS-driven work and recommend whether to stay in the main folder or move into a worktree
-- `[CDD-1] Init Project` — `cdd-init-project` — init or adopt the CDD workflow in the current folder
-- `[CDD-2] Plan` — `cdd-plan` — plan change requests or external audit findings into implementation-ready TODO steps
-- `[CDD-3] Implement TODO` — `cdd-implement-todo` — implement exactly one TODO step and mark that step done on success
-- `[CDD-4] Implementation Audit` — `cdd-implementation-audit` — audit a selected implementation scope for spec, code, test, complexity, and documentation findings, then route approved follow-up into planning
-- `[CDD-5] Maintain` — `cdd-maintain` — archive long CDD files, review doc drift, refresh `docs/INDEX.md`, sweep approved dead-code and legacy leftovers, plan refactors, and review repo-local runtime cleanup
-- `[CDD-6] Master Chef` — `cdd-master-chef` — start the autonomous development process through the canonical Master Chef package and its current runtime adapters
 
 ## What's Included
 
@@ -46,48 +46,39 @@ Current concrete adapters in this repo:
 ## General Workflow
 
 - Use the core `$cdd-*` loop when you want a single coding agent, explicit human approvals, and one approved TODO step at a time.
-- Use `[CDD-0] Boot` to load `AGENTS.md`, project docs, and current work context before working directly.
-- Use `[CDD-1] Init Project` for new or newly adopted repos, `[CDD-2] Plan` plus `[CDD-3] Implement TODO` for feature work, and `[CDD-4] Implementation Audit` plus `[CDD-2] Plan` when audit findings should become TODO work.
-- Use `[CDD-5] Maintain` when the actual task is doc drift review, codebase cleanup, index refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review.
-- Use `$cdd-master-chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
+- Start with `[CDD-0] Boot` to load `AGENTS.md`, project docs, and current work context.
+- Use `[CDD-1] Init Project` for new or newly adopted repos; use `[CDD-2] Plan` plus `[CDD-3] Implement TODO` for feature work.
+- Use `[CDD-4] Implementation Audit` plus `[CDD-2] Plan` when audit findings should become TODO work.
+- Use `[CDD-5] Maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review.
+- Use `cdd-master-chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
 
 For `[CDD-6] Master Chef`:
 
-- start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw
-- provide a Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, or let Master Chef recommend one from the current session model and thinking, then approve or edit it
-- on a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch; when the active TODO has a finite remaining unfinished top-level step-heading count, it recommends that exact count as the default/max step budget
-- Master Chef inspects the repo, proposes the next TODO step, may split an oversized top-level step before Builder handoff, sets up `.cdd-runtime/master-chef/`, and asks how many TODO steps this run should cover
-- kickoff asks whether Master Chef should spawn Builder now; after approval, Master Chef manages fresh single-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting
-- Adapter docs are for maintainers, debugging, and adding runtime support: use `cdd-master-chef/RUNBOOK.md`, `cdd-master-chef/CODEX-ADAPTER.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-ADAPTER.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/RUNTIME-CAPABILITIES.md`, and `cdd-master-chef/openclaw/`
-
-## Recommended tools
-
-- `git` — effectively required
-- `gh` — recommended when working with GitHub-backed repos
-- `bash` — required for the install scripts
-- `python3` — required for OpenClaw Builder skill generation and recommended for local validation
-- writable local repos — required because the Builder edits target workspaces
+- start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw.
+- Provide a Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, or let Master Chef recommend one from the current session model and thinking, then approve or edit it.
+- On a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch. When the active TODO has a finite remaining unfinished top-level step-heading count, it recommends that exact count as the default/max step budget.
+- Master Chef inspects the repo, proposes the next TODO step, may split an oversized top-level step before Builder handoff, sets up `.cdd-runtime/master-chef/`, and asks how many TODO steps this run should cover.
+- Kickoff asks whether Master Chef should spawn Builder now. After approval, Master Chef manages fresh single-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting.
+- Adapter docs are for maintainers, debugging, and runtime support: `cdd-master-chef/RUNBOOK.md`, `cdd-master-chef/CODEX-ADAPTER.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-ADAPTER.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/RUNTIME-CAPABILITIES.md`, and `cdd-master-chef/openclaw/`.
 
 ## Manual Install
 
-If you want a local checkout and the repo-managed install scripts instead of the optional `npx skills` path below:
+Use a local checkout when you want the repo-managed scripts directly instead of the optional `npx skills` path below.
 
-Clone the repo:
+1. Clone the repo:
 
 ```bash
 git clone git@github.com:ruphware/cdd-skills.git
 cd cdd-skills
 ```
 
-Install the core Builder skills plus the canonical `[CDD-6] Master Chef` package for Codex CLI or similar single-agent runtimes:
+2. Install the default package for Codex CLI or similar single-agent runtimes:
 
 ```bash
 ./scripts/install.sh
 ```
 
-For no-clone install or uninstall, use the Quick Install and Quick Uninstall wrappers above.
-
-Common local installs:
+3. Common variants:
 
 ```bash
 ./scripts/install.sh --all
@@ -98,7 +89,11 @@ Common local installs:
 ./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 ```
 
+Run `./scripts/install.sh --help` for the full flag set. The no-clone wrappers above also support `--help`.
+
 ## Update
+
+Use `--update` from a local checkout; add `--all` to refresh every existing default runtime home.
 
 ```bash
 cd cdd-skills
@@ -114,15 +109,11 @@ No-clone upgrade path:
 bash <(curl -fsSL https://raw.githubusercontent.com/ruphware/cdd-skills/main/install-remote.sh) --all --update --yes
 ```
 
-If the install target already contains one of the managed skill directories, rerunning the installer without `--update` fails by design.
-
-Builder update automatically runs the conservative prune logic. It also deletes retired `cdd-audit-and-implement`, `cdd-index`, and `cdd-refactor` leftovers, including visible `.pruned.*` artifacts for those retired skills. Managed or obviously invalid prune candidates default to `Y` interactively; use `--yes` if you want to auto-confirm prune prompts in non-interactive contexts:
-
-```bash
-./scripts/install.sh --update --yes
-```
+If the install target already contains one of the managed skill directories, rerun with `--update`; without it the installer fails by design. Builder update automatically runs the conservative prune logic and removes retired `cdd-audit-and-implement`, `cdd-index`, and `cdd-refactor` leftovers, including visible `.pruned.*` artifacts. Use `--yes` to auto-confirm managed or obviously invalid prune prompts in non-interactive contexts.
 
 ## Uninstall
+
+Use the local script from a checkout, or the `uninstall-remote.sh` wrapper above when you do not want a clone.
 
 ```bash
 ./scripts/install.sh --all --uninstall
@@ -130,15 +121,7 @@ Builder update automatically runs the conservative prune logic. It also deletes 
 ./scripts/install.sh --runtime openclaw --uninstall
 ```
 
-Notes:
-
-- `--uninstall` lists matching installed paths and installer artifacts, asks for `y/N`, and removes them only on confirmation.
-- `./scripts/install.sh --all` installs or updates every runtime home that already exists under `~/.agents`, `~/.claude`, and `~/.openclaw`.
-- `./scripts/install.sh` installs the canonical `[CDD-6] Master Chef` package on core single-agent targets and the same package plus generated OpenClaw Builder skills on OpenClaw targets.
-- `install-remote.sh` is the no-clone install and update wrapper: it downloads the repo tarball and forwards all flags to `./scripts/install.sh`.
-- `uninstall-remote.sh` is the no-clone uninstall wrapper: it downloads the repo tarball and forwards all flags to `./scripts/install.sh --uninstall`.
-- `./scripts/install-openclaw.sh` remains only as a deprecated compatibility wrapper around `./scripts/install.sh --runtime openclaw`.
-- If newly installed or updated skills do not appear, start a new session or restart the runtime.
+`--uninstall` lists matching installed paths and installer artifacts, asks for `y/N`, and removes them only on confirmation. `install-remote.sh` is the no-clone install and update wrapper, `uninstall-remote.sh` is the matching no-clone uninstall wrapper, and `./scripts/install-openclaw.sh` remains only as a deprecated compatibility wrapper around `./scripts/install.sh --runtime openclaw`. If newly installed or updated skills do not appear, start a new session or restart the runtime.
 
 ## Optional `npx skills` Path
 
