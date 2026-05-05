@@ -1,12 +1,12 @@
 ---
 name: cdd-plan
-description: "Plan change requests or audits into implementation-ready TODO steps (approval-gated, explicit-only)."
+description: "Plan change requests or external audit findings into implementation-ready TODO steps (approval-gated, explicit-only)."
 disable-model-invocation: true
 ---
 
 # CDD Plan (explicit-only)
 
-Use this skill for change requests and audits that should become implementation-ready TODO steps before implementation begins.
+Use this skill for change requests and externally supplied audit findings that should become implementation-ready TODO steps before implementation begins.
 
 Treat the target repo’s CDD contract files as the source of truth:
 - `AGENTS.md`
@@ -62,7 +62,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - For qualifying requests that are multi-surface, ambiguous, or likely to produce more than one TODO step, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
 - For those qualifying requests, refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
 - During the coarse planning phase, review any user-provided contract details, content details, and other implementation-driving artifacts, expand them into the plan, and keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat.
-- If a reviewed artifact affects both product behavior and implementation detail, keep the exact implementation-driving detail in `TODO.md` and add explicit `TODO.md` follow-up for the relevant spec/doc update unless a durable spec delta is intentionally being drafted now.
+- If a reviewed artifact is a mixed product and implementation detail surface, keep the exact implementation-driving detail in `TODO.md` and add explicit `TODO.md` follow-up for the relevant spec/doc update unless a durable spec delta is intentionally being drafted now.
 - Add a visible `Confirmed requirements coverage` section that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
 - Add a visible `Reviewed contract artifacts` section that identifies the user-provided artifacts, marks each as `copied as-is`, `corrected`, `expanded`, `removed`, or `left intentionally unspecified`, gives a short reason for each material change, and records where each artifact was written.
 - Only carry forward confirmed requirements that make sense for the repo.

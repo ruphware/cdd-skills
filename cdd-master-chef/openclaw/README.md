@@ -25,6 +25,7 @@ The internal Builder routing map stays aligned with the core skill pack:
 - `[CDD-1] Init Project` -> `cdd-init-project`
 - `[CDD-2] Plan` -> `cdd-plan`
 - `[CDD-3] Implement TODO` -> `cdd-implement-todo`
+- `[CDD-4] Implementation Audit` -> `cdd-implementation-audit`
 - `[CDD-5] Refactor` -> `cdd-refactor`
 - `[CDD-6] Index` -> `cdd-index`
 - `[CDD-7] Maintain` -> `cdd-maintain`
@@ -109,6 +110,7 @@ Uninstall:
 - `[CDD-1] Init Project` -> `cdd-init-project`
 - `[CDD-2] Plan` -> `cdd-plan`
 - `[CDD-3] Implement TODO` -> `cdd-implement-todo`
+- `[CDD-4] Implementation Audit` -> `cdd-implementation-audit`
 - `[CDD-6] Index` -> `cdd-index`
 - `[CDD-5] Refactor` -> `cdd-refactor`
 
@@ -142,8 +144,8 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - if the next runnable top-level TODO step is oversized for one Builder run, split it first
    - inspect the remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - if this is a fresh run from a long-lived branch, suggest a descriptive feature branch before managed worktree kickoff
-   - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct planning or refactor work
-   - route audit findings or review-derived work packages through `[CDD-2] Plan` before any delegated implementation
+   - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, sometimes Builder via `[CDD-6] Index`, otherwise Master-Chef-direct setup, planning, audit, or refactor work
+   - route approved findings from `[CDD-4] Implementation Audit` or external review through `[CDD-2] Plan` before any delegated implementation
    - when that top-level step count is finite, recommend that exact count as the default/max step budget, meaning all remaining steps, after any step split
    - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
    - ask whether to spawn Builder now and start the autonomous run
@@ -223,11 +225,12 @@ Master-Chef-direct path:
 
 - `[CDD-1] Init Project` (`cdd-init-project`), especially when the user wants a new project to start in CDD form
 - `[CDD-2] Plan` (`cdd-plan`)
+- `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
 - `[CDD-5] Refactor` (`cdd-refactor`)
 
 Audit findings:
 
-- normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session, then hand the selected runnable step to Builder through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+- approved findings from `[CDD-4] Implementation Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then hand the selected runnable step to Builder through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
 
 ## Validation
 

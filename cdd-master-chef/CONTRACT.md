@@ -170,7 +170,8 @@ Master Chef chooses the internal `cdd-*` routing model.
 - If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Recompute the remaining unfinished top-level TODO step-heading count after the split, then delegate the first new runnable step.
 - Builder optional: `cdd-index` when Master Chef explicitly wants an index refresh as the delegated action.
 - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-refactor` stay in the main session rather than being delegated to Builder.
-- Audit findings and review-derived work packages must be normalized through `cdd-plan` in the main session before any delegated implementation begins.
+- `cdd-implementation-audit` is an installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `cdd-plan` in the main session before any delegated implementation begins.
+- External audit findings and review-derived work packages must be normalized through `cdd-plan` in the main session before any delegated implementation begins.
 
 Runtime adapters must define the install roots, invocation surface, and delegation mechanism for those internal workflows.
 

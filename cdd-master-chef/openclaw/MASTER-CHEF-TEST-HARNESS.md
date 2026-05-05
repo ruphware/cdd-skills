@@ -14,6 +14,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   ls ~/.openclaw/skills/cdd-init-project/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-plan/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-implement-todo/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-implementation-audit/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-index/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-refactor/SKILL.md >/dev/null
   ```
@@ -83,7 +84,7 @@ Inspect the repo, tell me which TODO step is next, and wait for kickoff approval
   - remaining unfinished top-level TODO step-heading count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
   - an oversized top-level step is split in Master Chef before Builder handoff
-  - explicit routing choice: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master Chef direct for setup/planning/refactor work
+  - explicit routing choice: usually Builder via `cdd-implement-todo`, sometimes Builder via `cdd-index`, otherwise Master Chef direct for setup/planning/audit/refactor work
   - explicit kickoff approval request
 
 ### Prompt A1 - Oversized-step split before Builder handoff
@@ -199,8 +200,8 @@ Use Builder via [CDD-3] Implement TODO (`cdd-implement-todo`) for a normal runna
 Use Builder via [CDD-6] Index (`cdd-index`) only when an index refresh is the delegated action.
 Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
 Explain why [CDD-7] Maintain (`cdd-maintain`) is a manual helper rather than part of the normal flow.
-Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), or [CDD-5] Refactor (`cdd-refactor`) directly in Master Chef when setup, planning, or refactor decomposition is needed.
-Explain how audit findings should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation rather than through a separate mixed-role skill.
+Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Implementation Audit (`cdd-implementation-audit`), or [CDD-5] Refactor (`cdd-refactor`) directly in Master Chef when setup, planning, implementation audit, or refactor decomposition is needed.
+Explain how approved findings from [CDD-4] Implementation Audit or external review should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation.
 ```
 
 - [ ] Expected:

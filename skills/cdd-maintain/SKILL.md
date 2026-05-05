@@ -77,7 +77,7 @@ Read:
 - If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
 - For `docs/specs/prd.md`: treat it as the product-manager view; it may include product vision, use cases, JTBD, and feature lists.
 - For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec and use connected definition files for technical architecture, data structures, interfaces, technical reasoning, and implementation detail.
-- Do not treat repo history as justification for stale support-doc content; drift review is about current repo truth or clearly intended future-state docs.
+- repo history is not justification for stale support-doc content; drift review is about current repo truth or clearly intended future-state docs.
 - Classify each support doc as `current`, `drifted`, `missing`, or `unclear`.
 - Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear` when that surface exists or is expected by the repo.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.

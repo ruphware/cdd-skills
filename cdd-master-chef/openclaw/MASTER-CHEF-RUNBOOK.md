@@ -84,6 +84,7 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-init-project`
    - `~/.openclaw/skills/cdd-plan`
    - `~/.openclaw/skills/cdd-implement-todo`
+   - `~/.openclaw/skills/cdd-implementation-audit`
    - `~/.openclaw/skills/cdd-index`
    - `~/.openclaw/skills/cdd-refactor`
 6. Confirm the Run config includes:
@@ -166,8 +167,8 @@ On the first `/cdd-master-chef` turn:
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
    - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
    - delegated exception: `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh
-   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), or `[CDD-5] Refactor` (`cdd-refactor`) when the repo needs setup, plan repair, or refactor decomposition before Builder work
-   - audit findings or review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
+   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Refactor` (`cdd-refactor`) when the repo needs setup, planning, implementation audit, or refactor decomposition before Builder work
+   - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Confirm the approved Run config:
    - `master_model`
    - `master_thinking`
@@ -373,11 +374,12 @@ Master Chef chooses the routing path.
 
 - `[CDD-1] Init Project` (`cdd-init-project`)
 - `[CDD-2] Plan` (`cdd-plan`)
+- `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
 - `[CDD-5] Refactor` (`cdd-refactor`)
 
 **Audit findings:**
 
-- normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+- approved findings from `[CDD-4] Implementation Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
 
 Default spawn shape:
 
@@ -421,7 +423,7 @@ After kickoff approval:
 1. Initialize or refresh runtime files.
 2. Write `run.json` and `run.lock.json`.
 3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
-4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, or `cdd-refactor`), run it in the main session before any Builder spawn.
+4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-implementation-audit`, or `cdd-refactor`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
 6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
 7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh single-step Builder run for the same step, and update runtime/log evidence immediately.

@@ -107,9 +107,9 @@ Make `cdd-init-project` distinguish methodology-stable CDD contract docs from re
 
 ### UAT
 
-- [ ] Read the updated init skill and confirm it classifies methodology-stable vs repo-specific contract surfaces.
-- [ ] Confirm `AGENTS.md` methodology stays boilerplate-stable while limited repo-detail tailoring is still allowed.
-- [ ] Confirm `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md` are no longer described as repo-specific rewrites.
+- [x] Read the updated init skill and confirm it classifies methodology-stable vs repo-specific contract surfaces.
+- [x] Confirm `AGENTS.md` methodology stays boilerplate-stable while limited repo-detail tailoring is still allowed.
+- [x] Confirm `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md` are no longer described as repo-specific rewrites.
 
 ## Step 04 — Validate contract-doc drift rules
 
@@ -144,8 +144,8 @@ Add local validation that fails when `cdd-init-project` reopens methodology drif
 
 ### UAT
 
-- [ ] Run the validator and confirm it would fail if the skill text reintroduced repo-specific rewrites for `TODO.md`, `docs/JOURNAL.md`, or `docs/prompts/PROMPT-INDEX.md`.
-- [ ] Confirm the validator still permits repo-specific `README.md` / PRD / Blueprint generation and limited `AGENTS.md` repo-detail edits.
+- [x] Run the validator and confirm it would fail if the skill text reintroduced repo-specific rewrites for `TODO.md`, `docs/JOURNAL.md`, or `docs/prompts/PROMPT-INDEX.md`.
+- [x] Confirm the validator still permits repo-specific `README.md` / PRD / Blueprint generation and limited `AGENTS.md` repo-detail edits.
 
 ## Step 05 — Collapse repetitive implementation confirmations in `cdd-audit-and-implement`
 
@@ -180,9 +180,9 @@ Make `cdd-audit-and-implement` keep its explicit approval model without asking t
 
 ### UAT
 
-- [ ] Read the updated audit skill and confirm the first-step selection prompt doubles as the implementation-start approval.
-- [ ] Confirm the skill still offers a clear stop-after-plan path without forcing implementation.
-- [ ] Confirm the old standalone `Approve starting implementation now?` wording is gone.
+- [x] Read the updated audit skill and confirm the first-step selection prompt doubles as the implementation-start approval.
+- [x] Confirm the skill still offers a clear stop-after-plan path without forcing implementation.
+- [x] Confirm the old standalone `Approve starting implementation now?` wording is gone.
 
 ## Step 06 — Encode the Master Chef pass/remediation loop
 
@@ -991,3 +991,41 @@ Make `cdd-plan` the single planning entrypoint for both change requests and audi
 - [x] Confirm `cdd-plan` now covers both change requests and audit findings without directly implementing.
 - [x] Confirm `skills/cdd-audit-and-implement/` is gone from the repo and no longer ships through installer smoke tests.
 - [x] Confirm root README and Master Chef/OpenClaw docs treat `[CDD-4]` as retired and route audit findings through `cdd-plan`.
+
+## Step 27 — Add `[CDD-4] Implementation Audit` as a first-class audit entrypoint
+
+### Goal
+
+Add a new audit-only core skill at `[CDD-4]` that audits a selected implementation scope, triages major findings with the user, and routes approved follow-up into `cdd-plan`.
+
+### Constraints
+
+- Keep `cdd-plan` able to normalize externally supplied audit findings.
+- Keep `[CDD-4]` read-only and audit-only; it must not implement fixes directly.
+- Cover spec compliance, code quality, test quality, accidental complexity, and documentation in one coherent audit contract.
+- Restore `[CDD-4]` in the shipped skill pack, README taxonomy, validators, and installer smoke tests.
+
+### Tasks
+
+- [x] Add `skills/cdd-implementation-audit/` with a canonical skill body and OpenAI metadata.
+- [x] Update `README.md` so `[CDD-4] Implementation Audit` is a live skill again and the normal audit flow becomes `[CDD-4]` then `[CDD-2] Plan`.
+- [x] Extend `scripts/validate_skills.py` so the new skill has a display-name mapping, generated OpenClaw validation coverage, and topic validation in legacy-prose mode.
+- [x] Update `scripts/test_installers.sh` and the OpenClaw package docs so the new skill is part of the shipped core pack and internal Builder map.
+
+### Implementation notes
+
+- Keep the heavy audit rubric in the new skill rather than re-bloating `cdd-plan`.
+- Treat missing docs/specs/tests as findings when the chosen audit scope depends on them.
+- In Master Chef/OpenClaw docs, treat `[CDD-4]` as an installed direct audit helper whose approved findings still flow into `cdd-plan` before delegated implementation.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- [x] Confirm `[CDD-4] Implementation Audit` appears in the live root README skill map.
+- [x] Confirm the new skill accepts implementation-scope audit inputs and ends by recommending `cdd-plan`.
+- [x] Confirm installer smoke tests now ship `cdd-implementation-audit` across builder, Claude, and OpenClaw targets.

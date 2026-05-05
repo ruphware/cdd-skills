@@ -1,0 +1,5 @@
+interface:
+  display_name: "[CDD-4] Implementation Audit"
+  short_description: "Audit a selected implementation scope for code/test/spec/doc/complexity findings, triage major issues, then route approved follow-up into cdd-plan"
+policy:
+  allow_implicit_invocation: false

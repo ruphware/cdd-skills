@@ -65,7 +65,8 @@ Operating contract:
    - If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Recompute the remaining unfinished top-level TODO step-heading count after the split, then treat the first new runnable step as the proposed delegated action.
    - `[CDD-6] Index` (`cdd-index`): Builder optional when Master Chef explicitly wants an index refresh as the delegated action.
    - `[CDD-2] Plan` (`cdd-plan`) and `[CDD-5] Refactor` (`cdd-refactor`): Master Chef direct paths that stay in the main session rather than being delegated to Builder.
-   - Audit findings and review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
+   - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`): installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `[CDD-2] Plan` before any delegated implementation begins.
+   - External audit findings and review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
    - `[CDD-0] Boot` (`cdd-boot`) and `[CDD-7] Maintain` (`cdd-maintain`): installed helpers, but not part of the normal Master Chef routing flow.
    - Treat the installed `cdd-*` skills as internal Master Chef workflows, not standalone user commands during an active Master Chef run.
 9. Use a managed worktree before implementation:

@@ -31,6 +31,7 @@ CDD_DISPLAY_NAMES = {
     "cdd-init-project": "[CDD-1] Init Project",
     "cdd-plan": "[CDD-2] Plan",
     "cdd-implement-todo": "[CDD-3] Implement TODO",
+    "cdd-implementation-audit": "[CDD-4] Implementation Audit",
     "cdd-refactor": "[CDD-5] Refactor",
     "cdd-index": "[CDD-6] Index",
     "cdd-maintain": "[CDD-7] Maintain",
@@ -42,6 +43,7 @@ OPENCLAW_ROUTING_LABELS = (
     "[CDD-1] Init Project",
     "[CDD-2] Plan",
     "[CDD-3] Implement TODO",
+    "[CDD-4] Implementation Audit",
     "[CDD-5] Refactor",
     "[CDD-6] Index",
     "[CDD-7] Maintain",
@@ -173,7 +175,7 @@ def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None
             r"Ask clarifying questions one at a time",
             r"material assumptions.*confirm or correct",
             r"minor defaults.*proceed without blocking",
-            r"change requests and audits|change requests and for audit findings",
+            r"change requests and audits|change requests and for audit findings|change requests and externally supplied audit findings|change requests or external audit findings",
             r"Do not convert raw audit bullets directly into TODO tasks",
             r"`spec_delta`.*`implementation_delta`.*`verification_delta`.*`defer`",
             r"user-visible symptom.*likely root cause.*affected boundary.*proof needed",
@@ -181,13 +183,59 @@ def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None
             r"relevant docs.*README\.md.*docs/specs.*corresponding tests|corresponding tests.*README\.md.*docs/specs",
             r"Use this mode only when the request is multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step",
             r"write-location choice.*update an existing TODO file.*TODO-audit-<tag>\.md",
-            r"After applying, suggest implementing the next step via `\$cdd-implement-todo`\.",
+            r"After applying, suggest implementing the next step via `\$?cdd-implement-todo`\.",
         ),
         skill_md,
         "plan audit-mode topics",
     )
     assert "implement that step immediately" not in skill_text, (
         f"plan skill should not implement directly in {skill_md}"
+    )
+
+
+def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the implementation-audit skill keeps its audit-only contract."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"explicit implementation or codebase audits",
+            r"findings plus approved follow-up, not code changes",
+            r"Supported audit scopes:.*last commit.*uncommitted changes.*one TODO step.*multiple TODO steps.*one TODO file.*whole codebase",
+            r"missing docs, specs, or tests as findings",
+            r"`spec compliance`",
+            r"`code quality`",
+            r"`test quality`",
+            r"`accidental complexity`",
+            r"`documentation`",
+            r"KISS.*YAGNI.*SRP|YAGNI.*KISS.*SRP|SRP.*KISS.*YAGNI",
+            r"validate untrusted input early.*syntactic.*semantic",
+            r"confidence over coverage",
+            r"mostly integration",
+            r"narrower unit tests.*fewer high-level tests|fewer high-level tests.*narrower unit tests",
+            r"implementation details.*broad unrelated object equality.*mock choreography.*fragile snapshots|fragile snapshots.*mock choreography.*broad unrelated object equality.*implementation details",
+            r"useless tests.*duplicate lower-level coverage|duplicate lower-level coverage.*useless tests",
+            r"speculative abstraction.*wrapper indirection.*generic APIs with one concrete use.*parameterization without real consumers",
+            r"compact and optimized for reading",
+            r"Normalize each finding into a root-cause item",
+            r"user-visible symptom",
+            r"likely root cause",
+            r"affected boundary",
+            r"evidence or proof surface",
+            r"Collapse duplicate symptoms|Collapse duplicate findings",
+            r"Major findings.*one at a time|one at a time unless multiple findings clearly collapse into one root-cause decision",
+            r"`A\.\s*Plan fix now in cdd-plan`",
+            r"`B\.\s*Postpone or backlog`",
+            r"`C\.\s*Accept current state`",
+            r"`D\.\s*Reject finding or ask for more evidence`",
+            r"Stay read-only during the audit",
+            r"Do not patch code, docs, or TODO files",
+            r"recommend `\$?cdd-plan`",
+        ),
+        skill_md,
+        "implementation-audit topics",
+    )
+    assert "implement directly from this skill" not in skill_text, (
+        f"implementation-audit skill should stay audit-only in {skill_md}"
     )
 
 
@@ -424,8 +472,11 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
             validate_coarse_step_planning(skill_text, skill_md)
             validate_reviewed_contract_artifacts(skill_text, skill_md)
             validate_plan_audit_mode_skill_text(skill_text, skill_md)
+        if skill_dir.name == "cdd-implementation-audit":
+            validate_implementation_audit_skill_text(skill_text, skill_md)
         if skill_dir.name in {
             "cdd-plan",
+            "cdd-implementation-audit",
             "cdd-init-project",
             "cdd-refactor",
         }:
@@ -1271,8 +1322,11 @@ def validate_generated_openclaw_builder_skills(
                     validate_coarse_step_planning(skill_text, skill_md)
                     validate_reviewed_contract_artifacts(skill_text, skill_md)
                     validate_plan_audit_mode_skill_text(skill_text, skill_md)
+                if skill_name == "cdd-implementation-audit":
+                    validate_implementation_audit_skill_text(skill_text, skill_md)
                 if skill_name in {
                     "cdd-plan",
+                    "cdd-implementation-audit",
                     "cdd-init-project",
                     "cdd-refactor",
                 }:
