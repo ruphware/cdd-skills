@@ -164,7 +164,7 @@ On the first `/cdd-master-chef` turn:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
    - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
-   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, `docs/INDEX.md` refresh, codebase cleanup, or refactor planning before Builder work
+   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
    - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Confirm the approved Run config:
    - `master_model`
@@ -364,14 +364,14 @@ Master Chef chooses the routing path.
 **Manual / non-routed helper:**
 
 - `[CDD-0] Boot` (`cdd-boot`) — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
-- `[CDD-5] Maintain` (`cdd-maintain`) — direct maintenance helper for doc drift, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, or local runtime cleanup review when one of those tasks is the actual next action
+- `[CDD-5] Maintain` (`cdd-maintain`) — direct maintenance helper for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review when one of those tasks is the actual next action
 
 **Master Chef direct:**
 
 - `[CDD-1] Init Project` (`cdd-init-project`)
 - `[CDD-2] Plan` (`cdd-plan`)
 - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
-- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, index refresh, cleanup, or refactor planning before delegated implementation
+- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, cleanup, index refresh, or refactor architecture audit before delegated implementation
 
 **Audit findings:**
 

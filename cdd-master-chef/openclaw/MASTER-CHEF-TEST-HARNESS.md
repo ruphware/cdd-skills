@@ -196,7 +196,7 @@ Refuse to start a duplicate run and report the active lease owner.
 /cdd-master-chef TEST ONLY: explain the routing choice for the current repo state.
 Use Builder via [CDD-3] Implement TODO (`cdd-implement-todo`) for a normal runnable TODO step.
 Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
-Explain why [CDD-5] Maintain (`cdd-maintain`) is used directly when the repo specifically needs doc drift review, docs/INDEX.md refresh, codebase cleanup, or refactor planning.
+Explain why [CDD-5] Maintain (`cdd-maintain`) is used directly when the repo specifically needs doc drift review, codebase cleanup, docs/INDEX.md refresh, or refactor architecture audit.
 Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Implementation Audit (`cdd-implementation-audit`), or [CDD-5] Maintain (`cdd-maintain`) directly in Master Chef when setup, planning, implementation audit, or maintenance work is needed.
 Explain how approved findings from [CDD-4] Implementation Audit or external review should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation.
 ```

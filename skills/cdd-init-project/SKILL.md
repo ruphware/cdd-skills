@@ -52,7 +52,7 @@ ___
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
-<sup>Start with `$cdd-boot`. Use `$cdd-implementation-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement-todo` for feature work, and `$cdd-maintain` for doc drift, index refresh, codebase cleanup, refactor planning, and upkeep.</sup>
+<sup>Start with `$cdd-boot`. Use `$cdd-implementation-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement-todo` for feature work, and `$cdd-maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, and upkeep.</sup>
 ```
 
 - For existing-repo adoption, ask the user for explicit confirmation before proposing or applying that README.md edit; only then consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`.

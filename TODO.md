@@ -1034,18 +1034,18 @@ Add a new audit-only core skill at `[CDD-4]` that audits a selected implementati
 
 ### Goal
 
-Make `cdd-maintain` the single upkeep skill for doc drift, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, and local runtime cleanup review.
+Make `cdd-maintain` the single upkeep skill for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, and local runtime cleanup review.
 
 ### Constraints
 
 - Hard-remove standalone `cdd-index` and `cdd-refactor`.
 - Renumber `cdd-maintain` to `[CDD-5]` and `cdd-master-chef` to `[CDD-6]`.
 - Keep `[CDD-4] cdd-implementation-audit` as the scoped audit skill.
-- Allow `codebase cleanup` to remove approved dead code or legacy artifacts directly, but keep `refactor` planning-only.
+- Allow `codebase cleanup` to remove approved dead code or legacy artifacts directly, but keep `refactor` read-only and architecture-audit-only.
 
 ### Tasks
 
-- [x] Update `skills/cdd-maintain/*` so the skill starts with `A. doc drift`, `B. index`, `C. codebase cleanup`, `D. refactor` when intent is unclear and so each mode has the correct write scope.
+- [x] Update `skills/cdd-maintain/*` so the skill starts with `A. doc drift`, `B. codebase cleanup`, `C. index`, `D. refactor` when intent is unclear, supports multi-select and `do all`, and keeps the correct write scope for each mode.
 - [x] Remove `skills/cdd-index/` and `skills/cdd-refactor/` from the canonical skill pack.
 - [x] Update `README.md`, `skills/cdd-init-project/SKILL.md`, and `cdd-master-chef/*` so the public taxonomy, recommendations, and routing use `[CDD-5] Maintain` and `[CDD-6] Master Chef`.
 - [x] Update `scripts/validate_skills.py`, `scripts/test_installers.sh`, and `scripts/test_master_chef_artifacts.sh` so validation fails if the retired standalone skills return or numbering drifts back.
@@ -1054,7 +1054,7 @@ Make `cdd-maintain` the single upkeep skill for doc drift, `docs/INDEX.md` refre
 
 - Keep `index` mode narrow: it may write only `docs/INDEX.md`.
 - Keep `codebase cleanup` approval-gated and evidence-driven; remove only approved dead code, dead folders, duplicate retired paths, and legacy leftovers.
-- Treat `Maintain` as the Master Chef direct maintenance helper when index refresh, cleanup, or refactor planning is the real task.
+- Treat `Maintain` as the Master Chef direct maintenance helper when cleanup, index refresh, or refactor architecture audit is the real task.
 
 ### Automated checks
 
@@ -1066,5 +1066,5 @@ Make `cdd-maintain` the single upkeep skill for doc drift, `docs/INDEX.md` refre
 
 - [x] Confirm `cdd-maintain` asks the new A/B/C/D mode question when invoked without a clear task.
 - [x] Confirm `cdd-index` and `cdd-refactor` are no longer shipped as standalone skills.
-- [x] Confirm `[CDD-5] Maintain` covers doc drift, index refresh, codebase cleanup, and refactor planning.
+- [x] Confirm `[CDD-5] Maintain` covers doc drift, codebase cleanup, index refresh, and refactor architecture audit.
 - [x] Confirm `[CDD-6] Master Chef` docs and tests no longer reference standalone `cdd-index` or `cdd-refactor`.

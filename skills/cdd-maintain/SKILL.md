@@ -1,12 +1,12 @@
 ---
 name: cdd-maintain
-description: "Maintain a CDD repo by handling doc drift, docs/INDEX refresh, approval-gated codebase cleanup, and refactor planning, plus archive and local-runtime upkeep (explicit-only)."
+description: "Maintain a CDD repo by handling doc drift, approval-gated codebase cleanup, docs/INDEX refresh, and refactor architecture audit, plus archive and local-runtime upkeep (explicit-only)."
 disable-model-invocation: true
 ---
 
 # CDD Maintain (explicit-only)
 
-Use this skill for explicit repo maintenance: doc drift review, `docs/INDEX.md` refresh, approval-gated codebase cleanup, refactor planning, archive upkeep, and local runtime cleanup review.
+Use this skill for explicit repo maintenance: doc drift review, approval-gated codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, and local runtime cleanup review.
 
 ## Sources of truth
 Read:
@@ -28,14 +28,17 @@ Read:
 - If the user request already clearly maps to one mode, use it directly.
 - Otherwise ask one substantive question and wait:
   - `A. doc drift`
-  - `B. index`
-  - `C. codebase cleanup`
+  - `B. codebase cleanup`
+  - `C. index`
   - `D. refactor`
+  - `do all`
 - Put interactive choices at the bottom under a final `**Options**` section.
 - Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key.
 - default to letters: `A.`, `B.`, `C.`.
 - use numbers only when the surrounding context is already numeric and that would be clearer.
 - When practical, tell the user they can reply with just the selector.
+- Allow selecting more than one option in the same reply.
+- If the user says `do all` or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
 - Keep the mode-specific write scope tight. Do not widen from one mode into another without asking.
 
 ## Safe write behavior
@@ -43,9 +46,9 @@ Read:
 - Ask before deleting stale adjacent `TODO*.md` files.
 - Do not silently rewrite support docs.
 - Do not silently delete `.cdd-runtime/` content.
-- In `index` mode, write only `docs/INDEX.md`.
 - In `codebase cleanup` mode, remove only clearly approved dead or obsolete code and artifacts.
-- In `refactor` mode, do not rewrite implementation directly; draft a runnable refactor plan first.
+- In `index` mode, write only `docs/INDEX.md`.
+- In `refactor` mode, do not rewrite implementation directly; produce an architecture audit, refactor options, and a recommendation to use `cdd-plan`.
 
 ## TODO archive rules
 - Check `TODO.md` and adjacent `TODO*.md` files.
@@ -105,7 +108,30 @@ Read:
 - If the user approves, apply only the approved support-doc edits and then report them.
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
-## Mode B — Index
+## Mode B — Codebase cleanup
+- Review code, tests, configs, manifests, entrypoints, and current docs together; do not cleanup code in isolation when test, config, or wiring evidence is part of the decision.
+- Prefer repo-native lint, typecheck, unused-code, or dead-code tooling when present.
+- Otherwise use conservative heuristic scans for:
+  - orphaned files or modules
+  - dead or unreachable code branches
+  - duplicate retired implementation paths
+  - stale feature code no longer wired into entrypoints
+  - dead folders or obsolete generated leftovers
+  - unused exports when the evidence is strong
+- Classify each cleanup candidate as `confirmed_cleanup`, `probable_cleanup`, or `unclear`.
+- For each candidate, record:
+  - affected boundary
+  - why it appears dead or obsolete
+  - proof surface
+  - any must-preserve behavior or contract
+- Do not remove anything classified as `unclear`.
+- Do not silently refactor, redesign, or broaden the scope while cleaning.
+- If cleanup needs matching test, config, or doc deletion to keep the repo coherent, include those edits in the same proposed cleanup patch.
+- Group approved removals into one cleanup patch and ask once for approval using wording such as: `Approve and apply this codebase cleanup patch?`
+- If the user approves, remove only the approved dead lines, files, folders, tests, configs, or generated leftovers.
+- If the user does not approve, leave code unchanged and report the remaining cleanup candidates clearly.
+
+## Mode C — Index
 Regenerate `docs/INDEX.md` as a single-file update after approval.
 
 - Write only `docs/INDEX.md` in this mode.
@@ -133,58 +159,24 @@ Regenerate `docs/INDEX.md` as a single-file update after approval.
   - `rg -c '^```mermaid$' docs/INDEX.md`
   - `rg -n 'refactor-candidate|\\| Path \\| Role \\| LOC \\| Key Tags, Symbols, Names \\|' docs/INDEX.md`
 
-## Mode C — Codebase cleanup
-- Review code, tests, configs, manifests, entrypoints, and current docs together; do not cleanup code in isolation when test, config, or wiring evidence is part of the decision.
-- Prefer repo-native lint, typecheck, unused-code, or dead-code tooling when present.
-- Otherwise use conservative heuristic scans for:
-  - orphaned files or modules
-  - dead or unreachable code branches
-  - duplicate retired implementation paths
-  - stale feature code no longer wired into entrypoints
-  - dead folders or obsolete generated leftovers
-  - unused exports when the evidence is strong
-- Classify each cleanup candidate as `confirmed_cleanup`, `probable_cleanup`, or `unclear`.
-- For each candidate, record:
-  - affected boundary
-  - why it appears dead or obsolete
-  - proof surface
-  - any must-preserve behavior or contract
-- Do not remove anything classified as `unclear`.
-- Do not silently refactor, redesign, or broaden the scope while cleaning.
-- If cleanup needs matching test, config, or doc deletion to keep the repo coherent, include those edits in the same proposed cleanup patch.
-- Group approved removals into one cleanup patch and ask once for approval using wording such as: `Approve and apply this codebase cleanup patch?`
-- If the user approves, remove only the approved dead lines, files, folders, tests, configs, or generated leftovers.
-- If the user does not approve, leave code unchanged and report the remaining cleanup candidates clearly.
-
 ## Mode D — Refactor
-- Use refactor mode to turn refactor candidates into a small, checkable TODO plan.
+- Use refactor mode for a read-only architecture audit, not TODO authoring or direct implementation edits.
+- Refactor mode requires a fresh `docs/INDEX.md`.
+- If the current selection already includes `C. index`, complete that refreshed index first and run the refactor audit against the post-index repo state.
+- If `docs/INDEX.md` is missing, `stale`, or `very stale` and `C. index` is not part of the current selection, stop and ask whether to add `C. index` before continuing.
 - Candidate sources:
   - `docs/INDEX.md` file inventory rows tagged `refactor-candidate` when present
   - explicit refactor notes already in `docs/INDEX.md` or `TODO*.md`
   - refactor pressure discovered during maintain-mode review
-- For any new or rewritten refactor step, produce an implementation-ready step rather than a placeholder cleanup note.
-- Preserve the repo's existing Step template when possible, but add missing sections when the current template would leave the step underspecified.
-- Preferred section set for non-trivial work:
-  - `Goal`
-  - `Constraints`
-  - `Tasks`
-  - `Implementation notes`
-  - `Automated checks`
-  - `UAT`
-- Each refactor step should identify the exact boundary to refactor, the intended code-health outcome, the must-preserve behavior, and the evidence needed to prove the refactor is safe.
-- Split refactor work into separate steps when it crosses distinct boundaries, compatibility surfaces, migration risk, or independently testable subsystems.
-- Keep the plan KISS: minimal steps, minimal diffs, no speculative cleanup.
-- In this mode, planning is interactive, review-driven, and continuously refined.
-- Stay read-only until the user approves applying the plan.
-- Review the relevant code, tests, entrypoints, configs, and current TODO surfaces so the refactor plan reflects the real implementation state.
+- Review the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context so the audit reflects the real implementation state.
+- When multiple modes are selected, run refactor mode against the repo state after any approved `doc drift`, `codebase cleanup`, and `index` work has completed.
+- Stay read-only in this mode. Do not rewrite implementation directly and do not write `TODO-refactor-<tag>.md` files here.
+- Normalize findings around architecture boundaries, design pressure, duplicated responsibility, unclear ownership, oversized files, brittle seams, and other concrete refactor drivers.
 - Ask at most one substantive clarification or decision question per message.
-- Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
-- Put decision choices at the bottom under a final `**Options**` section:
-  - `A. create a dedicated TODO-refactor-<tag>.md`
-  - `B. update an existing TODO file`
-  - `C. stop without writing a refactor plan`
-- Ask for a short tag only if the user chose `A.`
-- Ask: `Approve and apply these refactor-plan changes?`
+- Present 2-3 context-specific refactor options under a final `**Options**` section with `A.`, `B.`, and `C.` selectors.
+- Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.
+- Keep the options KISS: minimal scope first, no speculative cleanup, no pattern cargo-culting.
+- Finish with an architecture audit report and recommend `cdd-plan` as the next step for any selected or preferred refactor direction.
 
 ## INDEX freshness
 - Check how old `docs/INDEX.md` is using the last git change when available, otherwise filesystem mtime.
@@ -221,7 +213,8 @@ Return a maintenance report that includes:
 - `Index update status`
 - `Codebase cleanup status`
 - `Cleanup approval needed`
-- `Refactor plan status`
+- `Refactor audit status`
+- `Refactor options proposed`
 - `Recommended next action`
 
 Recommend follow-up such as `cdd-plan`, direct cleanup work, or direct implementation work when supported by the findings, but do not widen beyond the selected mode automatically.

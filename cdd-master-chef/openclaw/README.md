@@ -211,14 +211,14 @@ Default delegated path:
 Manual helper:
 
 - `[CDD-0] Boot` (`cdd-boot`) for best-effort repo context ingestion when a human wants a vanilla `AGENTS.md` boot; it is installed in the shared pack but is not part of the normal Master Chef routing flow
-- `[CDD-5] Maintain` (`cdd-maintain`) for doc drift, `docs/INDEX.md` refresh, codebase cleanup, refactor planning, archive upkeep, or local runtime cleanup review; it is installed in the shared pack and used directly in the main session when one of those tasks is the actual next action
+- `[CDD-5] Maintain` (`cdd-maintain`) for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review; it is installed in the shared pack and used directly in the main session when one of those tasks is the actual next action
 
 Master-Chef-direct path:
 
 - `[CDD-1] Init Project` (`cdd-init-project`), especially when the user wants a new project to start in CDD form
 - `[CDD-2] Plan` (`cdd-plan`)
 - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
-- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, index refresh, cleanup, or refactor planning before delegated implementation
+- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, cleanup, index refresh, or refactor architecture audit before delegated implementation
 
 Audit findings:
 
