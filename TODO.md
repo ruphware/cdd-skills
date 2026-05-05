@@ -1185,3 +1185,47 @@ Make `cdd-maintain` treat `A` as doc drift plus repo upkeep, and treat `B` as a 
 - [x] Confirm a pure `B` report no longer includes TODO/journal/archive/runtime status sections unless one of those surfaces is needed as proof for a specific cleanup candidate.
 - [x] Confirm `B` can still surface dead branches, unwired modules, duplicate retired paths, or obsolete generated leftovers with explicit proof and approval-gated removals.
 - [x] Invoke `cdd-maintain`, reply `A`, and confirm doc drift plus TODO/journal/archive/runtime upkeep all live under that mode, including separate approval surfaces where required.
+
+## Step 32 — Make Master Chef session model and thinking implicit, with Builder inherit-by-default
+
+### Goal
+
+Make `cdd-master-chef` derive `master_model` and `master_thinking` directly from the active session, make Builder inherit those settings by default, and remove the current four-field `Run config` complexity around master-session settings.
+
+### Constraints
+
+- The active session is the only source of truth for Master Chef model and thinking; do not ask the user to supply, approve, or default `master_model` or `master_thinking`.
+- Builder must still support an explicit divergence path when an adapter can materially honor one, but the default Builder behavior must be to inherit the current session model and thinking.
+- Keep kickoff approval selector-driven and focused on next action, effective Builder settings, run step budget, and whether to spawn Builder now.
+- Preserve durable runtime transparency by recording effective `master_model`, `master_thinking`, `builder_model`, and `builder_thinking` in runtime state even though the user-facing config surface is simplified.
+- Remove the old `exact support` / `inherited-model fallback` / `startup-only application` / `constrained behavior` taxonomy rather than renaming it.
+
+### Tasks
+
+- [x] Update `cdd-master-chef/SKILL.md`, `CONTRACT.md`, `RUNBOOK.md`, and `README.md` so the shared contract no longer requires a four-field `Run config`; instead, Master Chef reads the current session model and current session thinking directly, surfaces them as read-only kickoff facts, and treats Builder settings as inherited by default unless an explicit Builder override is provided.
+- [x] Rewrite the shared kickoff contract so it no longer offers `A. use this Run config`, `B. edit this Run config`, or `C. stop before kickoff`, and no longer asks for `master_model` or `master_thinking`; the kickoff summary should show current session model, current session thinking, effective Builder settings, proposed next action, run step budget, and whether to spawn Builder now.
+- [x] Update shared runtime-state semantics so `master_model`, `master_thinking`, `builder_model`, and `builder_thinking` remain in `run.json` as effective resolved run facts, with `master_*` mirrored from the active session and `builder_*` resolved from either explicit override or inherit-by-default behavior; add new fields only if the existing four fields cannot express whether Builder inherited or overrode.
+- [x] Update `cdd-master-chef/CODEX-ADAPTER.md`, `CODEX-RUNBOOK.md`, `CLAUDE-ADAPTER.md`, and `CLAUDE-RUNBOOK.md` so Codex and Claude always treat active-session model and thinking as Master Chef truth, describe Builder as inheriting those settings by default, describe explicit Builder override paths only when the runtime can actually honor them, and remove the old four-way mapping taxonomy from both adapter and runbook text.
+- [x] Update `cdd-master-chef/openclaw/README.md`, `MASTER-CHEF-RUNBOOK.md`, and `MASTER-CHEF-TEST-HARNESS.md` so OpenClaw no longer uses inline or local-default four-field `Run config` resolution; instead it reads current session model and thinking directly, mirrors them into runtime state, and accepts only an optional explicit Builder override when the user wants Builder to diverge from the active session.
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `CLAUDE-TEST-HARNESS.md`, `RUNTIME-CAPABILITIES.md`, and `scripts/validate_skills.py` so validation and harness coverage enforce session-derived Master Chef settings, inherit-by-default Builder behavior, removal of the old Run-config approval flow, and removal of the old adapter classification taxonomy.
+
+### Implementation notes
+
+- Prefer a user-facing term like `Builder override` or `Builder settings` only when Builder is intentionally diverging from the active session; otherwise kickoff should simply report the detected current session model and current session thinking.
+- Remove `~/.openclaw/config/master-chef/default-run-config.yaml` from the shared and OpenClaw contract rather than narrowing it, because keeping it would preserve the precedence logic this step is meant to eliminate.
+- Keep kickoff terse: current session model, current session thinking, effective Builder settings, proposed next action, run step budget, spawn-now decision.
+- If a runtime cannot cleanly materialize a requested Builder override, Master Chef must say so and fall back to inherited Builder settings instead of carrying forward taxonomy prose or pretending the override landed.
+- Touch the shared package docs, all three current adapters, their harnesses, and the validator in one pass so the simplification is contract-complete.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- [x] Start `cdd-master-chef` in a Codex or Claude session with no inline config and confirm kickoff reports current session model and thinking automatically instead of asking for `master_model` or `master_thinking`.
+- [x] Confirm kickoff no longer presents `use/edit Run config` options and no longer mentions `~/.openclaw/config/master-chef/default-run-config.yaml`.
+- [x] Confirm default Builder behavior is reported as inheriting the current session settings when no explicit Builder override is supplied.
+- [x] Confirm an explicit Builder override, when described, is framed as a deviation from the inherited default rather than through the old four-way mapping taxonomy.
+- [x] Confirm `run.json` records the effective `master_*` and `builder_*` settings for the run.

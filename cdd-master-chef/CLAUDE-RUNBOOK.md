@@ -6,14 +6,14 @@ Use the shared contract in `CONTRACT.md` and the Claude adapter rules in `CLAUDE
 
 ## 1) Session shape
 
-- Launch the main Claude session with the approved `master_model` and `master_thinking`.
+- Launch the main Claude session with the desired Master Chef model and effort. The active session values become `master_model` and `master_thinking` for the run.
 - Treat the main Claude session as Master Chef.
 - Prefer explicit Builder selection through a named agent, `@`-mention, or a deliberate `--agent` / `--agents` launch path when the Builder role must be deterministic.
 
 Typical launch controls:
 
-- `--model <master_model>` for the main session model
-- `--effort <master_thinking>` for the main session effort
+- `--model <model>` for the main session model
+- `--effort <effort>` for the main session effort
 - `--agent <name>` or `--agents <json>` when the run needs a specific Builder or helper definition
 - `--worktree [name]` when Claude is relaunched directly into a managed worktree
 
@@ -31,16 +31,15 @@ Adapter rule:
 - Claude can delegate automatically, but Master Chef should not rely on automatic delegation alone for the main Builder path.
 - Subagents cannot spawn other subagents, so every additional agent handoff returns to the main Master Chef session first.
 
-## 3) Run config handling
+## 3) Session settings and Builder override
 
-Before kickoff, Master Chef must state how the approved `Run config` maps into Claude:
+Before kickoff, Master Chef must report the current session model and thinking as read-only Master Chef facts.
 
-- `master_model`: exact when the parent session is launched with `--model`
-- `master_thinking`: exact when the parent session is launched with `--effort`
-- `builder_model`: exact when the chosen Builder agent sets `model`, inherited when the Builder follows the parent session, startup-only when the Builder is applied through a relaunch path such as `--agent` or `--worktree`, constrained when the requested Builder override cannot be honored cleanly
-- `builder_thinking`: inherited by default in this adapter, startup-only when applied through a relaunch path, constrained when no reliable per-agent effort override exists for the current Builder path
+- If no `Builder override` is supplied, Builder inherits those settings.
+- If a `Builder override` is supplied, Master Chef must say whether the chosen Builder path can honor the requested `builder_model` and/or `builder_thinking` cleanly.
+- If the current Builder path cannot honor the requested override cleanly, say so explicitly and use inherited Builder settings instead.
 
-Do not start implementation until Master Chef has named which of `exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior` applies to the Builder settings.
+Do not start implementation until the effective Builder settings for the run are explicit.
 
 ## 4) Kickoff approval and run budget
 
@@ -48,7 +47,9 @@ Before autonomous implementation starts, Master Chef should present one selector
 
 - the next runnable TODO step or other chosen routing action
 - any pre-delegation split of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count
-- the approved `Run config`
+- current session model
+- current session thinking
+- effective Builder settings
 - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
 - the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
 - whether to spawn Builder now and start the autonomous run
@@ -57,7 +58,7 @@ Follow the shared selector contract.
 
 - `A. approve kickoff and start the autonomous run now`
 - `B. approve kickoff but do not spawn Builder yet`
-- `C. revise the next action, Run config, or step budget before kickoff`
+- `C. revise the next action, Builder settings, or step budget before kickoff`
 
 After that selector-based approval, Master Chef owns the Builder handoff. Do not treat "here is a `claude --worktree ...` command for you to run" as the normal Builder-start path.
 
@@ -106,4 +107,4 @@ After that selector-based approval, Master Chef owns the Builder handoff. Do not
 
 - Do not treat nested subagent spawning as available.
 - Do not let a background Builder path absorb clarifying-question or permission failures silently.
-- Do not hide Builder Run config downgrades.
+- Do not hide Builder override failures or inherited-setting fallback decisions.

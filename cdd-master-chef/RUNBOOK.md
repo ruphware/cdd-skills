@@ -6,6 +6,13 @@ Adapter docs may add runtime-specific detail, but they must not contradict this 
 
 When a shared approval or decision point is surfaced to the human through an adapter, use visible selector-based options when practical and let the human reply with just the selector.
 
+## 0) Session settings
+
+- Read the current session model and thinking directly from the active runtime surface.
+- Treat those values as read-only Master Chef facts for the run.
+- Default Builder to inherit those values unless an explicit `Builder override` is present.
+- If a requested `Builder override` cannot be honored cleanly, state that explicitly and fall back to inherited Builder settings before kickoff.
+
 ## 1) Managed worktree policy
 
 Master Chef runs against a managed worktree rather than mutating the source checkout in place.
@@ -80,6 +87,7 @@ Keep the existing fields and add:
 - `worktree_branch`
 - `worktree_continue_mode`
 - `builder_phase`
+- `builder_settings_source`
 - `builder_spawn_requested_at_utc`
 - `builder_ready_at_utc`
 - `last_builder_direct_signal_at_utc`
@@ -93,6 +101,7 @@ Field meanings:
 - `active_worktree_path` is the managed worktree path for the run
 - `worktree_continue_mode` is `in_session` or `relaunch_required`
 - `builder_phase` is `not_started`, `booting`, `running`, `blocked`, `completed`, `failed`, or `closed`
+- `builder_settings_source` is `inherited` or `override`
 - `builder_spawn_requested_at_utc` records when Master Chef received a Builder handle from the runtime
 - `builder_ready_at_utc` records the first direct readiness signal that proves Builder started operating
 - `last_builder_direct_signal_at_utc` tracks the latest direct Builder ACK, status reply, or runtime-native child-status signal
@@ -114,6 +123,8 @@ Keep the existing fields and add:
 
 The durable checkpoint must now also record:
 
+- current session model and thinking
+- effective Builder settings and whether they were inherited or overridden
 - source checkout path
 - active worktree path
 - worktree branch

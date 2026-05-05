@@ -6,15 +6,16 @@ Use the shared contract in `CONTRACT.md` and the Codex adapter rules in `CODEX-A
 
 ## 1) Session shape
 
-- Launch the main Codex session with the approved `master_model`.
+- Launch the main Codex session with the desired Master Chef model and reasoning effort. The active session values become `master_model` and `master_thinking` for the run.
 - Treat the main Codex session as Master Chef.
 - Treat Builder delegation as explicit. Master Chef should name the agent it wants rather than waiting for Codex to improvise the Builder shape.
 
 Typical launch controls:
 
-- `-m <master_model>` for the parent model
+- `-m <model>` for the parent model
 - `-C <repo-or-worktree>` for the active repo root
 - `-a on-request` when Builder or QA may need new approvals
+- if the active Codex surface exposes reasoning-effort controls, set them before starting Master Chef so the current session thinking is the intended Master Chef setting
 
 ## 2) Builder selection
 
@@ -29,16 +30,15 @@ Adapter rule:
 - Do not claim that Codex will spawn Builder automatically without explicit delegation instructions.
 - If the repo defines `.codex/agents/*.toml`, prefer those named agents over ad hoc behavior when the run needs stable, repeatable roles.
 
-## 3) Run config handling
+## 3) Session settings and Builder override
 
-Before kickoff, Master Chef must state how the approved `Run config` maps into Codex:
+Before kickoff, Master Chef must report the current session model and thinking as read-only Master Chef facts.
 
-- `master_model`: exact when the parent session is launched with that model
-- `master_thinking`: exact when the parent session reasoning effort matches the requested setting
-- `builder_model`: exact when the Builder agent TOML sets `model`, inherited when the Builder intentionally follows the parent session, startup-only when the Builder path depends on relaunching the parent session, constrained when a built-in agent is used without a narrower override
-- `builder_thinking`: exact when the Builder agent TOML sets `model_reasoning_effort`, inherited when it follows the parent session, startup-only when it depends on session launch or relaunch, constrained when the current Builder path cannot narrow it cleanly
+- If no `Builder override` is supplied, Builder inherits those settings.
+- If a `Builder override` is supplied, Master Chef must say whether the selected agent or relaunch path can honor the requested `builder_model` and/or `builder_thinking` cleanly.
+- If the current Builder path cannot honor the requested override cleanly, say so explicitly and use inherited Builder settings instead.
 
-Do not start implementation until Master Chef has named which of `exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior` applies to the Builder settings.
+Do not start implementation until the effective Builder settings for the run are explicit.
 
 ## 4) Kickoff approval and run budget
 
@@ -46,7 +46,9 @@ Before autonomous implementation starts, Master Chef should present one selector
 
 - the next runnable TODO step or other chosen routing action
 - any pre-delegation split of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count
-- the approved `Run config`
+- current session model
+- current session thinking
+- effective Builder settings
 - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
 - the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
 - whether to spawn Builder now and start the autonomous run
@@ -55,7 +57,7 @@ Follow the shared selector contract.
 
 - `A. approve kickoff and start the autonomous run now`
 - `B. approve kickoff but do not spawn Builder yet`
-- `C. revise the next action, Run config, or step budget before kickoff`
+- `C. revise the next action, Builder settings, or step budget before kickoff`
 
 After that selector-based approval, Master Chef owns the Builder handoff. Do not treat "here is a `codex -C ...` command for you to run" as the normal Builder-start path.
 
@@ -97,5 +99,5 @@ After that selector-based approval, Master Chef owns the Builder handoff. Do not
 ## 8) Blocked paths
 
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.
-- Do not hide Builder downgrade decisions.
+- Do not hide Builder override failures or inherited-setting fallback decisions.
 - Do not send approval-heavy Builder work into detached or non-interactive sidecars and expect automatic recovery.

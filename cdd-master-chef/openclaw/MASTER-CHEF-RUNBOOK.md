@@ -59,7 +59,7 @@ If a Builder needs inspection, recovery, or reporting, Master Chef handles it di
 
 The human owns:
 
-- the per-run Run config
+- any optional Builder override when Builder should diverge from the active session
 - the per-run step budget
 - kickoff approval
 - final review
@@ -74,8 +74,8 @@ Before `/cdd-master-chef` is used:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new/adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The current session should already be using the `master_model` from the chosen Run config, or the model you want copied into a recommended Run config when you use the current-session path.
-3. The full Run config must be resolved and approved before kickoff.
+2. The current session model and thinking must both be visible enough to mirror into runtime state before kickoff.
+3. Any optional `Builder override` must be resolved before kickoff.
 4. A pushable upstream is required before the normal autonomous commit/push loop begins.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
    - `~/.openclaw/skills/cdd-master-chef`
@@ -85,11 +85,7 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-plan`
    - `~/.openclaw/skills/cdd-implement-todo`
    - `~/.openclaw/skills/cdd-implementation-audit`
-6. Confirm the Run config includes:
-   - `master_model`
-   - `master_thinking`
-   - `builder_model`
-   - `builder_thinking`
+6. If Builder should diverge from the active session, prepare an optional `Builder override` that contains `builder_model`, `builder_thinking`, or both.
 
 The current Master Chef session is implicitly the control/reporting surface.
 
@@ -99,51 +95,26 @@ If the repo is not CDD-ready and the request is not an init/adoption flow, stop 
 
 If upstream is missing, do not start autonomous implementation/commit/push execution.
 
-### 2.1 Run config
+### 2.1 Optional Builder override
 
-For every run, resolve one explicit block in this shape:
+Builder inherits the active session model and thinking by default.
+
+If Builder should diverge, use an optional block in this shape:
 
 ```text
-Run config:
-  master_model: gpt-5.4
-  master_thinking: xhigh
+Builder override:
   builder_model: gpt-5.4
   builder_thinking: xhigh
 ```
 
 Rules:
 
-- This block is the only place per-run model settings are set.
-- The user may either paste the block directly into the kickoff prompt, let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`, or let Master Chef recommend it from the current session model and thinking when no explicit block or local default is used.
-- A current-session recommendation must copy one concrete current session model and one concrete current session thinking value into all four fields and show the candidate block back to the human before kickoff.
-- Use the shared selector contract.
-- `A. use this Run config`
-- `B. edit this Run config`
-- `C. stop before kickoff`
+- This block is optional; if it is absent, Builder inherits the current session settings.
+- If only one `builder_*` field is present, the missing field still inherits from the active session.
 - Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
-- After kickoff, copy the approved values into `.cdd-runtime/master-chef/run.json`. That file is the durable mirror of the approved Run config, not a second config source.
-- If the human wants different models on a given run, change only this block for that run.
+- If the current OpenClaw path cannot honor a requested Builder override cleanly, say so explicitly and use inherited Builder settings instead.
+- After kickoff, copy the effective `master_*` and `builder_*` values into `.cdd-runtime/master-chef/run.json` and record whether Builder is using inherited settings or an explicit override.
 - Keep shared docs and commits free of local-only operator transport details.
-
-### 2.2 Local default Run config
-
-Optional local-only convenience path:
-
-```text
-~/.openclaw/config/master-chef/default-run-config.yaml
-```
-
-Resolution order:
-
-1. If the kickoff prompt includes `Run config`, use that.
-2. Otherwise, if the local default file exists, read it and show the resolved config back to the human before kickoff.
-3. Otherwise, if the current session model and current session thinking are visible, recommend a candidate Run config that copies them into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, show it back to the human before kickoff, and use the shared selector contract.
-4. Otherwise, stop and ask the human for a Run config.
-
-Privacy rule:
-
-- Treat `~/.openclaw/config/master-chef/default-run-config.yaml` as local operator config.
-- Do not copy unrelated local-only overrides from it into repo docs, commits, or other shared artifacts.
 
 ---
 
@@ -170,18 +141,20 @@ On the first `/cdd-master-chef` turn:
    - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
    - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
-4. Confirm the approved Run config:
-   - `master_model`
-   - `master_thinking`
-   - `builder_model`
-   - `builder_thinking`
+4. Report session-derived Master Chef settings and effective Builder settings:
+   - current session model as `master_model`
+   - current session thinking as `master_thinking`
+   - effective `builder_model`
+   - effective `builder_thinking`
+   - whether Builder is inherited or overridden
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
 8. Present one selector-driven kickoff approval that includes:
    - repo state summary
    - proposed next action
-   - the approved Run config
+   - current session model and thinking
+   - effective Builder settings
    - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
    - the approved run step budget
    - whether to spawn Builder now and start the autonomous run
@@ -194,7 +167,7 @@ Use the shared selector contract.
 
 - `A. approve kickoff and start the autonomous run now`
 - `B. approve kickoff but do not spawn Builder yet`
-- `C. revise the next action, Run config, or step budget before kickoff`
+- `C. revise the next action, Builder settings, or step budget before kickoff`
 
 After kickoff approval, the run becomes autonomous.
 
@@ -255,6 +228,7 @@ Suggested shape:
   "master_thinking": "xhigh",
   "builder_model": "<model>",
   "builder_thinking": "xhigh",
+  "builder_settings_source": "inherited",
   "run_step_budget": 1,
   "steps_completed_this_run": 0,
   "builder_runtime": "subagent",

@@ -51,7 +51,7 @@ Each Builder run covers exactly one approved delegated action. After that action
 
 The human owns:
 
-- the per-run Run config
+- any optional Builder override when Builder should diverge from the active session
 - the per-run step budget
 - kickoff approval
 - final review
@@ -64,7 +64,7 @@ Before autonomous work begins:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new or adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The full Run config must be resolved and approved before kickoff.
+2. The current session model and thinking must be observable, and any optional Builder override must be resolved, before kickoff.
 3. A pushable upstream is required before the normal autonomous commit/push loop begins.
 4. Master Chef must inspect:
    - current git status and branch
@@ -97,6 +97,7 @@ Canonical `run.json` fields:
 - `master_thinking`
 - `builder_model`
 - `builder_thinking`
+- `builder_settings_source`
 - `builder_runtime`
 - `master_session_key`
 - `builder_session_key`
@@ -125,39 +126,39 @@ Canonical `run.json` fields:
 - `dispute_loop_count`
 - `current_blocker`
 
-## 4) Run config
+## 4) Session settings and Builder override
 
-The resolved `Run config` must contain:
+The active session is the only source of truth for:
 
 - `master_model`
 - `master_thinking`
-- `builder_model`
-- `builder_thinking`
 
-Runtime adapters may help resolve the `Run config` in one of three ways:
+Builder defaults:
 
-- an inline `Run config` block in the kickoff prompt
-- a local default Run config file when the adapter supports one
-- a recommended candidate derived from the current session model and thinking when the runtime can surface both concretely
+- `builder_model` inherits the current session model
+- `builder_thinking` inherits the current session thinking
 
-A current-session recommendation must copy those current session values into all four Run config fields and show the full candidate block back to the human before kickoff. Do not silently assume current session settings.
+When Builder should diverge from the active session, the human may provide an optional `Builder override` that contains `builder_model`, `builder_thinking`, or both.
 
-When Master Chef asks the human to approve or edit a recommended `Run config`, present selector-based choices rather than a free-form approval question.
+Before kickoff, Master Chef must report:
 
-Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can reply with just the selector, and let the selected option itself count as the approval.
+- current session model
+- current session thinking
+- effective `builder_model`
+- effective `builder_thinking`
+- whether Builder is using inherited settings or an explicit override
 
-- `A. use this Run config`
-- `B. edit this Run config`
-- `C. stop before kickoff`
+If the runtime cannot observe the current session model and thinking concretely enough to report them honestly, stop before kickoff rather than asking the human to type replacement `master_*` settings.
 
-Treat the resolved `Run config` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
+If the runtime cannot honor a requested Builder override cleanly, say so explicitly and use inherited Builder settings rather than pretending the override landed.
+
+Treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
 
 Runtime adapters must define:
 
-- how the Run config is supplied
-- whether they support local default Run config files
-- whether they can inspect the current session model and thinking well enough to recommend a candidate Run config when one is missing
-- how the model and thinking fields are honored, inherited, constrained, or downgraded
+- how they observe the current session model and thinking
+- how an optional `Builder override` is supplied when Builder should diverge
+- how Builder settings are inherited by default and how explicit overrides are honored or rejected
 - how Builder monitoring works, including whether live status, partial output, or direct reasoning visibility actually exist in that runtime
 
 Before kickoff, the run must also resolve an approved step budget for the current autonomous run:
@@ -209,7 +210,9 @@ Runtime adapters may use a different location only if they document that choice 
 Before implementation starts, present one kickoff approval that covers:
 
 - proposed next action
-- the approved `Run config`
+- current session model
+- current session thinking
+- effective Builder settings
 - any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
 - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
 - the approved run step budget
@@ -223,7 +226,7 @@ Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can repl
 
 - `A. approve kickoff and start the autonomous run now`
 - `B. approve kickoff but do not spawn Builder yet`
-- `C. revise the next action, Run config, or step budget before kickoff`
+- `C. revise the next action, Builder settings, or step budget before kickoff`
 
 Use single-step Builder runs only.
 

@@ -28,18 +28,16 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   git -C <REPO> rev-parse --abbrev-ref --symbolic-full-name @{upstream}
   ```
 
-- [ ] Either one explicit Run config block is prepared, or the current session model and current session thinking are known for the recommendation path.
+- [ ] Current session model and current session thinking are known and visible.
 
-- [ ] Main session is using `master_model` from that Run config, or the model that should be copied into the recommended Run config.
+- [ ] Main session is already using the model that should be mirrored into `master_model`.
 
-- [ ] `builder_model` and `builder_thinking` are known from that same Run config, or will be copied from the current-session recommendation path.
+- [ ] If Builder divergence is being tested, an explicit `Builder override` block is prepared.
 
-- [ ] The Run config stays model-only:
+- [ ] Any `Builder override` stays model-only:
 
   ```text
-  Run config:
-    master_model: gpt-5.4
-    master_thinking: xhigh
+  Builder override:
     builder_model: gpt-5.4
     builder_thinking: xhigh
   ```
@@ -50,28 +48,27 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 
 ## 2) Prompt sequence
 
-### Prompt A0 - Recommendation path
+### Prompt A0 - Session-settings path
 
 ```text
 /cdd-master-chef Use the Master Chef process for repo <REPO>.
-Do not use any local default Run config file for this test.
-If Run config is missing, recommend one that copies the current session model and current session thinking into master_model, master_thinking, builder_model, and builder_thinking, then present visible `A.`, `B.`, `C.` options for approval or edits before kickoff.
+No Builder override is provided for this test.
+Read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and do not create runtime state yet.
 ```
 
 - [ ] Expected:
-  - a candidate Run config is shown back to the human
-  - `master_model`, `master_thinking`, `builder_model`, and `builder_thinking` all mirror the current session values
+  - current session model and thinking are shown back to the human
+  - Builder is reported as inheriting those same settings
   - no runtime state is created yet
   - no Builder is spawned yet
-  - the recommendation is treated as pending selector-based approval or edits, not as an implicit fallback
-  - replying with just `A`, `B`, or `C` would be enough to approve, edit, or stop before kickoff
+  - there is no separate Run-config approval or edit loop before kickoff
 
 ### Prompt A - Inspection only
 
 ```text
 /cdd-master-chef Use the Master Chef process for repo <REPO>.
-Run config:
-<RUN_CONFIG>
+Builder override:
+<BUILDER_OVERRIDE>
 Inspect the repo, tell me which TODO step is next, and prepare selector-driven kickoff options before creating runtime state or spawning the Builder.
 ```
 
@@ -103,8 +100,8 @@ Split that step into smaller decision-complete TODO steps before delegation, rec
 
 ```text
 /cdd-master-chef Present kickoff options with visible `A.`, `B.`, `C.` selectors. The selected option itself should count as the approval.
-Run config:
-<RUN_CONFIG>
+Builder override:
+<BUILDER_OVERRIDE>
 Require a clean source checkout, create the managed worktree and fresh branch, initialize runtime state there, acquire the run lease, and stop with exact relaunch instructions if the adapter cannot safely continue in-session.
 ```
 
@@ -114,7 +111,7 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
   - a managed worktree is created on a fresh branch from the current `HEAD`
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
-  - `run.json` records the exact approved Run config, the approved run step budget, and source/worktree metadata
+  - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata
   - kickoff approval is presented with selector-based options rather than a free-form approval question
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
@@ -313,7 +310,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
 - [ ] Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step.
 - [ ] Lifecycle events were reported in the Master Chef session.
-- [ ] Run config and runtime state stayed free of extra route metadata.
+- [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
 - [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.

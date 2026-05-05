@@ -2,7 +2,7 @@
 
 This harness validates the Claude Code adapter docs against the shared `cdd-master-chef` contract.
 
-Goal: validate **explicit Builder selection -> kickoff approval with step budget -> correct Run config mapping -> foreground/background safety -> non-nesting -> worktree-aware continuation or relaunch behavior**.
+Goal: validate **explicit Builder selection -> current-session settings plus Builder override handling -> kickoff approval with step budget -> foreground/background safety -> non-nesting -> worktree-aware continuation or relaunch behavior**.
 
 ## 1) Preflight
 
@@ -24,7 +24,8 @@ Goal: validate **explicit Builder selection -> kickoff approval with step budget
   claude --help | rg --fixed-strings -- '--worktree'
   ```
 
-- [ ] One explicit Run config block is prepared.
+- [ ] Current session model and current session thinking are observable.
+- [ ] If Builder divergence is being tested, one explicit `Builder override` block is prepared.
 
 - [ ] If the repo uses custom Claude agents, they live under `.claude/agents/`.
 
@@ -48,26 +49,27 @@ Do not rely only on automatic delegation for the main Builder handoff.
   - automatic delegation is not treated as the only control mechanism
   - the answer distinguishes Builder from exploration or planning sidecars
 
-### Prompt B - Run config mapping
+### Prompt B - Session settings and Builder override
 
 ```text
-Use this approved Run config:
-<RUN_CONFIG>
-Map each field onto the current Claude surface and classify Builder settings as exact support, inherited-model fallback, startup-only application, or constrained behavior.
+Report the current session model and thinking as Master Chef facts.
+If no Builder override is provided, say Builder inherits those settings.
+If this Builder override is provided:
+<BUILDER_OVERRIDE>
+say whether Claude can honor it cleanly and what effective Builder settings will be used.
 Do not start implementation yet.
 ```
 
 - [ ] Expected:
-  - `master_model` maps to `--model`
-  - `master_thinking` maps to `--effort`
-  - `builder_model` and `builder_thinking` are classified explicitly
-  - any Builder downgrade is stated before work begins
+  - current session model and thinking are stated explicitly
+  - inherited Builder settings are the default path
+  - any Builder override limitation is stated before work begins
 
 ### Prompt C - Kickoff approval and run budget
 
 ```text
 The next runnable TODO step is known.
-Present visible `A.`, `B.`, `C.` kickoff options that cover the approved Run config, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
+Present visible `A.`, `B.`, `C.` kickoff options that cover the current session model, current session thinking, effective Builder settings, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
 If the active TODO has a finite remaining unfinished top-level step-heading count, recommend that exact count as the default/max budget.
 Do not hand the Builder-start decision back to me as a manual Claude relaunch command.
 Make the selected option itself the kickoff approval.
@@ -162,7 +164,7 @@ Explain what proves that Builder has actually started operating, what runtime fi
 ## 3) Pass criteria
 
 - [ ] The Claude adapter required an explicit Builder path when determinism mattered.
-- [ ] Builder Run config support was classified clearly before implementation.
+- [ ] Effective Builder settings were stated clearly before implementation, with inherited Builder behavior as the default.
 - [ ] Kickoff approval used selector-based options and asked for a run step budget plus whether to spawn Builder now.
 - [ ] Permission-heavy Builder work stayed foreground.
 - [ ] Nested subagent spawning was rejected.

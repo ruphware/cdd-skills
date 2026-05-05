@@ -44,20 +44,15 @@ OPENCLAW_ROUTING_LABELS = (
     "[CDD-4] Implementation Audit",
     "[CDD-5] Maintain",
 )
-MASTER_CHEF_RUN_CONFIG_OPTION_REGEXES = (
-    r"`A\.\s*use this Run config`",
-    r"`B\.\s*edit this Run config`",
-    r"`C\.\s*stop before kickoff`",
-)
 MASTER_CHEF_KICKOFF_OPTION_STRINGS = (
     "`A. approve kickoff and start the autonomous run now`",
     "`B. approve kickoff but do not spawn Builder yet`",
-    "`C. revise the next action, Run config, or step budget before kickoff`",
+    "`C. revise the next action, Builder settings, or step budget before kickoff`",
 )
 MASTER_CHEF_KICKOFF_OPTION_REGEXES = (
     r"`A\.\s*approve kickoff and start the autonomous run now`",
     r"`B\.\s*approve kickoff but do not spawn Builder yet`",
-    r"`C\.\s*revise the next action, Run config, or step budget before kickoff`",
+    r"`C\.\s*revise the next action, Builder settings, or step budget before kickoff`",
 )
 MASTER_CHEF_KICKOFF_HARNESS_SUMMARY = (
     "Kickoff approval used selector-based options and asked for a run step budget plus whether to spawn Builder now."
@@ -65,6 +60,28 @@ MASTER_CHEF_KICKOFF_HARNESS_SUMMARY = (
 MASTER_CHEF_KICKOFF_HARNESS_REGEXES = (
     r"selector-based options rather than a free-form approval question",
     r"replying with just `A`, `B`, or `C` would be enough",
+)
+MASTER_CHEF_SESSION_SETTINGS_STRINGS = (
+    "current session model",
+    "current session thinking",
+    "`Builder override`",
+    "effective Builder settings",
+)
+MASTER_CHEF_SESSION_FACTS = "current session model and thinking"
+MASTER_CHEF_SESSION_FACTS_EXPLICIT = (
+    "current session model and thinking are stated explicitly"
+)
+MASTER_CHEF_SESSION_FACTS_SHOWN = (
+    "current session model and thinking are shown back to the human"
+)
+MASTER_CHEF_SESSION_FACTS_REGEX = (
+    r"current session model and(?: current session)? thinking"
+)
+MASTER_CHEF_INHERITED_SETTINGS_REGEX = (
+    r"(?:Builder inherits those settings|default Builder to inherit (?:those settings|the current session model and(?: current session)? thinking))"
+)
+MASTER_CHEF_EFFECTIVE_BUILDER_PASS = (
+    "Effective Builder settings were stated clearly before implementation, with inherited Builder behavior as the default."
 )
 REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
 MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
@@ -773,7 +790,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         (
             ".cdd-runtime/master-chef/run.json",
             MASTER_CHEF_WORKTREE_ROOT,
-            "The full Run config must be resolved and approved before kickoff.",
+            "The current session model and thinking must be observable, and any optional Builder override must be resolved, before kickoff.",
             "- the per-run step budget",
             "unfinished top-level TODO step-heading count",
             "oversized for one Builder run",
@@ -783,6 +800,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             "`run_step_budget`",
             "`steps_completed_this_run`",
             "`builder_phase`",
+            "`builder_settings_source`",
             "`builder_spawn_requested_at_utc`",
             "`builder_ready_at_utc`",
             "`last_builder_direct_signal_at_utc`",
@@ -810,10 +828,11 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_regexes(
         contract_text,
         (
-            r"recommended candidate.*current session model and thinking",
-            r"selector-based choices.*free-form approval question",
-            r"selected option itself (?:is|count(?:s)? as) the approval",
-            *MASTER_CHEF_RUN_CONFIG_OPTION_REGEXES,
+            r"current session model.*thinking",
+            r"`Builder override`",
+            r"Builder defaults:.*inherits the current session model.*inherits the current session thinking",
+            r"runtime cannot observe the current session model and thinking.*stop before kickoff",
+            r"runtime cannot honor a requested Builder override cleanly.*use inherited Builder settings",
             r"selected option itself (?:is|count(?:s)? as) the kickoff approval",
             *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
             r"fresh run from a long-lived branch.*descriptive feature branch",
@@ -840,6 +859,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_headings(
         runbook_text,
         (
+            "## 0) Session settings",
             "## 1) Managed worktree policy",
             "## 2) Runtime-state additions",
             "## 3) Continuation decision rule",
@@ -858,10 +878,13 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             "unfinished top-level TODO step-heading count",
             "oversized for one Builder run",
             "default/max `run_step_budget`",
+            "current session model and thinking",
+            "`Builder override`",
             "- `source_repo`",
             "- `active_worktree_path`",
             "- `worktree_continue_mode`",
             "- `builder_phase`",
+            "- `builder_settings_source`",
             "- `builder_spawn_requested_at_utc`",
             "- `builder_ready_at_utc`",
             "- `last_builder_direct_signal_at_utc`",
@@ -884,6 +907,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     require_regexes(
         runbook_text,
         (
+            r"[Rr]ead (?:the )?current session model and(?: current session)? thinking directly",
+            r"Treat those values as read-only Master Chef facts",
+            r"Default Builder to inherit those values unless an explicit `Builder override` is present",
+            r"requested `Builder override` cannot be honored cleanly.*fall back to inherited Builder settings",
             r"fresh run.*long-lived branch.*descriptive feature branch",
             r"oversized for one Builder run.*split it first",
             r"unfinished top-level TODO step-heading count",
@@ -951,7 +978,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"fresh run from a long-lived branch.*descriptive feature branch",
             r"split an oversized top-level step before (?:Builder handoff|delegation)",
             r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
-            r"Run config block.*current session model.*thinking.*approve or edit",
+            r"current session model and thinking automatically.*Builder override",
             r"how many TODO steps this run should cover",
             r"whether (?:Master Chef|it) should spawn Builder now",
             r"No-clone upgrade path:",
@@ -1023,7 +1050,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
         (
             "## 1) Delegation model",
             "## 2) Built-in vs custom agents",
-            "## 4) Run config mapping",
+            "## 4) Session settings and Builder override",
             "## 6) Worktree handling",
             "## 7) Unsupported or blocked patterns",
         ),
@@ -1036,7 +1063,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "`worker`",
             "`explorer`",
             ".codex/agents/*.toml",
-            "Startup-only application",
+            "Builder inherits those settings by default.",
         ),
         adapter_md,
         "Codex adapter runtime tokens",
@@ -1061,7 +1088,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
         (
             "## 1) Session shape",
             "## 2) Builder selection",
-            "## 3) Run config handling",
+            "## 3) Session settings and Builder override",
             "## 4) Kickoff approval and run budget",
             "## 6) Worktree hand-off",
             "## 7) Builder monitoring",
@@ -1078,7 +1105,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "whether to spawn Builder now and start the autonomous run",
             "Do not treat \"here is a `codex -C ...` command for you to run\" as the normal Builder-start path.",
             ".codex/agents/*.toml",
-            "`exact support`, `inherited-model fallback`, `startup-only application`, or `constrained behavior`",
+            *MASTER_CHEF_SESSION_SETTINGS_STRINGS,
             "Follow the shared selector contract.",
         )
         + MASTER_CHEF_KICKOFF_OPTION_STRINGS,
@@ -1089,6 +1116,9 @@ def validate_codex_adapter(repo_root: Path) -> None:
         runbook_text,
         (
             r"selector-driven kickoff approval",
+            MASTER_CHEF_SESSION_FACTS_REGEX + r".*read-only Master Chef facts",
+            r"no `Builder override` is supplied.*Builder inherits",
+            r"cannot honor the requested override cleanly.*use inherited Builder settings",
             r"should not claim live access to Builder thinking.*streaming partial output",
             r"completion/failure notifications.*status replies.*closure/errors",
             r"two phases:.*boot/readiness.*quiet-work",
@@ -1110,6 +1140,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
     require_substrings(
         harness_text,
         (
+            "### Prompt B - Session settings and Builder override",
             "### Prompt C - Kickoff approval and run budget",
             "### Prompt F - Unsupported patterns",
             "### Prompt G - Worktree continuation",
@@ -1119,8 +1150,12 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "feature-branch suggestion is surfaced when applicable",
             "oversized top-level step is split in Master Chef before Builder handoff",
             "exact remaining top-level-step count when that count is finite",
+            MASTER_CHEF_SESSION_FACTS_EXPLICIT,
+            "inherited Builder settings are the default path",
+            "any Builder override limitation is stated before work begins",
             MASTER_CHEF_KICKOFF_HARNESS_SUMMARY,
             "Recursive default fan-out was rejected.",
+            MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
         ),
         harness_md,
         "Codex harness coverage",
@@ -1165,7 +1200,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "## 2) Agent surfaces",
             "## 3) Foreground vs background policy",
             "## 4) Non-nesting and tool inheritance",
-            "## 5) Run config mapping",
+            "## 5) Session settings and Builder override",
             "## 6) Worktree handling",
         ),
         adapter_md,
@@ -1179,7 +1214,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             ".claude/agents/",
             "~/.claude/agents/",
             "Subagents cannot spawn other subagents.",
-            "Startup-only application",
+            "Builder inherits those settings by default.",
         ),
         adapter_md,
         "Claude adapter runtime tokens",
@@ -1204,7 +1239,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
         (
             "## 1) Session shape",
             "## 2) Builder selection",
-            "## 3) Run config handling",
+            "## 3) Session settings and Builder override",
             "## 4) Kickoff approval and run budget",
             "## 5) Foreground and background policy",
             "## 6) Tool and MCP policy",
@@ -1217,7 +1252,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
     require_substrings(
         runbook_text,
         (
-            "--effort <master_thinking>",
+            "--effort <effort>",
             "`1` or `3`, or `until_blocked_or_complete`",
             "shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget",
             "oversized next top-level TODO step",
@@ -1226,6 +1261,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "Subagents cannot spawn other subagents",
             "Do not rely on background Builder work for MCP-dependent or approval-heavy tasks.",
             "Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.",
+            *MASTER_CHEF_SESSION_SETTINGS_STRINGS,
             "Follow the shared selector contract.",
         )
         + MASTER_CHEF_KICKOFF_OPTION_STRINGS,
@@ -1236,6 +1272,9 @@ def validate_claude_adapter(repo_root: Path) -> None:
         runbook_text,
         (
             r"selector-driven kickoff approval",
+            MASTER_CHEF_SESSION_FACTS_REGEX + r".*read-only Master Chef facts",
+            r"no `Builder override` is supplied.*Builder inherits",
+            r"cannot honor the requested override cleanly.*use inherited Builder settings",
             r"should not claim live access to Builder thinking.*streaming partial output",
             r"completion/failure notifications.*status replies.*closure/errors",
             r"two phases:.*boot/readiness.*quiet-work",
@@ -1257,6 +1296,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
     require_substrings(
         harness_text,
         (
+            "### Prompt B - Session settings and Builder override",
             "### Prompt C - Kickoff approval and run budget",
             "### Prompt F - Non-nesting rule",
             "### Prompt G - Worktree continuation",
@@ -1266,9 +1306,13 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "feature-branch suggestion is surfaced when applicable",
             "oversized top-level step is split in Master Chef before Builder handoff",
             "exact remaining top-level-step count when that count is finite",
+            MASTER_CHEF_SESSION_FACTS_EXPLICIT,
+            "inherited Builder settings are the default path",
+            "any Builder override limitation is stated before work begins",
             MASTER_CHEF_KICKOFF_HARNESS_SUMMARY,
             "Permission-heavy Builder work stayed foreground.",
             "Nested subagent spawning was rejected.",
+            MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
         ),
         harness_md,
         "Claude harness coverage",
@@ -1344,6 +1388,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             "`run_step_budget`",
             "`steps_completed_this_run`",
             "`builder_phase`",
+            "`builder_settings_source`",
             "`builder_spawn_requested_at_utc`",
             "`builder_ready_at_utc`",
             "`last_builder_direct_signal_at_utc`",
@@ -1361,8 +1406,10 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_regexes(
         skill_text,
         (
-            r"current session model.*current session thinking.*recommend.*`Run config`",
-            r"approves or edits it",
+            r"read (?:the )?current session model and(?: current session)? thinking directly",
+            r"current prompt includes a `Builder override` block",
+            MASTER_CHEF_INHERITED_SETTINGS_REGEX,
+            r"runtime cannot honor a requested Builder override cleanly.*fall back to inherited Builder settings",
             r"selector-based options.*`A\.`, `B\.`, `C\.`",
             r"selected option itself should count as the approval",
             MASTER_CHEF_KICKOFF_OPTION_REGEXES[0],
@@ -1400,7 +1447,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_LABEL,
             "~/.openclaw/skills/cdd-master-chef",
             "./scripts/install.sh --runtime openclaw",
-            "The full Run config must be resolved and approved before kickoff.",
+            "The current session model and thinking must both be visible enough to mirror into runtime state before kickoff.",
             "the approved run step budget",
             "unfinished top-level TODO step-heading count",
             "oversized for one Builder run",
@@ -1408,6 +1455,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             "whether to spawn Builder now and start the autonomous run",
             "\"run_step_budget\": 1",
             "\"steps_completed_this_run\": 0",
+            "\"builder_settings_source\": \"inherited\"",
             "worktree_continue_mode",
             "context-summary.md",
         )
@@ -1418,9 +1466,10 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_regexes(
         runbook_text,
         (
-            r"recommend it from the current session model and thinking",
+            r"Builder inherits the active session model and thinking by default",
+            r"optional `Builder override`",
+            r"current OpenClaw path cannot honor a requested Builder override cleanly.*use inherited Builder settings",
             r"shared selector contract",
-            *MASTER_CHEF_RUN_CONFIG_OPTION_REGEXES,
             *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
             r"oversized for one Builder run.*split.*smaller decision-complete TODO steps",
         ),
@@ -1450,8 +1499,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_regexes(
         readme_text,
         (
-            r"recommend a candidate Run config from the current session model and current session thinking",
-            r"selector-based `A\.`, `B\.`, `C\.` options for approval or edits before kickoff",
+            r"current session settings.*optional `?Builder override`?",
+            r"read the current session model and thinking directly",
+            r"current session model and(?: current session)? thinking.*effective Builder settings",
             r"replying with just `A`, `B`, or `C` is enough",
             r"present selector-driven kickoff options before creating runtime state or spawning the Builder",
             r"split an oversized one first",
@@ -1464,7 +1514,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         harness_text,
         (
             MASTER_CHEF_LABEL,
-            "Prompt A0 - Recommendation path",
+            "Prompt A0 - Session-settings path",
             "Prompt A1 - Oversized-step split before Builder handoff",
             "Prompt B - Selector-driven kickoff approval",
             "Prompt J - QA reject remediation",
@@ -1472,11 +1522,14 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             "Prompt N - Context compaction and resume",
             "Dirty checkout refusal",
             "The run step budget is prepared as either a positive integer step count or `until_blocked_or_complete`.",
+            MASTER_CHEF_SESSION_FACTS_SHOWN,
+            "Builder is reported as inheriting those same settings",
+            "there is no separate Run-config approval or edit loop before kickoff",
             "remaining unfinished top-level TODO step-heading count is stated when finite",
             "fresh-start feature-branch suggestion",
             "remaining top-level-step count is recomputed after the split",
             "exact remaining top-level-step count when that count is finite",
-            "replying with just `A`, `B`, or `C` would be enough to approve, edit, or stop before kickoff",
+            "`run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata",
         )
         + OPENCLAW_ROUTING_LABELS,
         harness_md,
@@ -1485,8 +1538,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
     require_regexes(
         harness_text,
         (
-            r"(selector-based|visible) `A\.`, `B\.`, `C\.` options for approval or edits before kickoff",
-            r"pending selector-based approval or edits",
+            r"no separate Run-config approval or edit loop before kickoff",
             r"replying with just `A`, `B`, or `C` would be enough",
             r"selector-driven kickoff options",
             r"selected option itself should count as the approval",

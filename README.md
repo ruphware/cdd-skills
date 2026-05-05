@@ -77,7 +77,7 @@ Current concrete adapters in this repo:
 For `[CDD-6] Master Chef`:
 
 - start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw.
-- Provide a Run config block with `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, or let Master Chef recommend one from the current session model and thinking, then approve or edit it.
+- Master Chef reads the current session model and thinking automatically; provide a `Builder override` only when Builder should diverge.
 - On a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch. When the active TODO has a finite remaining unfinished top-level step-heading count, it recommends that exact count as the default/max step budget.
 - Master Chef inspects the repo, proposes the next TODO step, may split an oversized top-level step before Builder handoff, sets up `.cdd-runtime/master-chef/`, and asks how many TODO steps this run should cover.
 - Kickoff asks whether Master Chef should spawn Builder now. After approval, Master Chef manages fresh single-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting.

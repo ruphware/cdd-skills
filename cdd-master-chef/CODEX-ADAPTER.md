@@ -72,30 +72,13 @@ Adapter implication:
 - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
 - When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
-## 4) Run config mapping
+## 4) Session settings and Builder override
 
-Shared Run config:
-
-- `master_model`
-- `master_thinking`
-- `builder_model`
-- `builder_thinking`
-
-Codex mapping rules:
-
-- `master_model` maps directly to the parent Codex session model when the operator launches Codex with that model.
-- `master_thinking` maps to the parent Codex reasoning effort when the active model supports it.
-- `builder_model` maps directly only when the selected built-in or custom agent sets `model` explicitly or inherits the parent model intentionally.
-- `builder_thinking` maps directly only when the spawned built-in or custom agent sets `model_reasoning_effort` explicitly or inherits the parent reasoning effort intentionally.
-
-Allowed adapter outcomes:
-
-- **Exact support:** custom agent TOML sets `model` and `model_reasoning_effort` exactly
-- **Inherited-model fallback:** custom agent omits one or both fields and intentionally inherits from the parent Codex session
-- **Startup-only application:** the requested setting is applied only when the parent Codex session is launched or relaunched with that setting, and the Builder intentionally inherits it from that session
-- **Constrained behavior:** built-in agents are used and Builder follows parent-session runtime settings because no narrower per-agent override exists in the current flow
-
-Do not silently ignore Run config differences. State explicitly whether the Builder agent is using exact support, inherited-model fallback, startup-only application, or constrained behavior.
+- `master_model` and `master_thinking` come directly from the active Codex session.
+- Builder inherits those settings by default.
+- A Builder override is clean only when the selected custom agent TOML sets `model` and/or `model_reasoning_effort`, or when the parent Codex session is deliberately relaunched and Builder intentionally inherits the new setting.
+- If built-in agents are used without narrower agent config, effective Builder settings remain inherited from the parent session.
+- Do not silently ignore a requested Builder override. State whether it landed cleanly or whether Builder is falling back to inherited settings.
 
 ## 5) Recommended Codex adapter shapes
 

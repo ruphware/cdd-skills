@@ -41,13 +41,13 @@ Operating contract:
    - `.cdd-runtime/master-chef/master-chef.jsonl`
    - `.cdd-runtime/master-chef/builder.jsonl`
    - `.cdd-runtime/master-chef/context-summary.md`
-6. Before kickoff, resolve the `Run config`:
-   - if the current prompt includes a `Run config` block, use that
-   - otherwise, if `~/.openclaw/config/master-chef/default-run-config.yaml` exists, read it, surface the resolved config back to the human, and use it as the starting `Run config` for that run
-   - otherwise, if the current session model and current session thinking are visible, recommend a candidate `Run config` that copies those values into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, surface it back to the human, and use it only after the human approves or edits it
-   - otherwise, stop and ask the human for a `Run config`
-   - the resolved `Run config` must contain `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`
-   - treat the resolved `Run config` as the only per-run source of truth; do not infer model settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
+6. Before kickoff, resolve current session settings and any optional `Builder override`:
+   - read the current session model and thinking directly from the active runtime surface
+   - if either value is not visible enough to report honestly, stop before kickoff
+   - if the current prompt includes a `Builder override` block, use it as the requested Builder settings for that run
+   - otherwise, default Builder to inherit those settings
+   - if the runtime cannot honor a requested Builder override cleanly, say so explicitly and fall back to inherited Builder settings
+   - treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth; do not infer model settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
    - keep shared docs and commits free of local-only operator overrides
 7. Before autonomous work starts, inspect:
    - current git status and branch
@@ -79,7 +79,9 @@ Operating contract:
    - the active runtime adapter either continues in-session from the managed worktree or stops with exact relaunch instructions; keep `worktree_continue_mode` explicit
 10. Before implementation starts, present one selector-driven kickoff approval that covers:
    - proposed next action
-   - the approved `Run config`
+   - current session model
+   - current session thinking
+   - effective Builder settings
    - any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
    - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
    - the approved run step budget
@@ -87,8 +89,8 @@ Operating contract:
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations
-   - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, `C. revise the next action, Run config, or step budget before kickoff`
-11. Spawn the Builder as a subagent with the exact `builder_model` and `builder_thinking` from the approved `Run config`, for exactly one approved delegated action, tell it which internal `cdd-*` skill path to use, and require an early readiness ACK before deep work.
+   - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, `C. revise the next action, Builder settings, or step budget before kickoff`
+11. Spawn the Builder as a subagent with the effective `builder_model` and `builder_thinking` resolved for that run, defaulting to inherited settings when no override is active, for exactly one approved delegated action, tell it which internal `cdd-*` skill path to use, and require an early readiness ACK before deep work.
 12. Use single-step Builder runs only.
    - Each Builder run covers exactly one approved delegated action.
    - After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
@@ -160,6 +162,7 @@ Canonical `run.json` fields:
 - `master_thinking`
 - `builder_model`
 - `builder_thinking`
+- `builder_settings_source`
 - `builder_runtime`
 - `master_session_key`
 - `builder_session_key`

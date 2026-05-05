@@ -35,7 +35,7 @@ The packaged OpenClaw adapter has two active actors:
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
 - **Builder:** a fresh single-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
-There is no watchdog cron. The human approves one per-run Run config, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks final results or critical blockers.
+There is no watchdog cron. The human verifies the current session settings, chooses any optional `Builder override`, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks final results or critical blockers.
 
 ## Managed worktree policy
 
@@ -115,26 +115,31 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 ## How development starts
 
 1. Open the OpenClaw session you want to use. That session is both Master Chef and the reporting surface for the run.
-2. Choose how Master Chef should get the Run config:
-   - either paste one inline, see `MASTER-CHEF-RUNBOOK.md`, section `2.1 Run config`
-   - or keep a local-only default file at `~/.openclaw/config/master-chef/default-run-config.yaml`, see section `2.2 Local default Run config`
-   - or omit both and let Master Chef recommend a candidate Run config from the current session model and current session thinking, then approve or edit it before kickoff
-3. Select the current session model to match `master_model` from the Run config you plan to use, or the model you want copied into the recommendation path:
+2. Make sure the current session already has the model and thinking you want Master Chef to mirror into runtime state.
+3. If Builder should diverge from that active session, prepare an optional `Builder override` block:
+
+   ```text
+   Builder override:
+     builder_model: gpt-5.4
+     builder_thinking: xhigh
+   ```
+
+4. Set the current session model before you start the run:
 
    ```text
    /model <master-model>
    ```
 
-4. Start `[CDD-6] Master Chef` in the target repo or new project folder:
+5. Start `[CDD-6] Master Chef` in the target repo or new project folder:
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
    Inspect where development is at, propose the next runnable TODO step, or split an oversized one first, and present selector-driven kickoff options before creating runtime state or spawning the Builder.
    ```
 
-   If the prompt does not include `Run config`, Master Chef should load `~/.openclaw/config/master-chef/default-run-config.yaml` when that file exists, show the resolved config back to the human, and use it only after kickoff approval. Otherwise, if the current session model and current session thinking are visible, it should recommend a candidate Run config that copies them into all four fields, show it back to the human, and use selector-based `A.`, `B.`, `C.` options for approval or edits before kickoff. If it cannot observe both values, it should stop and ask for a Run config.
+   Master Chef should read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and apply a `Builder override` only when one is supplied and the adapter can honor it cleanly. If the runtime cannot observe those values concretely enough, it should stop before kickoff.
 
-5. Master Chef should then:
+6. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
    - if the next runnable top-level TODO step is oversized for one Builder run, split it first
@@ -148,13 +153,14 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - initialize `.cdd-runtime/master-chef/` for durable run state and logs
    - present one selector-driven kickoff approval covering:
       - the proposed next action and routing path
-      - the approved Run config
+      - current session model and thinking
+      - effective Builder settings
       - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
       - the approved run step budget
       - whether to spawn Builder now
       - Builder handoff plus in-session reporting expectations
    - follow the shared selector contract
-   - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, and `C. revise the next action, Run config, or step budget before kickoff`
+   - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, and `C. revise the next action, Builder settings, or step budget before kickoff`
    - replying with just `A`, `B`, or `C` is enough
 
 After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.

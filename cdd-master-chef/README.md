@@ -2,6 +2,8 @@
 
 This directory is the canonical committed package root for `[CDD-6] Master Chef`, an in-development multi-runtime autonomous workflow that sits beside the core `[CDD-0]` through `[CDD-5]` CDD skills.
 
+The shared contract treats the current session model and thinking as Master Chef facts. Builder inherits them by default unless an adapter can honor an explicit `Builder override` cleanly.
+
 Use these files as the canonical contract surfaces:
 
 - `SKILL.md` — current installable `cdd-master-chef` skill entrypoint

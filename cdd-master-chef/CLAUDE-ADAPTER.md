@@ -81,30 +81,13 @@ Adapter implication:
 - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
 - When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
-## 5) Run config mapping
+## 5) Session settings and Builder override
 
-Shared Run config:
-
-- `master_model`
-- `master_thinking`
-- `builder_model`
-- `builder_thinking`
-
-Claude mapping rules:
-
-- `master_model` maps directly to the main Claude session model when the operator launches Claude with `--model`.
-- `master_thinking` maps directly to the main Claude session effort when the operator launches Claude with `--effort`.
-- `builder_model` maps directly only when the selected configured agent sets `model` explicitly or when Builder is relaunched as the main session with `--agent` plus `--model`.
-- `builder_thinking` is not assumed to have a stable per-subagent override surface in this adapter. Treat it as inherited from the main session unless the Builder is applied through a startup-only relaunch path that sets `--effort`.
-
-Allowed adapter outcomes:
-
-- **Exact support:** the configured Builder agent sets `model` exactly and the run clearly states how `builder_thinking` is satisfied
-- **Inherited-model fallback:** Builder intentionally inherits one or both settings from the main Claude session
-- **Startup-only application:** the requested Builder setting is applied only by launching or relaunching a Claude session with `--model`, `--effort`, `--agent`, or `--worktree`, and Builder then inherits from that session
-- **Constrained behavior:** the current Claude path cannot honor the requested Builder override cleanly, so Master Chef states the downgrade before implementation begins
-
-Do not silently ignore `builder_model` or `builder_thinking`. State explicitly whether the Builder is using exact support, inherited fallback, startup-only application, or constrained behavior.
+- `master_model` and `master_thinking` come directly from the active Claude session.
+- Builder inherits those settings by default.
+- A Builder override is clean only when the chosen Builder agent sets `model` explicitly or when Builder is applied through a relaunch path that can carry the requested `builder_model` and/or `builder_thinking`.
+- If the current Claude path cannot honor a requested Builder override cleanly, Master Chef must say so and use inherited Builder settings instead.
+- Do not silently ignore `builder_model` or `builder_thinking`.
 
 ## 6) Worktree handling
 
@@ -125,7 +108,7 @@ Adapter rule:
 - Do not claim that Claude Builder delegation is recursively nestable.
 - Do not rely on background subagents to recover fresh approvals or clarifying questions.
 - Do not rely on background Builder work for MCP-dependent tasks.
-- Do not silently downgrade `builder_thinking` when the current Claude surface can only satisfy it through parent-session inheritance or startup-only relaunch.
+- Do not silently downgrade `builder_thinking` when the current Claude surface can only satisfy it through parent-session inheritance or relaunch.
 
 ## 8) Source notes
 
