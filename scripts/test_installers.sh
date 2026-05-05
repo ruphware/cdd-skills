@@ -96,6 +96,8 @@ OPENCLAW_UNINSTALL="$TMP_ROOT/openclaw-uninstall"
 ALL_HOME="$TMP_ROOT/all-home"
 ALL_PARTIAL_HOME="$TMP_ROOT/all-partial-home"
 ALL_REMOVE_HOME="$TMP_ROOT/all-remove-home"
+REMOTE_HOME="$TMP_ROOT/remote-home"
+REMOTE_ARCHIVE="$TMP_ROOT/cdd-skills.tar.gz"
 
 echo "[CI] INFO LegacyFlagMigration root={$TMP_ROOT}"
 assert_command_fails_with "Unsupported flag: --force" \
@@ -110,6 +112,7 @@ assert_command_fails_with "--all cannot be combined with --runtime" \
   "$ROOT_DIR/scripts/install.sh" --all --runtime claude
 assert_command_fails_with "--all cannot be combined with --target" \
   "$ROOT_DIR/scripts/install.sh" --all --target "$TMP_ROOT/custom"
+tar -czf "$REMOTE_ARCHIVE" -C "$ROOT_DIR" .
 
 echo "[CI] INFO BuilderInstallFresh root={$BUILDER_INSTALL}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_INSTALL"
@@ -365,5 +368,20 @@ assert_not_exists "$ALL_REMOVE_HOME/.claude/skills/cdd-master-chef"
 assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-master-chef"
 assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-plan"
 assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-implementation-audit"
+
+echo "[CI] INFO RemoteInstallAndUpdate root={$REMOTE_HOME}"
+mkdir -p "$REMOTE_HOME/.agents" "$REMOTE_HOME/.claude"
+HOME="$REMOTE_HOME" CDD_SKILLS_ARCHIVE_URL="file://$REMOTE_ARCHIVE" \
+  "$ROOT_DIR/install-remote.sh" --all
+assert_exists "$REMOTE_HOME/.agents/skills/cdd-master-chef/SKILL.md"
+assert_exists "$REMOTE_HOME/.claude/skills/cdd-master-chef/SKILL.md"
+mkdir -p "$REMOTE_HOME/.agents/skills/cdd-audit-and-implement.pruned.20260505T080008Z"
+HOME="$REMOTE_HOME" CDD_SKILLS_ARCHIVE_URL="file://$REMOTE_ARCHIVE" \
+  "$ROOT_DIR/install-remote.sh" --all --update --yes
+assert_no_match "$REMOTE_HOME/.agents/skills" 'cdd-audit-and-implement.pruned.*'
+printf 'y\ny\n' | HOME="$REMOTE_HOME" CDD_SKILLS_ARCHIVE_URL="file://$REMOTE_ARCHIVE" \
+  "$ROOT_DIR/uninstall-remote.sh" --all
+assert_not_exists "$REMOTE_HOME/.agents/skills/cdd-master-chef"
+assert_not_exists "$REMOTE_HOME/.claude/skills/cdd-master-chef"
 
 echo "[CI] INFO InstallerSmokePassed root={$TMP_ROOT}"

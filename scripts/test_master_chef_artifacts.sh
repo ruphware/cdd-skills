@@ -91,15 +91,15 @@ assert_contains "$SHARED_ROOT/agents/openai.yaml" 'display_name: "[CDD-8] Master
 assert_contains "$SHARED_ROOT/agents/openai.yaml" "allow_implicit_invocation: true"
 
 echo "[MasterChefArtifacts] INFO LegacyStubPaths root={$ROOT_DIR}"
-assert_exists "$ROOT_DIR/master-chef/README.md"
-assert_not_exists "$ROOT_DIR/master-chef/CONTRACT.md"
-assert_exists "$ROOT_DIR/openclaw/README.md"
-assert_not_exists "$ROOT_DIR/openclaw/SKILL.md"
+assert_not_exists "$ROOT_DIR/master-chef"
+assert_not_exists "$ROOT_DIR/openclaw"
 
 echo "[MasterChefArtifacts] INFO RootInstallStory file={README.md}"
 for token in \
   "npx skills add https://github.com/ruphware/cdd-skills/" \
   "./scripts/install.sh --all" \
+  "install-remote.sh" \
+  "uninstall-remote.sh" \
   "Current concrete adapters in this repo:"; do
   assert_contains "$ROOT_DIR/README.md" "$token"
 done
@@ -114,6 +114,8 @@ for pattern in \
   'Run config block.*current session model.*thinking.*approve or edit' \
   'how many TODO steps this run should cover' \
   'whether (Master Chef|it) should spawn Builder now' \
+  'No-clone upgrade path:' \
+  'managed prune semantics' \
   'Adapter docs.*maintainers.*debugging.*runtime support' \
   'OpenClaw.*packaged adapter.*install\.sh --runtime openclaw' \
   'Codex.*CODEX-ADAPTER\.md.*CODEX-RUNBOOK\.md' \
@@ -135,7 +137,7 @@ done
 echo "[MasterChefArtifacts] INFO SharedAdapterStory file={cdd-master-chef/README.md}"
 for token in \
   "Current concrete adapters in this package:" \
-  "The top-level \`master-chef/\` and \`openclaw/\` directories are compatibility stubs only; this directory is the single canonical source tree."; do
+  "This directory is the single canonical source tree."; do
   assert_contains "$SHARED_ROOT/README.md" "$token"
 done
 for pattern in \

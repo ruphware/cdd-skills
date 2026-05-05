@@ -486,8 +486,6 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
 def validate_master_chef_shared_contract(repo_root: Path) -> None:
     """Validate shared Master Chef contract artifacts structurally."""
     shared_root = repo_root / "cdd-master-chef"
-    legacy_shared_root = repo_root / "master-chef"
-    legacy_openclaw_root = repo_root / "openclaw"
     readme_md = shared_root / "README.md"
     contract_md = shared_root / "CONTRACT.md"
     runbook_md = shared_root / "RUNBOOK.md"
@@ -499,18 +497,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         assert path.exists(), f"missing {path}"
 
     assert (shared_root / "SKILL.md").exists(), f"missing {shared_root / 'SKILL.md'}"
-    assert legacy_shared_root.exists(), f"missing {legacy_shared_root}"
-    assert legacy_openclaw_root.exists(), f"missing {legacy_openclaw_root}"
-    assert (legacy_shared_root / "README.md").exists(), f"missing {legacy_shared_root / 'README.md'}"
-    assert not (legacy_shared_root / "CONTRACT.md").exists(), (
-        f"legacy shared root should not remain canonical: {legacy_shared_root / 'CONTRACT.md'}"
-    )
-    assert (legacy_openclaw_root / "README.md").exists(), (
-        f"missing {legacy_openclaw_root / 'README.md'}"
-    )
-    assert not (legacy_openclaw_root / "SKILL.md").exists(), (
-        f"legacy OpenClaw root should not remain a skill package: {legacy_openclaw_root / 'SKILL.md'}"
-    )
+    assert not (repo_root / "master-chef").exists(), "legacy top-level master-chef stub should be removed"
+    assert not (repo_root / "openclaw").exists(), "legacy top-level openclaw stub should be removed"
 
     readme_text = readme_md.read_text(encoding="utf-8")
     contract_text = contract_md.read_text(encoding="utf-8")
@@ -709,6 +697,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             MASTER_CHEF_LABEL,
             "npx skills add https://github.com/ruphware/cdd-skills/",
             "./scripts/install.sh --all",
+            "install-remote.sh",
+            "uninstall-remote.sh",
             "cdd-master-chef/RUNBOOK.md",
             "cdd-master-chef/CODEX-ADAPTER.md",
             "cdd-master-chef/CLAUDE-ADAPTER.md",
@@ -732,6 +722,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"Run config block.*current session model.*thinking.*approve or edit",
             r"how many TODO steps this run should cover",
             r"whether (?:Master Chef|it) should spawn Builder now",
+            r"No-clone upgrade path:",
+            r"managed prune semantics",
             r"Adapter docs.*maintainers.*debugging.*runtime support",
             r"Current concrete adapters in this repo:",
             r"OpenClaw.*packaged adapter.*install\.sh --runtime openclaw",

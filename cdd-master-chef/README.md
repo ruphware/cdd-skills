@@ -35,4 +35,4 @@ Relationship to the rest of the repo:
 - `skills/` remains the canonical Builder workflow source for the core `[CDD-0]` through `[CDD-7]` `cdd-*` skills.
 - `openclaw/` inside this package is one adapter over the shared `[CDD-8] Master Chef` contract defined here.
 - Codex and Claude adapter docs now live directly in this package root.
-- The top-level `master-chef/` and `openclaw/` directories are compatibility stubs only; this directory is the single canonical source tree.
+- This directory is the single canonical source tree.
