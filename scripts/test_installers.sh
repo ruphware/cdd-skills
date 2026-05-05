@@ -98,6 +98,7 @@ ALL_PARTIAL_HOME="$TMP_ROOT/all-partial-home"
 ALL_REMOVE_HOME="$TMP_ROOT/all-remove-home"
 REMOTE_HOME="$TMP_ROOT/remote-home"
 REMOTE_ARCHIVE="$TMP_ROOT/cdd-skills.tar.gz"
+BUILDER_RETIRED="$TMP_ROOT/builder-retired"
 
 echo "[CI] INFO LegacyFlagMigration root={$TMP_ROOT}"
 assert_command_fails_with "Unsupported flag: --force" \
@@ -113,6 +114,12 @@ assert_command_fails_with "--all cannot be combined with --runtime" \
 assert_command_fails_with "--all cannot be combined with --target" \
   "$ROOT_DIR/scripts/install.sh" --all --target "$TMP_ROOT/custom"
 tar -czf "$REMOTE_ARCHIVE" -C "$ROOT_DIR" .
+
+echo "[CI] INFO ConfirmDefaultYes root={$TMP_ROOT}"
+assert_command_output_contains "default-yes-accepted" \
+  bash -lc "source '$ROOT_DIR/scripts/install-common.sh'; if printf '\n' | confirm_yes_no_default_yes 'Proceed? [Y/n] '; then echo default-yes-accepted; else exit 1; fi"
+assert_command_output_contains "default-yes-rejected" \
+  bash -lc "source '$ROOT_DIR/scripts/install-common.sh'; if printf 'n\n' | confirm_yes_no_default_yes 'Proceed? [Y/n] '; then exit 1; else echo default-yes-rejected; fi"
 
 echo "[CI] INFO BuilderInstallFresh root={$BUILDER_INSTALL}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_INSTALL"
@@ -153,6 +160,34 @@ assert_symlink "$BUILDER_LINK/cdd-master-chef"
 assert_symlink "$BUILDER_LINK/cdd-plan"
 assert_symlink "$BUILDER_LINK/cdd-master-chef"
 assert_exists "$BUILDER_LINK/cdd-master-chef/CODEX-RUNBOOK.md"
+
+echo "[CI] INFO BuilderInstallRetiredCleanup root={$BUILDER_RETIRED}"
+"$ROOT_DIR/scripts/install.sh" --target "$BUILDER_RETIRED"
+mkdir -p "$BUILDER_RETIRED/cdd-index"
+cat >"$BUILDER_RETIRED/cdd-index/SKILL.md" <<'EOF'
+---
+name: cdd-index
+description: retired skill
+disable-model-invocation: true
+---
+EOF
+mkdir -p "$BUILDER_RETIRED/cdd-refactor"
+cat >"$BUILDER_RETIRED/cdd-refactor/SKILL.md" <<'EOF'
+---
+name: cdd-refactor
+description: retired skill
+disable-model-invocation: true
+---
+EOF
+mkdir -p "$BUILDER_RETIRED/cdd-index.pruned.legacy"
+touch "$BUILDER_RETIRED/cdd-index.pruned.legacy/SKILL.md"
+mkdir -p "$BUILDER_RETIRED/cdd-refactor.pruned.legacy"
+touch "$BUILDER_RETIRED/cdd-refactor.pruned.legacy/SKILL.md"
+"$ROOT_DIR/scripts/install.sh" --target "$BUILDER_RETIRED" --update
+assert_not_exists "$BUILDER_RETIRED/cdd-index"
+assert_not_exists "$BUILDER_RETIRED/cdd-refactor"
+assert_not_exists "$BUILDER_RETIRED/cdd-index.pruned.legacy"
+assert_not_exists "$BUILDER_RETIRED/cdd-refactor.pruned.legacy"
 
 echo "[CI] INFO BuilderInstallPrune root={$BUILDER_PRUNE}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_PRUNE"

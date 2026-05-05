@@ -116,7 +116,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/ruphware/cdd-skills/main/ins
 
 If the install target already contains one of the managed skill directories, rerunning the installer without `--update` fails by design.
 
-Builder update automatically runs the conservative prune logic. It also deletes retired `cdd-audit-and-implement` leftovers, including visible `cdd-audit-and-implement.pruned.*` artifacts. Use `--yes` if you want to auto-confirm prune prompts in non-interactive contexts:
+Builder update automatically runs the conservative prune logic. It also deletes retired `cdd-audit-and-implement`, `cdd-index`, and `cdd-refactor` leftovers, including visible `.pruned.*` artifacts for those retired skills. Managed or obviously invalid prune candidates default to `Y` interactively; use `--yes` if you want to auto-confirm prune prompts in non-interactive contexts:
 
 ```bash
 ./scripts/install.sh --update --yes

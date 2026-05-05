@@ -65,9 +65,9 @@ EXECUTION:
 - Key decisions, trade-offs, tricky parts
 - Validation plan (exact commands)
 
-NEXT:
-- If codebase is dirty, suggest a commit message for the whole git diff (one-liner, past tense, lowercase, no prefix)
-- Suggest an immediate next step if continuation makes sense
+NEXT (can be omitted; offer options for user when present):
+A. If codebase is dirty, suggest to commit with a message for the whole git diff (one-liner, past tense, lowercase, no prefix)
+B. Suggest an immediate next step (can be without, or more than one option) 
 
 
 ## Logging Conventions

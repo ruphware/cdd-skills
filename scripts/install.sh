@@ -224,12 +224,16 @@ prune_backup_dir() {
   echo "${path}.pruned.$(timestamp_utc)"
 }
 
-delete_retired_audit_artifacts_in_target() {
+delete_retired_skill_artifacts_in_target() {
   local dest_root="$1"
   local d
   for d in \
     "$dest_root"/cdd-audit-and-implement \
-    "$dest_root"/cdd-audit-and-implement.pruned.*; do
+    "$dest_root"/cdd-audit-and-implement.pruned.* \
+    "$dest_root"/cdd-index \
+    "$dest_root"/cdd-index.pruned.* \
+    "$dest_root"/cdd-refactor \
+    "$dest_root"/cdd-refactor.pruned.*; do
     path_exists "$d" || continue
     echo "Deleting retired skill artifact: $d" >&2
     rm -rf "$d"
@@ -241,7 +245,7 @@ prune_deprecated_in_target() {
   local src_set
   src_set="$(source_skill_names || true)"
 
-  delete_retired_audit_artifacts_in_target "$dest_root"
+  delete_retired_skill_artifacts_in_target "$dest_root"
 
   local d
   for d in "$dest_root"/cdd-*; do
@@ -293,9 +297,23 @@ prune_deprecated_in_target() {
       echo "(No SKILL.md found; this looks like an invalid/partial install.)" >&2
     fi
 
-    local ans
-    read -r -p "Prune (move aside) '$name' from $dest_root ? [y/N] " ans
-    if [[ "$ans" == "y" || "$ans" == "Y" || "$ans" == "yes" || "$ans" == "YES" ]]; then
+    local prompt_default_yes=0
+    if [[ ! -f "$d/SKILL.md" || $has_marker -eq 1 ]]; then
+      prompt_default_yes=1
+    fi
+
+    local should_prune_now=0
+    if [[ $prompt_default_yes -eq 1 ]]; then
+      if confirm_yes_no_default_yes "Prune (move aside) '$name' from $dest_root ? [Y/n] "; then
+        should_prune_now=1
+      fi
+    else
+      if confirm_yes_no "Prune (move aside) '$name' from $dest_root ? [y/N] "; then
+        should_prune_now=1
+      fi
+    fi
+
+    if [[ $should_prune_now -eq 1 ]]; then
       local bak
       bak="$(prune_backup_dir "$d")"
       echo "Pruning: $d -> $bak" >&2
