@@ -953,3 +953,41 @@ Prove the first-class `cdd-master-chef` contract, packaging, and adapter claims 
 - [x] Confirm drift tests fail when OpenClaw-only or docs-only wording returns.
 - [x] Confirm local audit shows installed `cdd-master-chef` contains shared contract plus current adapters.
 - [x] Confirm root install story and installer story match.
+
+## Step 26 — Retire `cdd-audit-and-implement` and fold audit planning into `cdd-plan`
+
+### Goal
+
+Make `cdd-plan` the single planning entrypoint for both change requests and audit findings, retire the standalone `cdd-audit-and-implement` skill, and keep `[CDD-5]` through `[CDD-8]` numbering stable by treating `[CDD-4]` as retired.
+
+### Constraints
+
+- Preserve `cdd-plan -> cdd-implement-todo` as the only normal planning-to-implementation handoff.
+- Preserve audit normalization behavior: root-cause grouping, duplicate collapse, dependency order, and optional `TODO-audit-<tag>.md` placement.
+- Remove the retired skill from shipped skill packs, installer expectations, and Master Chef routing docs.
+- Do not renumber `[CDD-5]` through `[CDD-8]`.
+
+### Tasks
+
+- [x] Update `skills/cdd-plan/SKILL.md` and `skills/cdd-plan/agents/openai.yaml` so `cdd-plan` explicitly accepts audit findings, normalizes them into implementation-ready TODO steps, and still stops after suggesting `$cdd-implement-todo`.
+- [x] Remove `skills/cdd-audit-and-implement/` from the canonical skill pack.
+- [x] Update `README.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, and the OpenClaw adapter docs so audit findings route through `cdd-plan` and `[CDD-4]` is treated as retired rather than as a live excluded skill.
+- [x] Extend `scripts/validate_skills.py` and `scripts/test_installers.sh` so local validation fails if the retired skill returns or installers ship it again.
+
+### Implementation notes
+
+- Keep the public story compact: no fake `[CDD-4]` command entry, just a short retirement note plus audit-via-plan routing.
+- Let installer/remove behavior fall out of the canonical `skills/` source set unless a focused smoke test needs an explicit negative assertion.
+- Historical references inside older completed TODO steps are expected and should not be rewritten.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- [x] Confirm `cdd-plan` now covers both change requests and audit findings without directly implementing.
+- [x] Confirm `skills/cdd-audit-and-implement/` is gone from the repo and no longer ships through installer smoke tests.
+- [x] Confirm root README and Master Chef/OpenClaw docs treat `[CDD-4]` as retired and route audit findings through `cdd-plan`.

@@ -14,9 +14,8 @@ npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a c
 
 - `[CDD-0] Boot` — `cdd-boot` — ingest `AGENTS.md` plus project and development docs for vanilla AGENTS-driven work and recommend whether to stay in the main folder or move into a worktree
 - `[CDD-1] Init Project` — `cdd-init-project` — init or adopt the CDD workflow in the current folder
-- `[CDD-2] Plan` — `cdd-plan` — plan changes and TODO steps
+- `[CDD-2] Plan` — `cdd-plan` — plan change requests or audits into implementation-ready TODO steps
 - `[CDD-3] Implement TODO` — `cdd-implement-todo` — implement exactly one TODO step and mark that step done on success
-- `[CDD-4] Audit + Implement` — `cdd-audit-and-implement` — turn audit items into TODO steps and implement the first dependency-ordered step
 - `[CDD-5] Refactor` — `cdd-refactor` — create a refactor TODO plan from the current index
 - `[CDD-6] Index` — `cdd-index` — regenerate `docs/INDEX.md`
 - `[CDD-7] Maintain` — `cdd-maintain` — archive long CDD files, audit support-doc drift, review repo-local runtime cleanup for approval, and doctor the codebase for refactor and dead-code signals
@@ -29,7 +28,7 @@ npx skills add https://github.com/ruphware/cdd-skills/ --skill '*' -a codex -a c
 
 ## What's Included
 
-- Core `[CDD-0]` through `[CDD-7]` skills for the normal single-agent, human-in-the-loop CDD workflow
+- Core `cdd-*` skills for the normal single-agent, human-in-the-loop CDD workflow
 - `[CDD-8] Master Chef` package with current Codex, Claude Code, and OpenClaw adapters for orchestrated autonomous runs
 
 Details on the skill packs, canonical Master Chef package, manual repo install scripts, and the current concrete adapters are below.
@@ -57,9 +56,9 @@ Typical runtimes:
 Typical core path:
 
 - `[CDD-1] Init Project` when the repo is new or adopting CDD
-- `[CDD-2] Plan` then `[CDD-3] Implement TODO` for normal feature work
+- `[CDD-2] Plan` then `[CDD-3] Implement TODO` for normal feature work or audit findings
 - `[CDD-0] Boot` for a one-time vanilla AGENTS boot when you are working directly
-- `[CDD-4] Audit + Implement`, `[CDD-5] Refactor`, `[CDD-6] Index`, and `[CDD-7] Maintain` when audit, refactor, index-refresh, or maintenance work is the actual task
+- `[CDD-5] Refactor`, `[CDD-6] Index`, and `[CDD-7] Maintain` when refactor, index-refresh, or maintenance work is the actual task
 
 ## 2. `[CDD-8] Master Chef` (Shared Contract + Runtime Adapters)
 
@@ -101,7 +100,7 @@ Potential future adapters:
 
 The unified installer ships `[CDD-8] Master Chef` to generic/Codex-style, Claude Code, and OpenClaw installs. On OpenClaw it also installs internal `cdd-*` Builder variants into `~/.openclaw/skills`.
 
-Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; `[CDD-4] Audit + Implement` is excluded from the normal flow because it mixes roles. Each Builder run covers exactly one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
+Routing note: `[CDD-8] Master Chef` chooses the path. New projects should normally start with `[CDD-1] Init Project` so they enter the CDD contract before implementation. After that, the normal delegated Builder path is `[CDD-3] Implement TODO`; `[CDD-6] Index` is a delegated exception when Master Chef explicitly wants an index refresh; planning-oriented skills such as `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` stay in Master Chef; audit findings are normalized through `[CDD-2] Plan` before any delegated implementation. Each Builder run covers exactly one approved delegated action, so the next delegated step gets a fresh Builder run rather than session resurrection.
 
 Source of truth:
 

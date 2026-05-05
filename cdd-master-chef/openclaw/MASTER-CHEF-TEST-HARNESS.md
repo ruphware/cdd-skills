@@ -200,7 +200,7 @@ Use Builder via [CDD-6] Index (`cdd-index`) only when an index refresh is the de
 Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
 Explain why [CDD-7] Maintain (`cdd-maintain`) is a manual helper rather than part of the normal flow.
 Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), or [CDD-5] Refactor (`cdd-refactor`) directly in Master Chef when setup, planning, or refactor decomposition is needed.
-Explain why [CDD-4] Audit + Implement (`cdd-audit-and-implement`) is excluded from the normal flow.
+Explain how audit findings should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation rather than through a separate mixed-role skill.
 ```
 
 - [ ] Expected:
@@ -209,7 +209,7 @@ Explain why [CDD-4] Audit + Implement (`cdd-audit-and-implement`) is excluded fr
   - `[CDD-3] Implement TODO` is the default Builder path
   - `[CDD-6] Index` is treated as a delegated exception, not the default
   - `[CDD-1] Init Project`, `[CDD-2] Plan`, and `[CDD-5] Refactor` are treated as Master-Chef-direct skills
-  - `[CDD-4] Audit + Implement` is called out as excluded / non-default
+  - audit findings are routed through `[CDD-2] Plan` before delegated implementation
 
 ### Prompt I - Continue the run
 

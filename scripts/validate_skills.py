@@ -31,7 +31,6 @@ CDD_DISPLAY_NAMES = {
     "cdd-init-project": "[CDD-1] Init Project",
     "cdd-plan": "[CDD-2] Plan",
     "cdd-implement-todo": "[CDD-3] Implement TODO",
-    "cdd-audit-and-implement": "[CDD-4] Audit + Implement",
     "cdd-refactor": "[CDD-5] Refactor",
     "cdd-index": "[CDD-6] Index",
     "cdd-maintain": "[CDD-7] Maintain",
@@ -43,7 +42,6 @@ OPENCLAW_ROUTING_LABELS = (
     "[CDD-1] Init Project",
     "[CDD-2] Plan",
     "[CDD-3] Implement TODO",
-    "[CDD-4] Audit + Implement",
     "[CDD-5] Refactor",
     "[CDD-6] Index",
     "[CDD-7] Maintain",
@@ -167,27 +165,29 @@ def validate_reviewed_contract_artifacts(skill_text: str, skill_md: Path) -> Non
     )
 
 
-def validate_audit_and_implement_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the audit skill keeps its clarification and assumption guardrails."""
+def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the plan skill absorbs audit-input normalization cleanly."""
     require_topic_bundle(
         skill_text,
         (
             r"Ask clarifying questions one at a time",
-            r"(recommended default|recommended option first)",
             r"material assumptions.*confirm or correct",
             r"minor defaults.*proceed without blocking",
-            r"KISS and CDD-style.*dependency-ordered",
-            r"Ask which.*step.*implement first.*guided options.*recommend",
-            r"selected implementation option.*explicit approval",
-            r"stop-after-plan option",
-            r"if the user chooses the stop-after-plan option.*stop.*next recommended step",
-            r"implement that step immediately.*cdd-implement-todo",
+            r"change requests and audits|change requests and for audit findings",
+            r"Do not convert raw audit bullets directly into TODO tasks",
+            r"`spec_delta`.*`implementation_delta`.*`verification_delta`.*`defer`",
+            r"user-visible symptom.*likely root cause.*affected boundary.*proof needed",
+            r"Collapse duplicate symptoms.*root-cause work package",
+            r"relevant docs.*README\.md.*docs/specs.*corresponding tests|corresponding tests.*README\.md.*docs/specs",
+            r"Use this mode only when the request is multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step",
+            r"write-location choice.*update an existing TODO file.*TODO-audit-<tag>\.md",
+            r"After applying, suggest implementing the next step via `\$cdd-implement-todo`\.",
         ),
         skill_md,
-        "audit-and-implement topics",
+        "plan audit-mode topics",
     )
-    assert "Ask: **Approve starting implementation now?**" not in skill_text, (
-        f"repetitive implementation confirmation should not appear in {skill_md}"
+    assert "implement that step immediately" not in skill_text, (
+        f"plan skill should not implement directly in {skill_md}"
     )
 
 
@@ -420,16 +420,14 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
             validate_maintain_skill_text(skill_text, skill_md)
         if skill_dir.name == "cdd-init-project":
             validate_init_project_skill_text(skill_text, skill_md)
-        if skill_dir.name in {"cdd-plan", "cdd-audit-and-implement"}:
+        if skill_dir.name == "cdd-plan":
             validate_coarse_step_planning(skill_text, skill_md)
             validate_reviewed_contract_artifacts(skill_text, skill_md)
-        if skill_dir.name == "cdd-audit-and-implement":
-            validate_audit_and_implement_skill_text(skill_text, skill_md)
+            validate_plan_audit_mode_skill_text(skill_text, skill_md)
         if skill_dir.name in {
             "cdd-plan",
             "cdd-init-project",
             "cdd-refactor",
-            "cdd-audit-and-implement",
         }:
             validate_selector_labeled_options(skill_text, skill_md)
 
@@ -1269,15 +1267,14 @@ def validate_generated_openclaw_builder_skills(
                     validate_maintain_skill_text(skill_text, skill_md)
                 if skill_name == "cdd-init-project":
                     validate_init_project_skill_text(skill_text, skill_md)
-                if skill_name in {"cdd-plan", "cdd-audit-and-implement"}:
+                if skill_name == "cdd-plan":
                     validate_coarse_step_planning(skill_text, skill_md)
-                if skill_name == "cdd-audit-and-implement":
-                    validate_audit_and_implement_skill_text(skill_text, skill_md)
+                    validate_reviewed_contract_artifacts(skill_text, skill_md)
+                    validate_plan_audit_mode_skill_text(skill_text, skill_md)
                 if skill_name in {
                     "cdd-plan",
                     "cdd-init-project",
                     "cdd-refactor",
-                    "cdd-audit-and-implement",
                 }:
                     validate_selector_labeled_options(skill_text, skill_md)
 

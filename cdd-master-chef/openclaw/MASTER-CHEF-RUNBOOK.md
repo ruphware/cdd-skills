@@ -86,7 +86,6 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-implement-todo`
    - `~/.openclaw/skills/cdd-index`
    - `~/.openclaw/skills/cdd-refactor`
-   - optional / mixed-role installs such as `cdd-audit-and-implement`
 6. Confirm the Run config includes:
    - `master_model`
    - `master_thinking`
@@ -168,7 +167,7 @@ On the first `/cdd-master-chef` turn:
    - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
    - delegated exception: `[CDD-6] Index` (`cdd-index`) when Master Chef explicitly wants an index refresh
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), or `[CDD-5] Refactor` (`cdd-refactor`) when the repo needs setup, plan repair, or refactor decomposition before Builder work
-   - excluded by default: `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`), unless the process is intentionally adapted for its mixed role
+   - audit findings or review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Confirm the approved Run config:
    - `master_model`
    - `master_thinking`
@@ -376,9 +375,9 @@ Master Chef chooses the routing path.
 - `[CDD-2] Plan` (`cdd-plan`)
 - `[CDD-5] Refactor` (`cdd-refactor`)
 
-**Excluded from the normal flow:**
+**Audit findings:**
 
-- `[CDD-4] Audit + Implement` (`cdd-audit-and-implement`) — avoid by default because it mixes roles in a way that conflicts with the clean Master Chef / Builder split
+- normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
 
 Default spawn shape:
 
