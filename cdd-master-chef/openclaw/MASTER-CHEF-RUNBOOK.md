@@ -1,6 +1,10 @@
-# CDD Master Chef Runbook (OpenClaw-direct mode)
+# [CDD-6] Master Chef Runbook (OpenClaw adapter)
 
 ## 0) Purpose
+
+This runbook is the OpenClaw adapter over the shared `[CDD-6] Master Chef` contract.
+
+Use the parent `cdd-master-chef/` package docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
 Run autonomous development with one control loop:
 
@@ -45,7 +49,7 @@ The Builder is an OpenClaw subagent. It owns:
 - writing `builder.jsonl`
 - returning a structured report to Master Chef
 
-One Builder run equals one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+Each Builder run covers exactly one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
 
 There is no watchdog actor, cron wake-up, second control loop, or normal Builder-session resurrection path.
 
@@ -56,6 +60,7 @@ If a Builder needs inspection, recovery, or reporting, Master Chef handles it di
 The human owns:
 
 - the per-run Run config
+- the per-run step budget
 - kickoff approval
 - final review
 - intervention when Master Chef reports a blocker or deadlock
@@ -69,8 +74,8 @@ Before `/cdd-master-chef` is used:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new/adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The current session should already be using `master_model` from the chosen Run config.
-3. The full Run config must be known before kickoff.
+2. The current session should already be using the `master_model` from the chosen Run config, or the model you want copied into a recommended Run config when you use the current-session path.
+3. The full Run config must be resolved and approved before kickoff.
 4. A pushable upstream is required before the normal autonomous commit/push loop begins.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
    - `~/.openclaw/skills/cdd-master-chef`
@@ -79,9 +84,7 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-init-project`
    - `~/.openclaw/skills/cdd-plan`
    - `~/.openclaw/skills/cdd-implement-todo`
-   - `~/.openclaw/skills/cdd-index`
-   - `~/.openclaw/skills/cdd-refactor`
-   - optional / mixed-role installs such as `cdd-audit-and-implement`
+   - `~/.openclaw/skills/cdd-implementation-audit`
 6. Confirm the Run config includes:
    - `master_model`
    - `master_thinking`
@@ -111,7 +114,12 @@ Run config:
 Rules:
 
 - This block is the only place per-run model settings are set.
-- The user may either paste the block directly into the kickoff prompt or let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`.
+- The user may either paste the block directly into the kickoff prompt, let Master Chef load it from the optional local-only file described in section `2.2 Local default Run config`, or let Master Chef recommend it from the current session model and thinking when no explicit block or local default is used.
+- A current-session recommendation must copy one concrete current session model and one concrete current session thinking value into all four fields and show the candidate block back to the human before kickoff.
+- Use the shared selector contract.
+- `A. use this Run config`
+- `B. edit this Run config`
+- `C. stop before kickoff`
 - Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
 - After kickoff, copy the approved values into `.cdd-runtime/master-chef/run.json`. That file is the durable mirror of the approved Run config, not a second config source.
 - If the human wants different models on a given run, change only this block for that run.
@@ -129,7 +137,8 @@ Resolution order:
 
 1. If the kickoff prompt includes `Run config`, use that.
 2. Otherwise, if the local default file exists, read it and show the resolved config back to the human before kickoff.
-3. Otherwise, stop and ask the human for a Run config.
+3. Otherwise, if the current session model and current session thinking are visible, recommend a candidate Run config that copies them into `master_model`, `master_thinking`, `builder_model`, and `builder_thinking`, show it back to the human before kickoff, and use the shared selector contract.
+4. Otherwise, stop and ask the human for a Run config.
 
 Privacy rule:
 
@@ -150,14 +159,17 @@ On the first `/cdd-master-chef` turn:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
+   - whether the next runnable top-level TODO step is oversized for one Builder run
+   - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
+   - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - obvious blockers in the working tree
    - whether the repo first needs `cdd-init-project`
 3. Choose the next action and route it through the right internal skill:
-   - bootstrap path: `cdd-init-project` in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
-   - default delegated path: next runnable TODO step handled through `cdd-implement-todo`
-   - delegated exception: `cdd-index` when Master Chef explicitly wants an index refresh
-   - Master Chef direct: `cdd-init-project`, `cdd-plan`, or `cdd-refactor` when the repo needs setup, plan repair, or refactor decomposition before Builder work
-   - excluded by default: `cdd-audit-and-implement`, unless the process is intentionally adapted for its mixed role
+   - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
+   - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+   - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first, then recompute the remaining top-level-step count
+   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
+   - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Confirm the approved Run config:
    - `master_model`
    - `master_thinking`
@@ -166,16 +178,52 @@ On the first `/cdd-master-chef` turn:
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
-8. Present one kickoff approval that includes:
+8. Present one selector-driven kickoff approval that includes:
    - repo state summary
    - proposed next action
    - the approved Run config
+   - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
+   - the approved run step budget
+   - whether to spawn Builder now and start the autonomous run
    - runtime initialization
    - run lease
    - in-session reporting expectations
 9. Do not spawn the Builder until the user approves kickoff.
 
+Use the shared selector contract.
+
+- `A. approve kickoff and start the autonomous run now`
+- `B. approve kickoff but do not spawn Builder yet`
+- `C. revise the next action, Run config, or step budget before kickoff`
+
 After kickoff approval, the run becomes autonomous.
+
+### 3.1 Managed worktree kickoff
+
+Before implementation starts:
+
+1. Require a clean source checkout.
+   - If `git status --short` shows tracked or staged changes, stop and ask the human to stash, commit, or discard changes first.
+2. Record the source checkout path, source branch, and source `HEAD` SHA.
+3. If this is a fresh run from a long-lived branch and kickoff approved a descriptive feature branch, create that feature branch in the source checkout first and refresh `source_branch` and `source_head_sha`.
+4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max run step budget, meaning "all remaining steps", after any step split.
+5. Choose a managed worktree path under:
+
+   ```text
+   .cdd-runtime/worktrees/<run-id>/
+   ```
+
+6. Create a fresh per-run branch from the current branch `HEAD`, preferably:
+
+   ```text
+   master-chef/<run-id>
+   ```
+
+7. Create the managed worktree from the source checkout with that fresh branch.
+8. Initialize runtime files inside the managed worktree so `.cdd-runtime/master-chef/` is relative to the active repo root after relaunch.
+9. Record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
+10. The current OpenClaw adapter must set `worktree_continue_mode` to `relaunch_required`, then stop with exact relaunch instructions before any delegated implementation starts.
+11. After relaunch into the managed worktree, treat that path as the active repo root for QA, TODO inspection, commit, push, and runtime files.
 
 ---
 
@@ -202,16 +250,24 @@ Suggested shape:
 {
   "run_id": "<utc-id>",
   "repo": "/abs/path/to/repo",
+  "source_repo": "/abs/path/to/source-repo",
   "master_model": "<model>",
   "master_thinking": "xhigh",
   "builder_model": "<model>",
   "builder_thinking": "xhigh",
+  "run_step_budget": 1,
+  "steps_completed_this_run": 0,
   "builder_runtime": "subagent",
   "master_session_key": "<main-session-key>",
   "builder_session_key": "<builder-session-key>",
   "active_todo_path": "/abs/path/to/TODO.md",
   "active_step": "<exact step heading>",
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
+  "source_branch": "<source-branch>",
+  "source_head_sha": "<source-sha>",
+  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
+  "worktree_branch": "<worktree-branch>",
+  "worktree_continue_mode": "relaunch_required|in_session",
   "branch": "<branch>",
   "upstream": "<remote/ref>",
   "pre_step_head_sha": "<sha>",
@@ -238,6 +294,10 @@ Suggested shape:
   "owner_session_key": "<main-session-key>",
   "builder_session_key": "<builder-session-key>",
   "repo": "/abs/path/to/repo",
+  "source_repo": "/abs/path/to/source-repo",
+  "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
+  "worktree_branch": "<worktree-branch>",
+  "worktree_continue_mode": "relaunch_required|in_session",
   "started_at_utc": "<ts>",
   "last_renewed_at_utc": "<ts>",
   "generation": 1
@@ -284,8 +344,8 @@ Use `context-summary.md` as the durable Master Chef checkpoint for long runs and
 
 Required sections:
 
-- `Run`: run id, repo, branch, upstream, master session key, active Builder session key when present
-- `State`: active TODO path, active step, phase, last pass SHA, current blocker, current Builder status
+- `Run`: run id, repo, source repo, active worktree path, branch, upstream, master session key, active Builder session key when present
+- `State`: active TODO path, active step, phase, worktree branch, worktree continuation mode, last pass SHA, current blocker, current Builder status
 - `Recent decisions`: routing choices, QA/UAT verdicts, remediation decisions, blocker strategy, and why they were chosen
 - `Current diff`: working-tree summary, files changed, commands already run, and unresolved risks
 - `Pending proof`: checks, QA, UAT, commit, push, or reporting still needed
@@ -300,7 +360,7 @@ Keep this file current before any deliberate Master Chef compaction and after ma
 Use an OpenClaw subagent as the Builder.
 
 The Builder relies on the shared OpenClaw `cdd-*` skills that are installed into
-`~/.openclaw/skills` by `./scripts/install-openclaw.sh`. Those are OpenClaw-ready
+`~/.openclaw/skills` by `./scripts/install.sh --runtime openclaw`. Those are OpenClaw-ready
 internal variants generated from the canonical repo skill pack in `skills/`.
 
 ### 5.0 Routing model
@@ -309,23 +369,23 @@ Master Chef chooses the routing path.
 
 **Builder delegated by default:**
 
-- `cdd-implement-todo` — normal path for one approved runnable TODO step
-- `cdd-index` — allowed when Master Chef explicitly wants an index refresh as the delegated action
+- `[CDD-3] Implement TODO` (`cdd-implement-todo`) — normal path for one approved runnable TODO step
 
 **Manual / non-routed helper:**
 
-- `cdd-boot` — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
-- `cdd-maintain` — archive cleanup, support-doc drift review, and repo doctoring helper for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `[CDD-0] Boot` (`cdd-boot`) — best-effort vanilla `AGENTS.md` boot for direct human-driven work; installed in the shared pack but not part of the normal Master Chef routing flow
+- `[CDD-5] Maintain` (`cdd-maintain`) — direct maintenance helper for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review when one of those tasks is the actual next action
 
 **Master Chef direct:**
 
-- `cdd-init-project`
-- `cdd-plan`
-- `cdd-refactor`
+- `[CDD-1] Init Project` (`cdd-init-project`)
+- `[CDD-2] Plan` (`cdd-plan`)
+- `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
+- `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, cleanup, index refresh, or refactor architecture audit before delegated implementation
 
-**Excluded from the normal flow:**
+**Audit findings:**
 
-- `cdd-audit-and-implement` — avoid by default because it mixes roles in a way that conflicts with the clean Master Chef / Builder split
+- approved findings from `[CDD-4] Implementation Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
 
 Default spawn shape:
 
@@ -342,7 +402,7 @@ Why `run` for the normal flow:
 - easier replacement
 - fewer stale-session edge cases
 
-Do not use long-lived Builder sessions or session resurrection as the normal path. If exceptional manual debugging ever requires session reuse, treat it as outside the standard contract and return to fresh one-step Builder runs immediately after.
+Do not use long-lived Builder sessions or session resurrection as the normal path. If exceptional manual debugging ever requires session reuse, treat it as outside the standard contract and return to fresh single-step Builder runs immediately after.
 
 ### 5.1 Builder contract
 
@@ -350,8 +410,7 @@ The Builder must:
 
 - use the exact internal `cdd-*` skill chosen by Master Chef
 - default to `cdd-implement-todo` for a normal approved runnable TODO step
-- use `cdd-index` only when Master Chef explicitly delegates that action
-- not switch itself into planning or refactor mode; if the delegated path no longer fits, return a blocker instead
+- not switch itself into planning or maintain mode; if the delegated path no longer fits, return a blocker instead
 - implement exactly one approved action
 - end after that one approved action instead of continuing into the next TODO step
 - avoid scope creep
@@ -369,10 +428,10 @@ After kickoff approval:
 1. Initialize or refresh runtime files.
 2. Write `run.json` and `run.lock.json`.
 3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
-4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, or `cdd-refactor`), run it in the main session before any Builder spawn.
+4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-implementation-audit`, or `cdd-maintain`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
 6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
-7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh one-step Builder run for the same step, and update runtime/log evidence immediately.
+7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh single-step Builder run for the same step, and update runtime/log evidence immediately.
 8. Run Master Chef QA and step-level UAT.
 9. If Master Chef QA rejects the Builder result:
    - record the QA findings in `master-chef.jsonl`
@@ -387,6 +446,8 @@ After kickoff approval:
 12. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
 13. If no runnable step remains, report `RUN_COMPLETE`.
 14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
+
+All QA, TODO inspection, commit, and push actions after worktree activation happen against the active managed worktree path rather than the original source checkout.
 
 Only stop autonomy when:
 
@@ -440,7 +501,7 @@ If stale:
 - update runtime files and logs
 - send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
 
-Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, or returned without a usable report, replace it with a fresh one-step Builder run for the same step.
+Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, or returned without a usable report, replace it with a fresh single-step Builder run for the same step.
 
 If repeated replacements fail without forward progress:
 
@@ -459,7 +520,7 @@ Blocked-step recovery procedure:
 3. Decide whether the blocker is external input, repo state, or an oversized or underspecified TODO step.
 4. If the blocker is plan-shaped, use Master-Chef-direct planning or TODO repair before any new Builder spawn, and decompose the work into smaller decision-complete TODO steps with clear checks and UAT.
 5. Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence.
-6. Re-inspect TODO state and restart only from the next smaller actionable TODO step with a fresh one-step Builder run.
+6. Re-inspect TODO state and restart only from the next smaller actionable TODO step with a fresh single-step Builder run.
 7. If the blocker requires human input or cannot be decomposed safely, keep the run stopped and report the exact decision needed.
 
 Default thresholds:
@@ -471,7 +532,7 @@ Default thresholds:
 
 ## 8) Master Chef context compaction
 
-Builder context stays simple: every normal delegated TODO action gets a fresh one-step Builder run, normally through `cdd-implement-todo`. Master Chef is long-lived, so it must make its own memory durable before compaction.
+Builder context stays simple: every normal delegated TODO action gets a fresh single-step Builder run, normally through `cdd-implement-todo`. Master Chef is long-lived, so it must make its own memory durable before compaction.
 
 ### Safe compaction points
 
@@ -559,7 +620,7 @@ A step is not passed unless all are true:
 
 ### QA rejection path
 
-When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either a fresh one-step Builder run for the same step or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
+When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either a fresh single-step Builder run for the same step or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
 
 ---
 
@@ -602,7 +663,7 @@ Runtime obligations:
 
 ### If Builder fails or stalls
 
-1. replace Builder quickly with a fresh one-step subagent run for the same step
+1. replace Builder quickly with a fresh single-step subagent run for the same step
 2. do not use session resurrection as the normal recovery path
 3. if 2 replacements fail without progress, stop the step, report the blocker, and repair or decompose TODO before restarting from a smaller actionable step
 

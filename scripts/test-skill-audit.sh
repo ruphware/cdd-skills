@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unified local smoke-test + remote audit + heuristic explanation workflow.
+# Unified local smoke-test + remote audit + heuristic explanation workflow for
+# the core cdd-* pack and canonical cdd-master-chef package.
 #
 # Examples:
 #   bash scripts/test-skill-audit.sh
+#   bash scripts/test-skill-audit.sh --skip-remote
 #   bash scripts/test-skill-audit.sh --skip-local --only-flagged
 #   bash scripts/test-skill-audit.sh --source ruphware/cdd-skills --keep-sandbox
 
@@ -20,12 +22,12 @@ usage() {
   cat <<'EOF'
 Usage: bash scripts/test-skill-audit.sh [options]
 
-Run the local install smoke test, fetch the live remote skill audit, and print
-local heuristic explanations for flagged results.
+Run the local installer/artifact smoke test, fetch the live remote skill audit,
+and print local heuristic explanations for flagged results.
 
 Options:
   --source owner/repo  Override the GitHub source repo used for the remote audit
-  --skip-local         Skip the local install smoke test
+  --skip-local         Skip the local offline installer/artifact smoke test
   --skip-remote        Skip the remote audit fetch and explanation
   --only-flagged       Show only non-safe/non-low findings in remote output and explanation
   --keep-sandbox       Preserve the local smoke-test sandbox directory
@@ -80,6 +82,37 @@ assert_exists() {
     echo "Missing expected path: $path" >&2
     exit 1
   }
+}
+
+assert_contains() {
+  local path="$1"
+  local pattern="$2"
+  grep -F -- "$pattern" "$path" >/dev/null || {
+    echo "Expected '$pattern' in $path" >&2
+    exit 1
+  }
+}
+
+assert_master_chef_package_surface() {
+  local runtime_label="$1"
+  local package_root="$2"
+
+  assert_exists "$package_root/SKILL.md"
+  assert_exists "$package_root/agents/openai.yaml"
+  assert_exists "$package_root/README.md"
+  assert_exists "$package_root/CONTRACT.md"
+  assert_exists "$package_root/RUNBOOK.md"
+  assert_exists "$package_root/RUNTIME-CAPABILITIES.md"
+  assert_exists "$package_root/CODEX-ADAPTER.md"
+  assert_exists "$package_root/CODEX-RUNBOOK.md"
+  assert_exists "$package_root/CLAUDE-ADAPTER.md"
+  assert_exists "$package_root/CLAUDE-RUNBOOK.md"
+  assert_exists "$package_root/openclaw/README.md"
+  assert_exists "$package_root/openclaw/MASTER-CHEF-RUNBOOK.md"
+  assert_exists "$package_root/openclaw/MASTER-CHEF-TEST-HARNESS.md"
+  assert_contains "$package_root/agents/openai.yaml" 'display_name: "[CDD-6] Master Chef"'
+
+  echo "[LocalInstall] INFO MasterChefPackage runtime={$runtime_label} package_root={$package_root} shared_contract={yes} adapters={codex,claude,openclaw}"
 }
 
 infer_source_from_origin() {
@@ -149,6 +182,10 @@ collect_skill_names_csv() {
     names+=("$name")
   done
 
+  if [[ -f "$ROOT_DIR/cdd-master-chef/SKILL.md" ]]; then
+    names+=("cdd-master-chef")
+  fi
+
   if [[ ${#names[@]} -eq 0 ]]; then
     echo "No skills found under: $ROOT_DIR/skills" >&2
     exit 1
@@ -170,25 +207,18 @@ cleanup_local_sandbox() {
 }
 
 run_local_smoke_test() {
-  if ! command -v npx >/dev/null 2>&1; then
-    echo "Missing required command: npx" >&2
-    exit 1
-  fi
-
   local sandbox_root
   sandbox_root="$(mktemp -d "${TMPDIR:-/tmp}/cdd-skills-local-install.XXXXXX")"
   LOCAL_SANDBOX_ROOT="$sandbox_root"
 
   local home_dir="$sandbox_root/home"
-  local xdg_config_home="$sandbox_root/xdg-config"
-  local codex_home="$sandbox_root/codex-home"
   local claude_config_dir="$sandbox_root/claude-home"
-  local run_dir="$sandbox_root/run"
-  local npm_cache_dir="$sandbox_root/npm-cache"
+  local openclaw_home_dir="$sandbox_root/openclaw-home"
   local universal_skills_dir="$home_dir/.agents/skills"
   local claude_skills_dir="$claude_config_dir/skills"
+  local openclaw_skills_dir="$openclaw_home_dir/skills"
 
-  mkdir -p "$home_dir" "$xdg_config_home" "$codex_home" "$claude_config_dir" "$run_dir" "$npm_cache_dir"
+  mkdir -p "$home_dir" "$claude_config_dir" "$openclaw_home_dir"
 
   local skills=()
   local skill_dir
@@ -205,34 +235,12 @@ run_local_smoke_test() {
 
   echo "[LocalInstall] INFO SandboxCreated root={$sandbox_root}"
   echo "[LocalInstall] INFO SkillSource root={$ROOT_DIR/skills} count={${#skills[@]}}"
-  echo "[LocalInstall] INFO AuditMode mode={skipped} reason={local path source does not request remote audit}"
+  echo "[LocalInstall] INFO AuditMode mode={offline} reason={local repo installer plus local artifact smoke test}"
 
-  local install_cmd=(
-    npx
-    --yes
-    skills
-    add
-    "$ROOT_DIR/skills"
-    --skill
-    "*"
-    --agent
-    codex
-    claude-code
-    gemini-cli
-    --global
-    --yes
-    --copy
-  )
-
-  (
-    cd "$run_dir"
-    HOME="$home_dir" \
-    XDG_CONFIG_HOME="$xdg_config_home" \
-    CODEX_HOME="$codex_home" \
-    CLAUDE_CONFIG_DIR="$claude_config_dir" \
-    NPM_CONFIG_CACHE="$npm_cache_dir" \
-    "${install_cmd[@]}"
-  )
+  "$ROOT_DIR/scripts/install.sh" --target "$universal_skills_dir"
+  "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$claude_skills_dir"
+  "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$openclaw_skills_dir"
+  bash "$ROOT_DIR/scripts/test_master_chef_artifacts.sh"
 
   local skill
   for skill in "${skills[@]}"; do
@@ -241,10 +249,20 @@ run_local_smoke_test() {
     echo "[LocalInstall] INFO InstalledSkill name={$skill}"
   done
 
+  assert_master_chef_package_surface "codex" "$universal_skills_dir/cdd-master-chef"
+  assert_master_chef_package_surface "claude-code" "$claude_skills_dir/cdd-master-chef"
+  assert_master_chef_package_surface "openclaw" "$openclaw_skills_dir/cdd-master-chef"
+  assert_exists "$openclaw_skills_dir/cdd-plan/SKILL.md"
+  assert_contains "$openclaw_skills_dir/cdd-plan/SKILL.md" "user-invocable: false"
+  assert_contains "$openclaw_skills_dir/cdd-plan/SKILL.md" "Internal OpenClaw Builder variant generated from the canonical \`skills/\` pack."
+  echo "[LocalInstall] INFO OpenClawBuilderOverlay path={$openclaw_skills_dir/cdd-plan/SKILL.md} source={skills/}"
+  echo "[LocalInstall] INFO InstalledSkill name={cdd-master-chef}"
+
   echo "[LocalInstall] INFO AgentRoot agent={codex} path={$universal_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={claude-code} path={$claude_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={gemini-cli} path={$universal_skills_dir}"
-  echo "[LocalInstall] INFO InstallVerified skills={${#skills[@]}} agents={3}"
+  echo "[LocalInstall] INFO AgentRoot agent={openclaw} path={$openclaw_skills_dir}"
+  echo "[LocalInstall] INFO InstallVerified skills={$((${#skills[@]} + 1))} agents={4}"
 }
 
 echo "[SkillAudit] INFO Repo root={$ROOT_DIR}"
@@ -468,6 +486,9 @@ def print_explainer():
     skill_map = {}
     for skill_md in sorted((root / "skills").glob("*/SKILL.md")):
         skill_map[read_skill_name(skill_md)] = skill_md
+    master_chef_skill_md = root / "cdd-master-chef" / "SKILL.md"
+    if master_chef_skill_md.exists():
+        skill_map[read_skill_name(master_chef_skill_md)] = master_chef_skill_md
 
     flagged_names = [name for name in sorted(payload) if is_flagged(payload.get(name))]
     if only_flagged:

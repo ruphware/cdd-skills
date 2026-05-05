@@ -1,6 +1,6 @@
 interface:
-  display_name: "CDD 07 Maintain"
-  short_description: "Codebase maintenance: Archive CDD files, audit support-doc drift, doctor the codebase"
-  default_prompt: "Use $cdd-maintain to archive long TODO and journal files, audit support-doc drift including README.md and docs/specs, propose any documentation updates for approval, and doctor the codebase for refactor severity plus dead or orphaned code."
+  display_name: "[CDD-5] Maintain"
+  short_description: "Repo maintenance: Doc drift, codebase cleanup, index refresh, refactor architecture audit, and runtime upkeep"
+  default_prompt: "Use $cdd-maintain for repo maintenance. If the request is unclear, ask whether to do A. doc drift, B. codebase cleanup, C. index, D. refactor, or do all. Allow multi-select, execute multiple selected modes in fixed order A -> B -> C -> D, archive long TODO and journal files safely, audit support-doc drift, inspect repo-local .cdd-runtime for stale runtime artifacts or old managed worktrees, refresh docs/INDEX.md only in index mode, apply only approved codebase cleanup removals, and keep refactor work as a read-only architecture audit that ends by recommending cdd-plan."
 policy:
   allow_implicit_invocation: false

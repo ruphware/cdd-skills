@@ -5,103 +5,177 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=./install-common.sh
 source "$ROOT_DIR/scripts/install-common.sh"
 
-# Install Builder CDD skills into user skill directories.
-# Default target: Codex/Codex CLI (~/.agents/skills)
+# Install CDD skills into runtime skill directories.
+#
+# Default path:
+# - generic/codex-style targets -> ~/.agents/skills
+# - claude runtime            -> ~/.claude/skills
+# - openclaw runtime          -> ~/.openclaw/skills
 #
 # Usage:
-#   ./scripts/install.sh                                 # copy into ~/.agents/skills
-#   ./scripts/install.sh --update                        # replace existing installed skills in place
-#   ./scripts/install.sh --uninstall                     # remove installed skills and installer artifacts after confirmation
-#   ./scripts/install.sh --link                          # symlink instead of copy
-#   ./scripts/install.sh --target ~/.agents/skills \
-#                      --target ~/.claude/skills
-#
-# Notes:
-# - Fresh install fails if one of the managed skill directories already exists in the target root.
-# - Use --update to replace current installs in place; Builder prune runs automatically during --update.
-# - Prune is conservative: it only targets directories that look like CDD skills (name matches ^cdd-[a-z0-9-]+$).
-# - By default, prune asks Y/N per candidate unless --yes is provided.
-# - Prune never hard-deletes: it moves candidates to a timestamped backup dir (".pruned.<ts>") so you can recover.
+#   ./scripts/install.sh
+#   ./scripts/install.sh --runtime claude
+#   ./scripts/install.sh --runtime openclaw
+#   ./scripts/install.sh --target ~/.agents/skills --target ~/.claude/skills
+#   ./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 
-SRC_DIR="$ROOT_DIR/skills"
+SKILLS_SRC_ROOT="$ROOT_DIR/skills"
+MASTER_CHEF_SRC_ROOT="$ROOT_DIR/cdd-master-chef"
+OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"
+RUNTIME_BUILDER_GENERATOR="$ROOT_DIR/scripts/build_runtime_builder_skills.py"
 
 UPDATE=0
 UNINSTALL=0
 LINK=0
 YES=0
+ALL=0
+RUNTIME="generic"
+RUNTIME_EXPLICIT=0
 TARGETS=()
+SOURCE_PACKAGES=()
+BUILD_ROOT=""
+
+cleanup() {
+  if [[ -n "$BUILD_ROOT" && -d "$BUILD_ROOT" ]]; then
+    rm -rf "$BUILD_ROOT"
+  fi
+}
+
+trap cleanup EXIT
 
 usage() {
   cat <<'EOF'
-Usage: ./scripts/install.sh [--target DIR ...] [--link] [--update] [--yes] [--uninstall]
+Usage: ./scripts/install.sh [--runtime NAME] [--target DIR ...] [--link] [--update] [--yes] [--uninstall] [--all]
 
-Install Builder CDD skills into runtime skill directories.
+Install CDD skills into runtime skill directories.
+
+Runtimes:
+  generic     Canonical cdd-* skills plus the canonical cdd-master-chef package
+  codex       Alias for generic with ~/.agents/skills as the default target
+  claude      Canonical cdd-* skills plus the canonical cdd-master-chef package, default target ~/.claude/skills
+  openclaw    Canonical cdd-master-chef package plus generated internal OpenClaw Builder skills
 
 Options:
-  --target DIR   Install into DIR instead of ~/.agents/skills; may be repeated
-  --link         Symlink source skill directories instead of copying them
-  --update       Replace existing managed installs in place and run conservative prune
-  --yes, -y      Auto-confirm prune prompts during --update
-  --uninstall    List managed installs and installer artifacts, ask y/N, and remove them
-  -h, --help     Show this help text
+  --runtime NAME  Select package/runtime mode; default: generic
+  --target DIR    Install into DIR instead of the runtime default; may be repeated
+  --all           Install, update, or uninstall across every existing default runtime home
+  --link          Symlink canonical source skill directories when possible instead of copying them
+  --update        Replace existing managed installs in place and run conservative prune
+  --yes, -y       Auto-confirm prune prompts during --update
+  --uninstall     List managed installs and installer artifacts, ask y/N, and remove them
+  -h, --help      Show this help text
 EOF
 }
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --update) UPDATE=1; shift ;;
-    --uninstall) UNINSTALL=1; shift ;;
-    --link) LINK=1; shift ;;
-    --yes|-y) YES=1; shift ;;
-    --target) TARGETS+=("$2"); shift 2 ;;
-    -h|--help)
-      usage
-      exit 0
+runtime_default_target() {
+  case "$RUNTIME" in
+    claude)
+      echo "$HOME/.claude/skills"
       ;;
-    --force)
-      legacy_flag_error "--force" "Use --update instead."
+    openclaw)
+      echo "$HOME/.openclaw/skills"
       ;;
-    --prune)
-      legacy_flag_error "--prune" "Prune now runs automatically during --update."
+    codex|generic)
+      echo "$HOME/.agents/skills"
       ;;
     *)
-      echo "Unknown arg: $1" >&2
-      exit 2
+      fail_usage "Unsupported runtime: $RUNTIME"
       ;;
   esac
-done
+}
 
-if [[ $UNINSTALL -eq 1 && ( $UPDATE -eq 1 || $LINK -eq 1 || $YES -eq 1 ) ]]; then
-  fail_usage "--uninstall cannot be combined with --update, --link, or --yes."
-fi
+runtime_is_core() {
+  [[ "$RUNTIME" == "generic" || "$RUNTIME" == "codex" || "$RUNTIME" == "claude" ]]
+}
 
-if [[ $YES -eq 1 && $UPDATE -eq 0 ]]; then
-  fail_usage "--yes is only valid with --update."
-fi
+runtime_home_root() {
+  case "$RUNTIME" in
+    claude)
+      echo "$HOME/.claude"
+      ;;
+    openclaw)
+      echo "$HOME/.openclaw"
+      ;;
+    codex|generic)
+      echo "$HOME/.agents"
+      ;;
+    *)
+      fail_usage "Unsupported runtime: $RUNTIME"
+      ;;
+  esac
+}
 
-if [[ ! -d "$SRC_DIR" ]]; then
-  echo "Missing source skills dir: $SRC_DIR" >&2
-  exit 1
-fi
+build_source_packages() {
+  SOURCE_PACKAGES=()
 
-if [[ $LINK -eq 1 ]]; then
-  echo "Warning: --link uses symlinks. Some tools may not reliably discover symlinked skills; copy install is recommended." >&2
-fi
+  if runtime_is_core; then
+    local skill_dir
+    for skill_dir in "$SKILLS_SRC_ROOT"/*; do
+      [[ -d "$skill_dir" ]] || continue
+      [[ -f "$skill_dir/SKILL.md" ]] || continue
+      SOURCE_PACKAGES+=("$skill_dir")
+    done
+    SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")
+    return 0
+  fi
 
-if [[ ${#TARGETS[@]} -eq 0 ]]; then
-  TARGETS+=("$HOME/.agents/skills")
-fi
+  if [[ "$RUNTIME" != "openclaw" ]]; then
+    fail_usage "Unsupported runtime: $RUNTIME"
+  fi
 
-REV="unknown"
-if command -v git >/dev/null 2>&1 && [[ -d "$ROOT_DIR/.git" ]]; then
-  REV="$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-fi
+  SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")
+  BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/cdd-skills-build.XXXXXX")"
 
-ORIGIN_MARKER_NAME=".cdd-skills-origin"
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Missing required binary: python3" >&2
+    exit 1
+  fi
 
-prune_backup_dir() {
-  local path="$1"
-  echo "${path}.pruned.$(timestamp_utc)"
+  if [[ ! -f "$RUNTIME_BUILDER_GENERATOR" ]]; then
+    echo "Missing generator script: $RUNTIME_BUILDER_GENERATOR" >&2
+    exit 1
+  fi
+
+  python3 "$RUNTIME_BUILDER_GENERATOR" --runtime openclaw --output "$BUILD_ROOT/openclaw-builder" >/dev/null
+  for skill_dir in "$BUILD_ROOT/openclaw-builder"/*; do
+    [[ -d "$skill_dir" ]] || continue
+    [[ -f "$skill_dir/SKILL.md" ]] || continue
+    SOURCE_PACKAGES+=("$skill_dir")
+  done
+}
+
+install_all_runtimes() {
+  local original_runtime="$RUNTIME"
+  local found_any=0
+  local runtime
+
+  for runtime in generic claude openclaw; do
+    RUNTIME="$runtime"
+
+    local runtime_home
+    runtime_home="$(runtime_home_root)"
+    if [[ ! -d "$runtime_home" ]]; then
+      echo "Skipping $runtime (missing runtime home: $runtime_home)" >&2
+      continue
+    fi
+
+    TARGETS=("$(runtime_default_target)")
+    build_source_packages
+
+    local target
+    for target in "${TARGETS[@]}"; do
+      install_one "$target"
+    done
+
+    found_any=1
+  done
+
+  RUNTIME="$original_runtime"
+
+  if [[ $found_any -eq 0 ]]; then
+    echo "No existing runtime homes found under $HOME/.agents, $HOME/.claude, or $HOME/.openclaw." >&2
+    exit 1
+  fi
 }
 
 looks_like_skill_name() {
@@ -115,15 +189,21 @@ in_set() {
   grep -qxF "$needle" <<<"$hay"
 }
 
-# Build the canonical list of skills from source: directories that actually contain SKILL.md.
 source_skill_names() {
   local d
-  for d in "$SRC_DIR"/*; do
+  for d in "${SOURCE_PACKAGES[@]}"; do
     [[ -d "$d" ]] || continue
     [[ -f "$d/SKILL.md" ]] || continue
     basename "$d"
   done
 }
+
+REV="unknown"
+if command -v git >/dev/null 2>&1 && [[ -d "$ROOT_DIR/.git" ]]; then
+  REV="$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+fi
+
+ORIGIN_MARKER_NAME=".cdd-skills-origin"
 
 write_origin_marker() {
   local dest_dir="$1"
@@ -135,13 +215,37 @@ write_origin_marker() {
 cdd_skills_origin=ruphware/cdd-skills
 installed_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 source_rev=${REV}
+runtime=${RUNTIME}
 __CDD_ORIGIN__
+}
+
+prune_backup_dir() {
+  local path="$1"
+  echo "${path}.pruned.$(timestamp_utc)"
+}
+
+delete_retired_skill_artifacts_in_target() {
+  local dest_root="$1"
+  local d
+  for d in \
+    "$dest_root"/cdd-audit-and-implement \
+    "$dest_root"/cdd-audit-and-implement.pruned.* \
+    "$dest_root"/cdd-index \
+    "$dest_root"/cdd-index.pruned.* \
+    "$dest_root"/cdd-refactor \
+    "$dest_root"/cdd-refactor.pruned.*; do
+    path_exists "$d" || continue
+    echo "Deleting retired skill artifact: $d" >&2
+    rm -rf "$d"
+  done
 }
 
 prune_deprecated_in_target() {
   local dest_root="$1"
   local src_set
   src_set="$(source_skill_names || true)"
+
+  delete_retired_skill_artifacts_in_target "$dest_root"
 
   local d
   for d in "$dest_root"/cdd-*; do
@@ -154,7 +258,6 @@ prune_deprecated_in_target() {
 
     local should_prune=0
 
-    # Prune if missing SKILL.md (invalid install), or not present in current source set.
     if [[ ! -f "$d/SKILL.md" ]]; then
       should_prune=1
     elif ! in_set "$name" "$src_set"; then
@@ -194,9 +297,23 @@ prune_deprecated_in_target() {
       echo "(No SKILL.md found; this looks like an invalid/partial install.)" >&2
     fi
 
-    local ans
-    read -r -p "Prune (move aside) '$name' from $dest_root ? [y/N] " ans
-    if [[ "$ans" == "y" || "$ans" == "Y" || "$ans" == "yes" || "$ans" == "YES" ]]; then
+    local prompt_default_yes=0
+    if [[ ! -f "$d/SKILL.md" || $has_marker -eq 1 ]]; then
+      prompt_default_yes=1
+    fi
+
+    local should_prune_now=0
+    if [[ $prompt_default_yes -eq 1 ]]; then
+      if confirm_yes_no_default_yes "Prune (move aside) '$name' from $dest_root ? [Y/n] "; then
+        should_prune_now=1
+      fi
+    else
+      if confirm_yes_no "Prune (move aside) '$name' from $dest_root ? [y/N] "; then
+        should_prune_now=1
+      fi
+    fi
+
+    if [[ $should_prune_now -eq 1 ]]; then
       local bak
       bak="$(prune_backup_dir "$d")"
       echo "Pruning: $d -> $bak" >&2
@@ -213,12 +330,12 @@ uninstall_from_target() {
   src_set="$(source_skill_names || true)"
 
   local paths=()
-  local skill
-  for skill in "$SRC_DIR"/*; do
-    [[ -d "$skill" ]] || continue
-    [[ -f "$skill/SKILL.md" ]] || continue
+  local package_dir
+  for package_dir in "${SOURCE_PACKAGES[@]}"; do
+    [[ -d "$package_dir" ]] || continue
+    [[ -f "$package_dir/SKILL.md" ]] || continue
     local name
-    name="$(basename "$skill")"
+    name="$(basename "$package_dir")"
     local dest="$dest_root/$name"
     if path_exists "$dest"; then
       paths+=("$dest")
@@ -251,10 +368,15 @@ uninstall_from_target() {
   done
 
   if [[ ${#paths[@]} -gt 0 ]]; then
-    remove_paths_with_confirmation "Builder skills in $dest_root" "${paths[@]}"
+    remove_paths_with_confirmation "CDD skills in $dest_root" "${paths[@]}"
   else
-    remove_paths_with_confirmation "Builder skills in $dest_root"
+    remove_paths_with_confirmation "CDD skills in $dest_root"
   fi
+}
+
+should_link_source() {
+  local source_dir="$1"
+  [[ $LINK -eq 1 && ( "$source_dir" == "$SKILLS_SRC_ROOT"/* || "$source_dir" == "$MASTER_CHEF_SRC_ROOT" ) ]]
 }
 
 install_one() {
@@ -272,13 +394,13 @@ install_one() {
   fi
 
   local existing=()
-  local skill
-  for skill in "$SRC_DIR"/*; do
-    [[ -d "$skill" ]] || continue
-    [[ -f "$skill/SKILL.md" ]] || continue
+  local package_dir
+  for package_dir in "${SOURCE_PACKAGES[@]}"; do
+    [[ -d "$package_dir" ]] || continue
+    [[ -f "$package_dir/SKILL.md" ]] || continue
 
     local name
-    name="$(basename "$skill")"
+    name="$(basename "$package_dir")"
     local dest="$dest_root/$name"
 
     if path_exists "$dest"; then
@@ -288,9 +410,9 @@ install_one() {
 
   if [[ $UPDATE -eq 0 ]]; then
     if [[ ${#existing[@]} -gt 0 ]]; then
-      fail_if_paths_exist_without_update "Builder skill installs in $dest_root" "${existing[@]}"
+      fail_if_paths_exist_without_update "CDD skill installs in $dest_root" "${existing[@]}"
     else
-      fail_if_paths_exist_without_update "Builder skill installs in $dest_root"
+      fail_if_paths_exist_without_update "CDD skill installs in $dest_root"
     fi
   fi
 
@@ -298,25 +420,142 @@ install_one() {
     remove_paths "${existing[@]}"
   fi
 
-  for skill in "$SRC_DIR"/*; do
-    [[ -d "$skill" ]] || continue
-    [[ -f "$skill/SKILL.md" ]] || continue
+  for package_dir in "${SOURCE_PACKAGES[@]}"; do
+    [[ -d "$package_dir" ]] || continue
+    [[ -f "$package_dir/SKILL.md" ]] || continue
 
     local name
-    name="$(basename "$skill")"
+    name="$(basename "$package_dir")"
     local dest="$dest_root/$name"
 
-    if [[ $LINK -eq 1 ]]; then
-      ln -s "$skill" "$dest"
+    if should_link_source "$package_dir"; then
+      ln -s "$package_dir" "$dest"
       echo "Linked $name -> $dest"
     else
-      cp -a "$skill" "$dest"
+      cp -a "$package_dir" "$dest"
       write_origin_marker "$dest"
       echo "Installed $name -> $dest"
     fi
   done
 }
 
-for t in "${TARGETS[@]}"; do
-  install_one "$t"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --runtime)
+      if [[ $# -lt 2 ]]; then
+        fail_usage "Missing value for --runtime."
+      fi
+      RUNTIME="$2"
+      RUNTIME_EXPLICIT=1
+      shift 2
+      ;;
+    --update)
+      UPDATE=1
+      shift
+      ;;
+    --uninstall)
+      UNINSTALL=1
+      shift
+      ;;
+    --link)
+      LINK=1
+      shift
+      ;;
+    --yes|-y)
+      YES=1
+      shift
+      ;;
+    --target)
+      if [[ $# -lt 2 ]]; then
+        fail_usage "Missing value for --target."
+      fi
+      TARGETS+=("$2")
+      shift 2
+      ;;
+    --all)
+      ALL=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --force)
+      legacy_flag_error "--force" "Use --update instead."
+      ;;
+    --prune)
+      legacy_flag_error "--prune" "Prune now runs automatically during --update."
+      ;;
+    *)
+      echo "Unknown arg: $1" >&2
+      exit 2
+      ;;
+  esac
 done
+
+case "$RUNTIME" in
+  generic|codex|claude|openclaw) ;;
+  *)
+    fail_usage "Unsupported runtime: $RUNTIME"
+    ;;
+esac
+
+if [[ $UNINSTALL -eq 1 && ( $UPDATE -eq 1 || $LINK -eq 1 || $YES -eq 1 ) ]]; then
+  fail_usage "--uninstall cannot be combined with --update, --link, or --yes."
+fi
+
+if [[ $YES -eq 1 && $UPDATE -eq 0 ]]; then
+  fail_usage "--yes is only valid with --update."
+fi
+
+if [[ $ALL -eq 1 && ${#TARGETS[@]} -gt 0 ]]; then
+  fail_usage "--all cannot be combined with --target."
+fi
+
+if [[ $ALL -eq 1 && $RUNTIME_EXPLICIT -eq 1 ]]; then
+  fail_usage "--all cannot be combined with --runtime."
+fi
+
+if [[ ! -d "$SKILLS_SRC_ROOT" ]]; then
+  echo "Missing source skills dir: $SKILLS_SRC_ROOT" >&2
+  exit 1
+fi
+
+if [[ ! -d "$MASTER_CHEF_SRC_ROOT" ]]; then
+  echo "Missing canonical Master Chef package dir: $MASTER_CHEF_SRC_ROOT" >&2
+  exit 1
+fi
+
+if [[ ! -f "$MASTER_CHEF_SRC_ROOT/SKILL.md" ]]; then
+  echo "Missing Master Chef skill entrypoint: $MASTER_CHEF_SRC_ROOT/SKILL.md" >&2
+  exit 1
+fi
+
+if [[ "$RUNTIME" == "openclaw" ]]; then
+  if [[ ! -d "$OPENCLAW_SRC_ROOT" ]]; then
+    echo "Missing OpenClaw adapter source dir: $OPENCLAW_SRC_ROOT" >&2
+    exit 1
+  fi
+  if [[ ! -f "$OPENCLAW_SRC_ROOT/README.md" ]]; then
+    echo "Missing OpenClaw adapter docs: $OPENCLAW_SRC_ROOT/README.md" >&2
+    exit 1
+  fi
+fi
+
+if [[ $LINK -eq 1 ]]; then
+  echo "Warning: --link symlinks canonical source skill directories when possible. Generated runtime Builder skills are still copied." >&2
+fi
+
+if [[ $ALL -eq 1 ]]; then
+  install_all_runtimes
+else
+  if [[ ${#TARGETS[@]} -eq 0 ]]; then
+    TARGETS+=("$(runtime_default_target)")
+  fi
+
+  build_source_packages
+
+  for t in "${TARGETS[@]}"; do
+    install_one "$t"
+  done
+fi

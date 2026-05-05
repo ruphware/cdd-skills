@@ -51,6 +51,17 @@ confirm_yes_no() {
   esac
 }
 
+confirm_yes_no_default_yes() {
+  local prompt="${1:-Proceed? [Y/n] }"
+  local ans=""
+  read -r -p "$prompt" ans || true
+
+  case "$ans" in
+    n|N|no|NO) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 remove_paths_with_confirmation() {
   local label="$1"
   shift

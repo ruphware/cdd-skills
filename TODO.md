@@ -107,9 +107,9 @@ Make `cdd-init-project` distinguish methodology-stable CDD contract docs from re
 
 ### UAT
 
-- [ ] Read the updated init skill and confirm it classifies methodology-stable vs repo-specific contract surfaces.
-- [ ] Confirm `AGENTS.md` methodology stays boilerplate-stable while limited repo-detail tailoring is still allowed.
-- [ ] Confirm `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md` are no longer described as repo-specific rewrites.
+- [x] Read the updated init skill and confirm it classifies methodology-stable vs repo-specific contract surfaces.
+- [x] Confirm `AGENTS.md` methodology stays boilerplate-stable while limited repo-detail tailoring is still allowed.
+- [x] Confirm `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md` are no longer described as repo-specific rewrites.
 
 ## Step 04 — Validate contract-doc drift rules
 
@@ -144,8 +144,8 @@ Add local validation that fails when `cdd-init-project` reopens methodology drif
 
 ### UAT
 
-- [ ] Run the validator and confirm it would fail if the skill text reintroduced repo-specific rewrites for `TODO.md`, `docs/JOURNAL.md`, or `docs/prompts/PROMPT-INDEX.md`.
-- [ ] Confirm the validator still permits repo-specific `README.md` / PRD / Blueprint generation and limited `AGENTS.md` repo-detail edits.
+- [x] Run the validator and confirm it would fail if the skill text reintroduced repo-specific rewrites for `TODO.md`, `docs/JOURNAL.md`, or `docs/prompts/PROMPT-INDEX.md`.
+- [x] Confirm the validator still permits repo-specific `README.md` / PRD / Blueprint generation and limited `AGENTS.md` repo-detail edits.
 
 ## Step 05 — Collapse repetitive implementation confirmations in `cdd-audit-and-implement`
 
@@ -180,9 +180,9 @@ Make `cdd-audit-and-implement` keep its explicit approval model without asking t
 
 ### UAT
 
-- [ ] Read the updated audit skill and confirm the first-step selection prompt doubles as the implementation-start approval.
-- [ ] Confirm the skill still offers a clear stop-after-plan path without forcing implementation.
-- [ ] Confirm the old standalone `Approve starting implementation now?` wording is gone.
+- [x] Read the updated audit skill and confirm the first-step selection prompt doubles as the implementation-start approval.
+- [x] Confirm the skill still offers a clear stop-after-plan path without forcing implementation.
+- [x] Confirm the old standalone `Approve starting implementation now?` wording is gone.
 
 ## Step 06 — Encode the Master Chef pass/remediation loop
 
@@ -572,3 +572,574 @@ Make `cdd-init-project` preserve and adopt the newer boilerplate contract for st
 - Confirm it now accounts for repo-local `.agents/skills/*/SKILL.md` files when present.
 - Confirm it does not require `JOURNAL-next.md` and does not precreate split-journal files in unsplit repos.
 - Confirm the validator fails if `cdd-init-project` drops either the split-journal or repo-local-skill rule.
+
+## Step 16 — Split `cdd-master-chef` into a shared orchestration contract with runtime adapters
+
+### Goal
+
+Make `cdd-master-chef` stop being OpenClaw-only by separating the shared Master Chef orchestration contract from runtime-specific adapter rules for OpenClaw, Codex, and Claude Code.
+
+### Constraints
+
+- Preserve the existing OpenClaw autonomous loop semantics: kickoff, one-step Builder runs, QA remediation, blocker handling, compaction, commit/push, and in-session lifecycle reporting.
+- Do not describe any runtime as supporting subagent, approval, MCP, or worktree behavior that its current docs or current local CLI surface do not support.
+- Keep shared orchestration rules distinct from runtime adapter rules so test coverage can fail on either layer independently.
+- `README.md` must stop presenting Master Chef as an OpenClaw-only upgrade once the new contract lands.
+
+### Tasks
+
+- [x] Create a shared Master Chef source-of-truth surface that defines the runtime-agnostic contract: kickoff, routing, Builder lifecycle, QA/UAT gates, blocker handling, commit/push policy, lifecycle events, and durable runtime state.
+- [x] Refactor the existing `openclaw/*` package so OpenClaw-specific files become an adapter layer over the shared contract instead of the only Master Chef contract.
+- [x] Add a runtime capability matrix for OpenClaw, Codex, and Claude that records, at minimum, subagent model, nested-delegation limits, approval model, MCP/tool inheritance, child working-directory support, worktree-hand-off behavior, and startup-only versus in-session capabilities.
+- [x] Update the repo `README.md` so Master Chef is described as a shared workflow with runtime adapters, while keeping any still-experimental status explicit.
+- [x] Replace OpenClaw-only contract assertions with shared-contract and adapter-specific coverage that fails if the repo drifts back to OpenClaw-only wording.
+
+### Implementation notes
+
+- Prefer a new shared directory such as `master-chef/` or equivalent adapter-neutral surface rather than continuing to treat `openclaw/` as the canonical source.
+- Keep the current OpenClaw files readable during the migration, but no longer canonical.
+- Encode capability differences as first-class contract data, not as incidental prose hidden in one runtime README.
+- Claude `2.1.126` now exposes `--agent`, `--agents`, `agents`, and `--worktree`; write those facts into the Claude adapter instead of relying on older assumptions.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [x] Confirm the repo now has a shared Master Chef contract plus runtime adapters.
+- [x] Confirm OpenClaw docs no longer act as the only source of truth.
+- [x] Confirm `README.md` now describes Master Chef as multi-runtime rather than OpenClaw-only.
+- [x] Confirm the validator fails if shared rules collapse back into OpenClaw-only wording.
+
+## Step 17 — Add a clean-checkout-first managed worktree and branch lifecycle
+
+### Goal
+
+Make Master Chef provision work on a new branch in a new git worktree under a clean-checkout-first safety policy, with explicit runtime fallback rules when autonomous continuation from that worktree is not possible.
+
+### Constraints
+
+- Before kickoff, the source checkout must be clean; if it is dirty, Master Chef must stop and ask the human to stash, commit, or discard changes first.
+- v1 must not promise dirty-state transfer into the managed worktree.
+- The managed worktree must start from the current branch `HEAD` and create a fresh per-run branch rather than mutating the source checkout branch in place.
+- The contract must respect Git’s one-branch-per-worktree rule and must not tell users to check out the same branch in multiple worktrees.
+- Cleanup must not remove user branches, commits, or worktrees without explicit approval.
+
+### Tasks
+
+- [x] Define the managed worktree lifecycle: preflight cleanliness check, worktree path selection, branch naming, worktree creation, runtime-state initialization, active-worktree recording, and cleanup/archival behavior.
+- [x] Define where Master Chef stores worktree metadata and the active worktree path in runtime state, including any additions needed in `run.json`, `run.lock.json`, and `context-summary.md`.
+- [x] Define the runtime decision rule for “continue inside the worktree” versus “provision worktree and stop with exact relaunch instructions” when the adapter cannot safely keep Builder and Master Chef operating from the new worktree.
+- [x] Update the shared runbook and runtime adapters so commit, push, QA, and TODO inspection are performed against the managed worktree once it becomes active.
+- [x] Add executable test coverage for the clean-checkout-first rule, new-branch/new-worktree rule, and fallback behavior.
+
+### Implementation notes
+
+- Prefer a repo-local managed location such as `.cdd-runtime/master-chef/worktrees/<run-id>/` for adapters that control their own worktree path, unless an adapter is intentionally documented as using a runtime-managed external location instead.
+- Record the source checkout path separately from the active worktree path so resume logic can reason about both.
+- Claude’s current `--worktree` flag suggests a startup-time worktree path is viable there; do not treat that as proof of safe in-session worktree switching.
+- If a runtime cannot safely re-root the active control loop into the new worktree, the contract should stop after provisioning and emit exact restart or handoff instructions instead of improvising shell-level path switching.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Confirm Master Chef refuses kickoff from a dirty source checkout.
+- Confirm the contract now requires a fresh branch in a fresh worktree for the run.
+- Confirm runtime state records the active worktree path.
+- Confirm the docs state when Master Chef continues in the worktree versus when it stops and asks for a relaunch/handoff.
+
+## Step 18 — Add Codex and Claude adapter contracts for Builder delegation
+
+### Goal
+
+Make `cdd-master-chef` support Codex and Claude Code subagent delegation using each runtime’s real subagent model, approval behavior, and context-management limits.
+
+### Constraints
+
+- Codex adapter rules must align with explicit subagent workflows and Codex agent configuration rather than assuming automatic delegation.
+- Claude adapter rules must state that subagents cannot spawn subagents.
+- Claude background subagent flows must not rely on MCP tools or interactive approval recovery.
+- The shared Builder contract still requires one approved delegated action per Builder run, but the adapter may choose foreground-only delegation when background execution is unsafe.
+- Do not require per-run model overrides in a way the target runtime cannot actually materialize during a normal skill invocation; any downgrade or startup-only mapping must be explicit.
+
+### Tasks
+
+- [x] Add a Codex adapter contract that defines how Master Chef uses Codex subagents for Builder, exploration, QA support, and read-heavy sidecar work, including when built-in agent roles are sufficient and when project-scoped `.codex/agents/*.toml` surfaces are required.
+- [x] Add a Claude adapter contract that defines how Master Chef uses Claude subagents, including foreground-vs-background policy, non-nesting limits, permission-mode expectations, configured-agent surfaces, and when Builder work must remain foreground to keep approvals and tool access coherent.
+- [x] For both adapters, define how the approved `Run config` maps onto real runtime capabilities: exact support, inherited-model fallback, startup-only application, or adapter-specific constrained behavior.
+- [x] Add runtime-specific runbook and test-harness coverage for Codex and Claude, including explicit blocked paths for unsupported delegation patterns.
+- [x] Update shared docs so OpenClaw remains one adapter among three rather than the implied default control plane.
+
+### Implementation notes
+
+- Codex supports explicit subagent workflows and project-scoped `.codex/agents/*.toml`.
+- Claude `2.1.126` exposes `--agent`, `--agents`, `agents`, `--worktree`, `--tmux`, `--effort`, and `--permission-mode auto`; use those current facts in the adapter contract.
+- Treat “Builder may continue automatically” as adapter-specific, not universal.
+- If per-run Builder model selection cannot be made reliable in Codex or Claude v1, codify the limitation and keep the run config field visible as desired state rather than silently ignoring it.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [x] Confirm the Codex adapter uses explicit subagent semantics and does not claim automatic spawning.
+- [x] Confirm the Claude adapter states the non-nesting rule and background MCP limitation.
+- [x] Confirm both adapters explain how `Run config` fields are honored or downgraded.
+- [x] Confirm the validator fails if either adapter reintroduces unsupported runtime claims.
+
+## Step 19 — Collapse Master Chef packaging into `install.sh` and retire `install-openclaw.sh`
+
+### Goal
+
+Make the normal installer own Master Chef packaging across runtimes so the repo no longer depends on a separate `install-openclaw.sh` path for Master Chef delivery.
+
+### Constraints
+
+- Preserve the current core `cdd-*` install behavior for Codex, Claude, and Gemini users.
+- Keep runtime-specific adapter artifacts installable to the correct target roots without forcing a second installer.
+- The packaging model must still allow any generated adapter-specific Builder variants that remain necessary after the shared-contract split.
+- Do not leave README or smoke tests referring to `install-openclaw.sh` as the primary path once the unified installer lands.
+
+### Tasks
+
+- [x] Extend `scripts/install.sh` so it can install the shared Master Chef package and any runtime-specific adapter assets into the appropriate target roots, including `~/.agents/skills`, `~/.claude/skills`, and any retained OpenClaw target.
+- [x] Remove `scripts/install-openclaw.sh` after `install.sh` reaches feature parity, or reduce it to a temporary shim that exits with migration guidance if immediate removal would be too disruptive.
+- [x] Update `scripts/test_installers.sh` so installer smoke tests verify the unified Master Chef packaging path and no longer require a separate OpenClaw installer test matrix.
+- [x] Rename or generalize any OpenClaw-only generator/build script that remains necessary so its purpose matches the new multi-runtime packaging model.
+- [x] Update `README.md` install, update, and uninstall instructions so Master Chef is documented through the unified installer path.
+
+### Implementation notes
+
+- Touch `scripts/install.sh`, `scripts/test_installers.sh`, `README.md`, and any surviving adapter-generation script by default.
+- If OpenClaw still needs a distinct target root, that should be expressed as an installer target or mode, not a completely separate installer entrypoint.
+- Keep the final user story simple: one installer path, multiple targets.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- [x] Confirm Codex/Claude install docs now include Master Chef.
+- [x] Confirm installer smoke tests cover the new Master Chef packaging.
+- [x] Confirm validator coverage extends beyond OpenClaw.
+- [x] Confirm the repo no longer implies that Master Chef can only be installed through `install-openclaw.sh`.
+
+## Step 20 — Replace weak literal-text validation with structural and executable contract tests
+
+### Goal
+
+Replace the current phrase-by-phrase `scripts/validate_skills.py` approach with stronger structural checks and executable smoke tests so Master Chef behavior is validated by artifacts, packaging, and runtime-facing fixtures rather than fragile wording matches.
+
+### Constraints
+
+- Do not delete useful coverage before an equal or stronger replacement exists.
+- Keep any remaining Python validation focused on structural invariants such as frontmatter, required files, generated artifact shape, and schema-like checks.
+- Behavioral contract coverage should move toward executable tests, fixture validation, installer smoke tests, and generated-surface assertions rather than raw substring matches.
+- The new coverage must validate the shared contract, runtime adapters, installer outputs, and managed-worktree metadata expectations.
+
+### Tasks
+
+- [x] Audit `scripts/validate_skills.py` and classify each current assertion as structural, generated-artifact, or fragile prose match.
+- [x] Remove or shrink the fragile prose-match layer after equivalent stronger coverage exists in shell tests, fixture-based tests, or narrower schema checks.
+- [x] Add executable coverage for Master Chef packaging and contract artifacts, using `scripts/test_installers.sh`, `scripts/test-skill-audit.sh`, and any new focused smoke-test script needed for shared Master Chef surfaces.
+- [x] Ensure the remaining validation checks generated adapter artifacts, required frontmatter, installer outputs, runtime-state field presence, and any deterministic capability-matrix surface instead of exact explanatory sentences.
+- [x] Update `TODO.md` validation commands for the new test split if `python3 scripts/validate_skills.py` is no longer the primary contract gate.
+
+### Implementation notes
+
+- Prefer “prove the artifact exists and has the required machine-readable fields” over “prove this sentence exists verbatim.”
+- A smaller `validate_skills.py` is acceptable if stronger shell or fixture tests replace the removed coverage.
+- Keep local deterministic execution as a requirement; avoid network-dependent behavioral tests.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+
+### UAT
+
+- [x] Confirm fragile literal text assertions are no longer the primary contract gate.
+- [x] Confirm remaining Python validation is structural rather than prose-driven.
+- [x] Confirm executable tests cover installer outputs and shared Master Chef artifacts.
+- [x] Confirm the documented validation flow still runs locally without network access.
+
+## Step 21 — Normalize CDD skill taxonomy and Master Chef references
+
+### Goal
+
+Organize the visible CDD skill map as `[CDD-0]` through `[CDD-8]`, with `[CDD-8] Master Chef` documented as the separate autonomous development process.
+
+### Constraints
+
+- Do not rename skill directories, skill `name:` frontmatter, invocation commands, install roots, or generated Builder skill names.
+- Preserve the core single-agent CDD workflow as `[CDD-0]` through `[CDD-7]`.
+- Preserve Master Chef as separate from the core `skills/` pack: shared contract in `master-chef/`, current runnable adapter in `openclaw/`.
+- Keep behavior unchanged; this step is taxonomy, docs, display metadata, and validator coverage only.
+
+### Tasks
+
+- [x] Update `README.md` so the primary skill map lists `[CDD-0] Boot` through `[CDD-8] Master Chef`, removes redundant Basic Commands / Golden path drift, and states when to use the core loop versus Master Chef.
+- [x] Update `skills/*/agents/openai.yaml` display names to `[CDD-0]` through `[CDD-7]` and keep short descriptions aligned with the public skill map.
+- [x] Update `master-chef/README.md` so it identifies Master Chef as `[CDD-8] Master Chef` and clarifies that it is a separate shared contract for autonomous development.
+- [x] Update `openclaw/SKILL.md`, `openclaw/README.md`, `openclaw/MASTER-CHEF-RUNBOOK.md`, and `openclaw/MASTER-CHEF-TEST-HARNESS.md` so OpenClaw docs use the same `[CDD-8] Master Chef` label and show the internal `[CDD-0]` through `[CDD-7]` routing map where skill routing is explained.
+- [x] Update `scripts/install.sh` so the generated documentation-only `cdd-master-chef` package introduces itself as `[CDD-8] Master Chef`.
+- [x] Extend `scripts/validate_skills.py` to assert the numbered taxonomy in README, core skill display metadata, Master Chef docs, and OpenClaw routing/test harness coverage.
+
+### Implementation notes
+
+Use this exact public map:
+`[CDD-0] Boot`, `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-3] Implement TODO`, `[CDD-4] Audit + Implement`, `[CDD-5] Refactor`, `[CDD-6] Index`, `[CDD-7] Maintain`, `[CDD-8] Master Chef`.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- [x] Confirm `README.md` shows the full `[CDD-0]` through `[CDD-8]` map.
+- [x] Confirm Master Chef is visibly separate and described as starting autonomous development.
+- [x] Confirm OpenClaw routing docs and test harness use the same labels without changing behavior.
+
+## Step 22 — Canonicalize `cdd-master-chef/` as the committed source package
+
+### Goal
+
+Make top-level `cdd-master-chef/` the only committed first-class Master Chef skill package visible to repo-root skill installers.
+
+### Constraints
+
+- Do not rename the `cdd-master-chef` skill or command.
+- Avoid duplicate canonical shared-contract trees.
+- Preserve shared docs for Codex, Claude Code, and OpenClaw adapters.
+- Demote top-level `openclaw/` from package-scanned root surface so repo-root skill discovery no longer treats it as a peer installable skill.
+
+### Tasks
+
+- [x] Create a committed top-level `cdd-master-chef/` package surface with `SKILL.md`, `README.md`, shared contract docs, and current concrete adapter docs/artifacts now split across `master-chef/` and `openclaw/`.
+- [x] Move or rewrite source-of-truth references so shared contract docs point to `cdd-master-chef/` as canonical and top-level `master-chef/` / `openclaw/` no longer act as parallel canonical package roots.
+- [x] Re-home OpenClaw adapter files under the canonical package or another non-root-scanned adapter subtree and remove any top-level `SKILL.md` surface that would cause repo-root skill discovery to treat the old `openclaw/` path as a separate installable skill.
+- [x] Update local scripts/tests that read from `MASTER_CHEF_SRC_ROOT` or `OPENCLAW_SRC_ROOT` to follow the new canonical package layout.
+
+### Implementation notes
+
+- Prefer one canonical committed package tree under `cdd-master-chef/`.
+- If compatibility stubs remain in `master-chef/` or `openclaw/`, they must be explicitly non-canonical and non-package-scanned.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- [x] Confirm the repo has one committed first-class `cdd-master-chef/` package root.
+- [x] Confirm top-level `openclaw/` no longer behaves like a separate skill package root.
+
+## Step 23 — Make repo-root installs and `install.sh` ship the first-class `cdd-master-chef`
+
+### Goal
+
+Make repo-root `npx skills add https://github.com/ruphware/cdd-skills/` and `scripts/install.sh` install all skills, including first-class `cdd-master-chef`, from the canonical package layout.
+
+### Constraints
+
+- Preserve existing core `[CDD-0]` through `[CDD-7]` installs.
+- Keep OpenClaw-specific Builder generation only where the runtime actually needs it.
+- Generic/Codex/Claude targets must not receive a docs-only surrogate if the canonical package can ship directly.
+
+### Tasks
+
+- [x] Update `scripts/install.sh` so generic/Codex/Claude installs package the committed canonical `cdd-master-chef/` skill rather than synthesizing a docs-only surrogate from `master-chef/`.
+- [x] Update OpenClaw install assembly so `--runtime openclaw` installs the canonical `cdd-master-chef` skill plus any required OpenClaw-specific overlays/generated Builder skills from the new adapter subtree.
+- [x] Update installer smoke tests and local install-audit scripts to assert the canonical package is installed for generic, Claude, and OpenClaw targets and that installed contents match the new root package layout.
+- [x] Update `README.md` quick-install instructions so the root repo URL is the primary `npx skills add` entrypoint and no longer warns users away from it.
+
+### Implementation notes
+
+- Remove or minimize generated-package-only behavior in `emit_generic_master_chef_package`; prefer copying committed package source.
+- Keep local proof deterministic; remote root-URL verification may remain UAT after push.
+
+### Automated checks
+
+- `bash scripts/test_installers.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [x] Confirm root install instructions point to `https://github.com/ruphware/cdd-skills/`.
+- [x] Confirm local smoke tests install the core skills plus `cdd-master-chef` from repo-root semantics.
+- [x] After push, confirm root `npx skills add` installs the expected skill set.
+
+## Step 24 — Promote first-class multi-runtime Master Chef docs and status
+
+### Goal
+
+Make docs describe `cdd-master-chef` as a first-class in-development skill for Codex, Claude Code, OpenClaw, and other compatible adapter-based runtimes, without treating OpenClaw as the only target or calling the skill experimental.
+
+### Constraints
+
+- Only claim concrete runtime behavior already covered by current shared contract/adapters.
+- Hermes and similar autonomous systems may be described only as potential adapter targets in this pass.
+- README must distinguish current concrete adapters from future adapter targets.
+
+### Tasks
+
+- [x] Update root `README.md` and canonical `cdd-master-chef/README.md` / `SKILL.md` to describe Master Chef as first-class, in development, and multi-runtime rather than experimental, OpenClaw-only, or docs-only.
+- [x] Replace wording that presents OpenClaw as the only runnable or packaged target with wording that presents OpenClaw as one current adapter and Codex/Claude as current subagent-backed targets.
+- [x] Update the runtime capability matrix and adapter overviews so Codex/Claude/OpenClaw status lines match the shipped package and installer story.
+- [x] Add explicit wording that other subagent-capable coding tools and autonomous systems can be supported through additional adapters, without claiming a shipped Hermes adapter.
+
+### Implementation notes
+
+- Touch `README.md`, canonical `cdd-master-chef/README.md`, `cdd-master-chef/SKILL.md`, `RUNTIME-CAPABILITIES.md`, and any adapter overviews that still say “only packaged target” or “experimental”.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- [x] Confirm README no longer says Master Chef is experimental.
+- [x] Confirm docs no longer treat OpenClaw as the only target.
+- [x] Confirm Codex, Claude, and OpenClaw are described as current concrete adapters.
+- [x] Confirm Hermes is not falsely claimed as a shipped adapter.
+
+## Step 25 — Audit first-class runtime functionality and regression coverage
+
+### Goal
+
+Prove the first-class `cdd-master-chef` contract, packaging, and adapter claims hold across concrete runtime targets and fail when drift reintroduces docs-only or OpenClaw-only assumptions.
+
+### Constraints
+
+- Keep checks local and deterministic by default.
+- Audit only concrete shipped targets in this pass: Codex, Claude Code, and OpenClaw.
+- Do not depend on live external services as the primary gate.
+
+### Tasks
+
+- [x] Extend `scripts/validate_skills.py` and/or focused smoke tests to assert canonical package-root presence, absence of conflicting top-level package surfaces, installer use of canonical package source, and non-experimental multi-runtime README claims.
+- [x] Expand `scripts/test_master_chef_artifacts.sh` and `scripts/test-skill-audit.sh` to verify canonical package contents, Codex/Claude adapter docs in the installed package, and OpenClaw adapter/install overlays from the new layout.
+- [x] Add narrow negative checks that fail if README drifts back to root-URL avoidance, docs-only generic Master Chef packaging, or OpenClaw-as-only-target wording.
+- [x] Update TODO validation commands or supporting test docs to reflect the new first-class package story.
+
+### Implementation notes
+
+- Prefer structural package-surface assertions over exact prose checks, except for critical user-facing claims like root install URL and status wording.
+- If compatibility shims remain, tests must prove they are non-canonical.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+
+### UAT
+
+- [x] Confirm drift tests fail when OpenClaw-only or docs-only wording returns.
+- [x] Confirm local audit shows installed `cdd-master-chef` contains shared contract plus current adapters.
+- [x] Confirm root install story and installer story match.
+
+## Step 26 — Retire `cdd-audit-and-implement` and fold audit planning into `cdd-plan`
+
+### Goal
+
+Make `cdd-plan` the single planning entrypoint for both change requests and audit findings, retire the standalone `cdd-audit-and-implement` skill, and keep `[CDD-5]` through `[CDD-8]` numbering stable by treating `[CDD-4]` as retired.
+
+### Constraints
+
+- Preserve `cdd-plan -> cdd-implement-todo` as the only normal planning-to-implementation handoff.
+- Preserve audit normalization behavior: root-cause grouping, duplicate collapse, dependency order, and optional `TODO-audit-<tag>.md` placement.
+- Remove the retired skill from shipped skill packs, installer expectations, and Master Chef routing docs.
+- Do not renumber `[CDD-5]` through `[CDD-8]`.
+
+### Tasks
+
+- [x] Update `skills/cdd-plan/SKILL.md` and `skills/cdd-plan/agents/openai.yaml` so `cdd-plan` explicitly accepts audit findings, normalizes them into implementation-ready TODO steps, and still stops after suggesting `$cdd-implement-todo`.
+- [x] Remove `skills/cdd-audit-and-implement/` from the canonical skill pack.
+- [x] Update `README.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, and the OpenClaw adapter docs so audit findings route through `cdd-plan` and `[CDD-4]` is treated as retired rather than as a live excluded skill.
+- [x] Extend `scripts/validate_skills.py` and `scripts/test_installers.sh` so local validation fails if the retired skill returns or installers ship it again.
+
+### Implementation notes
+
+- Keep the public story compact: no fake `[CDD-4]` command entry, just a short retirement note plus audit-via-plan routing.
+- Let installer/remove behavior fall out of the canonical `skills/` source set unless a focused smoke test needs an explicit negative assertion.
+- Historical references inside older completed TODO steps are expected and should not be rewritten.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- [x] Confirm `cdd-plan` now covers both change requests and audit findings without directly implementing.
+- [x] Confirm `skills/cdd-audit-and-implement/` is gone from the repo and no longer ships through installer smoke tests.
+- [x] Confirm root README and Master Chef/OpenClaw docs treat `[CDD-4]` as retired and route audit findings through `cdd-plan`.
+
+## Step 27 — Add `[CDD-4] Implementation Audit` as a first-class audit entrypoint
+
+### Goal
+
+Add a new audit-only core skill at `[CDD-4]` that audits a selected implementation scope, triages major findings with the user, and routes approved follow-up into `cdd-plan`.
+
+### Constraints
+
+- Keep `cdd-plan` able to normalize externally supplied audit findings.
+- Keep `[CDD-4]` read-only and audit-only; it must not implement fixes directly.
+- Cover spec compliance, code quality, test quality, accidental complexity, and documentation in one coherent audit contract.
+- Restore `[CDD-4]` in the shipped skill pack, README taxonomy, validators, and installer smoke tests.
+
+### Tasks
+
+- [x] Add `skills/cdd-implementation-audit/` with a canonical skill body and OpenAI metadata.
+- [x] Update `README.md` so `[CDD-4] Implementation Audit` is a live skill again and the normal audit flow becomes `[CDD-4]` then `[CDD-2] Plan`.
+- [x] Extend `scripts/validate_skills.py` so the new skill has a display-name mapping, generated OpenClaw validation coverage, and topic validation in legacy-prose mode.
+- [x] Update `scripts/test_installers.sh` and the OpenClaw package docs so the new skill is part of the shipped core pack and internal Builder map.
+
+### Implementation notes
+
+- Keep the heavy audit rubric in the new skill rather than re-bloating `cdd-plan`.
+- Treat missing docs/specs/tests as findings when the chosen audit scope depends on them.
+- In Master Chef/OpenClaw docs, treat `[CDD-4]` as an installed direct audit helper whose approved findings still flow into `cdd-plan` before delegated implementation.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- [x] Confirm `[CDD-4] Implementation Audit` appears in the live root README skill map.
+- [x] Confirm the new skill accepts implementation-scope audit inputs and ends by recommending `cdd-plan`.
+- [x] Confirm installer smoke tests now ship `cdd-implementation-audit` across builder, Claude, and OpenClaw targets.
+
+## Step 28 — Collapse `cdd-index` and `cdd-refactor` into `cdd-maintain`
+
+### Goal
+
+Make `cdd-maintain` the single upkeep skill for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, and local runtime cleanup review.
+
+### Constraints
+
+- Hard-remove standalone `cdd-index` and `cdd-refactor`.
+- Renumber `cdd-maintain` to `[CDD-5]` and `cdd-master-chef` to `[CDD-6]`.
+- Keep `[CDD-4] cdd-implementation-audit` as the scoped audit skill.
+- Allow `codebase cleanup` to remove approved dead code or legacy artifacts directly, but keep `refactor` read-only and architecture-audit-only.
+
+### Tasks
+
+- [x] Update `skills/cdd-maintain/*` so the skill starts with `A. doc drift`, `B. codebase cleanup`, `C. index`, `D. refactor` when intent is unclear, supports multi-select and `do all`, and keeps the correct write scope for each mode.
+- [x] Remove `skills/cdd-index/` and `skills/cdd-refactor/` from the canonical skill pack.
+- [x] Update `README.md`, `skills/cdd-init-project/SKILL.md`, and `cdd-master-chef/*` so the public taxonomy, recommendations, and routing use `[CDD-5] Maintain` and `[CDD-6] Master Chef`.
+- [x] Update `scripts/validate_skills.py`, `scripts/test_installers.sh`, and `scripts/test_master_chef_artifacts.sh` so validation fails if the retired standalone skills return or numbering drifts back.
+
+### Implementation notes
+
+- Keep `index` mode narrow: it may write only `docs/INDEX.md`.
+- Keep `codebase cleanup` approval-gated and evidence-driven; remove only approved dead code, dead folders, duplicate retired paths, and legacy leftovers.
+- Treat `Maintain` as the Master Chef direct maintenance helper when cleanup, index refresh, or refactor architecture audit is the real task.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- [x] Confirm `cdd-maintain` asks the new A/B/C/D mode question when invoked without a clear task.
+- [x] Confirm `cdd-index` and `cdd-refactor` are no longer shipped as standalone skills.
+- [x] Confirm `[CDD-5] Maintain` covers doc drift, codebase cleanup, index refresh, and refactor architecture audit.
+- [x] Confirm `[CDD-6] Master Chef` docs and tests no longer reference standalone `cdd-index` or `cdd-refactor`.
+
+## Step 29 — Unify repo-local worktree root under `.cdd-runtime/worktrees/`
+
+### Goal
+
+Make `.cdd-runtime/worktrees/` the single repo-wide root for managed worktrees while keeping Master Chef runtime files and metadata under `.cdd-runtime/master-chef/`.
+
+### Constraints
+
+- Preserve clean-checkout-first kickoff, fresh per-run branches, Git's one-branch-per-worktree rule, and approval-gated cleanup.
+- `active_worktree_path` must move to `.cdd-runtime/worktrees/<run-id>/`, but runtime files must still live under the active worktree's `.cdd-runtime/master-chef/`.
+- Root `.gitignore` must ignore `.cdd-runtime/`, and init/adoption flows must preserve or add that rule safely.
+
+### Tasks
+
+- [x] Update the shared Master Chef contract and runbook surfaces in `cdd-master-chef/` so every managed worktree path changes from `.cdd-runtime/master-chef/worktrees/<run-id>/` to `.cdd-runtime/worktrees/<run-id>/`, while runtime-state field meanings and runtime-file locations stay under `.cdd-runtime/master-chef/`.
+- [x] Update adapter-facing docs and harnesses that currently hardcode the old path, including the OpenClaw runbook and README, so relaunch instructions, examples, and JSON examples all use the new worktree root.
+- [x] Update the executable and structural validation surfaces, including `scripts/test_master_chef_worktree.sh`, `scripts/test_master_chef_artifacts.sh`, and `scripts/validate_skills.py`, so validation fails if the old nested worktree root returns.
+- [x] Update this repo's root `.gitignore` to ignore `.cdd-runtime/`, and update `skills/cdd-init-project/SKILL.md` so fresh/bootstrap and adoption flows treat `.cdd-runtime/` as a required local ignore surface for target repos.
+
+### Implementation notes
+
+- Keep the semantic split explicit: worktrees under `.cdd-runtime/worktrees/`, durable Master Chef metadata under `.cdd-runtime/master-chef/`.
+- Remove the old `.cdd-runtime/master-chef/worktrees/` wording from docs, tests, and examples rather than supporting both paths.
+- Do not widen this step into `cdd-boot` behavior; that stays in Step 30.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_master_chef_worktree.sh`
+
+### UAT
+
+- Confirm shared and adapter docs now point managed worktrees at `.cdd-runtime/worktrees/<run-id>/`.
+- Confirm runtime metadata and runtime files still live under `.cdd-runtime/master-chef/`.
+- Confirm root `.gitignore` includes `.cdd-runtime/`.
+- Confirm worktree smoke coverage still rejects same-branch reuse and dirty-source preflight failures.
+
+## Step 30 — Make `cdd-boot` use selector next actions and `$cdd-implement-todo` handoff
+
+### Goal
+
+Make `cdd-boot` emit selector-labeled next actions, recommend repo-local worktree paths under `.cdd-runtime/worktrees/`, and route clear runnable TODO follow-up through `$cdd-implement-todo` instead of direct implementation offers.
+
+### Constraints
+
+- `cdd-boot` remains read-only and must not create worktrees, switch directories, or start implementation.
+- Repo-local `AGENTS.md` response-format guidance remains authoritative for `NEXT` or selector-style follow-up.
+- Worktree recommendations must use the Step 29 path contract.
+
+### Tasks
+
+- [x] Update `skills/cdd-boot/SKILL.md` so any follow-up surface uses selector-labeled choices aligned to repo-local `AGENTS.md`; when no repo-local `NEXT` contract exists, fall back to a final `**Options**` section with 2-4 concrete choices and the recommended option first.
+- [x] Update `skills/cdd-boot/SKILL.md` so worktree-migration recommendations use `.cdd-runtime/worktrees/<branch-or-tag>/` and explicitly distinguish "create or move into a worktree first" from "continue in the current worktree."
+- [x] Update `skills/cdd-boot/SKILL.md` so when a clear next runnable TODO step exists, the recommended follow-up names `$cdd-implement-todo <step>` rather than offering to start the step directly; if the user first needs a worktree, the recommended option should chain that path with continuing via `$cdd-implement-todo`.
+- [x] Update `skills/cdd-boot/agents/openai.yaml` and `scripts/validate_skills.py` so the boot metadata and regression coverage enforce the selector contract, the new worktree root, and the `$cdd-implement-todo` handoff rule.
+
+### Implementation notes
+
+- Keep selector choices as navigation or clarification only; do not turn boot into an approval-gated apply skill.
+- Use the target branch or approved workstream tag as the default manual-worktree leaf name so boot recommendations are path-stable and predictable.
+- Preserve the existing graceful-fallback and split-journal boot behavior.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Confirm boot reports now show selector-labeled next actions instead of plain bullets in repos whose `AGENTS.md` expects optioned follow-up.
+- Confirm boot worktree recommendations now point at `.cdd-runtime/worktrees/<branch-or-tag>/`.
+- Confirm a clear runnable TODO step now produces a `$cdd-implement-todo <step>` recommendation rather than "I can start it directly."
+- Confirm validation fails if `cdd-boot` drifts back to the old worktree root or unlabeled/direct-implementation follow-up wording.

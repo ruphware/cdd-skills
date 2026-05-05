@@ -1,6 +1,6 @@
 interface:
-  display_name: "CDD 00 Boot"
-  short_description: "Vanilla role (AGENTS.md), project (README.md, ...), development (journal entrypoint + split journals) boot"
-  default_prompt: "Use $cdd-boot to ingest AGENTS.md and assume the role. Read README.md, docs/INDEX.md, and docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them."
+  display_name: "[CDD-0] Boot"
+  short_description: "Vanilla role, project, development, and worktree boot"
+  default_prompt: "Use $cdd-boot to ingest AGENTS.md and assume the role. Read README.md, docs/INDEX.md, and docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them. Include worktree status and recommend whether development should stay in the main folder or move into a worktree. Follow repo-local AGENTS.md next-action formatting with selector-based next-step choices. If worktree migration is recommended, point to a repo-local path under .cdd-runtime/worktrees/<branch-or-tag>/. If a clear next runnable TODO step exists, recommend continuing with $cdd-implement-todo <step> rather than offering to start implementation directly."
 policy:
   allow_implicit_invocation: false

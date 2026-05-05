@@ -52,10 +52,10 @@ ___
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
-<sup>Start with `$cdd-boot`. Use `$cdd-plan` + `$cdd-implement-todo` for feature work, `$cdd-maintain` for upkeep and drift control, and `$cdd-refactor` for structured refactors.</sup>
+<sup>Start with `$cdd-boot`. Use `$cdd-implementation-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement-todo` for feature work, and `$cdd-maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, and upkeep.</sup>
 ```
 
-- For existing-repo adoption, consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`, but ask the user for explicit confirmation before proposing or applying that README edit.
+- For existing-repo adoption, ask the user for explicit confirmation before proposing or applying that README.md edit; only then consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`.
 - Avoid duplicating the block if it or its badges already exist.
 
 ## Contract-surface taxonomy and drift rules
@@ -73,6 +73,7 @@ ___
   - `.agents/skills/*/SKILL.md`
 - Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:
   - `README.md`
+  - `.gitignore`
   - `docs/specs/prd.md`
   - `docs/specs/blueprint.md`
 - `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology.
@@ -81,6 +82,7 @@ ___
 - `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and keep split-journal mode once it starts.
 - `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt.
 - `.agents/skills/*/SKILL.md`: preserve repo-local project skills when present. Treat them as project-level workflow surfaces tied to the repo's documented process. Preserve them during bootstrap or adoption; do not require them when absent and do not pull user-home skills into the repo.
+- `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored in fresh/bootstrap and adoption outputs.
 - `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
 
 ## Interactive planning contract
@@ -101,6 +103,9 @@ Planning in this skill is interactive, review-driven, and continuously refined.
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
   - when practical, tell the user they can reply with just the selector
+- When a draft init or adoption plan is ready for application, use the final repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
+- The selected option itself is the approval; do not append a separate free-form approval question after selector options.
+- Default final apply choices to `A. apply now`, `B. revise first`, and `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.
 
 ## State detection (required)
 Classify the workspace into exactly one state and tell the user which one you detected:
@@ -109,6 +114,7 @@ Use this precedence order; stop on the first matching state:
 
 0) Ignore non-substantive paths when classifying:
    - `.git/`, `.github/`, `.gitignore`, `.gitattributes`, `.editorconfig`
+   - `.cdd-runtime/`
    - editor/OS noise such as `.DS_Store`, `.idea/`, `.vscode/`
    - `LICENSE`, empty directories, and CI-only files
 
@@ -181,12 +187,13 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file) to:
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-9) Ask: **Approve and apply these changes?**
+9) Present final selector-based apply options for the proposed edits.
 10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
@@ -228,12 +235,13 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
     - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 11) Draft proposed edits (grouped by file) to:
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-12) Ask: **Approve and apply these changes?**
+12) Present final selector-based apply options for the proposed edits.
 13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
@@ -251,12 +259,13 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 6) Draft proposed edits (grouped by file) to:
    - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
    - fill `docs/specs/prd.md`
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-7) Ask: **Approve and apply these changes?**
+7) Present final selector-based apply options for the proposed edits.
 8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
@@ -287,17 +296,18 @@ Draft a patch proposal grouped by file, including:
    - `AGENTS.md`: start from the boilerplate contract and allow only bounded repo-fit edits that do not change the CDD methodology
    - `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint/index, rewritten as a short current-state index after split activation, and split-journal `docs/journal/*` topology preserved only when active
    - `.agents/skills/*/SKILL.md`: when present in the source or target repo, preserve them as repo-local workflow surfaces tied to the repo's documented process; do not require them when absent and do not import user-home skills
+   - `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored
    - `docs/specs/prd.md` and `docs/specs/blueprint.md`: fill from the actual repo rather than copying boilerplate placeholders forward
 2) Reorganize docs:
    - keep `README.md` as the runbook entrypoint
-   - if the current `README.md` does not already contain the required CDD footnote footer, ask for explicit confirmation before proposing or applying that full-block README edit during adoption
+   - if the current `README.md` does not already contain the required CDD footnote footer, ask for explicit confirmation before proposing or applying that full-block README.md edit during existing-repo adoption
    - move/normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links
 3) Add repo-specific planning to `TODO.md`:
    - preserve the boilerplate header, Step 00, and Step template
-   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-index`)
+   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-maintain` in `index` mode)
 
 ### Phase 3 — Apply
-1) Ask: **Approve and apply this migration plan?**
+1) Present final selector-based apply options for the migration plan.
 2) If the approved plan includes clone, remote creation, git initialization, push, or path-moving operations, ask a second confirmation listing those exact operations before executing them.
 3) Apply only the approved changes.
-4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-index` as the next action.
+4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-maintain` in `index` mode as the next action.
