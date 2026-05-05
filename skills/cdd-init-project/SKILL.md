@@ -101,6 +101,9 @@ Planning in this skill is interactive, review-driven, and continuously refined.
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
   - when practical, tell the user they can reply with just the selector
+- When a draft init or adoption plan is ready for application, use the final repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
+- The selected option itself is the approval; do not append a separate free-form approval question after selector options.
+- Default final apply choices to `A. apply now`, `B. revise first`, and `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.
 
 ## State detection (required)
 Classify the workspace into exactly one state and tell the user which one you detected:
@@ -186,7 +189,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-9) Ask: **Approve and apply these changes?**
+9) Present final selector-based apply options for the proposed edits.
 10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
@@ -233,7 +236,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-12) Ask: **Approve and apply these changes?**
+12) Present final selector-based apply options for the proposed edits.
 13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
@@ -256,7 +259,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
    - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-7) Ask: **Approve and apply these changes?**
+7) Present final selector-based apply options for the proposed edits.
 8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
@@ -297,7 +300,7 @@ Draft a patch proposal grouped by file, including:
    - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-maintain` in `index` mode)
 
 ### Phase 3 — Apply
-1) Ask: **Approve and apply this migration plan?**
+1) Present final selector-based apply options for the migration plan.
 2) If the approved plan includes clone, remote creation, git initialization, push, or path-moving operations, ask a second confirmation listing those exact operations before executing them.
 3) Apply only the approved changes.
 4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-maintain` in `index` mode as the next action.

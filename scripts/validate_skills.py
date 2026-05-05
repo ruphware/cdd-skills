@@ -250,6 +250,38 @@ def validate_selector_labeled_options(skill_text: str, skill_md: Path) -> None:
     )
 
 
+def validate_option_driven_approval(skill_text: str, skill_md: Path) -> None:
+    """Assert approval decisions are made through selector options, not a second prompt."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"selected option itself is the approval",
+            r"[Dd]o not append a separate free-form approval question after selector options",
+        ),
+        skill_md,
+        "option-driven approval topics",
+    )
+
+
+def validate_plan_final_apply_options(skill_text: str, skill_md: Path) -> None:
+    """Assert the plan skill uses one selector-driven final approval surface."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"AGENTS\.md.*`NEXT`.*otherwise.*`\*\*Options\*\*`",
+            r"clear next execution step.*exactly three final options",
+            r"`A\.\s*apply now and continue with the recommended next step`",
+            r"`B\.\s*apply now only`",
+            r"`C\.\s*keep the plan read-only and revise before applying`",
+        ),
+        skill_md,
+        "plan final apply option topics",
+    )
+    assert "Approve and apply these changes?" not in skill_text, (
+        f"plan skill should not add a second free-form approval prompt in {skill_md}"
+    )
+
+
 def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
     """Assert the boot skill keeps its graceful vanilla boot contract."""
     require_topic_bundle(
@@ -283,6 +315,11 @@ def validate_implement_todo_skill_text(skill_text: str, skill_md: Path) -> None:
     require_topic_bundle(
         skill_text,
         (
+            r"Resolve ambiguity and approval boundaries with selector-based options under a final `\*\*Options\*\*` section",
+            r"`A\.\s*apply the minimal TODO patch and implement the step`",
+            r"`B\.\s*apply the minimal TODO patch only`",
+            r"`C\.\s*keep the step read-only and revise first`",
+            r"multiple matches remain.*matching file or heading choices.*`\*\*Options\*\*`",
             r"matching journal file.*non-trivial.*AGENTS\.md",
             r"single-journal mode.*`docs/JOURNAL\.md`",
             r"selected step.*`TODO-<area>\.md`.*`docs/journal/JOURNAL-<area>\.md`.*default hot journal",
@@ -330,12 +367,15 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
             r"README\.md.*runbook entrypoint",
             r"README\.md.*low-visibility bottom footer",
             r"README\.md.*user-approved compaction",
+            r"selected option itself is the approval",
+            r"[Dd]o not append a separate free-form approval question after selector options",
+            r"`A\.\s*apply now`.*`B\.\s*keep the report only`.*`C\.\s*revise scope first`",
             r"`docs/specs/prd\.md`.*product-manager view",
             r"`docs/specs/blueprint\.md`.*anchor technical spec",
-            r"Approve and apply these documentation updates",
+            r"documentation approval using selector-based options",
             r"documentation approval separate from stale TODO deletion approval.*runtime-cleanup approval",
             r"Write only `docs/INDEX\.md` in this mode",
-            r"Approve and apply this single-file docs/INDEX\.md update",
+            r"selector-based apply options for the single-file `docs/INDEX\.md` update",
             r"[Ss]elf-grade.*0-12.*11\.5",
             r"refactor-candidate",
             r"repo-local `\.cdd-runtime/`.*`\.cdd-runtime/master-chef/`",
@@ -344,14 +384,13 @@ def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
             r"abandoned managed worktree directories.*orphaned runtime logs.*`stale`",
             r"Do not silently delete `\.cdd-runtime/` content",
             r"runtime state is unclear.*report it as `unclear`",
-            r"Approve cleanup of stale local runtime artifacts under \.cdd-runtime/\?",
+            r"runtime-cleanup approval using selector-based options",
             r"runtime-cleanup approval separate from support-document approval.*stale TODO deletion approval",
             r"remove only `stale` repo-local runtime artifacts and managed worktrees",
             r"Never remove the current worktree.*current run state.*`live` linked worktree",
             r"confirmed_cleanup.*probable_cleanup.*unclear",
             r"Do not remove anything classified as `unclear`",
-            r"Group approved removals into one cleanup patch",
-            r"Approve and apply this codebase cleanup patch",
+            r"Group approved removals into one cleanup patch.*selector-based options",
             r"[Rr]epo history.*not justification for stale support-doc content",
             r"Classify each support doc as `current`, `drifted`, `missing`, or `unclear`",
             r"Do not silently refresh `README\.md`.*`docs/prompts/PROMPT-INDEX\.md`.*`\.agents/skills/\*/SKILL\.md`",
@@ -415,6 +454,10 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
             r"append repo-specific Step 01\+ work.*docs/INDEX\.md.*PROMPT-INDEX.*cdd-maintain.*`index` mode",
             r"`TODO\.md`, `docs/JOURNAL\.md`, and `docs/prompts/PROMPT-INDEX\.md`.*materialize from `https://github\.com/ruphware/cdd-boilerplate`",
             r"`\.agents/skills/\*/SKILL\.md`: when present.*do not import user-home skills",
+            r"AGENTS\.md.*`NEXT`.*otherwise.*`\*\*Options\*\*`",
+            r"selected option itself is the approval",
+            r"[Dd]o not append a separate free-form approval question after selector options",
+            r"`A\.\s*apply now`.*`B\.\s*revise first`.*`C\.\s*stop read-only`",
         ),
         skill_md,
         "init-project topics",
@@ -435,6 +478,12 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
         "For fresh/bootstrap repos, require this exact `README.md` block under the title and short project description, before the rest of the runbook content:"
         not in skill_text
     ), f"old README header placement rule should not appear in {skill_md}"
+    assert "Approve and apply these changes?" not in skill_text, (
+        f"init-project skill should not add a second free-form approval prompt in {skill_md}"
+    )
+    assert "Approve and apply this migration plan?" not in skill_text, (
+        f"init-project migration flow should use selector options in {skill_md}"
+    )
 
 
 def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
@@ -464,6 +513,24 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         f"implicit invocation not disabled in {openai_yaml}"
     )
 
+    if skill_dir.name in {
+        "cdd-plan",
+        "cdd-implementation-audit",
+        "cdd-init-project",
+        "cdd-maintain",
+        "cdd-implement-todo",
+    }:
+        validate_selector_labeled_options(skill_text, skill_md)
+    if skill_dir.name in {
+        "cdd-plan",
+        "cdd-init-project",
+        "cdd-maintain",
+        "cdd-implement-todo",
+    }:
+        validate_option_driven_approval(skill_text, skill_md)
+    if skill_dir.name == "cdd-plan":
+        validate_plan_final_apply_options(skill_text, skill_md)
+
     if include_legacy_prose:
         if skill_dir.name == "cdd-implement-todo":
             require_topic_bundle(
@@ -484,7 +551,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
                     r"worktree boot",
                     r"docs/JOURNAL\.md.*journal entrypoint.*split-journal files",
                     r"worktree status.*stay in the main folder or move into a worktree",
-                    r"next action.*create a worktree.*continue.*there",
+                    r"[Nn]ext action.*creat.*worktree.*continu.*there",
                 ),
                 openai_yaml,
                 "boot YAML topics",
@@ -499,13 +566,6 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
             validate_plan_audit_mode_skill_text(skill_text, skill_md)
         if skill_dir.name == "cdd-implementation-audit":
             validate_implementation_audit_skill_text(skill_text, skill_md)
-        if skill_dir.name in {
-            "cdd-plan",
-            "cdd-implementation-audit",
-            "cdd-init-project",
-            "cdd-maintain",
-        }:
-            validate_selector_labeled_options(skill_text, skill_md)
 
 
 def validate_master_chef_shared_contract(repo_root: Path) -> None:
@@ -1316,6 +1376,23 @@ def validate_generated_openclaw_builder_skills(
                 skill_md,
                 "generated Builder wrapper topics",
             )
+            if skill_name in {
+                "cdd-plan",
+                "cdd-implementation-audit",
+                "cdd-init-project",
+                "cdd-maintain",
+                "cdd-implement-todo",
+            }:
+                validate_selector_labeled_options(skill_text, skill_md)
+            if skill_name in {
+                "cdd-plan",
+                "cdd-init-project",
+                "cdd-maintain",
+                "cdd-implement-todo",
+            }:
+                validate_option_driven_approval(skill_text, skill_md)
+            if skill_name == "cdd-plan":
+                validate_plan_final_apply_options(skill_text, skill_md)
 
             if include_legacy_prose:
                 if skill_name == "cdd-implement-todo":
@@ -1341,13 +1418,6 @@ def validate_generated_openclaw_builder_skills(
                     validate_plan_audit_mode_skill_text(skill_text, skill_md)
                 if skill_name == "cdd-implementation-audit":
                     validate_implementation_audit_skill_text(skill_text, skill_md)
-                if skill_name in {
-                    "cdd-plan",
-                    "cdd-implementation-audit",
-                    "cdd-init-project",
-                    "cdd-maintain",
-                }:
-                    validate_selector_labeled_options(skill_text, skill_md)
 
 def main(argv: list[str] | None = None) -> int:
     """Validate the current repository layout and print a success marker."""

@@ -34,6 +34,12 @@ Read:
 - Allow selecting more than one option in the same reply. If the user says `do all` or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
 - Keep the mode-specific write scope tight. Do not widen from one mode into another without asking.
 
+## Approval contract
+- Reuse the same selector-based option pattern for documentation, cleanup, index, stale-TODO deletion, and runtime-cleanup approvals.
+- The selected option itself is the approval; do not append a separate free-form approval question after selector options.
+- Keep documentation approval, stale TODO deletion approval, and runtime-cleanup approval separate even when the same report surfaces all three.
+- When a single apply decision is ready, prefer `A. apply now`, `B. keep the report only`, and `C. revise scope first`.
+
 ## Safe write behavior
 - Apply safe archive moves immediately.
 - Ask before deleting stale adjacent `TODO*.md` files.
@@ -84,7 +90,7 @@ Read:
 - Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear`.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
 - If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything. Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files.
-- Ask once for documentation approval using a single grouped confirmation such as: `Approve and apply these documentation updates?` Keep documentation approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- Ask once for documentation approval using selector-based options under a final `**Options**` section. Keep documentation approval separate from stale TODO deletion approval and runtime-cleanup approval.
 - If the user approves, apply only the approved support-doc edits and then report them.
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
@@ -107,7 +113,7 @@ Read:
 - Do not remove anything classified as `unclear`.
 - Do not silently refactor, redesign, or broaden the scope while cleaning.
 - If cleanup needs matching test, config, or doc deletion to keep the repo coherent, include those edits in the same proposed cleanup patch.
-- Group approved removals into one cleanup patch and ask once for approval using wording such as: `Approve and apply this codebase cleanup patch?`
+- Group approved removals into one cleanup patch and ask once using selector-based options.
 - If the user approves, remove only the approved dead lines, files, folders, tests, configs, or generated leftovers.
 - If the user does not approve, leave code unchanged and report the remaining cleanup candidates clearly.
 
@@ -131,7 +137,7 @@ Regenerate `docs/INDEX.md` as a single-file update after approval.
   - exact validation commands
   - explicit confirmation that no file other than `docs/INDEX.md` will be modified
 - Self-grade the draft from 0-12; if below 11.5, revise before asking for approval.
-- Ask: `Approve and apply this single-file docs/INDEX.md update?`
+- Present selector-based apply options for the single-file `docs/INDEX.md` update.
 - After approval, run only these fixed validation commands:
   - `test -f docs/INDEX.md`
   - `rg -n '^# Context for ' docs/INDEX.md`
@@ -170,7 +176,7 @@ Regenerate `docs/INDEX.md` as a single-file update after approval.
 - Treat abandoned managed worktree directories, orphaned runtime logs, stale context snapshots, and old run directories not tied to live worktrees as `stale`.
 - If runtime state is unclear, leave it in place and report it as `unclear`.
 - Do not silently delete `.cdd-runtime/` content.
-- Ask once for runtime-cleanup approval using a grouped confirmation such as: `Approve cleanup of stale local runtime artifacts under .cdd-runtime/?`
+- Ask once for runtime-cleanup approval using selector-based options.
 - Keep runtime-cleanup approval separate from support-document approval and stale TODO deletion approval.
 - If the user approves, remove only `stale` repo-local runtime artifacts and managed worktrees.
 - Never remove the current worktree, the current run state, or any runtime surface still tied to a `live` linked worktree.

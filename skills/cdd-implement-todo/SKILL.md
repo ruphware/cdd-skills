@@ -10,14 +10,25 @@ Implement exactly one TODO step in the target repo, run that step's `Automated c
 
 Do not invent missing product, architecture, sequencing, or validation decisions during implementation. If the selected step is not decision-complete, patch the TODO step first.
 
+## Interaction contract
+- Resolve ambiguity and approval boundaries with selector-based options under a final `**Options**` section.
+- Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key.
+- Default to letters: `A.`, `B.`, `C.`. Use numbers only when the surrounding context is already numeric and that would be clearer.
+- When practical, tell the user they can reply with just the selector.
+- When a minimal TODO patch is required before implementation, the selected option itself is the approval; do not append a separate free-form approval question after selector options.
+- Prefer:
+  - `A. apply the minimal TODO patch and implement the step`
+  - `B. apply the minimal TODO patch only`
+  - `C. keep the step read-only and revise first`
+
 ## Flow
 1) Read `AGENTS.md`, `README.md`, the active `TODO*.md`, and any files needed for the chosen step.
 2) Resolve the requested step before asking anything:
    - If the user explicitly names a step (for example `step 8`, `step 08`, `step 008`, or an exact step heading), search `TODO.md` and `TODO-*.md` and normalize numeric step identifiers so `8`, `08`, and `008` are equivalent.
    - If exactly one step matches, treat that step as authoritative and continue immediately without asking for confirmation.
-   - Ask only when the step is ambiguous (for example the same step number exists in multiple TODO files) or cannot be resolved from the user’s request.
-   - If the user did not specify a step at all, ask for the exact step to implement.
-3) If the step is underspecified, draft a minimal TODO patch and ask approval before implementing.
+   - Ask only when the step is ambiguous (for example the same step number exists in multiple TODO files) or cannot be resolved from the user’s request. When multiple matches remain, present the matching file or heading choices under `**Options**` plus a stop or revise option.
+   - If the user did not specify a step at all, ask for the exact step to implement using the interaction contract above.
+3) If the step is underspecified, draft a minimal TODO patch and present selector-based options before implementing.
    - Treat the step as underspecified when it is missing `Tasks`, `Automated checks`, or `UAT`.
    - Also treat it as underspecified when the task list does not identify the concrete target boundary or subsystem, the contract/interface/behavior change to make, the sequencing needed across multiple surfaces, or the validation evidence required by the goal.
    - If the step implies migration, snapshot/audit retention, compatibility, or must-preserve behavior, treat those omissions as underspecification unless the step captures them in `Constraints`, `Implementation notes`, or equivalent local sections.
@@ -40,8 +51,8 @@ Do not invent missing product, architecture, sequencing, or validation decisions
 
 ## Resolution examples
 - `$cdd-implement-todo step 008` + one matching Step 08 in the repo: implement immediately, no reconfirmation.
-- `$cdd-implement-todo step 008` + matches in `TODO.md` and `TODO-foo.md`: ask which TODO file or exact heading to use.
-- `$cdd-implement-todo` with no step argument: ask which step to implement.
-- A matched step missing `Tasks`, `Automated checks`, or `UAT`: ask approval only for the minimal TODO patch needed to make the step executable.
-- A matched step with vague tasks such as "support DOCX export" or "simplify the report" but no concrete boundaries, sequencing, or proof: ask approval for the minimal TODO patch needed to make the step decision-complete before implementing.
+- `$cdd-implement-todo step 008` + matches in `TODO.md` and `TODO-foo.md`: present selector-based choices for the matching TODO file or exact heading.
+- `$cdd-implement-todo` with no step argument: ask which step to implement using selector-based options when concrete choices are available.
+- A matched step missing `Tasks`, `Automated checks`, or `UAT`: present selector-based options for the minimal TODO patch needed to make the step executable.
+- A matched step with vague tasks such as "support DOCX export" or "simplify the report" but no concrete boundaries, sequencing, or proof: present selector-based options for the minimal TODO patch needed to make the step decision-complete before implementing.
 - A matched step that passes implementation and checks: mark only that step's task items done in the active TODO file before the final report.

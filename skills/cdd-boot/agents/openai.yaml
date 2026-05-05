@@ -1,6 +1,6 @@
 interface:
   display_name: "[CDD-0] Boot"
   short_description: "Vanilla role, project, development, and worktree boot"
-  default_prompt: "Use $cdd-boot to ingest AGENTS.md and assume the role. Read README.md, docs/INDEX.md, and docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them. Include worktree status and recommend whether development should stay in the main folder or move into a worktree. If moving into a worktree is recommended, offer creating a worktree and continuing development there as one of the next options."
+  default_prompt: "Use $cdd-boot to ingest AGENTS.md and assume the role. Read README.md, docs/INDEX.md, and docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them. Include worktree status and recommend whether development should stay in the main folder or move into a worktree. In Next action, if moving into a worktree is recommended, offer creating a worktree and continuing development there as one of the next options."
 policy:
   allow_implicit_invocation: false

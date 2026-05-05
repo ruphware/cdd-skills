@@ -77,6 +77,12 @@ Planning in this skill is interactive, review-driven, and continuously refined.
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
   - when practical, tell the user they can reply with just the selector
+- When a draft plan is ready for application, use the final repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
+- The selected option itself is the approval; do not append a separate free-form approval question after selector options.
+- When a clear next execution step exists, prefer exactly three final options:
+  - `A. apply now and continue with the recommended next step`
+  - `B. apply now only`
+  - `C. keep the plan read-only and revise before applying`
 
 ## Flow (approval-gated)
 1) Read the contract files above, any linked sub-specs, and the relevant codebase surfaces.
@@ -113,5 +119,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
    - for qualifying requests, refine one coarse step at a time into runnable TODO steps rather than drafting a single mixed-surface detailed plan in one jump
    - split oversized mixed-surface work into dependency-ordered steps
    - plans may be long and include many steps when the confirmed scope requires it
-11) Ask: **Approve and apply these changes?**
+11) Present final selector-based apply options instead of a second approval question.
+   - When a clear next execution step exists, prefer exactly three selectors: `A. apply now and continue with the recommended next step`, `B. apply now only`, `C. keep the plan read-only and revise before applying`.
+   - If no immediate follow-on step is clear, still use 2-4 selector-based apply/revise/stop options.
 12) After applying, suggest implementing the next step via `$cdd-implement-todo`.
