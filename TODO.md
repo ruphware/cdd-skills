@@ -1594,3 +1594,135 @@ Make the Master Chef startup, worktree, and split policy shorter, more canonical
   - `split oversized step first` as the default rule
   - worktree path creation without explicit `env_ready` bootstrap before Builder or `hard_gate`
 - Confirm the root install story still truthfully describes kickoff approval, step budget guidance, and Master Chef mission ownership without reintroducing obsolete split wording.
+
+## Step 41 — Replace the legacy fresh-Builder lifecycle with a persistent Builder contract
+
+### Goal
+
+Make Master Chef keep one long-lived Builder alive across normal delegated step transitions in the same autonomous run, removing the legacy fresh-per-step Builder rule while preserving explicit replacement on real Builder failure or unusable drift.
+
+### Constraints
+
+- Preserve Master Chef as the single controlling loop and keep Builder replacement available for hard failure, explicit runtime closure, deadlock, or unusable drift.
+- Preserve durable run state, Builder evidence, QA/UAT, commit/push, and final mission reporting.
+- Do not introduce a shared numeric context-pressure threshold unless the runtime can actually surface it truthfully.
+- Shared policy must distinguish normal step transition from failure recovery.
+- Preserve adapter-truthfulness: the shared contract may require a compaction attempt when supported, but must not pretend every runtime exposes the same compaction command or context meter.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so the normal Builder lifecycle changes from `fresh single-step Builder run per delegated action` to `persistent Builder per active run`, with explicit language that the same Builder normally continues across multiple delegated steps.
+- [ ] Replace the legacy rule that Master Chef always spawns a fresh Builder after every `STEP_PASS`, same-step continuation, or repaired-step continuation with a new shared rule: Master Chef first attempts to reuse the active Builder for the next delegated step in the same run, and replaces Builder only on defined recovery conditions such as hard failure, explicit runtime closure, deadlock, unusable drift, or inability to continue safely in the active worktree.
+- [ ] Define beginning-of-step compaction explicitly in the shared contract: before handing a new delegated step to the persistent Builder, Master Chef must attempt a Builder compaction operation when the active runtime exposes a supported compaction command or API; if the runtime does not expose one, Master Chef must continue with the same Builder and rely on native auto-compaction or the runtime's own context management instead of inventing a fake compaction path.
+- [ ] Define shared replacement conditions explicitly: Builder replacement is no longer the normal step-transition path and is valid only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or an adapter-defined inability to continue coherently after compaction or status checks.
+- [ ] Define runtime-state additions or changes needed for persistent Builder continuity, including the active Builder identity across steps, latest step-boundary compaction attempt/result, and Builder replacement lineage when replacement does occur.
+
+### Implementation notes
+
+- The shared contract should stop using phrases like `single-step Builder runs only`, `fresh Builder for the next delegated action`, and `do not compact or resume Builders as the normal path`.
+- The new shared policy should remain qualitative on context pressure; it should require `attempt compaction when the runtime supports it` rather than a fabricated universal occupancy threshold.
+- Preserve the difference between `same Builder continues to the next step` and `Master Chef compacts its own long-lived context`; both may happen, but they are separate control-loop behaviors.
+- Do not weaken the QA, blocker, deadlock, or final mission reporting contract while changing Builder lifespan.
+- If Builder replacement occurs, durable reporting should still show why the persistent Builder contract was suspended for that branch of execution.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the shared contract and confirm a passed step no longer implies automatic Builder replacement.
+- Confirm a normal next-step handoff attempts same-Builder continuation first.
+- Confirm Builder replacement is now described as recovery behavior, not the default lifecycle.
+- Confirm beginning-of-step compaction is required only when the runtime actually supports it.
+
+## Step 42 — Propagate persistent Builder and compaction capability rules across adapters and runtime matrix
+
+### Goal
+
+Make Codex, Claude, OpenClaw, and the runtime capability matrix describe persistent Builder continuation, manual compaction support, auto-compaction fallback, and context-visibility limits truthfully and consistently.
+
+### Constraints
+
+- Preserve runtime-specific truth: do not claim a compaction command, context-left meter, or parent-visible subagent token budget where the runtime docs do not actually provide one.
+- Keep the shared contract canonical and use adapter docs only for runtime-specific deltas.
+- Preserve the managed-worktree, Builder readiness, and monitoring rules already in place unless they need to change directly for persistent Builder continuation.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/RUNTIME-CAPABILITIES.md` so the matrix and notes explicitly cover:
+  - whether persistent Builder continuation across delegated steps is supported
+  - whether manual compaction is supported
+  - whether only auto-compaction is available
+  - whether the controller can observe real context-budget or context-left evidence
+- [ ] Update `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md` so the Codex path describes persistent Builder reuse truthfully, defines whether a manual compaction path is actually available in supported Codex surfaces, and states whether visible context-left or token-budget evidence is reliable enough to drive Master Chef decisions.
+- [ ] Update `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md` so the Claude path describes persistent Builder reuse, manual `/compact` support when appropriate, auto-compaction fallback, and the limits of parent-visible subagent context information.
+- [ ] Update `cdd-master-chef/openclaw/README.md` and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so the packaged runtime path describes whether persistent Builder continuation is supported there, whether Builder compaction is manually available, and what fallback behavior applies if only auto-compaction or no explicit compaction surface exists.
+- [ ] Ensure all adapter docs distinguish:
+  - step-start compaction attempt
+  - normal same-Builder continuation
+  - replacement-only-on-failure conditions
+  - context-awareness or context-meter limits visible to Master Chef
+
+### Implementation notes
+
+- Claude currently has the strongest official documentation for long-lived sessions plus auto/manual compaction; Codex may need more careful, narrower wording.
+- If a runtime supports compaction but not a parent-visible fullness meter, document that clearly and keep the shared contract qualitative.
+- If an adapter cannot safely support persistent Builder continuation after worktree transition or compaction, that limitation must be stated explicitly rather than hidden behind shared prose.
+- The runtime matrix is the right place to state `manual compaction`, `auto-compaction`, and `context-budget visibility` as separate capabilities.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read each adapter path and confirm it no longer claims fresh-per-step Builder replacement as the normal path.
+- Confirm Claude, Codex, and OpenClaw docs each state whether manual compaction, auto-compaction, and context-budget visibility are actually available.
+
+## Step 43 — Realign harnesses, artifact checks, and validator rules to the persistent Builder contract
+
+### Goal
+
+Make the harnesses, artifact script, and structural validator enforce persistent Builder continuation plus step-boundary compaction semantics instead of the legacy fresh-Builder lifecycle.
+
+### Constraints
+
+- Preserve proof strength while removing obsolete fresh-Builder assertions.
+- Prefer concept-level checks over brittle sentence-shaped literals when possible.
+- Keep CI aligned with the new shared contract and adapter-specific truth.
+- Do not require proof surfaces to assert unsupported runtime capabilities such as exact subagent context percentages when the adapter cannot actually expose them.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so they test persistent Builder continuation across steps, beginning-of-step compaction attempts when supported, and replacement only under defined failure or drift conditions.
+- [ ] Update `scripts/test_master_chef_artifacts.sh` so artifact checks no longer require phrases or topics that imply `fresh single-step Builder runs only`, `next delegated step gets a fresh Builder`, or `Builder compaction is not a normal path`, and instead verify the new persistent-Builder lifecycle plus adapter-specific compaction capability language.
+- [ ] Update `scripts/validate_skills.py` so structural checks fail if docs regress to legacy fresh-per-step Builder semantics, fail if they invent unsupported universal context metrics, and pass only when they encode persistent Builder continuation, step-boundary compaction attempts when supported, and replacement-only-on-failure behavior.
+- [ ] Add validator and harness coverage that distinguishes:
+  - normal next-step continuation on the same Builder
+  - beginning-of-step compaction when supported
+  - auto-compaction fallback when manual compaction is unavailable
+  - replacement after explicit failure, deadlock, unusable drift, or runtime closure
+
+### Implementation notes
+
+- Remove or rewrite all assertions built on the old phrases:
+  - `Use single-step Builder runs only`
+  - `fresh Builder for the next delegated action`
+  - `do not compact or resume Builders as the normal path`
+- Keep proof surfaces focused on behavior and capability boundaries rather than forcing one exact phrasing.
+- Preserve existing coverage for Builder readiness, worktree continuation, blocker repair, and mission reporting unless it directly conflicts with the new Builder lifecycle.
+- If a runtime lacks a controller-visible context metric, tests should verify truthful fallback wording rather than a fake measurement rule.
+
+### Automated checks
+
+- `bash scripts/test_master_chef_artifacts.sh`
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Run the artifact script and confirm it no longer expects fresh-per-step Builder behavior.
+- Confirm the validator fails if docs regress to legacy fresh-Builder lifecycle wording.
+- Confirm the harnesses require same-Builder continuation across normal step transitions and only allow replacement under defined recovery conditions.
+- Confirm no proof surface forces a universal numeric context threshold without adapter support.
