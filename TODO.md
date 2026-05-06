@@ -1527,3 +1527,70 @@ Make Master Chef prefer keeping a step intact, repairing it in place, or continu
 - Simulate repeated low-forward-progress retries where the remainder now has cleaner proof boundaries and confirm Master Chef splits only then.
 - Confirm adapter docs and harnesses fail if split is justified only by generic size language or generic expectation of `many test runs`.
 - Confirm split reporting names why the split cost was justified compared with continuing the parent step.
+
+## Step 40 — Compact the Master Chef contract and realign CI proof surfaces
+
+### Goal
+
+Make the Master Chef startup, worktree, and split policy shorter, more canonical, and less drift-prone, then align the artifact script, harnesses, and validator to that compact contract so CI proves the refined behavior instead of obsolete split-first and stop-before-kickoff wording.
+
+### Constraints
+
+- Preserve the current Step 37-39 semantics: unresolved session-setting fields remain `unknown` and non-blocking, active worktrees must be branch-backed and `env_ready` before Builder or `hard_gate` depend on them, and split stays a costed last resort.
+- Keep the shared contract normative, the shared runbook procedural, the READMEs user-facing, and adapter docs focused on runtime-specific deltas rather than restating the full shared contract.
+- Fix the failing `scripts/test_master_chef_artifacts.sh` checks without reintroducing the old split-first or visible-before-kickoff policy.
+- Prefer behavior-oriented proof in CI over brittle literal prose matches, while still keeping a small set of canonical phrases stable where they materially help maintainers.
+- Keep adapter capability claims truthful and do not overstate live reasoning visibility, session-setting introspection, or worktree continuation capabilities.
+
+### Tasks
+
+- [ ] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md), `cdd-master-chef/README.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/SKILL.md` so the shared package exposes one compact canonical policy flow:
+  - startup observes session settings when available and records unresolved fields as `unknown` while continuing with the active session as-is
+  - fresh runs from long-lived branches default to a descriptive source feature-branch recommendation, then still create a fresh per-run worktree branch and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
+  - oversized-looking steps are reviewed first, preserved when still viable, repaired in place when possible, and split only when split cost is justified
+- [ ] Update `cdd-master-chef/RUNTIME-CAPABILITIES.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so adapter docs reference the shared policy compactly and only restate runtime-specific deltas:
+  - how that runtime reports unknown session fields
+  - how it continues or relaunches into the managed worktree
+  - what direct Builder readiness and monitoring evidence it can actually provide
+- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so prompts and expected outcomes verify the refined behavior instead of the old literals:
+  - reject `stop before kickoff` for missing session-setting visibility alone
+  - reject `split before Builder handoff` as the default oversized-step behavior
+  - require branch-backed `env_ready` worktree bootstrap before Builder or `hard_gate`
+  - require split decisions to be justified by preserved-versus-split cost, not generic size language
+- [ ] Update [scripts/test_master_chef_artifacts.sh](/Users/ruph/Workspace/cdd-skills/scripts/test_master_chef_artifacts.sh) so artifact assertions match the refined contract and no longer require obsolete phrases such as:
+  - `visible enough to mirror into runtime state before kickoff`
+  - `split it first`
+  - `oversized top-level step is split in Master Chef before Builder handoff`
+  - `oversized for one Builder run.*split.*smaller decision-complete TODO steps` as an unconditional preflight rule
+- [ ] Update [scripts/validate_skills.py](/Users/ruph/Workspace/cdd-skills/scripts/validate_skills.py) so its regex and substring checks use the same compact canonical topics as the artifact script, and fail when docs drift back to split-first or stop-before-kickoff semantics.
+- [ ] Ensure the root install story and package docs remain concise and user-facing while still truthfully covering kickoff approval, default/max step budget guidance, managed worktree bootstrap expectations, and final mission reporting.
+
+### Implementation notes
+
+- Keep `cdd-master-chef/CONTRACT.md` as the normative wording source for the three key policies:
+  - unknown session settings do not block kickoff
+  - managed worktree readiness requires branch setup plus worktree-local bootstrap
+  - split is rare and justified only when preserving the parent step costs more
+- Keep `cdd-master-chef/RUNBOOK.md` procedural and shorter than the current restated contract blocks; it should explain sequence and runtime-state handling, not re-argue policy.
+- Keep root and package READMEs brief and operator-facing. They should describe the flow cleanly without carrying the whole contract text.
+- Adapter docs should state only runtime-specific behavior that differs in surface shape, not duplicate all shared policy prose.
+- In proof surfaces, prefer compact topic bundles keyed to concepts such as `unknown`, `active session as-is`, `do not split by default`, `split cost`, `env_ready`, and `final mission report` instead of older sentence-shaped literals.
+- If a small canonical phrase is worth preserving for grepability, use the same phrase family across shared docs and proof surfaces intentionally rather than letting each file drift independently.
+- Do not roll back any Step 37-39 behavior to satisfy old CI wording.
+
+### Automated checks
+
+- `bash scripts/test_master_chef_artifacts.sh`
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Run `bash scripts/test_master_chef_artifacts.sh` and confirm it passes without expecting split-first or visible-before-kickoff semantics.
+- Read [README.md](/Users/ruph/Workspace/cdd-skills/README.md), `cdd-master-chef/CONTRACT.md`, and `cdd-master-chef/RUNBOOK.md` and confirm the startup/worktree/split flow is shorter, more canonical, and no longer duplicated unnecessarily.
+- Read one adapter path such as `cdd-master-chef/openclaw/README.md` plus its runbook and confirm they now focus on OpenClaw-specific behavior rather than restating the full shared contract.
+- Confirm the harnesses and validator would fail if docs regress to:
+  - `stop before kickoff` for unknown session settings
+  - `split oversized step first` as the default rule
+  - worktree path creation without explicit `env_ready` bootstrap before Builder or `hard_gate`
+- Confirm the root install story still truthfully describes kickoff approval, step budget guidance, and Master Chef mission ownership without reintroducing obsolete split wording.
