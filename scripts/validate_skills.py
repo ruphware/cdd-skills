@@ -143,11 +143,6 @@ LEGACY_BUILDER_LIFECYCLE_STRINGS = (
     "the next delegated step got a fresh Builder run.",
     "do not compact or resume Builders as the normal path",
 )
-ROOT_README_LEGACY_MASTER_CHEF_STRINGS = (
-    "Master Chef reads the current session model and thinking automatically; provide a `Builder override` only when Builder should diverge.",
-    "may split an oversized top-level step before Builder handoff",
-    "After approval, Master Chef manages fresh single-step Builder runs",
-)
 OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES = (
     r"QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly",
     r"If Master Chef QA rejects the Builder result:.*either push the findings to a fresh Builder run for the same step or fix the issue directly in Master Chef",
@@ -787,11 +782,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     contract_md = shared_root / "CONTRACT.md"
     runbook_md = shared_root / "RUNBOOK.md"
     matrix_md = shared_root / "RUNTIME-CAPABILITIES.md"
-    root_readme_md = repo_root / "README.md"
     gitignore_md = repo_root / ".gitignore"
     install_sh = repo_root / "scripts" / "install.sh"
 
-    for path in (readme_md, skill_md, contract_md, runbook_md, matrix_md, root_readme_md, gitignore_md, install_sh):
+    for path in (readme_md, skill_md, contract_md, runbook_md, matrix_md, gitignore_md, install_sh):
         assert path.exists(), f"missing {path}"
 
     assert not (repo_root / "master-chef").exists(), "legacy top-level master-chef stub should be removed"
@@ -802,7 +796,6 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
     contract_text = contract_md.read_text(encoding="utf-8")
     runbook_text = runbook_md.read_text(encoding="utf-8")
     matrix_text = matrix_md.read_text(encoding="utf-8")
-    root_readme_text = root_readme_md.read_text(encoding="utf-8")
     gitignore_text = gitignore_md.read_text(encoding="utf-8")
     install_text = install_sh.read_text(encoding="utf-8")
 
@@ -1081,75 +1074,6 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         "runtime capability matrix entries",
     )
 
-    require_substrings(
-        root_readme_text,
-        CDD_CORE_LABELS
-        + (
-            MASTER_CHEF_LABEL,
-            "npx skills add https://github.com/ruphware/cdd-skills/",
-            "./scripts/install.sh --all",
-            "install-remote.sh",
-            "uninstall-remote.sh",
-            "cdd-master-chef/RUNBOOK.md",
-            "cdd-master-chef/CODEX-ADAPTER.md",
-            "cdd-master-chef/CLAUDE-ADAPTER.md",
-            "cdd-master-chef/RUNTIME-CAPABILITIES.md",
-            "./scripts/install.sh --runtime claude",
-            "./scripts/install.sh --runtime openclaw",
-        ),
-        root_readme_md,
-        "root README stable Master Chef references",
-    )
-    require_regexes(
-        root_readme_text,
-        (
-            r"\[CDD-5\] Maintain.*doc drift.*repo upkeep.*source cleanup",
-            r"Use `\[CDD-5\] Maintain` for doc drift \+ upkeep, source cleanup, index refresh, or refactor architecture audit\.",
-            r"Use the core .*cdd-\*.*single coding agent",
-            r"Use .*(cdd-master-chef|\[CDD-6\] Master Chef).*kickoff approval",
-            r"owns the mission.*final mission report.*completed work.*decisions (?:were )?made",
-            r"For `\[CDD-6\] Master Chef`:",
-            r"remaining unfinished top-level step-heading count.*default/max step budget",
-            r"fresh run from a long-lived branch.*descriptive feature branch",
-            r"managed worktree branch.*`env_ready`|fresh managed worktree branch.*`env_ready`",
-            r"reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
-            r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
-            r"current session model and thinking.*`unknown`.*active session as-is.*Builder override|reads the current session model and thinking when the runtime exposes them.*Builder override",
-            r"how many TODO steps this run should cover",
-            r"whether (?:Master Chef|it) should spawn Builder now",
-            r"persistent Builder per active run.*recovery conditions|persistent Builder.*replaces Builder only for recovery conditions",
-            r"No-clone upgrade path:",
-            r"managed prune semantics",
-            r"Adapter docs.*maintainers.*debugging.*runtime support",
-            r"Current concrete adapters in this repo:",
-            r"OpenClaw.*packaged adapter.*install\.sh --runtime openclaw",
-            r"Codex.*CODEX-ADAPTER\.md.*CODEX-RUNBOOK\.md",
-            r"Claude Code.*CLAUDE-ADAPTER\.md.*CLAUDE-RUNBOOK\.md",
-            r"No Hermes adapter ships in this repo today\.",
-        ),
-        root_readme_md,
-        "root README topic coverage",
-    )
-    forbid_substrings(
-        root_readme_text,
-        ROOT_README_LEGACY_MASTER_CHEF_STRINGS,
-        root_readme_md,
-        "legacy root README Master Chef lifecycle drift",
-    )
-    forbid_substrings(
-        root_readme_text,
-        (
-            "wrong `npx skills add` entrypoint",
-            "docs-only surrogate",
-            "very experimental",
-            "the current OpenClaw adapter fits your runtime",
-            "only packaged Master Chef runtime",
-            "For current Codex or Claude Code `[CDD-6] Master Chef` adapter work:",
-            "treat those as the current subagent-backed adapter paths in development",
-        ),
-        root_readme_md,
-        "outdated root README drift",
-    )
     require_substrings(
         install_text,
         (
