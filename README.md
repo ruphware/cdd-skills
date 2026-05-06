@@ -1,22 +1,24 @@
-# 🚀 Autonomous Agent Development in Strict CDD Guardrails
+# 🚀 Autonomous Agent Development in CDD Guardrails
 
-**CDD Skills make AI coding agents easier to trust.**
+**AI agents build. CDD keeps control.**
 
-Autonomous agents are useful only when they stay inside a clear contract. CDD Skills turn loose development chat into scoped plans, auditable TODO steps, isolated worktrees, and evidence-backed implementation. Use the core skills when you want precise human-guided work. Use Master Chef when the plan is clear enough for bounded autonomous execution.
+CDD Skills wrap agentic coding in the guardrails busy developers need: scoped plans, auditable TODO steps, isolated worktrees, validation evidence, and clear human approval points.
 
-Powered by the structured simplicity of [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate), CDD helps developers:
+Use the core skills for precise human-guided work. Use Master Chef when the plan is ready for bounded autonomous execution.
 
-* Turn vague requests into concrete TODO contracts.
-* Keep human approval at the planning and kickoff points that matter.
-* Give AI agents enough structure to work independently without drifting.
-* Audit what shipped against the original goals, tasks, checks, and UAT.
-* Run bounded autonomous missions with Master Chef when the work is ready.
+Powered by [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate), CDD helps you:
+
+* Turn intent into TODO contracts.
+* Keep approval at the right checkpoints.
+* Let agents move without drifting.
+* Audit shipped work against goals, checks, and UAT.
+* Run autonomous missions when the work is ready.
 
 ---
 
 ## 🧑‍🍳 Master Chef: Bounded Autonomous Development
 
-Master Chef is for the moment when the plan is ready to delegate. You approve the mission once, set a step budget, and it works through TODO steps in an isolated worktree with persistent Builder context, recovery rules, commits, pushes, and a final mission report.
+Approve once, set a step budget, and Master Chef works through TODO steps in an isolated worktree with persistent Builder context, recovery rules, commits, pushes, and a final mission report.
 
 Why use it:
 
@@ -35,20 +37,38 @@ $cdd-master-chef  # Codex runtime
 
 ---
 
-## 🛠️ Core Skill Map
+## 🛠️ Skill Map
 
-| Skill | Command | Use it when you want to... |
-| --- | --- | --- |
-| **[CDD-0] Boot** | `cdd-boot` | Load repo context and decide whether to stay put or move into a worktree. |
-| **[CDD-1] Init Project** | `cdd-init-project` | Add or repair the CDD contract in a repository. |
-| **[CDD-2] Plan** | `cdd-plan` | Turn requests and audit findings into implementation-ready TODO steps. |
-| **[CDD-3] Implement TODO** | `cdd-implement-todo` | Execute one approved TODO step with focused human oversight. |
-| **[CDD-4] Implementation Audit** | `cdd-implementation-audit` | Check whether the implementation actually satisfies the TODO goals, tasks, checks, and UAT. |
-| **[CDD-5] Maintain** | `cdd-maintain` | Clean drift, refresh upkeep surfaces, and review architecture cleanup candidates. |
-| **[CDD-6] Master Chef** | `cdd-master-chef` | Run a bounded multi-step autonomous mission with a final report. |
+The core loop is intentionally simple: boot context, plan work, implement one step, audit the result.
 
-The core `$cdd-*` loop is deliberately boring: plan the work, approve the step, implement the step, audit the result. That structure is what makes the agent useful without making the human guess what happened.
+- **[CDD-0] Boot** 
+ *cdd-boot*
+ Ingest AGENTS.md, project docs, and current work context; decide whether to stay in the current checkout, continue in a linked worktree, or create a branch-backed worktree under .cdd-runtime/worktrees/. 
 
+- **[CDD-1] Init Project**
+ *cdd-init-project*
+ Initialize or adopt CDD in the current repo. *gh is a great tool to have when the repo is GitHub-backed.* 
+
+- **[CDD-2] Plan**
+ *cdd-plan*
+ Convert change requests or audit findings into implementation-ready TODO steps. 
+
+- **[CDD-3] Implement TODO**
+ *cdd-implement-todo*
+  Implement exactly one approved TODO step and mark it done. 
+
+- **[CDD-4] Implementation Audit**
+ *cdd-implementation-audit*
+ Audit spec, code, tests, complexity, and docs, then route approved follow-up into planning. 
+
+- **[CDD-5] Maintain**
+ *cdd-maintain*
+ Review doc drift and repo upkeep, run source cleanup sweeps, refresh indexes, and audit refactor candidates.
+
+- **[CDD-6] Master Chef**
+ *cdd-master-chef*
+ Run the autonomous multi-step workflow through the canonical Master Chef skill and runtime adapters.
+ 
 ---
 
 ## 📦 Quick Install & Update
