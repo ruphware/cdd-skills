@@ -1304,3 +1304,86 @@ Make the shared Master Chef docs, adapter docs, harnesses, and validators enforc
 - Read the shared and adapter docs and confirm they no longer leave `successful split but stopped at R05A`, routine blocker handoff to the human, or vague terminal reporting as acceptable.
 - Confirm the validator or harness would fail if stop-after-split drift or missing mission-report drift reappears.
 - Confirm unresolved blockers still permit a hard-stop run only when a technical or physical limit prevents safe autonomous continuation.
+
+## Step 35 — Encode Builder-run viability as the shared split decision for Master Chef
+
+### Goal
+
+Make Master Chef decide whether to delegate, repair, or split a TODO step based on one shared rule: whether one fresh Builder can plausibly complete the step safely in one run with acceptable failure risk.
+
+### Constraints
+
+- Do not treat the number of checklist tasks by itself as a reason to split.
+- Preserve Step 33 and Step 34 behavior: successful repair still emits `BLOCKER_CLEARED` and continues the same run when safe.
+- Keep the split policy qualitative and evidence-based; do not invent token, file-count, or elapsed-time thresholds that this repo cannot verify.
+- Preserve single-step Builder runs and do not let Builder invent missing product, architecture, sequencing, or proof decisions.
+- Keep preflight review and blocked-step review on the same core rubric.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so Master Chef uses one explicit Builder-run-viability rubric for `delegate unchanged`, `repair in place`, `split the remainder into child steps`, or `hard-stop`.
+- [ ] Define the delegation-ready test explicitly: a step is safe for one Builder run only when Master Chef can reasonably expect one fresh Builder to finish it end-to-end without reopening planning, without relying on large context recovery between attempts, and without an unusually high risk of stalling in repeated edit-validate-debug loops.
+- [ ] Define non-signals explicitly: many checklist tasks, many touched files, or broad-looking wording are not by themselves reasons to split.
+- [ ] Define supporting risk signals explicitly: expected need for several sequential debug or validation cycles, heavy cross-cutting coordination that is likely to force replanning mid-run, expensive hard-gate proof likely to create long recovery loops, or a remainder that would naturally separate into clearer executable chunks if the first attempt stalls.
+- [ ] Define the preflight decision path explicitly: if a minimal TODO repair makes the step viable for one Builder run without changing its true scope, Master Chef should repair in place; otherwise it should split before Builder handoff only when Master Chef already has strong evidence that one-run completion is too risky.
+- [ ] Define the blocked-step decision path explicitly: when a Builder attempt does not pass, Master Chef must review the returned evidence, current diff, failed checks, and remaining work using the same viability rubric before deciding whether the next Builder should continue the same step, receive an in-place repair, or resume on a new child step.
+
+### Implementation notes
+
+- Center the policy on execution risk, not superficial size.
+- Reuse the repo's existing `decision-complete` standard as the minimum quality bar for any step Builder is asked to run, but keep split logic focused on one-run viability rather than checkbox count.
+- Treat structural breadth as supporting evidence only when it materially increases one-run failure risk.
+- Keep the wording explicit that Master Chef may continue the same step after partial progress when the remaining work is still one bounded Builder-sized action.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Simulate a step with many concrete tasks that still forms one coherent implementation pass and confirm Master Chef does not split it for task count alone.
+- Simulate a step whose first-pass proof is likely to require several long debug or validation cycles and confirm Master Chef may split it before Builder handoff when one-run failure risk is already clear.
+- Simulate a non-passing Builder attempt with meaningful progress and confirm Master Chef reviews the remaining work through the same viability rubric before choosing the next action.
+- Confirm the reported reason for delegation, repair, or split is framed in terms of one-run viability and failure risk rather than generic size language.
+
+## Step 36 — Encode the post-attempt continuation review and split-remainder contract
+
+### Goal
+
+Make Master Chef review every non-passing Builder result, decide whether the same step can continue safely, and when necessary split only the remaining work into lower-risk child steps with preserved proof and invariants.
+
+### Constraints
+
+- Preserve adapter-specific capability claims and keep runtime descriptions truthful.
+- Do not force a split after every failed or partial Builder attempt; continuing the same step must remain valid when the remainder is still Builder-sized.
+- Cleaning is optional and scoped: do it only when stale runtime or build artifacts materially increase retry risk or obscure the true remaining work.
+- Child steps must preserve the parent step's intent, proof obligations, and must-preserve invariants.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, and `cdd-master-chef/CLAUDE-RUNBOOK.md` so every non-passing Builder attempt triggers an explicit Master Chef review with four possible outcomes: `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`.
+- [ ] Define the continuation review explicitly: Master Chef must inspect what was actually completed, what failed, whether the remaining work is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
+- [ ] Define `continue_same_step` explicitly: use it when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning.
+- [ ] Define `repair_in_place` explicitly: use it when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run.
+- [ ] Define `split_remainder_into_child_steps` explicitly: use it when observed progress shows the unfinished portion is too risky to keep as one Builder run and can now be expressed as clearer executable child steps with explicit dependency order.
+- [ ] Define the split artifact contract explicitly: when Master Chef splits after partial progress, it must record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks and UAT carry forward, and what invariants or compatibility duties remain attached to each child.
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `scripts/validate_skills.py` so docs and validation fail if Master Chef either splits too eagerly without risk evidence or keeps retrying a same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
+
+### Implementation notes
+
+- The important distinction is not `failed once` versus `failed twice`; it is whether the remaining work is still one viable Builder-sized execution.
+- `Builder can continue` means a fresh single-step Builder can resume the same parent step intentionally, not that an old Builder session is resurrected.
+- Prefer terminology that reflects review outcomes directly: `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, and `hard_stop`.
+- Keep `BLOCKER_CLEARED` aligned with the existing reporting contract rather than inventing a separate split event.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Simulate a partial but coherent Builder result and confirm Master Chef continues the same step with a fresh Builder instead of splitting automatically.
+- Simulate repeated partial progress where most new Builder effort would be spent on context recovery and confirm Master Chef stops the parent step, optionally cleans stale artifacts, splits the remainder, and resumes on the first runnable child.
+- Confirm the child-step split records completed portion, remaining portion, next-child justification, carried-forward checks, and preserved invariants.
+- Confirm the validator or harness would fail if docs said `split because large` without tying that decision to Builder-run viability and observed retry risk.
