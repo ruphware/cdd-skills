@@ -6,6 +6,12 @@ Adapter docs may add runtime-specific detail, but they must not contradict this 
 
 When a shared approval or decision point is surfaced to the human through an adapter, use visible selector-based options when practical and let the human reply with just the selector.
 
+## Compact policy flow
+
+- Session settings: record unresolved current-session fields as `unknown` and continue with the active session as-is.
+- Startup: recommend a descriptive source feature branch on fresh runs from long-lived branches, then create a fresh per-run managed worktree branch and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
+- Step shaping: review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified.
+
 ## 0) Session settings
 
 - Read the current session model and thinking directly from the active runtime surface.
@@ -69,7 +75,7 @@ If the human approves that suggestion:
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
-3. If the next runnable top-level TODO step is oversized for one Builder run, review it first rather than splitting automatically. Keep the step intact while one fresh Builder can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
+3. If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep the step intact while one fresh Builder can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and fresh per-run branch name.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.

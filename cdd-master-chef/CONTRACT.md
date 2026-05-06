@@ -17,6 +17,14 @@ Design principle: **soft reasoning, hard state**.
 - Keep planning, review, QA, and blocker judgment LLM-driven.
 - Keep runtime state, leases, logs, events, and recovery thresholds explicit and durable.
 
+## 0.5) Compact policy flow
+
+Treat these three rules as the canonical policy flow for `cdd-master-chef`:
+
+1. Session settings are best-effort facts. Observe the current session model and thinking when the runtime exposes them, record unresolved fields as `unknown`, and continue with the active session as-is rather than blocking kickoff.
+2. Startup is branch-backed and environment-backed. On fresh runs from long-lived branches, default to recommending a descriptive source feature branch, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate` validation rely on it.
+3. Oversized-looking work is reviewed first. Keep the parent step while one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified by lower total delivery churn.
+
 ## 1) Actors
 
 ### Master Chef
@@ -186,7 +194,7 @@ Master Chef chooses the internal `cdd-*` routing model.
 
 - For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
 - Builder default: `cdd-implement-todo` for the next runnable TODO step.
-- If the next runnable top-level TODO step is oversized for one Builder run, do not split it by default. Use one shared Builder-run-viability review for that choice: prefer delegating the step unchanged while one fresh Builder can still finish it safely in one run; if a minimal TODO fix restores that viability without changing scope, repair it in place; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
+- If the next runnable top-level TODO step is oversized for one Builder run, apply the compact review-first split policy rather than splitting by default. Delegate the parent step unchanged while one fresh Builder can still finish it safely in one run, repair it in place when a minimal TODO fix restores that viability without changing scope, and split only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
 - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-maintain` stay in the main session rather than being delegated to Builder.
 - Use `cdd-maintain` directly when the repo specifically needs doc drift review, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review before the normal TODO loop continues.
 - `cdd-implementation-audit` is an installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `cdd-plan` in the main session before any delegated implementation begins.

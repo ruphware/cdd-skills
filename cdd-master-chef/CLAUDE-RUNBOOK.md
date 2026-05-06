@@ -4,6 +4,12 @@ This runbook defines the operational Claude Code adapter path over the shared `c
 
 Use the shared contract in `CONTRACT.md` and the Claude adapter rules in `CLAUDE-ADAPTER.md` as the source of truth. Use this file for the concrete Claude operating shape.
 
+Claude-specific deltas over the shared policy:
+
+- how Claude reports unresolved session-setting fields as `unknown`
+- whether the active Claude surface can continue in the managed worktree in-session or needs a fallback handoff
+- what direct Builder readiness, status, and closure evidence Claude can actually expose
+
 ## 1) Session shape
 
 - Launch the main Claude session with the desired Master Chef model and effort. The active session values become `master_model` and `master_thinking` for the run.

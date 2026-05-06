@@ -1544,26 +1544,26 @@ Make the Master Chef startup, worktree, and split policy shorter, more canonical
 
 ### Tasks
 
-- [ ] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md), `cdd-master-chef/README.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/SKILL.md` so the shared package exposes one compact canonical policy flow:
+- [x] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md), `cdd-master-chef/README.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/SKILL.md` so the shared package exposes one compact canonical policy flow:
   - startup observes session settings when available and records unresolved fields as `unknown` while continuing with the active session as-is
   - fresh runs from long-lived branches default to a descriptive source feature-branch recommendation, then still create a fresh per-run worktree branch and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
   - oversized-looking steps are reviewed first, preserved when still viable, repaired in place when possible, and split only when split cost is justified
-- [ ] Update `cdd-master-chef/RUNTIME-CAPABILITIES.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so adapter docs reference the shared policy compactly and only restate runtime-specific deltas:
+- [x] Update `cdd-master-chef/RUNTIME-CAPABILITIES.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so adapter docs reference the shared policy compactly and only restate runtime-specific deltas:
   - how that runtime reports unknown session fields
   - how it continues or relaunches into the managed worktree
   - what direct Builder readiness and monitoring evidence it can actually provide
-- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so prompts and expected outcomes verify the refined behavior instead of the old literals:
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so prompts and expected outcomes verify the refined behavior instead of the old literals:
   - reject `stop before kickoff` for missing session-setting visibility alone
   - reject `split before Builder handoff` as the default oversized-step behavior
   - require branch-backed `env_ready` worktree bootstrap before Builder or `hard_gate`
   - require split decisions to be justified by preserved-versus-split cost, not generic size language
-- [ ] Update [scripts/test_master_chef_artifacts.sh](/Users/ruph/Workspace/cdd-skills/scripts/test_master_chef_artifacts.sh) so artifact assertions match the refined contract and no longer require obsolete phrases such as:
+- [x] Update [scripts/test_master_chef_artifacts.sh](/Users/ruph/Workspace/cdd-skills/scripts/test_master_chef_artifacts.sh) so artifact assertions match the refined contract and no longer require obsolete phrases such as:
   - `visible enough to mirror into runtime state before kickoff`
   - `split it first`
   - `oversized top-level step is split in Master Chef before Builder handoff`
   - `oversized for one Builder run.*split.*smaller decision-complete TODO steps` as an unconditional preflight rule
-- [ ] Update [scripts/validate_skills.py](/Users/ruph/Workspace/cdd-skills/scripts/validate_skills.py) so its regex and substring checks use the same compact canonical topics as the artifact script, and fail when docs drift back to split-first or stop-before-kickoff semantics.
-- [ ] Ensure the root install story and package docs remain concise and user-facing while still truthfully covering kickoff approval, default/max step budget guidance, managed worktree bootstrap expectations, and final mission reporting.
+- [x] Update [scripts/validate_skills.py](/Users/ruph/Workspace/cdd-skills/scripts/validate_skills.py) so its regex and substring checks use the same compact canonical topics as the artifact script, and fail when docs drift back to split-first or stop-before-kickoff semantics.
+- [x] Ensure the root install story and package docs remain concise and user-facing while still truthfully covering kickoff approval, default/max step budget guidance, managed worktree bootstrap expectations, and final mission reporting.
 
 ### Implementation notes
 

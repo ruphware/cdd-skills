@@ -83,6 +83,18 @@ MASTER_CHEF_INHERITED_SETTINGS_REGEX = (
 MASTER_CHEF_EFFECTIVE_BUILDER_PASS = (
     "Effective Builder settings were stated clearly before implementation, with inherited Builder behavior as the default."
 )
+MASTER_CHEF_UNKNOWN_AS_IS_REGEX = (
+    r"`unknown`.*active session as-is|continue with the active session as-is"
+)
+MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX = (
+    r"oversized(?:-looking)?(?: next| top-level)? TODO step.*(?:review|do not split).*split cost.*justified|oversized for one Builder run.*(?:do not split|rather than splitting by default).*split cost|keep it intact unless.*split cost.*justified|review-first split policy"
+)
+MASTER_CHEF_ENV_READY_REGEX = (
+    r"`worktree_env_status`.*`preparing`.*`env_ready`.*`partial`.*`blocked`|branch-backed.*`env_ready`|`env_ready`"
+)
+MASTER_CHEF_FINAL_REPORT_REGEX = (
+    r"final mission report.*completed work.*decisions made|Terminal mission reports.*completed work.*decisions made"
+)
 REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
 MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
 MASTER_CHEF_RUNBOOK_WORKTREE_ROOT = (
@@ -848,9 +860,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"source_branch_decision.*accepted.*declined.*not applicable|accepted, declined, or not applicable",
             r"unfinished top-level TODO step headings only.*nested checkboxes or sub-tasks",
             r"default/max run step budget.*all remaining steps",
-            r"oversized for one Builder run.*do not split.*by default.*split cost|oversized for one Builder run.*split cost.*justified",
+            MASTER_CHEF_UNKNOWN_AS_IS_REGEX,
+            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
             r"bootstrap the worktree-local environment.*before Builder or `hard_gate` validation rely on that worktree",
-            r"`worktree_env_status`.*`preparing`.*`env_ready`.*`partial`.*`blocked`",
+            MASTER_CHEF_ENV_READY_REGEX,
             r"`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
             r"hard technical or physical limit.*stop before implementation.*source checkout",
             r"Builder monitoring.*live status.*partial output.*direct reasoning visibility",
@@ -866,7 +879,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent Builder reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
-            r"final mission report.*completed work.*decisions made",
+            MASTER_CHEF_FINAL_REPORT_REGEX,
         ),
         contract_md,
         "shared contract monitoring topics",
@@ -936,11 +949,11 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"inherits from an unresolved parent field.*`unknown`",
             r"Do not ask the human to type replacement `master_\*` settings",
             r"fresh run.*long-lived branch.*descriptive feature branch",
-            r"oversized for one Builder run.*keep it intact unless.*split cost.*justified|oversized for one Builder run.*review it first.*split cost.*justified",
+            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
             r"unfinished top-level TODO step-heading count",
             r"default/max `run_step_budget`.*all remaining steps",
             r"inspect repo-native manifests.*validation entrypoints.*active worktree",
-            r"`worktree_env_status`.*`preparing`.*`env_ready`.*`partial`.*`blocked`",
+            MASTER_CHEF_ENV_READY_REGEX,
             r"do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`",
             r"`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
             r"does not expose live Builder reasoning.*do not pretend",
@@ -955,7 +968,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent discovery note.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
-            r"Terminal mission reports.*completed work.*decisions made",
+            MASTER_CHEF_FINAL_REPORT_REGEX,
         ),
         runbook_md,
         "shared runbook monitoring topics",
@@ -1011,7 +1024,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"For `\[CDD-6\] Master Chef`:",
             r"remaining unfinished top-level step-heading count.*default/max step budget",
             r"fresh run from a long-lived branch.*descriptive feature branch",
-            r"may split an oversized top-level step before Builder handoff|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
+            r"reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
             r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
             r"current session model and thinking automatically.*Builder override",
             r"how many TODO steps this run should cover",
@@ -1239,7 +1252,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"`READY`.*`BLOCKED: <reason>`",
             r"ACK or runtime-ready signal rather than only a spawn handle",
             r"bootstrapped locally before Builder or `hard_gate` validation rely on it",
-            r"branch-backed.*`env_ready`|`env_ready`",
+            MASTER_CHEF_ENV_READY_REGEX,
             r"if Codex does not expose one or both fields exactly.*`unknown`.*kickoff still proceeds with the active session as-is",
             r"ordinary scope or sequencing ambiguity is resolved by Master Chef.*handed back to the human",
             r"partial progress",
@@ -1249,7 +1262,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
-            r"final mission report.*completed work.*decisions made.*remaining work|final mission report.*completed work.*decisions made",
+            r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
         ),
         harness_md,
         "Codex harness monitoring topics",
@@ -1437,7 +1450,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"`READY`.*`BLOCKED: <reason>`",
             r"ACK or runtime-ready signal rather than only a spawn handle",
             r"bootstrapped locally before Builder or `hard_gate` validation rely on it",
-            r"branch-backed.*`env_ready`|`env_ready`",
+            MASTER_CHEF_ENV_READY_REGEX,
             r"if Claude does not expose one or both fields exactly.*`unknown`.*kickoff still proceeds with the active session as-is",
             r"ordinary scope or sequencing ambiguity is resolved by Master Chef.*handed back to the human",
             r"partial progress",
@@ -1447,7 +1460,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
-            r"final mission report.*completed work.*decisions made.*remaining work|final mission report.*completed work.*decisions made",
+            r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
         ),
         harness_md,
         "Claude harness monitoring topics",
@@ -1540,7 +1553,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"fresh run from a long-lived branch.*descriptive feature branch",
             r"bootstrap the repo-native environment there.*before Builder or `hard_gate` validation rely on it",
             r"`worktree_env_status`.*`env_ready`",
-            r"oversized for one Builder run.*do not split.*by default.*split cost|oversized for one Builder run.*split cost.*justified",
+            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
             r"default/max run step-budget recommendation",
             r"direct Builder status or progress surfaces",
             r"`builder_phase: booting`.*spawn request succeeds",
@@ -1610,7 +1623,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"current OpenClaw path cannot honor a requested Builder override cleanly.*use inherited Builder settings",
             r"shared selector contract",
             *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
-            r"oversized for one Builder run.*do not split.*by default.*split cost|oversized for one Builder run.*split cost.*justified",
+            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
@@ -1657,7 +1670,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"only split an oversized one when.*Builder, test, and QA cost.*justified|only split an oversized one when.*split cost.*justified",
             r"one bounded implementation action",
             r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
-            r"final mission report.*completed work.*decisions made",
+            MASTER_CHEF_FINAL_REPORT_REGEX,
         ),
         readme_md,
         "OpenClaw README config topics",
@@ -1668,7 +1681,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         (
             MASTER_CHEF_LABEL,
             "Prompt A0 - Session-settings path",
-            "Prompt A1 - Oversized-step review before Builder handoff",
+            "Prompt A1 - Oversized-step review before delegation",
             "Prompt B - Selector-driven kickoff approval",
             "Prompt J - QA reject remediation",
             "Prompt L - Blocked-step decomposition",

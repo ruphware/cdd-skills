@@ -16,6 +16,12 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 
 ## Runtime notes
 
+Shared policy anchors for every adapter in this package:
+
+- record unresolved current-session fields as `unknown` and continue with the active session as-is
+- recommend a descriptive source feature branch on fresh runs from long-lived branches, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
+- review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
+
 All adapters in this package must satisfy the same startup gate:
 
 - optionally recommend and record a descriptive source feature branch on fresh runs from long-lived branches
@@ -29,8 +35,8 @@ All adapters in this package must satisfy the same startup gate:
 
 - The repo currently ships the OpenClaw adapter docs in `cdd-master-chef/openclaw/`.
 - The OpenClaw adapter is the current packaged runtime adapter, but it is not the only current adapter in this package.
-- Session-setting observation is best-effort: when OpenClaw cannot expose an exact model or thinking value, the adapter should record that field as `unknown`, report the limitation honestly, and continue kickoff.
-- The current adapter should provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, and bootstrap the repo-native environment after relaunch before autonomous implementation starts.
+- OpenClaw-specific delta: when OpenClaw cannot expose an exact model or thinking value, record that field as `unknown`, report the limitation honestly, and continue kickoff.
+- OpenClaw-specific delta: provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, and bootstrap the repo-native environment after relaunch before autonomous implementation starts.
 
 ### Codex
 

@@ -12,6 +12,12 @@ This `openclaw/` folder documents how the OpenClaw runtime satisfies that shared
 
 It is one current concrete adapter in this package. Codex and Claude Code adapter docs live in the package root as current subagent-backed alternatives.
 
+OpenClaw-specific deltas over the shared policy:
+
+- unresolved current-session fields are recorded as `unknown`, reported honestly, and do not block kickoff
+- the packaged adapter provisions the managed worktree, then stops with exact relaunch instructions instead of assuming safe live cwd switching
+- Builder or `hard_gate` validation do not rely on the worktree until the relaunched session has bootstrapped it to `env_ready`
+
 Installed form:
 
 - `~/.openclaw/skills/cdd-master-chef`

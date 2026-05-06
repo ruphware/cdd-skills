@@ -6,6 +6,12 @@ This runbook is the OpenClaw adapter over the shared `[CDD-6] Master Chef` contr
 
 Use the parent `cdd-master-chef/` package docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
+OpenClaw-specific deltas over the shared policy:
+
+- unresolved current-session fields are recorded as `unknown`, reported honestly, and do not block kickoff
+- the current adapter provisions the managed worktree, records runtime state there, and then requires relaunch instead of assuming safe in-session cwd switching
+- Builder readiness and monitoring evidence comes from the relaunched session, runtime files, and explicit Builder ACKs rather than any claim of live reasoning visibility
+
 Run autonomous development with one control loop:
 
 - **Master Chef:** the current OpenClaw session

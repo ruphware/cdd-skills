@@ -84,7 +84,7 @@ Inspect the repo, tell me which TODO step is next, and prepare selector-driven k
   - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
   - explicit selector-driven kickoff approval request
 
-### Prompt A1 - Oversized-step review before Builder handoff
+### Prompt A1 - Oversized-step review before delegation
 
 ```text
 /cdd-master-chef TEST ONLY: assume the next top-level TODO step is oversized for one Builder run.

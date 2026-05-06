@@ -4,6 +4,12 @@ This runbook defines the operational Codex adapter path over the shared `cdd-mas
 
 Use the shared contract in `CONTRACT.md` and the Codex adapter rules in `CODEX-ADAPTER.md` as the source of truth. Use this file for the concrete Codex operating shape.
 
+Codex-specific deltas over the shared policy:
+
+- how Codex reports unresolved session-setting fields as `unknown`
+- whether the active Codex surface can continue in the managed worktree in-session or needs a fallback handoff
+- what direct Builder readiness, status, and closure evidence Codex can actually expose
+
 ## 1) Session shape
 
 - Launch the main Codex session with the desired Master Chef model and reasoning effort. The active session values become `master_model` and `master_thinking` for the run.

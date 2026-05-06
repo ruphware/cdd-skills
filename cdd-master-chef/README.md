@@ -2,19 +2,20 @@
 
 This directory is the canonical committed package root for `[CDD-6] Master Chef`, an in-development multi-runtime autonomous workflow that sits beside the core `[CDD-0]` through `[CDD-5]` CDD skills.
 
-The shared contract treats the current session model and thinking as best-effort Master Chef facts. When a runtime cannot expose one or both exactly, Master Chef records only those fields as `unknown`, proceeds with the active session as-is, and still defaults Builder to inherit the effective settings unless an adapter can honor an explicit `Builder override` cleanly.
+## Compact policy flow
 
-Startup is branch-backed and environment-backed. On fresh runs from long-lived branches, Master Chef should default to recommending a descriptive source feature branch unless the human declines. It then still provisions a separate fresh per-run worktree branch, activates the managed worktree, bootstraps the repo-native environment there, records branch and bootstrap evidence in runtime state, and only then lets Builder or `hard_gate` validation depend on that worktree.
+- Session settings: treat the current session model and thinking as best-effort Master Chef facts. If a runtime cannot expose one or both exactly, record only those fields as `unknown` and continue with the active session as-is. Builder still inherits the effective settings unless an adapter can honor an explicit `Builder override` cleanly.
+- Startup: on fresh runs from long-lived branches, default to recommending a descriptive source feature branch unless the human declines. Then create a separate fresh per-run worktree branch, activate the managed worktree, bootstrap the repo-native environment there, and only let Builder or `hard_gate` validation depend on that worktree after it is `env_ready`.
+- Step shaping: review oversized-looking work before delegation. Keep the parent step intact while one fresh Builder can still finish it safely in one run, repair it in place when a minimal TODO fix restores that shape, and split only when the added Builder, hard-gate, QA, and mission-delay cost is justified.
+- Mission ownership: after kickoff approval, Master Chef owns the mission under the approved run step budget and ends terminal states with a final mission report covering completed work, unresolved session-setting fields, and decisions made.
 
-After kickoff approval, Master Chef owns the mission under the approved run step budget: it keeps continuation and blocker decisions in-session, restarts Builders as needed, repairs or splits blocked work when safe, and ends terminal states with a final mission report covering completed work, unresolved session-setting fields, and decisions made.
-
-Split decisions follow one shared rule: keep the current step intact while one fresh Builder can still finish it safely in one run and preserving the parent step is still cheaper than introducing new proof boundaries. If not, Master Chef first tries a minimal in-place repair; only then does it split the remainder into smaller decision-complete steps. A split is expensive because it adds Builder boots, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Many checklist tasks, many touched files, or broad-looking wording are not triggers by themselves; the real question is whether the split cost is justified.
+The rest of this package fans out from that compact shared policy.
 
 Use these files as the canonical contract surfaces:
 
 - `SKILL.md` — current installable `cdd-master-chef` skill entrypoint
 - `CONTRACT.md` — runtime-agnostic Master Chef behavior
-- `RUNBOOK.md` — shared worktree, hand-off, and operational procedure
+- `RUNBOOK.md` — shared procedural sequence over the compact policy
 - `RUNTIME-CAPABILITIES.md` — capability boundaries for OpenClaw, Codex, and Claude Code
 
 Runtime adapters consume that shared contract and define how a specific runtime realizes it:
