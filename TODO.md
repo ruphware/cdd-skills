@@ -1387,3 +1387,143 @@ Make Master Chef review every non-passing Builder result, decide whether the sam
 - Simulate repeated partial progress where most new Builder effort would be spent on context recovery and confirm Master Chef stops the parent step, optionally cleans stale artifacts, splits the remainder, and resumes on the first runnable child.
 - Confirm the child-step split records completed portion, remaining portion, next-child justification, carried-forward checks, and preserved invariants.
 - Confirm the validator or harness would fail if docs said `split because large` without tying that decision to Builder-run viability and observed retry risk.
+
+## Step 37 — Make session-setting observability non-blocking for Master Chef startup
+
+### Goal
+
+Make missing session model or thinking visibility a non-blocking reporting gap so Master Chef proceeds with the active session as-is, records any unknown settings honestly, and never dies or stops kickoff just because `master_model` or `master_thinking` cannot be read exactly.
+
+### Constraints
+
+- Keep the existing `master_model`, `master_thinking`, `builder_model`, `builder_thinking`, and `builder_settings_source` runtime fields.
+- Do not ask the human to supply, confirm, or type replacement `master_*` values.
+- Treat the active session as the source of truth even when its exact model or thinking cannot be introspected.
+- Preserve Builder inherit-by-default behavior and explicit `Builder override` behavior when the adapter can honor it cleanly.
+- Preserve mission-owned autonomy: missing setting visibility must not hand ordinary continuation decisions back to the human or block kickoff by itself.
+- Keep adapter claims truthful: if a runtime cannot expose exact values, say so explicitly instead of guessing.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so current session model and thinking are best-effort read-only Master Chef facts rather than mandatory startup prerequisites; when either value is not observable, Master Chef must record that field as `unknown`, proceed with the active session as-is, and keep kickoff moving.
+- [ ] Define the runtime-state rule explicitly: keep `master_model`, `master_thinking`, `builder_model`, `builder_thinking`, and `builder_settings_source`, and allow any unresolved setting field to be stored as `unknown` rather than stopping the run or inventing replacement values.
+- [ ] Define partial-known behavior explicitly: if one session field is observable and the other is not, preserve the known value and record only the missing value as `unknown`; if Builder inherits from an unknown parent field, the inherited Builder field is also `unknown` unless an explicit Builder override supplies a concrete replacement for that field.
+- [ ] Update `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, and `cdd-master-chef/RUNTIME-CAPABILITIES.md` so all adapters describe the same rule: observe session settings when available, report exact unknowns honestly when not, continue autonomously, and never treat this case as a normal kickoff stop.
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `scripts/validate_skills.py` so verification requires `unknown-and-proceed` behavior, rejects `stop before kickoff` for missing session-setting visibility alone, and confirms Master Chef still reports the limitation honestly in kickoff and final mission reporting.
+- [ ] Require kickoff and final mission reporting to disclose any unresolved session-setting fields explicitly, including that Master Chef continued with the active session as-is and which effective Builder settings were concrete versus `unknown`.
+
+### Implementation notes
+
+- Do not infer `master_*` settings from repo docs, memory, previous `run.json`, or earlier runs.
+- Keep `builder_settings_source` as `inherited` or `override`; it describes where Builder settings came from, not whether every inherited field was observable.
+- Preferred kickoff wording is compact and honest, for example:
+  - `current session model: unknown`
+  - `current session thinking: unknown`
+  - `effective Builder settings: inherited from active session`
+  - `note: runtime does not expose exact session settings here; Master Chef will proceed with the active session as-is`
+- If a Builder override is requested and only part of it can be honored, preserve concrete honored fields, report rejected fields explicitly, and keep unresolved inherited fields as `unknown` instead of blocking startup.
+- Do not change blocker, split, Builder-restart, or run-budget semantics in this step beyond what is needed to remove the startup stop.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Start `cdd-master-chef` in a runtime path where exact session model and/or thinking are not exposed and confirm kickoff continues instead of stopping.
+- Confirm kickoff does not ask the human to type replacement `master_model` or `master_thinking`.
+- Confirm `run.json` records unresolved session-setting fields as `unknown` while preserving any concrete known values and any concrete Builder override values.
+- Confirm adapter docs and harnesses no longer accept `stop before kickoff` for this case alone.
+- Confirm the final mission report discloses any session-setting unknowns while still reporting completed work and decisions made.
+
+## Step 38 — Make Master Chef provision a branch-backed, environment-ready active worktree before autonomous implementation
+
+### Goal
+
+Make Master Chef treat fresh-run branch setup and active-worktree environment bootstrap as part of the normal startup contract so autonomous implementation, tests, and QA run in a prepared managed worktree rather than a merely relocated checkout.
+
+### Constraints
+
+- Preserve the existing clean-checkout-first rule, fresh per-run worktree branch rule, and Git's one-branch-per-worktree constraint.
+- Keep the descriptive source feature branch as the default recommendation on fresh runs from long-lived branches, but still allow the user to decline it explicitly.
+- Do not hardcode repo-specific package-manager or language-tool commands into the shared contract; require repo-native environment setup discovery instead.
+- Keep the managed worktree as the active repo root for Builder, tests, QA, commit, and push once the worktree becomes active.
+- Hard-stop only when the worktree environment cannot be prepared autonomously because of a real technical or physical limitation.
+- Preserve adapter-truthfulness: runtimes may differ on whether they continue in-session or require relaunch, but both paths must produce the same prepared active worktree contract.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so a fresh run from a long-lived branch defaults to recommending a descriptive source feature branch unless the user declines, still creates a separate fresh per-run worktree branch, and treats both branch setup and managed worktree creation as part of startup rather than optional side guidance.
+- [ ] Define the active-worktree environment bootstrap phase explicitly: after the managed worktree becomes the active repo root, Master Chef must inspect repo-native manifests, runbook commands, and validation entrypoints, prepare the worktree-local test and validation environment there, and only then treat Builder, hard-gate validation, and QA as ready to rely on that worktree.
+- [ ] Define the bootstrap evidence contract explicitly: runtime state and durable reporting must record the active worktree path, source branch, worktree branch, whether the default feature-branch recommendation was accepted or declined, what environment/bootstrap commands or checks were run in the active worktree, and whether the worktree is `env_ready`, partially ready, or blocked.
+- [ ] Update `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, and `cdd-master-chef/RUNTIME-CAPABILITIES.md` so every adapter describes the same startup flow: inspect source repo, recommend or create the source feature branch when appropriate, create the fresh per-run worktree branch, move execution to the active worktree through in-session continuation or relaunch, bootstrap the worktree environment there, and only then proceed into autonomous implementation.
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `scripts/validate_skills.py` so verification requires branch-backed worktree setup plus explicit active-worktree environment bootstrap before tests or QA, and fails if docs reduce the worktree requirement to path creation alone.
+- [ ] Require kickoff and final mission reporting to disclose the active source branch, active worktree branch, active worktree path, whether the default branch recommendation was taken, and whether the worktree environment was prepared successfully before Builder or QA depended on it.
+
+### Implementation notes
+
+- Keep the existing semantic split: optional descriptive source feature branch for the source checkout, mandatory fresh per-run branch for the managed worktree.
+- The shared contract should describe environment bootstrap qualitatively: discover and run the repo-native install, dependency, build, test, or validation preparation commands needed for this repo in the active worktree. Adapter docs may add runtime-specific execution details, but must not invent repo-specific commands at the shared layer.
+- `env_ready` is a workflow fact, not a claim that every optional local tool is installed. It should mean the worktree is prepared enough for the approved Builder action and the repo's declared hard-gate validation path.
+- If environment preparation reveals missing credentials, unavailable external services, or other hard technical or physical limits, report that explicitly as the stop reason rather than falling back to running validation from the source checkout.
+- Keep Builder readiness separate from environment readiness: the worktree may be active before it is fully `env_ready`, and Builder should not be treated as ready to execute proof-heavy work until the worktree bootstrap phase is complete.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Start `cdd-master-chef` from a long-lived branch and confirm kickoff defaults to recommending a descriptive source feature branch, while still allowing that recommendation to be declined explicitly.
+- Confirm the managed worktree is created on a fresh per-run branch regardless of whether the source feature-branch recommendation was accepted.
+- Confirm the active worktree environment is bootstrapped there before Builder or hard-gate validation rely on it, and that the setup is described in durable run evidence.
+- Confirm docs and harnesses fail if the flow creates a worktree and branch but skips explicit worktree-local environment preparation before tests or QA.
+- Confirm a hard-stop report names the exact technical or physical limitation when the active worktree environment cannot be prepared autonomously.
+
+## Step 39 — Make Master Chef treat step splitting as a costed last resort
+
+### Goal
+
+Make Master Chef prefer keeping a step intact, repairing it in place, or continuing the same parent step with a fresh Builder, and only split when concrete evidence shows that splitting the remainder will reduce total delivery cost despite the extra Builder boot, hard-gate reruns, and mission delay it introduces.
+
+### Constraints
+
+- Preserve single-step Builder runs, fresh Builder replacement, and same-run `BLOCKER_CLEARED` continuation.
+- Do not treat raw task count, file count, broad wording, or speculative “this may take a while” intuition as split reasons.
+- Treat every split as expensive because it introduces new delegated boundaries, new proof loops, and usually new test or QA runs.
+- Keep pre-delegation split available only when the parent step is not safely delegable as one coherent Builder action or is missing critical decision-complete detail that cannot be repaired in place.
+- Keep post-attempt split available only when observed evidence shows the parent step boundary is now actively costing more than preserving it.
+- Do not hand ordinary split decisions back to the human; Master Chef still owns them in-session.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so the shared split policy explicitly prefers this order: `delegate unchanged`, `repair in place`, `continue_same_step`, then `split_remainder_into_child_steps` only as the last normal option before `hard_stop`.
+- [ ] Define split cost explicitly in the shared contract: a split adds Builder restart overhead, extra hard-gate and QA cycles, extra mission time, and extra proof boundaries, so Master Chef must treat splitting as more expensive than preserving the current step unless evidence shows the split will reduce total retry cost.
+- [ ] Tighten pre-delegation split rules explicitly: Master Chef should not split a top-level step before first Builder handoff merely because it looks large, spans many tasks, or is likely to need several validation cycles; it should split before delegation only when the parent step is not decision-complete for one coherent Builder action and cannot be made so with a minimal in-place repair.
+- [ ] Tighten post-attempt split rules explicitly: after a non-passing Builder attempt, Master Chef should prefer `continue_same_step` when progress is real and the remaining work still forms one bounded proof boundary, and should prefer `repair_in_place` when the step only needs tighter sequencing or proof notes; split the remainder only when concrete evidence shows continued same-step retries would cost more total proof churn than introducing child steps.
+- [ ] Define required split evidence explicitly: repeated low-forward-progress retries on the same parent boundary, recovery effort dominating completion effort, a remainder that now has materially cleaner proof boundaries than the parent step, or proof that continuing unchanged would trigger more total hard-gate reruns than splitting the remainder.
+- [ ] Update `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, and `cdd-master-chef/CLAUDE-RUNBOOK.md` so startup and continuation text no longer normalize “split oversized one first”; instead they should describe split as rare, cost-aware, and evidence-driven.
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `scripts/validate_skills.py` so verification fails if docs allow speculative preflight splitting, first-failure auto-splitting, or split rationale that ignores added test and QA cost.
+
+### Implementation notes
+
+- A long or proof-heavy step is not the same thing as a splittable step. If the work still forms one coherent proof boundary, Master Chef should usually keep it intact.
+- Repeated validation cycles are not automatic split evidence. They matter only when they show that preserving the parent step is producing more total churn than a remainder split would.
+- `Oversized` should stop being shorthand for `split now`. It should mean `review carefully for one-run viability and split cost`.
+- Same-step continuation preserves existing context, existing parent proof, and usually avoids inventing extra hard-gate checkpoints. The contract should model that as the preferred path when still plausible.
+- When a split does happen, Master Chef should report why the split cost was justified, not just why the parent looked hard.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Simulate a broad but coherent step with expensive full validation and confirm Master Chef prefers `delegate unchanged`, `repair in place`, or `continue_same_step` rather than splitting preflight.
+- Simulate one non-passing Builder attempt with meaningful progress and confirm Master Chef does not split automatically after the first miss.
+- Simulate repeated low-forward-progress retries where the remainder now has cleaner proof boundaries and confirm Master Chef splits only then.
+- Confirm adapter docs and harnesses fail if split is justified only by generic size language or generic expectation of `many test runs`.
+- Confirm split reporting names why the split cost was justified compared with continuing the parent step.
