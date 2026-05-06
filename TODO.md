@@ -1778,3 +1778,116 @@ Make the OpenClaw remediation flow, the root Master Chef entrypoint docs, and th
 - Read [README.md](/Users/ruph/Workspace/cdd-skills/README.md) and confirm it no longer advertises `fresh single-step Builder runs` as the normal lifecycle.
 - Confirm the validator fails if OpenClaw docs regress to `send findings to a fresh Builder run` as the default remediation path.
 - Confirm the validator or artifact coverage fails if the root README regresses to legacy Master Chef lifecycle wording.
+
+## Step 45 — Make Master Chef verify TODO completion and emit post-run closeout recommendations
+
+### Goal
+
+Make Master Chef verify that completed TODO steps are actually written back as done, then end successful runs with a final mission report that recommends the next human actions clearly: run `cdd-implementation-audit` on the completed run scope, push if needed, open a PR when the branch is published, clean up the managed worktree when done, and return development to the source checkout.
+
+### Constraints
+
+- Preserve the current Step 41-44 contract: persistent Builder continuation, recovery-only replacement, branch-backed `env_ready` managed worktrees, and split as a costed last resort.
+- Do not recommend actions that are already satisfied; recommendations must be conditional on real repo and run state.
+- Keep hard technical or physical stops distinct from successful completion or budget stop reporting.
+- Do not silently perform post-run cleanup or PR creation as part of the shared contract; this step is about verification and recommendations in reporting, not automatic side effects.
+- Preserve concise final mission reporting while still making the next operator actions explicit.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so a step cannot pass unless the selected TODO step is written back correctly and its task checklist reflects the completed work; the final mission report must name which TODO step ids were completed in the run and whether their task checklists are fully checked.
+- [ ] Update `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, and `cdd-master-chef/CLAUDE-RUNBOOK.md` so successful terminal states and `RUN_STOPPED` due to approved budget include a compact post-run recommendation bundle that conditionally covers:
+  - run `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) on the completed run scope, typically the completed TODO steps and the branch changes from that run
+  - push the branch if the active branch is ahead of origin
+  - open a PR once the branch is published upstream
+  - clean up the managed worktree when no more work is planned there
+  - return development to the source checkout or parent folder after worktree cleanup
+- [ ] Define the recommendation conditions explicitly in the shared contract so Master Chef does not recommend impossible or already-satisfied actions:
+  - recommend `push` only when the active branch is ahead of its upstream or has no published upstream yet
+  - recommend `open PR` only when the branch is pushed and PR creation is still pending
+  - recommend worktree cleanup only when the run used a managed worktree that still exists and no immediate continuation is planned there
+  - recommend returning to the source checkout only after cleanup or when the worktree is no longer the active development root
+- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so final mission report prompts and pass criteria require:
+  - completed TODO step ids
+  - checklist completion status for those steps
+  - decisions made and exact stop reason when relevant
+  - the conditional post-run recommendation bundle above
+- [ ] Update `scripts/validate_skills.py` so validation fails if Master Chef terminal reporting omits TODO completion verification or regresses to generic final-report wording that never recommends audit, publish, cleanup, and source-checkout return actions when those recommendations are actually warranted.
+- [ ] Update `scripts/test_master_chef_artifacts.sh` only as needed so the artifact layer and validator layer remain aligned on whether final-report recommendation coverage is structural or validator-owned.
+
+### Implementation notes
+
+- Treat `TODO writeback` and `task checklist complete` as separate proof points. A step can still be wrong if the heading is present but task checkboxes do not reflect the shipped work.
+- Keep the recommendation bundle compact and state-based. It should read like the next operator moves, not like a long tutorial.
+- Distinguish `RUN_COMPLETE` from `RUN_STOPPED` clearly:
+  - `RUN_COMPLETE` should recommend audit of the completed run and normal branch cleanup/publish actions
+  - `RUN_STOPPED` from budget should recommend audit plus continuation/publish actions appropriate to the remaining work
+  - hard-stop `STEP_BLOCKED` or `DEADLOCK_STOPPED` should prioritize blocker context first and should not pretend branch cleanup is the primary next move
+- If the repo has no `docs/specs/*` surfaces, the final report should still recommend audit against `TODO.md`, `README.md`, and the current branch diff rather than inventing missing specs.
+
+### Automated checks
+
+- `bash scripts/test_master_chef_artifacts.sh`
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Simulate a successful `RUN_COMPLETE` and confirm the final mission report names the completed TODO step ids, states their checklist completion, and recommends `cdd-implementation-audit` on the run scope.
+- Simulate a branch that is already pushed and confirm the final report does not redundantly recommend `push`, but can still recommend `open PR` if appropriate.
+- Simulate a completed managed-worktree run and confirm the final report recommends cleanup and returning to the source checkout only when that worktree still exists and no immediate continuation is planned there.
+- Simulate a budget stop with remaining runnable work and confirm the final report distinguishes that from `RUN_COMPLETE` while still recommending audit of the work completed in the run so far.
+
+## Step 46 — Make cdd-implementation-audit explicitly audit TODO step contracts
+
+### Goal
+
+Make `cdd-implementation-audit` explicitly audit selected TODO steps against their own step contract sections, so audits check whether the implementation actually satisfied each step’s goal, tasks, checks, and UAT rather than only comparing against broad TODO scope.
+
+### Constraints
+
+- Preserve `cdd-implementation-audit` as a read-only audit skill that routes approved findings back into `cdd-plan`.
+- Keep step-contract auditing additive to the existing `README.md`, code, tests, and docs audit dimensions; do not narrow the skill into TODO-only review.
+- Support all existing audit scopes, including one TODO step, multiple TODO steps, one TODO file, last commit, uncommitted changes, and whole codebase.
+- Treat missing `docs/specs/*` surfaces as findings when the repo contract expects them; do not invent specs during the audit.
+- Keep the public README description compact; the detailed behavior belongs in the skill file and validator.
+
+### Tasks
+
+- [ ] Update `skills/cdd-implementation-audit/SKILL.md` so when the chosen audit scope resolves to one or more TODO steps, the audit must explicitly inspect each selected step’s:
+  - `Goal`
+  - `Constraints`
+  - `Tasks`
+  - `Implementation notes`
+  - `Automated checks`
+  - `UAT`
+  and must report whether the implementation actually satisfies that step contract rather than only the broader TODO topic.
+- [ ] Define the TODO-step audit output contract explicitly in `skills/cdd-implementation-audit/SKILL.md`: the final audit summary for step-scoped audits must say which selected steps were checked, whether their checked tasks appear fully done, whether the observed implementation matches the step goal, whether automated checks and UAT evidence support the claimed completion, and where README, TODO, spec, or proof-surface drift remains.
+- [ ] Update the skill flow so step-scoped audits inspect the corresponding implementation, docs, tests, configs, manifests, and validation surfaces together, and treat unchecked TODO tasks, missing evidence for completed tasks, or implementation that misses the step goal as first-class findings.
+- [ ] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md) only if needed so the `[CDD-4] Implementation Audit` description stays accurate while remaining compact and user-facing.
+- [ ] Update `scripts/validate_skills.py` so validation fails if `cdd-implementation-audit` regresses to vague TODO-scope language and no longer requires explicit step-contract auditing for one-step or multi-step TODO audits.
+- [ ] Update generated OpenClaw Builder coverage only as needed so the shared skill validation still passes without changing the audit skill’s read-only contract.
+
+### Implementation notes
+
+- This is a contract refinement, not a request to make the audit skill implement fixes directly.
+- Keep the strongest wording around step-scoped audits in the skill file itself:
+  - selected step ids
+  - step-section contract review
+  - checked-task reality check
+  - goal satisfaction
+  - proof from automated checks and UAT
+- For non-step scopes such as whole-codebase or uncommitted changes, preserve the current broader audit behavior.
+- If a TODO step lacks one of the preferred sections, the audit should treat that as a contract weakness or missing proof surface rather than silently skipping it.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Audit one completed TODO step and confirm the summary explicitly states whether the step goal was achieved, whether the checked tasks are actually done, and whether the cited checks and UAT support completion.
+- Audit multiple TODO steps from one run and confirm the summary distinguishes findings per selected step rather than collapsing them into one vague branch-level judgment.
+- Confirm the validator fails if the audit skill is reduced back to broad TODO-scope auditing without explicit step-section review.
+- Confirm missing repo specs still surface as findings where relevant instead of being silently ignored.
