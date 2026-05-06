@@ -55,7 +55,7 @@ The Builder is an OpenClaw subagent. It owns:
 - writing `builder.jsonl`
 - returning a structured report to Master Chef
 
-Each Builder run covers exactly one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+Builder is persistent for the active autonomous run after relaunch into the managed worktree unless recovery conditions force replacement. It still handles exactly one approved delegated action at a time, but the same Builder normally continues across later delegated steps in the same run after Master Chef re-inspects state and performs any supported beginning-of-step compaction.
 
 There is no watchdog actor, cron wake-up, second control loop, or normal Builder-session resurrection path.
 
@@ -393,7 +393,7 @@ Why `run` for the normal flow:
 - easier replacement
 - fewer stale-session edge cases
 
-Do not use long-lived Builder sessions or session resurrection as the normal path. If exceptional manual debugging ever requires session reuse, treat it as outside the standard contract and return to fresh single-step Builder runs immediately after.
+Persistent Builder continuation is the normal path after the managed-worktree relaunch. Do not use dead-session resurrection as the normal recovery path. If OpenClaw later exposes a supported Builder compaction operation, use it at delegated-step boundaries; otherwise keep the same Builder and rely on native context management instead of inventing a manual compaction command.
 
 ### 5.1 Builder contract
 
@@ -403,7 +403,7 @@ The Builder must:
 - default to `cdd-implement-todo` for a normal approved runnable TODO step
 - not switch itself into planning or maintain mode; if the delegated path no longer fits, return a blocker instead
 - implement exactly one approved action
-- end after that one approved action instead of continuing into the next TODO step
+- stop after that one approved action and wait for the next explicit Master Chef handoff instead of self-selecting the next TODO step
 - avoid scope creep
 - avoid commit/push
 - update only the selected TODO step when the step passes
@@ -421,7 +421,7 @@ After kickoff approval:
 3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
 4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-implementation-audit`, or `cdd-maintain`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
-6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that Builder run as finished for that approved action.
+6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that delegated action as finished while keeping the Builder session available for same-run continuation when it remains usable.
 7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh single-step Builder run for the same step, and update runtime/log evidence immediately.
 8. Run Master Chef QA and step-level UAT.
 9. If Master Chef QA rejects the Builder result:
@@ -434,7 +434,7 @@ After kickoff approval:
    - update runtime state
    - advertise `STEP_PASS` with full detail in the current Master Chef session
 11. Re-inspect TODO state.
-12. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
+12. If another runnable step exists, re-inspect repo and TODO state, attempt beginning-of-step Builder compaction only when the active OpenClaw surface exposes a supported operation, and continue automatically with the same Builder when it remains usable; otherwise spawn a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
 13. If no runnable step remains, report `RUN_COMPLETE` with the final mission report.
 14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
 
@@ -482,6 +482,7 @@ If healthy:
 - keep the current Builder
 - update runtime/log evidence only when that check adds meaningful operational value
 - do not invent timer-based heartbeat chatter
+- do not claim a parent-visible Builder fullness meter or a manual Builder compaction command unless the active OpenClaw surface actually exposes one
 
 If stale:
 
@@ -491,7 +492,7 @@ If stale:
 - update runtime files and logs
 - send `BUILDER_RESTARTED` or `STEP_BLOCKED` if appropriate
 
-Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, or returned without a usable report, replace it with a fresh single-step Builder run for the same step.
+Do not use Builder-session resurrection as the normal recovery path. If a Builder session died, drifted, returned without a usable report, or cannot continue safely after status or compaction checks, replace it with a fresh single-step Builder run for the same step.
 
 If repeated replacements fail without forward progress:
 
@@ -509,14 +510,14 @@ Blocked-step recovery procedure:
 2. Inspect `git status`, the current diff, `run.json`, `master-chef.jsonl`, `builder.jsonl`, failed commands, and the selected TODO step.
 3. Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, whether preserving the parent step is still cheaper than a split, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
 4. Choose one explicit outcome:
-   - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
+   - `continue_same_step` when progress is coherent, the step boundary still holds, and the active Builder can plausibly finish the remainder without reopening planning, or one recovery replacement Builder can do so if the active one is no longer usable
    - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
    - `split_remainder_into_child_steps` only when the unfinished portion is now too risky to keep as one Builder run and preserving the parent step would cost more total retry churn than the split
    - `hard_stop` when a hard technical or physical limit still prevents safe continuation
 5. Treat split as expensive because it adds Builder restarts, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Do not pay that cost merely because the step looks broad or is expected to need several validation cycles.
 6. Clean only stale runtime or build artifacts when they materially increase retry risk or obscure the true remainder; do not revert unrelated user work or discard useful failure evidence.
-7. If the outcome is `continue_same_step`, keep the parent step, preserve the existing approval, and continue it with a fresh single-step Builder run.
-8. If the outcome is `repair_in_place`, use Master-Chef-direct planning or TODO repair to tighten the same parent step, then continue that same step with a fresh single-step Builder run.
+7. If the outcome is `continue_same_step`, keep the parent step, preserve the existing approval, and continue it with the same Builder when it remains usable after status or compaction checks; otherwise continue it with a fresh single-step Builder run.
+8. If the outcome is `repair_in_place`, use Master-Chef-direct planning or TODO repair to tighten the same parent step, then continue that same step with the same Builder when safe, otherwise with a fresh single-step Builder run.
 9. If the outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks, UAT, and invariants carry forward to each child, and why that split cost was justified before delegating again.
 10. If repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids when applicable, preserved remaining `run_step_budget`, and the next delegated action. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
 11. Re-inspect TODO state and continue the same run from the same repaired parent step or the first runnable child step, as chosen by the continuation review.
@@ -531,7 +532,7 @@ Default thresholds:
 
 ## 8) Master Chef context compaction
 
-Builder context stays simple: every normal delegated TODO action gets a fresh single-step Builder run, normally through `cdd-implement-todo`. Master Chef is long-lived, so it must make its own memory durable before compaction.
+Builder continuation and Master Chef compaction are separate concerns. The normal path is one persistent Builder across delegated steps in the same run, normally through `cdd-implement-todo`, with each delegated action still handled one at a time. This repo does not currently document a manual OpenClaw Builder compaction command, so step-boundary compaction falls back to native context management unless the active surface exposes more later. Master Chef is long-lived, so it must make its own memory durable before compaction.
 
 ### Safe compaction points
 
@@ -619,7 +620,7 @@ A step is not passed unless all are true:
 
 ### QA rejection path
 
-When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either a fresh single-step Builder run for the same step or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
+When Master Chef rejects Builder output during QA, the step stays active and cannot be passed, committed, pushed, or advertised as `STEP_PASS`. Master Chef must preserve concrete QA findings, choose either the same Builder when it remains usable, a fresh single-step Builder run for the same step when recovery requires replacement, or a direct Master Chef fix, then re-run QA and UAT before the normal commit, push, `STEP_PASS`, TODO re-inspection, and automatic continuation path resumes.
 
 ---
 
@@ -672,7 +673,7 @@ Runtime obligations:
 
 - resume manually from `run.json` and `run.lock.json`
 - inspect repo diff and Builder logs
-- either continue the same step with a fresh Builder run or mark it blocked
+- either continue the same step with the same Builder when it remains usable, continue with a fresh Builder run when recovery requires replacement, or mark it blocked
 
 The main session is the only control plane. Do not create a second control loop.
 

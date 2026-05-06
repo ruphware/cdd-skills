@@ -1650,15 +1650,15 @@ Make Codex, Claude, OpenClaw, and the runtime capability matrix describe persist
 
 ### Tasks
 
-- [ ] Update `cdd-master-chef/RUNTIME-CAPABILITIES.md` so the matrix and notes explicitly cover:
+- [x] Update `cdd-master-chef/RUNTIME-CAPABILITIES.md` so the matrix and notes explicitly cover:
   - whether persistent Builder continuation across delegated steps is supported
   - whether manual compaction is supported
   - whether only auto-compaction is available
   - whether the controller can observe real context-budget or context-left evidence
-- [ ] Update `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md` so the Codex path describes persistent Builder reuse truthfully, defines whether a manual compaction path is actually available in supported Codex surfaces, and states whether visible context-left or token-budget evidence is reliable enough to drive Master Chef decisions.
-- [ ] Update `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md` so the Claude path describes persistent Builder reuse, manual `/compact` support when appropriate, auto-compaction fallback, and the limits of parent-visible subagent context information.
-- [ ] Update `cdd-master-chef/openclaw/README.md` and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so the packaged runtime path describes whether persistent Builder continuation is supported there, whether Builder compaction is manually available, and what fallback behavior applies if only auto-compaction or no explicit compaction surface exists.
-- [ ] Ensure all adapter docs distinguish:
+- [x] Update `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md` so the Codex path describes persistent Builder reuse truthfully, defines whether a manual compaction path is actually available in supported Codex surfaces, and states whether visible context-left or token-budget evidence is reliable enough to drive Master Chef decisions.
+- [x] Update `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md` so the Claude path describes persistent Builder reuse, manual `/compact` support when appropriate, auto-compaction fallback, and the limits of parent-visible subagent context information.
+- [x] Update `cdd-master-chef/openclaw/README.md` and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so the packaged runtime path describes whether persistent Builder continuation is supported there, whether Builder compaction is manually available, and what fallback behavior applies if only auto-compaction or no explicit compaction surface exists.
+- [x] Ensure all adapter docs distinguish:
   - step-start compaction attempt
   - normal same-Builder continuation
   - replacement-only-on-failure conditions
