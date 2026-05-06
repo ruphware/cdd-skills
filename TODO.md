@@ -1854,7 +1854,7 @@ Make `cdd-implementation-audit` explicitly audit selected TODO steps against the
 
 ### Tasks
 
-- [ ] Update `skills/cdd-implementation-audit/SKILL.md` so when the chosen audit scope resolves to one or more TODO steps, the audit must explicitly inspect each selected step’s:
+- [x] Update `skills/cdd-implementation-audit/SKILL.md` so when the chosen audit scope resolves to one or more TODO steps, the audit must explicitly inspect each selected step’s:
   - `Goal`
   - `Constraints`
   - `Tasks`
@@ -1862,11 +1862,11 @@ Make `cdd-implementation-audit` explicitly audit selected TODO steps against the
   - `Automated checks`
   - `UAT`
   and must report whether the implementation actually satisfies that step contract rather than only the broader TODO topic.
-- [ ] Define the TODO-step audit output contract explicitly in `skills/cdd-implementation-audit/SKILL.md`: the final audit summary for step-scoped audits must say which selected steps were checked, whether their checked tasks appear fully done, whether the observed implementation matches the step goal, whether automated checks and UAT evidence support the claimed completion, and where README, TODO, spec, or proof-surface drift remains.
-- [ ] Update the skill flow so step-scoped audits inspect the corresponding implementation, docs, tests, configs, manifests, and validation surfaces together, and treat unchecked TODO tasks, missing evidence for completed tasks, or implementation that misses the step goal as first-class findings.
-- [ ] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md) only if needed so the `[CDD-4] Implementation Audit` description stays accurate while remaining compact and user-facing.
-- [ ] Update `scripts/validate_skills.py` so validation fails if `cdd-implementation-audit` regresses to vague TODO-scope language and no longer requires explicit step-contract auditing for one-step or multi-step TODO audits.
-- [ ] Update generated OpenClaw Builder coverage only as needed so the shared skill validation still passes without changing the audit skill’s read-only contract.
+- [x] Define the TODO-step audit output contract explicitly in `skills/cdd-implementation-audit/SKILL.md`: the final audit summary for step-scoped audits must say which selected steps were checked, whether their checked tasks appear fully done, whether the observed implementation matches the step goal, whether automated checks and UAT evidence support the claimed completion, and where README, TODO, spec, or proof-surface drift remains.
+- [x] Update the skill flow so step-scoped audits inspect the corresponding implementation, docs, tests, configs, manifests, and validation surfaces together, and treat unchecked TODO tasks, missing evidence for completed tasks, or implementation that misses the step goal as first-class findings.
+- [x] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md) only if needed so the `[CDD-4] Implementation Audit` description stays accurate while remaining compact and user-facing.
+- [x] Update `scripts/validate_skills.py` so validation fails if `cdd-implementation-audit` regresses to vague TODO-scope language and no longer requires explicit step-contract auditing for one-step or multi-step TODO audits.
+- [x] Update generated OpenClaw Builder coverage only as needed so the shared skill validation still passes without changing the audit skill’s read-only contract.
 
 ### Implementation notes
 
