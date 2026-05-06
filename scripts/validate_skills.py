@@ -95,6 +95,30 @@ MASTER_CHEF_ENV_READY_REGEX = (
 MASTER_CHEF_FINAL_REPORT_REGEX = (
     r"final mission report.*completed work.*decisions made|Terminal mission reports.*completed work.*decisions made"
 )
+MASTER_CHEF_SAME_BUILDER_REGEX = (
+    r"(?:same Builder|same-Builder|reuse the same Builder|reuse the active Builder|persistent Builder|keeps? the same Builder)"
+)
+MASTER_CHEF_STEP_COMPACTION_REGEX = (
+    r"(?:step-start|beginning-of-step|Before handing a new delegated step).*compaction|(?:attempt|attempted).*compaction.*(?:supported|supports|command|API|/compact)"
+)
+MASTER_CHEF_COMPACTION_FALLBACK_REGEX = (
+    r"(?:auto-compaction|native context management|native-context fallback|native_context_management)"
+)
+MASTER_CHEF_REPLACEMENT_ONLY_REGEX = (
+    r"(?:Replace Builder only after|replace Builder only after|replacement is reserved for|replacement only.*(?:failure|closure|deadlock|unusable drift)|recovery conditions require it|recovery-only)"
+)
+MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX = (
+    r"(?:do not claim|should not claim|no clean official|lack of any trustworthy|no documented|unsupported universal).*(?:context meter|token-left|fullness percentage|numeric threshold|context threshold)"
+)
+UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX = (
+    r"(?:\b\d{1,3}%\b.*(?:context|token|fullness)|(?:context|token|fullness).*\b\d{1,3}%\b)"
+)
+LEGACY_BUILDER_LIFECYCLE_STRINGS = (
+    "Use single-step Builder runs only.",
+    "fresh Builder for the next delegated action",
+    "the next delegated step got a fresh Builder run.",
+    "do not compact or resume Builders as the normal path",
+)
 REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
 MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
 MASTER_CHEF_RUNBOOK_WORKTREE_ROOT = (
@@ -184,6 +208,14 @@ def forbid_substrings(
 ) -> None:
     """Assert that none of the forbidden tokens exist in the given text."""
     present = [pattern for pattern in patterns if pattern in text]
+    assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
+
+
+def forbid_regexes(
+    text: str, patterns: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that none of the forbidden regexes match in the given text."""
+    present = [pattern for pattern in patterns if re.search(pattern, text, re.M | re.S)]
     assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
 
 
@@ -1193,11 +1225,16 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent status or discovery reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
-            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with a fresh Builder",
+            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
             r"Do not split too eagerly.*one-run failure-risk evidence",
             r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
@@ -1216,6 +1253,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "### Prompt G - Worktree continuation",
             "### Prompt H - Long-thinking Builder monitoring",
             "### Prompt I - Builder boot readiness",
+            "### Prompt I1 - Normal next-step continuation",
             "### Prompt J - Blocked-step autonomy",
             "### Prompt K - Final mission report",
             "remaining top-level-step count is stated when finite",
@@ -1258,7 +1296,12 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"partial progress",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
             r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
@@ -1266,6 +1309,24 @@ def validate_codex_adapter(repo_root: Path) -> None:
         ),
         harness_md,
         "Codex harness monitoring topics",
+    )
+    forbid_substrings(
+        runbook_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        runbook_md,
+        "legacy Codex runbook Builder lifecycle drift",
+    )
+    forbid_substrings(
+        harness_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        harness_md,
+        "legacy Codex harness Builder lifecycle drift",
+    )
+    forbid_regexes(
+        adapter_text + "\n" + runbook_text + "\n" + harness_text,
+        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
+        adapter_md,
+        "unsupported Codex context-meter claims",
     )
 
 
@@ -1390,11 +1451,16 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent status or discovery reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
-            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with a fresh Builder",
+            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
             r"Do not split too eagerly.*one-run failure-risk evidence",
             r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
@@ -1413,6 +1479,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "### Prompt G - Worktree continuation",
             "### Prompt H - Long-thinking Builder monitoring",
             "### Prompt I - Builder boot readiness",
+            "### Prompt I1 - Normal next-step continuation",
             "### Prompt J - Blocked-step autonomy",
             "### Prompt K - Final mission report",
             "remaining top-level-step count is stated when finite",
@@ -1456,7 +1523,12 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"partial progress",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
             r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
@@ -1464,6 +1536,24 @@ def validate_claude_adapter(repo_root: Path) -> None:
         ),
         harness_md,
         "Claude harness monitoring topics",
+    )
+    forbid_substrings(
+        runbook_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        runbook_md,
+        "legacy Claude runbook Builder lifecycle drift",
+    )
+    forbid_substrings(
+        harness_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        harness_md,
+        "legacy Claude harness Builder lifecycle drift",
+    )
+    forbid_regexes(
+        adapter_text + "\n" + runbook_text + "\n" + harness_text,
+        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
+        adapter_md,
+        "unsupported Claude context-meter claims",
     )
 
 
@@ -1627,7 +1717,10 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"same repaired parent step or (?:from )?the first runnable child step",
         ),
         runbook_md,
@@ -1669,7 +1762,10 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"before Builder or `hard_gate` validation rely on that worktree",
             r"only split an oversized one when.*Builder, test, and QA cost.*justified|only split an oversized one when.*split cost.*justified",
             r"one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             MASTER_CHEF_FINAL_REPORT_REGEX,
         ),
         readme_md,
@@ -1720,12 +1816,41 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"partial progress",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
             r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the first runnable child step",
         ),
         harness_md,
         "OpenClaw harness selector topics",
+    )
+    forbid_substrings(
+        runbook_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        runbook_md,
+        "legacy OpenClaw runbook Builder lifecycle drift",
+    )
+    forbid_substrings(
+        readme_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        readme_md,
+        "legacy OpenClaw README Builder lifecycle drift",
+    )
+    forbid_substrings(
+        harness_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        harness_md,
+        "legacy OpenClaw harness Builder lifecycle drift",
+    )
+    forbid_regexes(
+        runbook_text + "\n" + readme_text + "\n" + harness_text,
+        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
+        runbook_md,
+        "unsupported OpenClaw context-meter claims",
     )
 
 

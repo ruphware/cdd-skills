@@ -88,13 +88,19 @@ assert_not_contains "$SHARED_ROOT/RUNBOOK.md" "$legacy_worktree_root"
 assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 echo "[MasterChefArtifacts] INFO CoverageDelegated validator={scripts/validate_skills.py}"
 # Structural smoke stays here. Prose/topic coverage belongs to the Python
-# validator so the repo has one source of truth for those regex bundles.
+# validator so the repo has one source of truth for persistent-Builder,
+# step-boundary compaction, fallback, and recovery-only regex bundles.
 for rel in \
   "cdd-master-chef/openclaw/README.md" \
   "cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" \
   "cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
   assert_exists "$ROOT_DIR/$rel"
 done
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_SAME_BUILDER_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_STEP_COMPACTION_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_COMPACTION_FALLBACK_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_REPLACEMENT_ONLY_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "LEGACY_BUILDER_LIFECYCLE_STRINGS"
 
 echo "[MasterChefArtifacts] INFO GeneratedBuilder runtime={openclaw}"
 python3 "$ROOT_DIR/scripts/build_runtime_builder_skills.py" \

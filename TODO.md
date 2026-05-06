@@ -1695,10 +1695,10 @@ Make the harnesses, artifact script, and structural validator enforce persistent
 
 ### Tasks
 
-- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so they test persistent Builder continuation across steps, beginning-of-step compaction attempts when supported, and replacement only under defined failure or drift conditions.
-- [ ] Update `scripts/test_master_chef_artifacts.sh` so artifact checks no longer require phrases or topics that imply `fresh single-step Builder runs only`, `next delegated step gets a fresh Builder`, or `Builder compaction is not a normal path`, and instead verify the new persistent-Builder lifecycle plus adapter-specific compaction capability language.
-- [ ] Update `scripts/validate_skills.py` so structural checks fail if docs regress to legacy fresh-per-step Builder semantics, fail if they invent unsupported universal context metrics, and pass only when they encode persistent Builder continuation, step-boundary compaction attempts when supported, and replacement-only-on-failure behavior.
-- [ ] Add validator and harness coverage that distinguishes:
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so they test persistent Builder continuation across steps, beginning-of-step compaction attempts when supported, and replacement only under defined failure or drift conditions.
+- [x] Update `scripts/test_master_chef_artifacts.sh` so artifact checks no longer require phrases or topics that imply `fresh single-step Builder runs only`, `next delegated step gets a fresh Builder`, or `Builder compaction is not a normal path`, and instead verify the new persistent-Builder lifecycle plus adapter-specific compaction capability language.
+- [x] Update `scripts/validate_skills.py` so structural checks fail if docs regress to legacy fresh-per-step Builder semantics, fail if they invent unsupported universal context metrics, and pass only when they encode persistent Builder continuation, step-boundary compaction attempts when supported, and replacement-only-on-failure behavior.
+- [x] Add validator and harness coverage that distinguishes:
   - normal next-step continuation on the same Builder
   - beginning-of-step compaction when supported
   - auto-compaction fallback when manual compaction is unavailable

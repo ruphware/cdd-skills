@@ -164,6 +164,20 @@ Explain what proves that Builder has actually started operating, what runtime fi
   - foreground Claude uses a short boot window of about 2 minutes before the first boot-status probe
   - the chosen quiet-work window starts only after `builder_phase` reaches `running` and `builder_ready_at_utc` is recorded
 
+### Prompt I1 - Normal next-step continuation
+
+```text
+The current delegated step just passed and another runnable delegated step exists in the same run.
+Explain how Claude Master Chef should continue with the active Builder, when it may ask Builder to run `/compact`, what fallback applies when the active Claude surface or invocation mode does not expose manual `/compact`, and when Builder replacement is allowed instead.
+```
+
+- [ ] Expected:
+  - normal next-step continuation reuses the same Builder first when it remains usable
+  - a step-start compaction attempt may use `/compact` only when the active Claude surface actually exposes that slash-command
+  - if manual `/compact` is unavailable, the adapter keeps the same Builder and relies on Claude auto-compaction or native context management instead of inventing a fake path
+  - Claude's separate subagent contexts are acknowledged, and the adapter should not claim exact parent-visible fullness percentages, a precise token-left meter, or a universal numeric threshold
+  - replacement is reserved for explicit failure, runtime closure, deadlock, unusable drift, or inability to continue safely after status or worktree-safety checks
+
 ### Prompt J - Blocked-step autonomy
 
 ```text
@@ -173,13 +187,13 @@ Explain how Claude Master Chef should report STEP_BLOCKED, review what completed
 
 - [ ] Expected:
   - ordinary scope or sequencing ambiguity is resolved by Master Chef in-session rather than handed back to the human
-  - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, and whether a fresh Builder would spend most of its effort on recovery rather than completion
-  - `continue_same_step` remains valid when the step boundary still holds and a fresh Builder can plausibly finish the remainder
+  - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, whether the active Builder is still usable after status or compaction checks, and whether a recovery replacement Builder would spend most of its effort on recovery rather than completion
+  - `continue_same_step` remains valid when the step boundary still holds and the active Builder can plausibly finish the remainder, or one recovery replacement Builder can do so if the active one is no longer usable
   - blocked broad work is repaired or split in the main Master Chef session only when the remainder has become the lower-risk choice
   - `split_remainder_into_child_steps` is chosen only when the unfinished portion has cleaner sub-step boundaries than the original parent step
   - a split records what part of the parent is already done, what exact remainder is being separated, why the first child is next, and what checks, UAT, and invariants carry forward
   - successful repair emits `BLOCKER_CLEARED` and preserves the existing approval
-  - continuation uses a fresh Builder run for the same repaired parent step or the next smaller actionable child step, as justified by the review
+  - continuation reuses the same Builder first for the same repaired parent step or the next smaller actionable child step, replacing only when defined recovery conditions require it
   - stopping is reserved for hard technical or physical limits
 
 ### Prompt K - Final mission report
@@ -204,5 +218,6 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] The active worktree was treated as branch-backed but not usable for Builder or `hard_gate` validation until repo-native bootstrap evidence marked it `env_ready`.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
+- [ ] Normal next-step continuation reused the same Builder first, attempted `/compact` only when supported, and used auto-compaction or native-context fallback when manual compaction was unavailable.
 - [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.
 - [ ] Terminal states ended with a final mission report covering completed work and decisions made.
