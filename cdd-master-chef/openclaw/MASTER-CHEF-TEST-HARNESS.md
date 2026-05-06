@@ -252,21 +252,24 @@ Stop the run and report DEADLOCK_STOPPED.
 ### Prompt L - Blocked-step decomposition
 
 ```text
-/cdd-master-chef TEST ONLY: simulate that the active TODO step is blocked because it is too broad or missing implementation decisions.
-Report STEP_BLOCKED for the blocked broad step in the current session, inspect runtime logs and the working tree, decompose the blocked work into smaller TODO steps, clean only stale retry artifacts, choose the next safe path in-session, and continue from the next smaller actionable step unless a hard technical or physical limit still blocks safe autonomous continuation.
+/cdd-master-chef TEST ONLY: simulate a non-passing Builder attempt with partial progress on the active TODO step.
+Report STEP_BLOCKED in the current session, inspect runtime logs and the working tree, review what completed and what failed, choose between `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`, clean only stale retry artifacts when they materially increase retry risk, and continue under the existing approval unless a hard technical or physical limit still blocks safe autonomous continuation.
 ```
 
 - [ ] Expected:
-  - no fresh Builder is spawned for the same broad blocked step
+  - no fresh Builder is spawned blindly before the continuation review is complete
   - `STEP_BLOCKED` is reported in the current Master Chef session with concrete evidence
-  - TODO planning is repaired into smaller decision-complete steps before another implementation attempt
+  - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, and whether a fresh Builder would spend most of its effort on recovery rather than completion
+  - `continue_same_step` remains valid when the step boundary still holds and a fresh Builder can plausibly finish the remainder
+  - TODO planning is repaired into smaller decision-complete steps only when the unfinished portion has become the lower-risk child-step sequence
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
   - ordinary scope or decision ambiguity is resolved by Master Chef in-session rather than handed back to the human as the default path
-  - successful repair emits `BLOCKER_CLEARED` with the original blocked step, replacement step ids, preserved remaining budget, and next delegated action
+  - `split_remainder_into_child_steps` records what part of the parent is already done, what exact remainder is being separated, why the first child is next, and what checks, UAT, and invariants carry forward
+  - successful repair emits `BLOCKER_CLEARED` with the original blocked step, replacement step ids when applicable, preserved remaining budget, and next delegated action
   - successful repair does not trigger a new kickoff or increment `steps_completed_this_run`
+  - continuation uses a fresh single-step Builder run for the same repaired parent step or the first runnable child step, as justified by the review
   - Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized
   - the run stops only when a hard technical or physical limit still blocks safe autonomous continuation after repair
-  - restart uses a fresh single-step Builder run for the next smaller actionable TODO step
 
 ### Prompt M - In-session reporting contract
 
@@ -314,7 +317,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
-- [ ] Blocked broad or underspecified steps were decomposed into smaller TODO steps and normally resumed autonomously from a smaller actionable step, stopping only for hard technical or physical limits.
+- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and lower-risk child steps were created only when the remainder truly needed them.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.

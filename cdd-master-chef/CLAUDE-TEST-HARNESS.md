@@ -164,15 +164,19 @@ Explain what proves that Builder has actually started operating, what runtime fi
 ### Prompt J - Blocked-step autonomy
 
 ```text
-The active TODO step is blocked because it is too broad or underspecified.
-Explain how Claude Master Chef should report STEP_BLOCKED, repair or split the work in the main session, choose the next safe path itself, emit BLOCKER_CLEARED when repair succeeds, and continue under the existing approval unless a hard technical or physical limit forces a stop.
+The active TODO step just had a non-passing Builder attempt with partial progress.
+Explain how Claude Master Chef should report STEP_BLOCKED, review what completed and what failed, choose between `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`, emit BLOCKER_CLEARED when a safe next step exists, and continue under the existing approval unless a hard technical or physical limit forces a stop.
 ```
 
 - [ ] Expected:
   - ordinary scope or sequencing ambiguity is resolved by Master Chef in-session rather than handed back to the human
-  - blocked broad work is repaired or split in the main Master Chef session
+  - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, and whether a fresh Builder would spend most of its effort on recovery rather than completion
+  - `continue_same_step` remains valid when the step boundary still holds and a fresh Builder can plausibly finish the remainder
+  - blocked broad work is repaired or split in the main Master Chef session only when the remainder has become the lower-risk choice
+  - `split_remainder_into_child_steps` is chosen only when the unfinished portion has cleaner sub-step boundaries than the original parent step
+  - a split records what part of the parent is already done, what exact remainder is being separated, why the first child is next, and what checks, UAT, and invariants carry forward
   - successful repair emits `BLOCKER_CLEARED` and preserves the existing approval
-  - continuation uses a fresh Builder run for the next smaller actionable step
+  - continuation uses a fresh Builder run for the same repaired parent step or the next smaller actionable child step, as justified by the review
   - stopping is reserved for hard technical or physical limits
 
 ### Prompt K - Final mission report
@@ -196,5 +200,5 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
-- [ ] Blocked-step repair stayed inside Master Chef and continued autonomously when safe.
+- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe.
 - [ ] Terminal states ended with a final mission report covering completed work and decisions made.

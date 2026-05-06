@@ -167,6 +167,8 @@ After that approval, Master Chef drives the Builder automatically until the run 
 
 After each passed, blocked, or stale delegated step, that Builder run is finished. If another delegated step exists, Master Chef re-inspects repo state and starts a fresh Builder run, normally via `cdd-implement-todo`.
 
+Every non-passing Builder attempt becomes a continuation-review boundary. Master Chef reviews completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
+
 ## Reporting and Builder checks
 
 Reporting is OpenClaw-native and session-native:
@@ -216,8 +218,13 @@ Default delegated path:
 - If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
 - Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
 - if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
-- if a step is blocked, Master Chef reports `STEP_BLOCKED` in-session, repairs the plan in the main session when possible, and keeps the run stopped only when a hard technical or physical limit still blocks safe autonomous continuation
-- if that repair yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids, preserved remaining budget, and next delegated action, then continues the same run from the next smaller actionable step with a fresh Builder
+- if a Builder attempt does not pass, Master Chef chooses one of four outcomes in-session: `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`
+- `continue_same_step` is valid when progress is coherent and a fresh Builder can plausibly finish the remainder without reopening planning
+- `repair_in_place` is valid when the parent step boundary still holds but the TODO needs tighter sequencing, contract, or proof notes before the next Builder run
+- `split_remainder_into_child_steps` is valid when the unfinished portion has become too risky for one Builder run and now forms a clearer lower-risk child-step sequence
+- if Master Chef splits the remainder, it records what part of the parent is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward
+- if repair or split yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids when applicable, preserved remaining budget, and next delegated action, then continues the same run from the repaired parent step or first runnable child with a fresh Builder
+- keep the run stopped only when a hard technical or physical limit still blocks safe autonomous continuation
 
 Manual helper:
 

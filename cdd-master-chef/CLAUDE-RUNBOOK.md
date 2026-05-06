@@ -107,7 +107,16 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 
 ## 9) Blocked paths
 
-- If a step blocks because it is too broad, underspecified, or otherwise repairable, report `STEP_BLOCKED`, repair or split it in the main Master Chef session, emit `BLOCKER_CLEARED` once a safe next step exists, and continue with a fresh Builder under the existing approval.
+- Treat every non-passing Builder attempt, including QA reject, explicit blocker, or stale replacement with no usable pass result, as a continuation-review boundary in the main Master Chef session.
+- Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
+- Choose one explicit outcome:
+  - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
+  - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
+  - `split_remainder_into_child_steps` when the unfinished portion is now too risky to keep as one Builder run and can be expressed as clearer executable child steps with explicit dependency order
+  - `hard_stop` when a hard technical or physical limit still prevents safe continuation
+- If a safe next action still exists, report `STEP_BLOCKED`, keep the decision in the main session, emit `BLOCKER_CLEARED` once the next action is explicit, and continue with a fresh Builder under the existing approval.
+- If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward to the child steps.
+- Do not split too eagerly without one-run failure-risk evidence, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
 - Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
 - End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
 - Do not treat nested subagent spawning as available.
