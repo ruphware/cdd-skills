@@ -80,22 +80,23 @@ Inspect the repo, tell me which TODO step is next, and prepare selector-driven k
   - proposed next runnable step
   - remaining unfinished top-level TODO step-heading count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
-  - an oversized top-level step is split in Master Chef before Builder handoff
+  - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
   - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
   - explicit selector-driven kickoff approval request
 
-### Prompt A1 - Oversized-step split before Builder handoff
+### Prompt A1 - Oversized-step review before Builder handoff
 
 ```text
 /cdd-master-chef TEST ONLY: assume the next top-level TODO step is oversized for one Builder run.
-Split that step into smaller decision-complete TODO steps before delegation, recompute the remaining unfinished top-level TODO step-heading count, and then present selector-driven kickoff options on the first new runnable step.
+Review whether that step truly needs a pre-delegation split. Keep it intact when it is still one coherent Builder action, repair it in place when a minimal TODO fix restores that shape, and split it into smaller decision-complete TODO steps only when the added Builder, test, and QA cost is clearly justified. Recompute the remaining unfinished top-level TODO step-heading count only if a split is chosen, and then present selector-driven kickoff options on the selected next runnable step.
 ```
 
 - [ ] Expected:
-  - Master Chef does not hand the oversized step to Builder unchanged
-  - the TODO split happens in the main session before any Builder spawn
-  - the remaining top-level-step count is recomputed after the split
-  - kickoff approval targets the first new runnable step
+  - Master Chef does not split automatically just because the step looks oversized
+  - the pre-delegation review happens in the main session before any Builder spawn
+  - any split is justified as cheaper than preserving the parent step
+  - the remaining top-level-step count is recomputed only when a split occurs
+  - kickoff approval targets either the intact parent step or the first new runnable child step, as justified by the review
 
 ### Prompt B - Selector-driven kickoff approval
 
@@ -265,6 +266,7 @@ Report STEP_BLOCKED in the current session, inspect runtime logs and the working
   - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, and whether a fresh Builder would spend most of its effort on recovery rather than completion
   - `continue_same_step` remains valid when the step boundary still holds and a fresh Builder can plausibly finish the remainder
   - TODO planning is repaired into smaller decision-complete steps only when the unfinished portion has become the lower-risk child-step sequence
+  - split is justified only when its added Builder, test, and QA cost is lower than preserving the parent step
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
   - ordinary scope or decision ambiguity is resolved by Master Chef in-session rather than handed back to the human as the default path
   - `split_remainder_into_child_steps` records what part of the parent is already done, what exact remainder is being separated, why the first child is next, and what checks, UAT, and invariants carry forward
@@ -321,7 +323,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
-- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and lower-risk child steps were created only when the remainder truly needed them.
+- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and lower-risk child steps were created only when the remainder truly needed them and the added Builder/test/QA cost was justified.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.

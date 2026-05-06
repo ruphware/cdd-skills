@@ -48,7 +48,7 @@ Do not start implementation until the effective Builder settings for the run are
 Before autonomous implementation starts, Master Chef should present one selector-driven kickoff approval that covers:
 
 - the next runnable TODO step or other chosen routing action
-- any pre-delegation split of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count
+- any cost-justified pre-delegation split review of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count when a split is actually chosen
 - current session model
 - current session thinking
 - effective Builder settings
@@ -110,11 +110,12 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Choose one explicit outcome:
   - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
   - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
-  - `split_remainder_into_child_steps` when the unfinished portion is now too risky to keep as one Builder run and can be expressed as clearer executable child steps with explicit dependency order
+  - `split_remainder_into_child_steps` only when the unfinished portion is now too risky to keep as one Builder run and preserving the parent step would cost more total retry churn than the split
   - `hard_stop` when a hard technical or physical limit still prevents safe continuation
 - If a safe next action still exists, report `STEP_BLOCKED`, keep the decision in the main session, emit `BLOCKER_CLEARED` once the next action is explicit, and continue with a fresh Builder under the existing approval.
-- If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward to the child steps.
-- Do not split too eagerly without one-run failure-risk evidence, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
+- Treat split as expensive because it adds Builder boots, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Do not pay that cost merely because the step looks broad or is expected to need several validation cycles.
+- If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks, UAT, and invariants carry forward to the child steps, and why the split cost was justified.
+- Do not split too eagerly without one-run failure-risk evidence and explicit split-cost justification, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
 - Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
 - End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.

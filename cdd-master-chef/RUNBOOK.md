@@ -69,7 +69,7 @@ If the human approves that suggestion:
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
-3. If the next runnable top-level TODO step is oversized for one Builder run, split it first only when the shared Builder-run-viability review says one-run completion already looks too risky. Otherwise keep the step intact while one fresh Builder can still finish it safely in one run, or repair it in place if a minimal TODO fix restores that viability without changing scope.
+3. If the next runnable top-level TODO step is oversized for one Builder run, review it first rather than splitting automatically. Keep the step intact while one fresh Builder can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and fresh per-run branch name.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
@@ -168,9 +168,12 @@ Use the same split-decision rule before Builder handoff and again after any non-
 
 - Ask whether one fresh Builder can plausibly finish the current step end-to-end without reopening planning, leaning on large context recovery, or falling into long repeated edit-validate-debug loops.
 - Do not treat many checklist items, many touched files, or broad-looking wording as split reasons by themselves.
-- Treat repeated debug or validation churn, replanning pressure, expensive hard-gate recovery loops, or a remainder that would naturally separate into clearer executable chunks if the attempt stalls as supporting evidence that the current step boundary is too risky.
+- Treat split as expensive because it adds Builder boots, extra hard-gate reruns, extra QA cycles, mission delay, and extra proof boundaries.
+- Prefer to keep the parent step intact while it still holds one coherent proof boundary and the split cost is not yet justified.
+- Repeated debug or validation churn is not split evidence by itself. It matters only when it shows that preserving the parent step will cost more total retry churn than splitting the remainder.
+- Treat repeated low-forward-progress retries, recovery effort dominating completion effort, expensive hard-gate recovery loops, or a remainder that would naturally separate into materially cleaner proof boundaries if the attempt stalls as supporting evidence that the current step boundary is now too costly to preserve.
 - If a minimal TODO repair makes the step decision-complete and restores one-run viability without changing the true scope, repair it in place.
-- Otherwise split only when Master Chef already has strong evidence that continuing as one Builder-sized run carries too much failure risk.
+- Otherwise split only when Master Chef already has strong evidence that continuing as one Builder-sized run costs more total delivery churn than paying the split cost.
 
 ### Builder monitoring evidence
 

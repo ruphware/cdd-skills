@@ -8,7 +8,7 @@ Startup is branch-backed and environment-backed. On fresh runs from long-lived b
 
 After kickoff approval, Master Chef owns the mission under the approved run step budget: it keeps continuation and blocker decisions in-session, restarts Builders as needed, repairs or splits blocked work when safe, and ends terminal states with a final mission report covering completed work, unresolved session-setting fields, and decisions made.
 
-Split decisions follow one shared rule: keep the current step intact while one fresh Builder can still finish it safely in one run. If not, Master Chef first tries a minimal in-place repair; only then does it split the remainder into smaller decision-complete steps. Many checklist tasks, many touched files, or broad-looking wording are not triggers by themselves; the real trigger is one-run failure risk.
+Split decisions follow one shared rule: keep the current step intact while one fresh Builder can still finish it safely in one run and preserving the parent step is still cheaper than introducing new proof boundaries. If not, Master Chef first tries a minimal in-place repair; only then does it split the remainder into smaller decision-complete steps. A split is expensive because it adds Builder boots, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Many checklist tasks, many touched files, or broad-looking wording are not triggers by themselves; the real question is whether the split cost is justified.
 
 Use these files as the canonical contract surfaces:
 

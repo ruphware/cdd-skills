@@ -37,7 +37,7 @@ Goal: validate **explicit Builder selection -> current-session settings plus Bui
 Use the shared Master Chef contract for this repo under the Claude Code adapter.
 Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and name the explicit Builder path you would use.
 If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive feature branch before managed worktree kickoff.
-If the next top-level TODO step is oversized for one Builder run, say that you would split it in Master Chef first and recompute the remaining top-level-step count.
+If the next top-level TODO step looks oversized for one Builder run, say that you would review it in Master Chef first, keep it intact unless the split cost is clearly justified, and recompute the remaining top-level-step count only if a split is actually chosen.
 Do not rely only on automatic delegation for the main Builder handoff.
 ```
 
@@ -45,7 +45,7 @@ Do not rely only on automatic delegation for the main Builder handoff.
   - the Builder path is explicit
   - the remaining top-level-step count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when applicable
-  - an oversized top-level step is split in Master Chef before Builder handoff
+  - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
   - automatic delegation is not treated as the only control mechanism
   - the answer distinguishes Builder from exploration or planning sidecars
 
@@ -204,5 +204,5 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] The active worktree was treated as branch-backed but not usable for Builder or `hard_gate` validation until repo-native bootstrap evidence marked it `env_ready`.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
-- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe.
+- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.
 - [ ] Terminal states ended with a final mission report covering completed work and decisions made.

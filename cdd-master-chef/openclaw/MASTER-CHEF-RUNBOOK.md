@@ -139,7 +139,7 @@ On the first `/cdd-master-chef` turn:
 3. Choose the next action and route it through the right internal skill:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
-   - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first into smaller decision-complete TODO steps, then recompute the remaining top-level-step count
+   - if the next runnable top-level TODO step looks oversized for one Builder run, review it in Master Chef first and keep it intact unless the parent step is not safely delegable as one coherent Builder action and the split cost is clearly justified; only then split into smaller decision-complete TODO steps and recompute the remaining top-level-step count
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
    - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Report session-derived Master Chef settings and effective Builder settings:
@@ -501,19 +501,20 @@ Blocked-step recovery procedure:
 
 1. Set the run phase to `blocked`, preserve the Builder report and failed validation evidence, and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session.
 2. Inspect `git status`, the current diff, `run.json`, `master-chef.jsonl`, `builder.jsonl`, failed commands, and the selected TODO step.
-3. Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
+3. Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, whether preserving the parent step is still cheaper than a split, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
 4. Choose one explicit outcome:
    - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
    - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
-   - `split_remainder_into_child_steps` when the unfinished portion is now too risky to keep as one Builder run and can be expressed as clearer executable child steps with explicit dependency order
+   - `split_remainder_into_child_steps` only when the unfinished portion is now too risky to keep as one Builder run and preserving the parent step would cost more total retry churn than the split
    - `hard_stop` when a hard technical or physical limit still prevents safe continuation
-5. Clean only stale runtime or build artifacts when they materially increase retry risk or obscure the true remainder; do not revert unrelated user work or discard useful failure evidence.
-6. If the outcome is `continue_same_step`, keep the parent step, preserve the existing approval, and continue it with a fresh single-step Builder run.
-7. If the outcome is `repair_in_place`, use Master-Chef-direct planning or TODO repair to tighten the same parent step, then continue that same step with a fresh single-step Builder run.
-8. If the outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward to each child before delegating again.
-9. If repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids when applicable, preserved remaining `run_step_budget`, and the next delegated action. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
-10. Re-inspect TODO state and continue the same run from the same repaired parent step or the first runnable child step, as chosen by the continuation review.
-11. If the outcome is `hard_stop`, keep the run stopped and report the exact limit plus the decisions Master Chef made before stopping.
+5. Treat split as expensive because it adds Builder restarts, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Do not pay that cost merely because the step looks broad or is expected to need several validation cycles.
+6. Clean only stale runtime or build artifacts when they materially increase retry risk or obscure the true remainder; do not revert unrelated user work or discard useful failure evidence.
+7. If the outcome is `continue_same_step`, keep the parent step, preserve the existing approval, and continue it with a fresh single-step Builder run.
+8. If the outcome is `repair_in_place`, use Master-Chef-direct planning or TODO repair to tighten the same parent step, then continue that same step with a fresh single-step Builder run.
+9. If the outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks, UAT, and invariants carry forward to each child, and why that split cost was justified before delegating again.
+10. If repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids when applicable, preserved remaining `run_step_budget`, and the next delegated action. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
+11. Re-inspect TODO state and continue the same run from the same repaired parent step or the first runnable child step, as chosen by the continuation review.
+12. If the outcome is `hard_stop`, keep the run stopped and report the exact limit plus the decisions Master Chef made before stopping.
 
 Default thresholds:
 

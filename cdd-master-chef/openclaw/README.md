@@ -136,7 +136,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 
    ```text
    /cdd-master-chef Use the Master Chef process for /abs/path/to/repo.
-   Inspect where development is at, propose the next runnable TODO step, or split an oversized one first, and present selector-driven kickoff options before creating runtime state or spawning the Builder.
+   Inspect where development is at, propose the next runnable TODO step, and only split an oversized one when the added Builder, test, and QA cost is clearly justified, then present selector-driven kickoff options before creating runtime state or spawning the Builder.
    ```
 
    Master Chef should read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and apply a `Builder override` only when one is supplied and the adapter can honor it cleanly. If OpenClaw cannot expose one or both values concretely enough, it should record only those fields as `unknown`, say so explicitly, and proceed with the active session as-is rather than stopping kickoff.
@@ -144,7 +144,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 6. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
    - inspect git status, branch, upstream, active TODO state, and the next runnable step
-   - if the next runnable top-level TODO step is oversized for one Builder run, split it first
+   - if the next runnable top-level TODO step looks oversized for one Builder run, review it first and keep it intact unless the parent step is not safely delegable as one coherent Builder action and the split cost is clearly justified
    - inspect the remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - if this is a fresh run from a long-lived branch, suggest a descriptive feature branch before managed worktree kickoff
    - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, otherwise Master-Chef-direct setup, planning, audit, or maintain work
@@ -216,7 +216,7 @@ Master Chef chooses the internal routing path.
 Default delegated path:
 
 - Master Chef chooses the next runnable TODO step
-- if that top-level TODO step is oversized for one Builder run, Master Chef splits it first and delegates the first new runnable step
+- if that top-level TODO step looks oversized for one Builder run, Master Chef first prefers delegating it unchanged or repairing it in place; it splits only when the parent step is not safely delegable and the split cost is clearly justified, then delegates the first new runnable step
 - Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step in a fresh single-step run
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
@@ -226,7 +226,8 @@ Default delegated path:
 - if a Builder attempt does not pass, Master Chef chooses one of four outcomes in-session: `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`
 - `continue_same_step` is valid when progress is coherent and a fresh Builder can plausibly finish the remainder without reopening planning
 - `repair_in_place` is valid when the parent step boundary still holds but the TODO needs tighter sequencing, contract, or proof notes before the next Builder run
-- `split_remainder_into_child_steps` is valid when the unfinished portion has become too risky for one Builder run and now forms a clearer lower-risk child-step sequence
+- `split_remainder_into_child_steps` is valid only when the unfinished portion has become too risky for one Builder run and preserving the parent step would cost more total retry churn than introducing a clearer lower-risk child-step sequence
+- split is rare because it adds Builder restarts, hard-gate reruns, QA cycles, and mission delay; Master Chef should justify paying that cost before creating child steps
 - if Master Chef splits the remainder, it records what part of the parent is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward
 - if repair or split yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids when applicable, preserved remaining budget, and next delegated action, then continues the same run from the repaired parent step or first runnable child with a fresh Builder
 - keep the run stopped only when a hard technical or physical limit still blocks safe autonomous continuation
