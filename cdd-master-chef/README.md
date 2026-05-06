@@ -4,6 +4,8 @@ This directory is the canonical committed package root for `[CDD-6] Master Chef`
 
 The shared contract treats the current session model and thinking as best-effort Master Chef facts. When a runtime cannot expose one or both exactly, Master Chef records only those fields as `unknown`, proceeds with the active session as-is, and still defaults Builder to inherit the effective settings unless an adapter can honor an explicit `Builder override` cleanly.
 
+Startup is branch-backed and environment-backed. On fresh runs from long-lived branches, Master Chef should default to recommending a descriptive source feature branch unless the human declines. It then still provisions a separate fresh per-run worktree branch, activates the managed worktree, bootstraps the repo-native environment there, records branch and bootstrap evidence in runtime state, and only then lets Builder or `hard_gate` validation depend on that worktree.
+
 After kickoff approval, Master Chef owns the mission under the approved run step budget: it keeps continuation and blocker decisions in-session, restarts Builders as needed, repairs or splits blocked work when safe, and ends terminal states with a final mission report covering completed work, unresolved session-setting fields, and decisions made.
 
 Split decisions follow one shared rule: keep the current step intact while one fresh Builder can still finish it safely in one run. If not, Master Chef first tries a minimal in-place repair; only then does it split the remainder into smaller decision-complete steps. Many checklist tasks, many touched files, or broad-looking wording are not triggers by themselves; the real trigger is one-run failure risk.

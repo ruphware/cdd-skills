@@ -62,6 +62,7 @@ Operating contract:
    - whether this looks like a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - whether the repo first needs `cdd-init-project` before the normal TODO loop can start
    - whether the source checkout is clean enough for managed worktree creation
+   - which repo-native install, dependency, build, test, or validation entrypoints will have to be prepared in the active worktree before Builder or `hard_gate` validation can rely on it
 8. Master Chef chooses the internal `cdd-*` routing model for the core `[CDD-0]` through `[CDD-5]` skills.
    - `[CDD-1] Init Project` (`cdd-init-project`): for a new or not-yet-CDD project, propose and normally start here in the main session before any autonomous TODO execution.
    - `[CDD-3] Implement TODO` (`cdd-implement-todo`): Builder default for the next runnable TODO step.
@@ -74,11 +75,13 @@ Operating contract:
    - Treat the installed `cdd-*` skills as internal Master Chef workflows, not standalone user commands during an active Master Chef run.
 9. Use a managed worktree before implementation:
    - require a clean source checkout before kickoff; if dirty, stop and ask the human to stash, commit, or discard changes first
-   - if this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, suggest a descriptive feature branch first; if approved, create it in the source checkout before the per-run worktree branch
+   - if this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, default to recommending a descriptive feature branch first; if approved, create it in the source checkout before the per-run worktree branch
    - create a fresh per-run branch from the current branch `HEAD`
    - prefer `.cdd-runtime/worktrees/<run-id>/` as the managed worktree path
-   - record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
+   - record `source_repo`, `source_branch`, `source_head_sha`, `source_branch_decision`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
    - the active runtime adapter either continues in-session from the managed worktree or stops with exact relaunch instructions; keep `worktree_continue_mode` explicit
+   - once the managed worktree becomes active, bootstrap the repo-native environment there before Builder or `hard_gate` validation rely on it
+   - record `worktree_env_status`, `worktree_env_prepared_at_utc`, and a concise `worktree_env_bootstrap_summary` in runtime state; keep detailed bootstrap commands and checks in durable evidence
 10. Before implementation starts, present one selector-driven kickoff approval that covers:
    - proposed next action
    - current session model
@@ -91,6 +94,7 @@ Operating contract:
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations
+   - active-worktree environment bootstrap expectations before Builder or `hard_gate` validation run
    - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, `C. revise the next action, Builder settings, or step budget before kickoff`
 11. Spawn the Builder as a subagent with the effective `builder_model` and `builder_thinking` resolved for that run, defaulting to inherited settings when no override is active, for exactly one approved delegated action, tell it which internal `cdd-*` skill path to use, and require an early readiness ACK before deep work.
 12. Use single-step Builder runs only.
@@ -104,7 +108,11 @@ Operating contract:
 15. Use working-tree-aware discovery checks when unstaged files matter:
    - `rg --files`
    - `git ls-files --cached --others --exclude-standard`
-16. After relaunch into the managed worktree, treat that worktree as the active repo root for QA, TODO inspection, commit, and push.
+16. After relaunch into the managed worktree, treat that worktree as the active repo root for TODO inspection, environment bootstrap, QA, commit, and push.
+   - inspect repo-native manifests, runbook commands, and validation entrypoints from the active worktree
+   - run the required dependency, build, install, or test-prep commands in that worktree
+   - keep `worktree_env_status` at `preparing` until the worktree is ready, then move it to `env_ready`, `partial`, or `blocked` with durable evidence
+   - do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`
 17. For each passed step:
    - increment `steps_completed_this_run`
    - ensure the Builder updated only the selected step in `TODO*.md`
@@ -186,9 +194,13 @@ Canonical `run.json` fields:
 - `phase`
 - `source_branch`
 - `source_head_sha`
+- `source_branch_decision`
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `worktree_env_status`
+- `worktree_env_prepared_at_utc`
+- `worktree_env_bootstrap_summary`
 - `branch`
 - `upstream`
 - `pre_step_head_sha`

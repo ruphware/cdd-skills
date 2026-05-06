@@ -76,6 +76,7 @@ Before autonomous work begins:
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
    - whether the repo first needs `cdd-init-project`
+   - which repo-native install, dependency, build, test, or validation entrypoints must be prepared in the active worktree before Builder or `hard_gate` validation rely on it
 5. Before kickoff, the source checkout must be clean. If it is dirty, stop and ask the human to stash, commit, or discard changes before managed worktree creation.
 
 ## 3) Durable runtime state
@@ -112,9 +113,13 @@ Canonical `run.json` fields:
 - `phase`
 - `source_branch`
 - `source_head_sha`
+- `source_branch_decision`
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `worktree_env_status`
+- `worktree_env_prepared_at_utc`
+- `worktree_env_bootstrap_summary`
 - `branch`
 - `upstream`
 - `pre_step_head_sha`
@@ -198,9 +203,13 @@ Master Chef runs against a managed worktree rather than mutating the source chec
 - Create the managed worktree from the current branch `HEAD`.
 - Use a fresh per-run branch rather than reusing the source checkout branch.
 - Record the source checkout path separately from the active worktree path.
+- Record whether the default feature-branch recommendation was accepted, declined, or not applicable.
 - Initialize runtime state in the managed worktree before implementation begins.
 - Continue in the worktree only when the runtime adapter can safely re-root the active control loop there.
 - Otherwise, stop with exact relaunch instructions and mark the run as `relaunch_required` before any implementation starts.
+- Once the managed worktree becomes active, inspect repo-native manifests, runbook commands, and validation entrypoints there, bootstrap the worktree-local environment there, and record bootstrap evidence before Builder or `hard_gate` validation rely on that worktree.
+- Use `worktree_env_status` to report `preparing`, `env_ready`, `partial`, or `blocked`; use `worktree_env_prepared_at_utc` and `worktree_env_bootstrap_summary` to capture the latest concise runtime-state evidence, and keep the exact commands or checks in durable reporting.
+- If the worktree environment cannot be prepared autonomously because of a hard technical or physical limit, stop before implementation and report that exact limit rather than falling back to the source checkout.
 
 Prefer a managed worktree path under:
 
@@ -224,6 +233,7 @@ Before implementation starts, present one kickoff approval that covers:
 - whether to spawn Builder now and start the autonomous run
 - runtime initialization under `.cdd-runtime/master-chef/`
 - run lease creation
+- worktree branch setup plus active-worktree environment bootstrap expectations
 
 Present that kickoff decision with selector-based options rather than a free-form approval question.
 
@@ -234,6 +244,8 @@ Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can repl
 - `C. revise the next action, Builder settings, or step budget before kickoff`
 
 Once kickoff approval lands, Master Chef owns the mission under the approved run step budget. It keeps continuation, Builder restarts, blocker repair, TODO splitting, next-step routing, and terminal reporting in-session instead of handing ordinary decisions back to the human.
+
+Before Builder or `hard_gate` validation run, Master Chef must bootstrap the active worktree environment enough for the approved Builder action and the repo's hard-gate proof path. Do not treat path creation alone as worktree readiness.
 
 Use single-step Builder runs only.
 
@@ -280,6 +292,8 @@ Use `hard_gate` and `soft_signal` validation classes:
 - `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
 - `soft_signal`: discovery greps, file-presence scans, or other non-blocking heuristics
 
+`hard_gate` validation must run from the active worktree only after `worktree_env_status` reaches `env_ready` or an exact blocking limit has already been reported.
+
 Use working-tree-aware discovery checks when unstaged files matter:
 
 - `rg --files`
@@ -317,6 +331,7 @@ Report events:
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
 When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
+That final mission report must also disclose the source branch, worktree branch, active worktree path, whether the default feature-branch recommendation was accepted or declined, and whether the worktree environment became `env_ready`, stayed `partial`, or stopped as `blocked`.
 
 If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 
@@ -354,6 +369,7 @@ Runtime adapters must define:
 - how tools and MCP access are inherited or restricted
 - how child working directories are selected
 - how worktree creation and hand-off are realized or limited
+- how the active worktree environment is bootstrapped, evidenced, and blocked when repo-native setup cannot finish
 - whether they continue in the managed worktree in-session or stop with relaunch instructions
 - how the reporting surface maps onto the runtime
 - any runtime-specific stop conditions or safety restrictions that are stricter than the shared contract

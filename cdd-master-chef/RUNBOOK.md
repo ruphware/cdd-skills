@@ -73,10 +73,13 @@ If the human approves that suggestion:
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and fresh per-run branch name.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
-7. Initialize runtime state in the managed worktree.
+7. Initialize runtime state in the managed worktree, including `source_branch_decision`.
 8. Record the active worktree path and continuation mode in runtime state.
 9. Continue in the managed worktree only if the runtime adapter can safely re-root Master Chef and Builder there.
 10. Otherwise, stop with exact relaunch instructions that point the next Master Chef session at the managed worktree path.
+11. Once the managed worktree becomes active, inspect repo-native manifests, runbook commands, and validation entrypoints from that worktree.
+12. Run the required dependency, build, install, or test-prep bootstrap commands in the active worktree, record the commands or checks in durable evidence, and keep `worktree_env_status` at `preparing` until the worktree is either `env_ready`, `partial`, or `blocked`.
+13. Do not let Builder or `hard_gate` validation rely on the active worktree until `worktree_env_status` reaches `env_ready`.
 
 ## 2) Runtime-state additions
 
@@ -87,9 +90,13 @@ Keep the existing fields and add:
 - `source_repo`
 - `source_branch`
 - `source_head_sha`
+- `source_branch_decision`
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `worktree_env_status`
+- `worktree_env_prepared_at_utc`
+- `worktree_env_bootstrap_summary`
 - `builder_phase`
 - `builder_settings_source`
 - `builder_spawn_requested_at_utc`
@@ -104,6 +111,10 @@ Field meanings:
 - `source_repo` is the original checkout path where the run was requested
 - `active_worktree_path` is the managed worktree path for the run
 - `worktree_continue_mode` is `in_session` or `relaunch_required`
+- `source_branch_decision` is `accepted`, `declined`, or `not_applicable` for the default feature-branch recommendation
+- `worktree_env_status` is `not_started`, `preparing`, `env_ready`, `partial`, or `blocked`
+- `worktree_env_prepared_at_utc` records the latest time the active worktree bootstrap state became usable evidence
+- `worktree_env_bootstrap_summary` is a concise summary of the latest repo-native bootstrap commands or checks that prepared or blocked the active worktree
 - `builder_phase` is `not_started`, `booting`, `running`, `blocked`, `completed`, `failed`, or `closed`
 - `builder_settings_source` is `inherited` or `override`
 - `builder_spawn_requested_at_utc` records when Master Chef received a Builder handle from the runtime
@@ -131,9 +142,11 @@ The durable checkpoint must now also record:
 - current session model and thinking, with any unresolved field recorded as `unknown`
 - effective Builder settings, whether they were inherited or overridden, and which fields are concrete versus `unknown`
 - source checkout path
+- whether the default feature-branch recommendation was accepted, declined, or not applicable
 - active worktree path
 - worktree branch
 - worktree continuation mode
+- worktree environment status, preparation time, and concise bootstrap summary
 - whether relaunch is still pending or the worktree session is active
 - the approved run step budget and how many steps have already passed in this run
 - the remaining top-level TODO step count when it drove the default budget recommendation
@@ -200,9 +213,22 @@ Terminal mission reports must cover completed work, validations and pushes, Buil
 Once the managed worktree becomes active:
 
 - all repo inspection happens against the active worktree path
+- repo-native manifests, runbook commands, and validation entrypoints are discovered from the active worktree path
+- environment bootstrap commands and checks run in the active worktree rather than the source checkout
 - QA, UAT, commit, and push happen against the active worktree path
 - TODO inspection and TODO writeback happen against the active worktree path
 - runtime files live under the active worktree's `.cdd-runtime/master-chef/`
+
+Bootstrap the active worktree before Builder or `hard_gate` validation depend on it:
+
+- set `worktree_env_status: preparing` when bootstrap begins
+- run the repo-native dependency, build, install, credential, or test-prep commands needed for the approved Builder action and the repo's declared hard-gate path
+- record the commands or checks that ran in durable evidence and write a concise `worktree_env_bootstrap_summary` in runtime state
+- move `worktree_env_status` to `env_ready` only when the worktree is prepared enough for Builder and the repo's hard-gate validation path
+- use `partial` when some bootstrap work succeeded but the worktree still is not ready for Builder or hard-gate reliance
+- use `blocked` when a hard technical or physical limit prevents the worktree from becoming ready
+- set `worktree_env_prepared_at_utc` whenever `env_ready`, `partial`, or `blocked` evidence is written
+- do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`
 
 Keep the source checkout path in runtime state for traceability and cleanup decisions.
 

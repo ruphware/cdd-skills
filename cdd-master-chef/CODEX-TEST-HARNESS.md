@@ -125,6 +125,8 @@ If a fallback handoff is unavoidable, keep the previously approved Builder start
 - [ ] Expected:
   - the answer uses the shared worktree contract
   - continuation versus fallback handoff is stated explicitly
+  - the answer says the active worktree must be bootstrapped locally before Builder or `hard_gate` validation rely on it
+  - the answer records or references `source_branch_decision`, `worktree_env_status`, and bootstrap evidence for the active worktree
   - the Builder-start decision remains owned by Master Chef
 
 ### Prompt H - Long-thinking Builder monitoring
@@ -197,6 +199,7 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] Approval-heavy Builder work stayed interactive.
 - [ ] Recursive default fan-out was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
+- [ ] The active worktree was treated as branch-backed but not usable for Builder or `hard_gate` validation until repo-native bootstrap evidence marked it `env_ready`.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
 - [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe.

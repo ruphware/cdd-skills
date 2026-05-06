@@ -85,8 +85,10 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Follow the shared clean-checkout-first worktree contract.
 - If the shared kickoff rule approved a feature branch, create it in the source checkout first; then provision the managed worktree from that branch `HEAD`.
 - Prefer `worktree_continue_mode: in_session` when the active Claude surface can keep Master Chef and Builder coherently rooted at `active_worktree_path`.
+- Once `active_worktree_path` is active, inspect repo-native manifests, runbook commands, and validation entrypoints there, bootstrap the required dependency, build, install, or test-prep environment in that worktree, and record `source_branch_decision`, `worktree_env_status`, `worktree_env_prepared_at_utc`, and a concise `worktree_env_bootstrap_summary`.
+- Do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`.
 - Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.
-- If a relaunch or restart is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.
+- If a relaunch or restart is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder, and finish the active-worktree bootstrap before Builder starts.
 
 ## 8) Builder monitoring
 

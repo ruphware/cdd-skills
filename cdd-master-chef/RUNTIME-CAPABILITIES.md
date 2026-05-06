@@ -16,12 +16,21 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 
 ## Runtime notes
 
+All adapters in this package must satisfy the same startup gate:
+
+- optionally recommend and record a descriptive source feature branch on fresh runs from long-lived branches
+- always create a separate fresh per-run managed worktree branch
+- activate or relaunch into that managed worktree
+- bootstrap the repo-native environment there
+- record `source_branch_decision`, `worktree_env_status`, `worktree_env_prepared_at_utc`, and `worktree_env_bootstrap_summary`
+- do not let Builder or `hard_gate` validation rely on the worktree until it is `env_ready`
+
 ### OpenClaw
 
 - The repo currently ships the OpenClaw adapter docs in `cdd-master-chef/openclaw/`.
 - The OpenClaw adapter is the current packaged runtime adapter, but it is not the only current adapter in this package.
 - Session-setting observation is best-effort: when OpenClaw cannot expose an exact model or thinking value, the adapter should record that field as `unknown`, report the limitation honestly, and continue kickoff.
-- The current adapter should provision the managed worktree, write worktree metadata, and stop with exact relaunch instructions before autonomous implementation starts.
+- The current adapter should provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, and bootstrap the repo-native environment after relaunch before autonomous implementation starts.
 
 ### Codex
 
@@ -30,6 +39,7 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 - The Codex adapter must define how current session model and thinking are observed when available, how `unknown` is reported when the runtime does not expose an exact field, and how optional Builder overrides map onto the actual runtime configuration surface.
 - The Codex adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
 - The Codex adapter must also define whether a managed worktree can become active in-session or only after a fallback handoff rooted in that worktree.
+- The Codex adapter must define how the active worktree environment is bootstrapped and evidenced before Builder or `hard_gate` validation rely on it.
 - The Codex adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
 - The Codex adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
 - Current repo docs: `CODEX-ADAPTER.md`, `CODEX-RUNBOOK.md`, and `CODEX-TEST-HARNESS.md`.
@@ -44,6 +54,7 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 - The Claude adapter must define how current session model and thinking are observed when available, how `unknown` is reported when the runtime does not expose an exact field, and how optional Builder overrides are honored or rejected.
 - Adapter rules must distinguish in-session continuation from startup-time fallback handoff support.
 - The Claude adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
+- The Claude adapter must define how the active worktree environment is bootstrapped and evidenced before Builder or `hard_gate` validation rely on it.
 - The Claude adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
 - The Claude adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
 - Current repo docs: `CLAUDE-ADAPTER.md`, `CLAUDE-RUNBOOK.md`, and `CLAUDE-TEST-HARNESS.md`.

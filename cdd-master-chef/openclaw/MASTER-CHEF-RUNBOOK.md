@@ -196,9 +196,12 @@ Before implementation starts:
 
 7. Create the managed worktree from the source checkout with that fresh branch.
 8. Initialize runtime files inside the managed worktree so `.cdd-runtime/master-chef/` is relative to the active repo root after relaunch.
-9. Record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
+9. Record `source_repo`, `source_branch`, `source_head_sha`, `source_branch_decision`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
 10. The current OpenClaw adapter must set `worktree_continue_mode` to `relaunch_required`, then stop with exact relaunch instructions before any delegated implementation starts.
-11. After relaunch into the managed worktree, treat that path as the active repo root for QA, TODO inspection, commit, push, and runtime files.
+11. After relaunch into the managed worktree, treat that path as the active repo root for TODO inspection, environment bootstrap, QA, commit, push, and runtime files.
+12. Inspect repo-native manifests, runbook commands, and validation entrypoints from the active worktree.
+13. Run the required dependency, build, install, credential, or test-prep commands in that worktree, record the commands or checks in durable evidence, and keep `worktree_env_status` at `preparing` until the worktree is either `env_ready`, `partial`, or `blocked`.
+14. Do not spawn Builder or run `hard_gate` validation until `worktree_env_status` is `env_ready`. If bootstrap hits a hard technical or physical limit, stop and report it explicitly instead of falling back to the source checkout.
 
 ---
 
@@ -241,9 +244,13 @@ Suggested shape:
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
   "source_branch": "<source-branch>",
   "source_head_sha": "<source-sha>",
+  "source_branch_decision": "accepted|declined|not_applicable",
   "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
   "worktree_branch": "<worktree-branch>",
   "worktree_continue_mode": "relaunch_required|in_session",
+  "worktree_env_status": "not_started|preparing|env_ready|partial|blocked",
+  "worktree_env_prepared_at_utc": "<ts>",
+  "worktree_env_bootstrap_summary": "<summary>",
   "branch": "<branch>",
   "upstream": "<remote/ref>",
   "pre_step_head_sha": "<sha>",
@@ -274,6 +281,8 @@ Suggested shape:
   "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
   "worktree_branch": "<worktree-branch>",
   "worktree_continue_mode": "relaunch_required|in_session",
+  "source_branch_decision": "accepted|declined|not_applicable",
+  "worktree_env_status": "not_started|preparing|env_ready|partial|blocked",
   "started_at_utc": "<ts>",
   "last_renewed_at_utc": "<ts>",
   "generation": 1
@@ -321,10 +330,10 @@ Use `context-summary.md` as the durable Master Chef checkpoint for long runs and
 Required sections:
 
 - `Run`: run id, repo, source repo, active worktree path, branch, upstream, master session key, active Builder session key when present
-- `State`: active TODO path, active step, phase, worktree branch, worktree continuation mode, last pass SHA, current blocker, current Builder status
+- `State`: active TODO path, active step, phase, worktree branch, worktree continuation mode, source branch decision, worktree environment status, last pass SHA, current blocker, current Builder status
 - `Recent decisions`: routing choices, QA/UAT verdicts, remediation decisions, blocker strategy, and why they were chosen
 - `Current diff`: working-tree summary, files changed, commands already run, and unresolved risks
-- `Pending proof`: checks, QA, UAT, commit, push, or reporting still needed
+- `Pending proof`: checks, QA, UAT, commit, push, reporting, or worktree bootstrap still needed
 - `Next action`: the exact next Master Chef action after compaction or resume
 
 Keep this file current before any deliberate Master Chef compaction and after material lifecycle events such as kickoff, Builder handoff, `STEP_PASS`, `STEP_BLOCKED`, `DEADLOCK_STOPPED`, plan repair, or direct Master Chef fixes.

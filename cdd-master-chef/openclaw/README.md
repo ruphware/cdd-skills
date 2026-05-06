@@ -40,9 +40,11 @@ There is no watchdog cron. The human reviews the current session settings as rep
 ## Managed worktree policy
 
 - The source checkout must be clean before kickoff. If it is dirty, Master Chef stops and asks the human to stash, commit, or discard changes first.
-- The OpenClaw adapter provisions a fresh per-run branch in a managed worktree rooted under `.cdd-runtime/worktrees/<run-id>/`.
+- On fresh runs from long-lived branches, Master Chef should default to recommending a descriptive source feature branch unless the human declines.
+- The OpenClaw adapter still provisions a separate fresh per-run branch in a managed worktree rooted under `.cdd-runtime/worktrees/<run-id>/`.
 - The current OpenClaw adapter then stops with exact relaunch instructions rather than assuming safe live cwd switching inside the already-running session.
-- After relaunch, treat the managed worktree as the active repo root for TODO inspection, QA, commit, and push.
+- After relaunch, treat the managed worktree as the active repo root for TODO inspection, environment bootstrap, QA, commit, and push.
+- Do not let Builder or `hard_gate` validation rely on the worktree until the repo-native environment has been bootstrapped there and recorded as `env_ready`.
 
 ## Relationship to the shared contract
 
@@ -158,10 +160,13 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
       - the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
       - the approved run step budget
       - whether to spawn Builder now
+      - managed worktree branch setup plus active-worktree environment bootstrap expectations
       - Builder handoff plus in-session reporting expectations
    - follow the shared selector contract
    - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, and `C. revise the next action, Builder settings, or step budget before kickoff`
    - replying with just `A`, `B`, or `C` is enough
+
+After the managed worktree becomes active, Master Chef must inspect repo-native manifests, runbook commands, and validation entrypoints there, run the required bootstrap commands in that worktree, record whether the default feature-branch recommendation was accepted or declined, and record the worktree bootstrap evidence before Builder or `hard_gate` validation rely on that worktree.
 
 After that approval, Master Chef drives the Builder automatically until the run completes, hits a hard technical or physical stop, or deadlocks.
 

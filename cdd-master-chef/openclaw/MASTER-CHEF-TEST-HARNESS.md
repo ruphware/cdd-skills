@@ -113,11 +113,13 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
   - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata, using `unknown` for only the unresolved session-setting fields
+  - `run.json` also records whether the default feature-branch recommendation was accepted or declined and the current worktree environment status
   - kickoff approval is presented with selector-based options rather than a free-form approval question
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
   - no watchdog cron is created
   - the OpenClaw adapter stops with exact relaunch instructions before delegated implementation starts
+  - the relaunch plan says the active worktree environment must be bootstrapped there before Builder or `hard_gate` validation rely on it
   - the routing choice is named explicitly in the handoff or main-session action
 
 ### Prompt C - Verify runtime files
@@ -308,6 +310,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Dirty source checkouts were refused before managed worktree creation.
 - [ ] The run started from a fresh branch in a managed worktree rather than the source checkout branch.
 - [ ] The OpenClaw adapter stopped with exact relaunch instructions before delegated implementation began.
+- [ ] The active worktree environment was bootstrapped and evidenced there before Builder or `hard_gate` validation relied on it.
 - [ ] `context-summary.md` was created and used as the Master Chef compaction checkpoint.
 - [ ] Duplicate-run prevention worked.
 - [ ] Builder recovery stayed inside the main session.
