@@ -28,7 +28,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   git -C <REPO> rev-parse --abbrev-ref --symbolic-full-name @{upstream}
   ```
 
-- [ ] Current session model and current session thinking are known and visible.
+- [ ] Current session model and current session thinking are either observable or expected to be reported as `unknown` without blocking kickoff.
 
 - [ ] Main session is already using the model that should be mirrored into `master_model`.
 
@@ -58,6 +58,7 @@ Read the current session model and thinking directly, report them back as Master
 
 - [ ] Expected:
   - current session model and thinking are shown back to the human
+  - if OpenClaw does not expose one or both fields exactly, only those fields are reported as `unknown` and Master Chef says kickoff would proceed with the active session as-is
   - Builder is reported as inheriting those same settings
   - no runtime state is created yet
   - no Builder is spawned yet
@@ -79,22 +80,23 @@ Inspect the repo, tell me which TODO step is next, and prepare selector-driven k
   - proposed next runnable step
   - remaining unfinished top-level TODO step-heading count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
-  - an oversized top-level step is split in Master Chef before Builder handoff
+  - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
   - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
   - explicit selector-driven kickoff approval request
 
-### Prompt A1 - Oversized-step split before Builder handoff
+### Prompt A1 - Oversized-step review before delegation
 
 ```text
 /cdd-master-chef TEST ONLY: assume the next top-level TODO step is oversized for one Builder run.
-Split that step into smaller decision-complete TODO steps before delegation, recompute the remaining unfinished top-level TODO step-heading count, and then present selector-driven kickoff options on the first new runnable step.
+Review whether that step truly needs a pre-delegation split. Keep it intact when it is still one coherent Builder action, repair it in place when a minimal TODO fix restores that shape, and split it into smaller decision-complete TODO steps only when the added Builder, test, and QA cost is clearly justified. Recompute the remaining unfinished top-level TODO step-heading count only if a split is chosen, and then present selector-driven kickoff options on the selected next runnable step.
 ```
 
 - [ ] Expected:
-  - Master Chef does not hand the oversized step to Builder unchanged
-  - the TODO split happens in the main session before any Builder spawn
-  - the remaining top-level-step count is recomputed after the split
-  - kickoff approval targets the first new runnable step
+  - Master Chef does not split automatically just because the step looks oversized
+  - the pre-delegation review happens in the main session before any Builder spawn
+  - any split is justified as cheaper than preserving the parent step
+  - the remaining top-level-step count is recomputed only when a split occurs
+  - kickoff approval targets either the intact parent step or the first new runnable child step, as justified by the review
 
 ### Prompt B - Selector-driven kickoff approval
 
@@ -111,12 +113,14 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
   - a managed worktree is created on a fresh branch from the current `HEAD`
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
-  - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata
+  - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata, using `unknown` for only the unresolved session-setting fields
+  - `run.json` also records whether the default feature-branch recommendation was accepted or declined and the current worktree environment status
   - kickoff approval is presented with selector-based options rather than a free-form approval question
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
   - no watchdog cron is created
   - the OpenClaw adapter stops with exact relaunch instructions before delegated implementation starts
+  - the relaunch plan says the active worktree environment must be bootstrapped there before Builder or `hard_gate` validation rely on it
   - the routing choice is named explicitly in the handoff or main-session action
 
 ### Prompt C - Verify runtime files
@@ -262,6 +266,7 @@ Report STEP_BLOCKED in the current session, inspect runtime logs and the working
   - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, and whether a fresh Builder would spend most of its effort on recovery rather than completion
   - `continue_same_step` remains valid when the step boundary still holds and a fresh Builder can plausibly finish the remainder
   - TODO planning is repaired into smaller decision-complete steps only when the unfinished portion has become the lower-risk child-step sequence
+  - split is justified only when its added Builder, test, and QA cost is lower than preserving the parent step
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
   - ordinary scope or decision ambiguity is resolved by Master Chef in-session rather than handed back to the human as the default path
   - `split_remainder_into_child_steps` records what part of the parent is already done, what exact remainder is being separated, why the first child is next, and what checks, UAT, and invariants carry forward
@@ -307,6 +312,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Dirty source checkouts were refused before managed worktree creation.
 - [ ] The run started from a fresh branch in a managed worktree rather than the source checkout branch.
 - [ ] The OpenClaw adapter stopped with exact relaunch instructions before delegated implementation began.
+- [ ] The active worktree environment was bootstrapped and evidenced there before Builder or `hard_gate` validation relied on it.
 - [ ] `context-summary.md` was created and used as the Master Chef compaction checkpoint.
 - [ ] Duplicate-run prevention worked.
 - [ ] Builder recovery stayed inside the main session.
@@ -317,7 +323,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
-- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and lower-risk child steps were created only when the remainder truly needed them.
+- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and lower-risk child steps were created only when the remainder truly needed them and the added Builder/test/QA cost was justified.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.

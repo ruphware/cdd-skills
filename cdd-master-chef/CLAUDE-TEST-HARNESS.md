@@ -24,7 +24,7 @@ Goal: validate **explicit Builder selection -> current-session settings plus Bui
   claude --help | rg --fixed-strings -- '--worktree'
   ```
 
-- [ ] Current session model and current session thinking are observable.
+- [ ] Current session model and current session thinking are observable when Claude exposes them, or will be reported as `unknown` without blocking kickoff.
 - [ ] If Builder divergence is being tested, one explicit `Builder override` block is prepared.
 
 - [ ] If the repo uses custom Claude agents, they live under `.claude/agents/`.
@@ -37,7 +37,7 @@ Goal: validate **explicit Builder selection -> current-session settings plus Bui
 Use the shared Master Chef contract for this repo under the Claude Code adapter.
 Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and name the explicit Builder path you would use.
 If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive feature branch before managed worktree kickoff.
-If the next top-level TODO step is oversized for one Builder run, say that you would split it in Master Chef first and recompute the remaining top-level-step count.
+If the next top-level TODO step looks oversized for one Builder run, say that you would review it in Master Chef first, keep it intact unless the split cost is clearly justified, and recompute the remaining top-level-step count only if a split is actually chosen.
 Do not rely only on automatic delegation for the main Builder handoff.
 ```
 
@@ -45,7 +45,7 @@ Do not rely only on automatic delegation for the main Builder handoff.
   - the Builder path is explicit
   - the remaining top-level-step count is stated when finite
   - a fresh-start feature-branch suggestion is surfaced when applicable
-  - an oversized top-level step is split in Master Chef before Builder handoff
+  - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
   - automatic delegation is not treated as the only control mechanism
   - the answer distinguishes Builder from exploration or planning sidecars
 
@@ -62,6 +62,7 @@ Do not start implementation yet.
 
 - [ ] Expected:
   - current session model and thinking are stated explicitly
+  - if Claude does not expose one or both fields exactly, only those fields are stated as `unknown` and kickoff still proceeds with the active session as-is
   - inherited Builder settings are the default path
   - any Builder override limitation is stated before work begins
 
@@ -126,6 +127,8 @@ If a fallback handoff is unavoidable, keep the previously approved Builder start
 - [ ] Expected:
   - `--worktree` is treated as a startup or relaunch surface only when needed
   - continuation versus fallback handoff is stated explicitly
+  - the answer says the active worktree must be bootstrapped locally before Builder or `hard_gate` validation rely on it
+  - the answer records or references `source_branch_decision`, `worktree_env_status`, and bootstrap evidence for the active worktree
   - the Builder-start decision remains owned by Master Chef
 
 ### Prompt H - Long-thinking Builder monitoring
@@ -198,7 +201,8 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] Permission-heavy Builder work stayed foreground.
 - [ ] Nested subagent spawning was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
+- [ ] The active worktree was treated as branch-backed but not usable for Builder or `hard_gate` validation until repo-native bootstrap evidence marked it `env_ready`.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
-- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe.
+- [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.
 - [ ] Terminal states ended with a final mission report covering completed work and decisions made.

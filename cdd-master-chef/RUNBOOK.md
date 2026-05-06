@@ -6,12 +6,22 @@ Adapter docs may add runtime-specific detail, but they must not contradict this 
 
 When a shared approval or decision point is surfaced to the human through an adapter, use visible selector-based options when practical and let the human reply with just the selector.
 
+## Compact policy flow
+
+- Session settings: record unresolved current-session fields as `unknown` and continue with the active session as-is.
+- Startup: recommend a descriptive source feature branch on fresh runs from long-lived branches, then create a fresh per-run managed worktree branch and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
+- Step shaping: review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified.
+
 ## 0) Session settings
 
 - Read the current session model and thinking directly from the active runtime surface.
 - Treat those values as read-only Master Chef facts for the run.
+- If one or both fields are not exposed exactly, record only those fields as `unknown`, say the runtime does not expose them here, and continue with the active session as-is.
 - Default Builder to inherit those values unless an explicit `Builder override` is present.
 - If a requested `Builder override` cannot be honored cleanly, state that explicitly and fall back to inherited Builder settings before kickoff.
+- If Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`.
+- Do not ask the human to type replacement `master_*` settings when the runtime cannot expose them.
+- Kickoff and final mission reporting must disclose any unresolved session-setting fields explicitly and note which effective Builder settings are concrete versus `unknown`.
 
 ## 1) Managed worktree policy
 
@@ -65,14 +75,17 @@ If the human approves that suggestion:
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
-3. If the next runnable top-level TODO step is oversized for one Builder run, split it first only when the shared Builder-run-viability review says one-run completion already looks too risky. Otherwise keep the step intact while one fresh Builder can still finish it safely in one run, or repair it in place if a minimal TODO fix restores that viability without changing scope.
+3. If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep the step intact while one fresh Builder can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and fresh per-run branch name.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
-7. Initialize runtime state in the managed worktree.
+7. Initialize runtime state in the managed worktree, including `source_branch_decision`.
 8. Record the active worktree path and continuation mode in runtime state.
 9. Continue in the managed worktree only if the runtime adapter can safely re-root Master Chef and Builder there.
 10. Otherwise, stop with exact relaunch instructions that point the next Master Chef session at the managed worktree path.
+11. Once the managed worktree becomes active, inspect repo-native manifests, runbook commands, and validation entrypoints from that worktree.
+12. Run the required dependency, build, install, or test-prep bootstrap commands in the active worktree, record the commands or checks in durable evidence, and keep `worktree_env_status` at `preparing` until the worktree is either `env_ready`, `partial`, or `blocked`.
+13. Do not let Builder or `hard_gate` validation rely on the active worktree until `worktree_env_status` reaches `env_ready`.
 
 ## 2) Runtime-state additions
 
@@ -83,9 +96,13 @@ Keep the existing fields and add:
 - `source_repo`
 - `source_branch`
 - `source_head_sha`
+- `source_branch_decision`
 - `active_worktree_path`
 - `worktree_branch`
 - `worktree_continue_mode`
+- `worktree_env_status`
+- `worktree_env_prepared_at_utc`
+- `worktree_env_bootstrap_summary`
 - `builder_phase`
 - `builder_settings_source`
 - `builder_spawn_requested_at_utc`
@@ -100,6 +117,10 @@ Field meanings:
 - `source_repo` is the original checkout path where the run was requested
 - `active_worktree_path` is the managed worktree path for the run
 - `worktree_continue_mode` is `in_session` or `relaunch_required`
+- `source_branch_decision` is `accepted`, `declined`, or `not_applicable` for the default feature-branch recommendation
+- `worktree_env_status` is `not_started`, `preparing`, `env_ready`, `partial`, or `blocked`
+- `worktree_env_prepared_at_utc` records the latest time the active worktree bootstrap state became usable evidence
+- `worktree_env_bootstrap_summary` is a concise summary of the latest repo-native bootstrap commands or checks that prepared or blocked the active worktree
 - `builder_phase` is `not_started`, `booting`, `running`, `blocked`, `completed`, `failed`, or `closed`
 - `builder_settings_source` is `inherited` or `override`
 - `builder_spawn_requested_at_utc` records when Master Chef received a Builder handle from the runtime
@@ -107,6 +128,7 @@ Field meanings:
 - `last_builder_direct_signal_at_utc` tracks the latest direct Builder ACK, status reply, or runtime-native child-status signal
 - `run_step_budget` is either a positive integer step count or `until_blocked_or_complete`
 - `steps_completed_this_run` counts passed TODO steps in the current autonomous run
+- unresolved `master_*` or `builder_*` setting fields are stored as `unknown` rather than blocking kickoff
 
 ### `run.lock.json`
 
@@ -123,12 +145,14 @@ Keep the existing fields and add:
 
 The durable checkpoint must now also record:
 
-- current session model and thinking
-- effective Builder settings and whether they were inherited or overridden
+- current session model and thinking, with any unresolved field recorded as `unknown`
+- effective Builder settings, whether they were inherited or overridden, and which fields are concrete versus `unknown`
 - source checkout path
+- whether the default feature-branch recommendation was accepted, declined, or not applicable
 - active worktree path
 - worktree branch
 - worktree continuation mode
+- worktree environment status, preparation time, and concise bootstrap summary
 - whether relaunch is still pending or the worktree session is active
 - the approved run step budget and how many steps have already passed in this run
 - the remaining top-level TODO step count when it drove the default budget recommendation
@@ -150,9 +174,12 @@ Use the same split-decision rule before Builder handoff and again after any non-
 
 - Ask whether one fresh Builder can plausibly finish the current step end-to-end without reopening planning, leaning on large context recovery, or falling into long repeated edit-validate-debug loops.
 - Do not treat many checklist items, many touched files, or broad-looking wording as split reasons by themselves.
-- Treat repeated debug or validation churn, replanning pressure, expensive hard-gate recovery loops, or a remainder that would naturally separate into clearer executable chunks if the attempt stalls as supporting evidence that the current step boundary is too risky.
+- Treat split as expensive because it adds Builder boots, extra hard-gate reruns, extra QA cycles, mission delay, and extra proof boundaries.
+- Prefer to keep the parent step intact while it still holds one coherent proof boundary and the split cost is not yet justified.
+- Repeated debug or validation churn is not split evidence by itself. It matters only when it shows that preserving the parent step will cost more total retry churn than splitting the remainder.
+- Treat repeated low-forward-progress retries, recovery effort dominating completion effort, expensive hard-gate recovery loops, or a remainder that would naturally separate into materially cleaner proof boundaries if the attempt stalls as supporting evidence that the current step boundary is now too costly to preserve.
 - If a minimal TODO repair makes the step decision-complete and restores one-run viability without changing the true scope, repair it in place.
-- Otherwise split only when Master Chef already has strong evidence that continuing as one Builder-sized run carries too much failure risk.
+- Otherwise split only when Master Chef already has strong evidence that continuing as one Builder-sized run costs more total delivery churn than paying the split cost.
 
 ### Builder monitoring evidence
 
@@ -195,9 +222,22 @@ Terminal mission reports must cover completed work, validations and pushes, Buil
 Once the managed worktree becomes active:
 
 - all repo inspection happens against the active worktree path
+- repo-native manifests, runbook commands, and validation entrypoints are discovered from the active worktree path
+- environment bootstrap commands and checks run in the active worktree rather than the source checkout
 - QA, UAT, commit, and push happen against the active worktree path
 - TODO inspection and TODO writeback happen against the active worktree path
 - runtime files live under the active worktree's `.cdd-runtime/master-chef/`
+
+Bootstrap the active worktree before Builder or `hard_gate` validation depend on it:
+
+- set `worktree_env_status: preparing` when bootstrap begins
+- run the repo-native dependency, build, install, credential, or test-prep commands needed for the approved Builder action and the repo's declared hard-gate path
+- record the commands or checks that ran in durable evidence and write a concise `worktree_env_bootstrap_summary` in runtime state
+- move `worktree_env_status` to `env_ready` only when the worktree is prepared enough for Builder and the repo's hard-gate validation path
+- use `partial` when some bootstrap work succeeded but the worktree still is not ready for Builder or hard-gate reliance
+- use `blocked` when a hard technical or physical limit prevents the worktree from becoming ready
+- set `worktree_env_prepared_at_utc` whenever `env_ready`, `partial`, or `blocked` evidence is written
+- do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`
 
 Keep the source checkout path in runtime state for traceability and cleanup decisions.
 

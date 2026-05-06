@@ -6,6 +6,12 @@ This runbook is the OpenClaw adapter over the shared `[CDD-6] Master Chef` contr
 
 Use the parent `cdd-master-chef/` package docs as the runtime-agnostic source of truth. Use this runbook for the OpenClaw-specific realization details and packaged smoke-test behavior.
 
+OpenClaw-specific deltas over the shared policy:
+
+- unresolved current-session fields are recorded as `unknown`, reported honestly, and do not block kickoff
+- the current adapter provisions the managed worktree, records runtime state there, and then requires relaunch instead of assuming safe in-session cwd switching
+- Builder readiness and monitoring evidence comes from the relaunched session, runtime files, and explicit Builder ACKs rather than any claim of live reasoning visibility
+
 Run autonomous development with one control loop:
 
 - **Master Chef:** the current OpenClaw session
@@ -74,7 +80,7 @@ Before `/cdd-master-chef` is used:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new/adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The current session model and thinking must both be visible enough to mirror into runtime state before kickoff.
+2. The current session model and thinking should be mirrored into runtime state when OpenClaw exposes them; any unresolved field is recorded as `unknown` and does not block kickoff.
 3. Any optional `Builder override` must be resolved before kickoff.
 4. A pushable upstream is required before the normal autonomous commit/push loop begins.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
@@ -113,7 +119,8 @@ Rules:
 - If only one `builder_*` field is present, the missing field still inherits from the active session.
 - Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
 - If the current OpenClaw path cannot honor a requested Builder override cleanly, say so explicitly and use inherited Builder settings instead.
-- After kickoff, copy the effective `master_*` and `builder_*` values into `.cdd-runtime/master-chef/run.json` and record whether Builder is using inherited settings or an explicit override.
+- If OpenClaw cannot expose one current-session field exactly, preserve any known field and record only the missing field as `unknown`; if Builder inherits from that unresolved field without an explicit replacement, keep the inherited Builder field as `unknown`.
+- After kickoff, copy the effective `master_*` and `builder_*` values into `.cdd-runtime/master-chef/run.json`, record whether Builder is using inherited settings or an explicit override, and never ask the human to type replacement `master_*` values.
 - Keep shared docs and commits free of local-only operator transport details.
 
 ---
@@ -138,15 +145,16 @@ On the first `/cdd-master-chef` turn:
 3. Choose the next action and route it through the right internal skill:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
-   - if the next runnable top-level TODO step is oversized for one Builder run, split it in Master Chef first into smaller decision-complete TODO steps, then recompute the remaining top-level-step count
+   - if the next runnable top-level TODO step looks oversized for one Builder run, review it in Master Chef first and keep it intact unless the parent step is not safely delegable as one coherent Builder action and the split cost is clearly justified; only then split into smaller decision-complete TODO steps and recompute the remaining top-level-step count
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
    - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Report session-derived Master Chef settings and effective Builder settings:
-   - current session model as `master_model`
-   - current session thinking as `master_thinking`
+   - current session model as `master_model`, or `unknown` when OpenClaw does not expose it exactly
+   - current session thinking as `master_thinking`, or `unknown` when OpenClaw does not expose it exactly
    - effective `builder_model`
    - effective `builder_thinking`
    - whether Builder is inherited or overridden
+   - a compact note when OpenClaw does not expose one or more exact session-setting fields and Master Chef is proceeding with the active session as-is
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
@@ -194,9 +202,12 @@ Before implementation starts:
 
 7. Create the managed worktree from the source checkout with that fresh branch.
 8. Initialize runtime files inside the managed worktree so `.cdd-runtime/master-chef/` is relative to the active repo root after relaunch.
-9. Record `source_repo`, `source_branch`, `source_head_sha`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
+9. Record `source_repo`, `source_branch`, `source_head_sha`, `source_branch_decision`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode`.
 10. The current OpenClaw adapter must set `worktree_continue_mode` to `relaunch_required`, then stop with exact relaunch instructions before any delegated implementation starts.
-11. After relaunch into the managed worktree, treat that path as the active repo root for QA, TODO inspection, commit, push, and runtime files.
+11. After relaunch into the managed worktree, treat that path as the active repo root for TODO inspection, environment bootstrap, QA, commit, push, and runtime files.
+12. Inspect repo-native manifests, runbook commands, and validation entrypoints from the active worktree.
+13. Run the required dependency, build, install, credential, or test-prep commands in that worktree, record the commands or checks in durable evidence, and keep `worktree_env_status` at `preparing` until the worktree is either `env_ready`, `partial`, or `blocked`.
+14. Do not spawn Builder or run `hard_gate` validation until `worktree_env_status` is `env_ready`. If bootstrap hits a hard technical or physical limit, stop and report it explicitly instead of falling back to the source checkout.
 
 ---
 
@@ -224,10 +235,10 @@ Suggested shape:
   "run_id": "<utc-id>",
   "repo": "/abs/path/to/repo",
   "source_repo": "/abs/path/to/source-repo",
-  "master_model": "<model>",
-  "master_thinking": "xhigh",
-  "builder_model": "<model>",
-  "builder_thinking": "xhigh",
+  "master_model": "<model-or-unknown>",
+  "master_thinking": "<thinking-or-unknown>",
+  "builder_model": "<model-or-unknown>",
+  "builder_thinking": "<thinking-or-unknown>",
   "builder_settings_source": "inherited",
   "run_step_budget": 1,
   "steps_completed_this_run": 0,
@@ -239,9 +250,13 @@ Suggested shape:
   "phase": "kickoff|builder|qa|uat|commit|push|reporting|blocked|complete",
   "source_branch": "<source-branch>",
   "source_head_sha": "<source-sha>",
+  "source_branch_decision": "accepted|declined|not_applicable",
   "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
   "worktree_branch": "<worktree-branch>",
   "worktree_continue_mode": "relaunch_required|in_session",
+  "worktree_env_status": "not_started|preparing|env_ready|partial|blocked",
+  "worktree_env_prepared_at_utc": "<ts>",
+  "worktree_env_bootstrap_summary": "<summary>",
   "branch": "<branch>",
   "upstream": "<remote/ref>",
   "pre_step_head_sha": "<sha>",
@@ -272,6 +287,8 @@ Suggested shape:
   "active_worktree_path": "/abs/path/to/source-repo/.cdd-runtime/worktrees/<run-id>",
   "worktree_branch": "<worktree-branch>",
   "worktree_continue_mode": "relaunch_required|in_session",
+  "source_branch_decision": "accepted|declined|not_applicable",
+  "worktree_env_status": "not_started|preparing|env_ready|partial|blocked",
   "started_at_utc": "<ts>",
   "last_renewed_at_utc": "<ts>",
   "generation": 1
@@ -319,10 +336,10 @@ Use `context-summary.md` as the durable Master Chef checkpoint for long runs and
 Required sections:
 
 - `Run`: run id, repo, source repo, active worktree path, branch, upstream, master session key, active Builder session key when present
-- `State`: active TODO path, active step, phase, worktree branch, worktree continuation mode, last pass SHA, current blocker, current Builder status
+- `State`: active TODO path, active step, phase, worktree branch, worktree continuation mode, source branch decision, worktree environment status, last pass SHA, current blocker, current Builder status
 - `Recent decisions`: routing choices, QA/UAT verdicts, remediation decisions, blocker strategy, and why they were chosen
 - `Current diff`: working-tree summary, files changed, commands already run, and unresolved risks
-- `Pending proof`: checks, QA, UAT, commit, push, or reporting still needed
+- `Pending proof`: checks, QA, UAT, commit, push, reporting, or worktree bootstrap still needed
 - `Next action`: the exact next Master Chef action after compaction or resume
 
 Keep this file current before any deliberate Master Chef compaction and after material lifecycle events such as kickoff, Builder handoff, `STEP_PASS`, `STEP_BLOCKED`, `DEADLOCK_STOPPED`, plan repair, or direct Master Chef fixes.
@@ -490,19 +507,20 @@ Blocked-step recovery procedure:
 
 1. Set the run phase to `blocked`, preserve the Builder report and failed validation evidence, and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session.
 2. Inspect `git status`, the current diff, `run.json`, `master-chef.jsonl`, `builder.jsonl`, failed commands, and the selected TODO step.
-3. Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
+3. Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, whether preserving the parent step is still cheaper than a split, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
 4. Choose one explicit outcome:
    - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
    - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
-   - `split_remainder_into_child_steps` when the unfinished portion is now too risky to keep as one Builder run and can be expressed as clearer executable child steps with explicit dependency order
+   - `split_remainder_into_child_steps` only when the unfinished portion is now too risky to keep as one Builder run and preserving the parent step would cost more total retry churn than the split
    - `hard_stop` when a hard technical or physical limit still prevents safe continuation
-5. Clean only stale runtime or build artifacts when they materially increase retry risk or obscure the true remainder; do not revert unrelated user work or discard useful failure evidence.
-6. If the outcome is `continue_same_step`, keep the parent step, preserve the existing approval, and continue it with a fresh single-step Builder run.
-7. If the outcome is `repair_in_place`, use Master-Chef-direct planning or TODO repair to tighten the same parent step, then continue that same step with a fresh single-step Builder run.
-8. If the outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward to each child before delegating again.
-9. If repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids when applicable, preserved remaining `run_step_budget`, and the next delegated action. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
-10. Re-inspect TODO state and continue the same run from the same repaired parent step or the first runnable child step, as chosen by the continuation review.
-11. If the outcome is `hard_stop`, keep the run stopped and report the exact limit plus the decisions Master Chef made before stopping.
+5. Treat split as expensive because it adds Builder restarts, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Do not pay that cost merely because the step looks broad or is expected to need several validation cycles.
+6. Clean only stale runtime or build artifacts when they materially increase retry risk or obscure the true remainder; do not revert unrelated user work or discard useful failure evidence.
+7. If the outcome is `continue_same_step`, keep the parent step, preserve the existing approval, and continue it with a fresh single-step Builder run.
+8. If the outcome is `repair_in_place`, use Master-Chef-direct planning or TODO repair to tighten the same parent step, then continue that same step with a fresh single-step Builder run.
+9. If the outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks, UAT, and invariants carry forward to each child, and why that split cost was justified before delegating again.
+10. If repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids when applicable, preserved remaining `run_step_budget`, and the next delegated action. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
+11. Re-inspect TODO state and continue the same run from the same repaired parent step or the first runnable child step, as chosen by the continuation review.
+12. If the outcome is `hard_stop`, keep the run stopped and report the exact limit plus the decisions Master Chef made before stopping.
 
 Default thresholds:
 
@@ -638,7 +656,7 @@ Runtime obligations:
 - keep `run.json` focused on run state rather than extra route metadata
 - report blockers and completion clearly in the current session
 - when `BLOCKER_CLEARED` is reported, include the original blocked step, replacement step ids, preserved remaining budget, and the next delegated action
-- when the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason
+- when the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason
 
 ---
 

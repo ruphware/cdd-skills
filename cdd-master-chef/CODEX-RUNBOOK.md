@@ -4,6 +4,12 @@ This runbook defines the operational Codex adapter path over the shared `cdd-mas
 
 Use the shared contract in `CONTRACT.md` and the Codex adapter rules in `CODEX-ADAPTER.md` as the source of truth. Use this file for the concrete Codex operating shape.
 
+Codex-specific deltas over the shared policy:
+
+- how Codex reports unresolved session-setting fields as `unknown`
+- whether the active Codex surface can continue in the managed worktree in-session or needs a fallback handoff
+- what direct Builder readiness, status, and closure evidence Codex can actually expose
+
 ## 1) Session shape
 
 - Launch the main Codex session with the desired Master Chef model and reasoning effort. The active session values become `master_model` and `master_thinking` for the run.
@@ -34,9 +40,12 @@ Adapter rule:
 
 Before kickoff, Master Chef must report the current session model and thinking as read-only Master Chef facts.
 
+- If the active Codex surface does not expose one or both fields exactly, Master Chef must record only those fields as `unknown`, say Codex does not expose them here, and keep kickoff moving.
 - If no `Builder override` is supplied, Builder inherits those settings.
+- If Builder inherits from an unresolved parent field and no explicit override replaces it, the inherited Builder field stays `unknown`.
 - If a `Builder override` is supplied, Master Chef must say whether the selected agent or relaunch path can honor the requested `builder_model` and/or `builder_thinking` cleanly.
 - If the current Builder path cannot honor the requested override cleanly, say so explicitly and use inherited Builder settings instead.
+- Do not ask the human to type replacement `master_*` settings when Codex cannot expose them.
 
 Do not start implementation until the effective Builder settings for the run are explicit.
 
@@ -45,7 +54,7 @@ Do not start implementation until the effective Builder settings for the run are
 Before autonomous implementation starts, Master Chef should present one selector-driven kickoff approval that covers:
 
 - the next runnable TODO step or other chosen routing action
-- any pre-delegation split of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count
+- any cost-justified pre-delegation split review of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count when a split is actually chosen
 - current session model
 - current session thinking
 - effective Builder settings
@@ -74,8 +83,10 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Follow the shared clean-checkout-first worktree contract.
 - If the shared kickoff rule approved a feature branch, create it in the source checkout first; then provision the managed worktree from that branch `HEAD`.
 - Prefer `worktree_continue_mode: in_session` when the active Codex surface can keep Master Chef and Builder operating against `active_worktree_path` coherently.
+- Once `active_worktree_path` is active, inspect repo-native manifests, runbook commands, and validation entrypoints there, bootstrap the required dependency, build, install, or test-prep environment in that worktree, and record `source_branch_decision`, `worktree_env_status`, `worktree_env_prepared_at_utc`, and a concise `worktree_env_bootstrap_summary`.
+- Do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`.
 - If the active Codex surface truly cannot continue in the managed worktree, stop after provisioning and use the smallest coherent relaunch or handoff path.
-- If a handoff is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder.
+- If a handoff is unavoidable, keep the approved Builder start and run step budget as part of that continuation plan rather than asking the human to decide again whether to spawn Builder, and finish the active-worktree bootstrap before Builder starts.
 - Do not assume Codex app worktree behavior and Codex CLI worktree behavior are identical.
 
 ## 7) Builder monitoring
@@ -105,13 +116,14 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Choose one explicit outcome:
   - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
   - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
-  - `split_remainder_into_child_steps` when the unfinished portion is now too risky to keep as one Builder run and can be expressed as clearer executable child steps with explicit dependency order
+  - `split_remainder_into_child_steps` only when the unfinished portion is now too risky to keep as one Builder run and preserving the parent step would cost more total retry churn than the split
   - `hard_stop` when a hard technical or physical limit still prevents safe continuation
 - If a safe next action still exists, report `STEP_BLOCKED`, keep the decision in the main session, emit `BLOCKER_CLEARED` once the next action is explicit, and continue with a fresh Builder under the existing approval.
-- If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward to the child steps.
-- Do not split too eagerly without one-run failure-risk evidence, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
+- Treat split as expensive because it adds Builder boots, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Do not pay that cost merely because the step looks broad or is expected to need several validation cycles.
+- If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks, UAT, and invariants carry forward to the child steps, and why the split cost was justified.
+- Do not split too eagerly without one-run failure-risk evidence and explicit split-cost justification, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
 - Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
-- End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
+- End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.
 - Do not hide Builder override failures or inherited-setting fallback decisions.
 - Do not send approval-heavy Builder work into detached or non-interactive sidecars and expect automatic recovery.
