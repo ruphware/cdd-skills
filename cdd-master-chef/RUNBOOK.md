@@ -10,8 +10,12 @@ When a shared approval or decision point is surfaced to the human through an ada
 
 - Read the current session model and thinking directly from the active runtime surface.
 - Treat those values as read-only Master Chef facts for the run.
+- If one or both fields are not exposed exactly, record only those fields as `unknown`, say the runtime does not expose them here, and continue with the active session as-is.
 - Default Builder to inherit those values unless an explicit `Builder override` is present.
 - If a requested `Builder override` cannot be honored cleanly, state that explicitly and fall back to inherited Builder settings before kickoff.
+- If Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`.
+- Do not ask the human to type replacement `master_*` settings when the runtime cannot expose them.
+- Kickoff and final mission reporting must disclose any unresolved session-setting fields explicitly and note which effective Builder settings are concrete versus `unknown`.
 
 ## 1) Managed worktree policy
 
@@ -107,6 +111,7 @@ Field meanings:
 - `last_builder_direct_signal_at_utc` tracks the latest direct Builder ACK, status reply, or runtime-native child-status signal
 - `run_step_budget` is either a positive integer step count or `until_blocked_or_complete`
 - `steps_completed_this_run` counts passed TODO steps in the current autonomous run
+- unresolved `master_*` or `builder_*` setting fields are stored as `unknown` rather than blocking kickoff
 
 ### `run.lock.json`
 
@@ -123,8 +128,8 @@ Keep the existing fields and add:
 
 The durable checkpoint must now also record:
 
-- current session model and thinking
-- effective Builder settings and whether they were inherited or overridden
+- current session model and thinking, with any unresolved field recorded as `unknown`
+- effective Builder settings, whether they were inherited or overridden, and which fields are concrete versus `unknown`
 - source checkout path
 - active worktree path
 - worktree branch

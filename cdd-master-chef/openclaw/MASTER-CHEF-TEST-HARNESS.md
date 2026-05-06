@@ -28,7 +28,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   git -C <REPO> rev-parse --abbrev-ref --symbolic-full-name @{upstream}
   ```
 
-- [ ] Current session model and current session thinking are known and visible.
+- [ ] Current session model and current session thinking are either observable or expected to be reported as `unknown` without blocking kickoff.
 
 - [ ] Main session is already using the model that should be mirrored into `master_model`.
 
@@ -58,6 +58,7 @@ Read the current session model and thinking directly, report them back as Master
 
 - [ ] Expected:
   - current session model and thinking are shown back to the human
+  - if OpenClaw does not expose one or both fields exactly, only those fields are reported as `unknown` and Master Chef says kickoff would proceed with the active session as-is
   - Builder is reported as inheriting those same settings
   - no runtime state is created yet
   - no Builder is spawned yet
@@ -111,7 +112,7 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
   - a managed worktree is created on a fresh branch from the current `HEAD`
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
-  - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata
+  - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata, using `unknown` for only the unresolved session-setting fields
   - kickoff approval is presented with selector-based options rather than a free-form approval question
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff

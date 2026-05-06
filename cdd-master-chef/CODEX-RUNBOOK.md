@@ -34,9 +34,12 @@ Adapter rule:
 
 Before kickoff, Master Chef must report the current session model and thinking as read-only Master Chef facts.
 
+- If the active Codex surface does not expose one or both fields exactly, Master Chef must record only those fields as `unknown`, say Codex does not expose them here, and keep kickoff moving.
 - If no `Builder override` is supplied, Builder inherits those settings.
+- If Builder inherits from an unresolved parent field and no explicit override replaces it, the inherited Builder field stays `unknown`.
 - If a `Builder override` is supplied, Master Chef must say whether the selected agent or relaunch path can honor the requested `builder_model` and/or `builder_thinking` cleanly.
 - If the current Builder path cannot honor the requested override cleanly, say so explicitly and use inherited Builder settings instead.
+- Do not ask the human to type replacement `master_*` settings when Codex cannot expose them.
 
 Do not start implementation until the effective Builder settings for the run are explicit.
 
@@ -111,7 +114,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward to the child steps.
 - Do not split too eagerly without one-run failure-risk evidence, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
 - Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
-- End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
+- End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.
 - Do not hide Builder override failures or inherited-setting fallback decisions.
 - Do not send approval-heavy Builder work into detached or non-interactive sidecars and expect automatic recovery.

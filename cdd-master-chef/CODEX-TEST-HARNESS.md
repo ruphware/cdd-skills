@@ -22,7 +22,7 @@ Goal: validate **explicit Builder delegation -> current-session settings plus Bu
   codex --help | rg --fixed-strings -- '--ask-for-approval'
   ```
 
-- [ ] Current session model and current session thinking are observable.
+- [ ] Current session model and current session thinking are observable when Codex exposes them, or will be reported as `unknown` without blocking kickoff.
 - [ ] If Builder divergence is being tested, one explicit `Builder override` block is prepared.
 
 - [ ] If the repo uses custom Codex agents, they live under `.codex/agents/`.
@@ -60,6 +60,7 @@ Do not start implementation yet.
 
 - [ ] Expected:
   - current session model and thinking are stated explicitly
+  - if Codex does not expose one or both fields exactly, only those fields are stated as `unknown` and kickoff still proceeds with the active session as-is
   - inherited Builder settings are the default path
   - any Builder override limitation is stated before work begins
 

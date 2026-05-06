@@ -35,7 +35,7 @@ The packaged OpenClaw adapter has two active actors:
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
 - **Builder:** a fresh single-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
-There is no watchdog cron. The human verifies the current session settings, chooses any optional `Builder override`, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks the final mission report or a hard stop.
+There is no watchdog cron. The human reviews the current session settings as reported, chooses any optional `Builder override`, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks the final mission report or a hard stop.
 
 ## Managed worktree policy
 
@@ -115,7 +115,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 ## How development starts
 
 1. Open the OpenClaw session you want to use. That session is both Master Chef and the reporting surface for the run.
-2. Make sure the current session already has the model and thinking you want Master Chef to mirror into runtime state.
+2. Make sure the current session already has the model and thinking you want Master Chef to mirror into runtime state when OpenClaw exposes them exactly.
 3. If Builder should diverge from that active session, prepare an optional `Builder override` block:
 
    ```text
@@ -137,7 +137,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    Inspect where development is at, propose the next runnable TODO step, or split an oversized one first, and present selector-driven kickoff options before creating runtime state or spawning the Builder.
    ```
 
-   Master Chef should read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and apply a `Builder override` only when one is supplied and the adapter can honor it cleanly. If the runtime cannot observe those values concretely enough, it should stop before kickoff.
+   Master Chef should read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and apply a `Builder override` only when one is supplied and the adapter can honor it cleanly. If OpenClaw cannot expose one or both values concretely enough, it should record only those fields as `unknown`, say so explicitly, and proceed with the active session as-is rather than stopping kickoff.
 
 6. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
@@ -175,7 +175,7 @@ Reporting is OpenClaw-native and session-native:
 
 - the current Master Chef session is the only control/reporting route described by the shared package
 - lifecycle reporting such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, and `RUN_COMPLETE` stays in that session
-- terminal states end with a final mission report covering completed work and decisions made
+- terminal states end with a final mission report covering completed work, unresolved session-setting fields, and decisions made
 - `.cdd-runtime/master-chef/run.json` stores run state, not extra route metadata
 - if a local operator wants external notifications, keep that as local-only behavior rather than shared skill config
 

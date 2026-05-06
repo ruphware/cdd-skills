@@ -24,7 +24,7 @@ Goal: validate **explicit Builder selection -> current-session settings plus Bui
   claude --help | rg --fixed-strings -- '--worktree'
   ```
 
-- [ ] Current session model and current session thinking are observable.
+- [ ] Current session model and current session thinking are observable when Claude exposes them, or will be reported as `unknown` without blocking kickoff.
 - [ ] If Builder divergence is being tested, one explicit `Builder override` block is prepared.
 
 - [ ] If the repo uses custom Claude agents, they live under `.claude/agents/`.
@@ -62,6 +62,7 @@ Do not start implementation yet.
 
 - [ ] Expected:
   - current session model and thinking are stated explicitly
+  - if Claude does not expose one or both fields exactly, only those fields are stated as `unknown` and kickoff still proceeds with the active session as-is
   - inherited Builder settings are the default path
   - any Builder override limitation is stated before work begins
 

@@ -64,7 +64,7 @@ Before autonomous work begins:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new or adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The current session model and thinking must be observable, and any optional Builder override must be resolved, before kickoff.
+2. Master Chef must observe the current session model and thinking when the runtime exposes them, resolve any optional Builder override, and continue kickoff even when one or both session-setting fields remain `unknown`.
 3. A pushable upstream is required before the normal autonomous commit/push loop begins.
 4. Master Chef must inspect:
    - current git status and branch
@@ -133,12 +133,16 @@ The active session is the only source of truth for:
 - `master_model`
 - `master_thinking`
 
+Any unresolved session-setting field may be stored as `unknown`. Do not invent replacement `master_*` values.
+
 Builder defaults:
 
 - `builder_model` inherits the current session model
 - `builder_thinking` inherits the current session thinking
 
 When Builder should diverge from the active session, the human may provide an optional `Builder override` that contains `builder_model`, `builder_thinking`, or both.
+
+If one current-session field is observable and the other is not, preserve the known value and record only the missing field as `unknown`. If Builder inherits from an unknown parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`.
 
 Before kickoff, Master Chef must report:
 
@@ -147,8 +151,9 @@ Before kickoff, Master Chef must report:
 - effective `builder_model`
 - effective `builder_thinking`
 - whether Builder is using inherited settings or an explicit override
+- a compact note when the runtime does not expose one or more exact session-setting fields and Master Chef is proceeding with the active session as-is
 
-If the runtime cannot observe the current session model and thinking concretely enough to report them honestly, stop before kickoff rather than asking the human to type replacement `master_*` settings.
+If the runtime cannot observe one or both current-session fields concretely enough to report them exactly, record only those unresolved fields as `unknown`, say the runtime does not expose them here, and proceed with the active session as-is. Do not ask the human to type replacement `master_*` settings.
 
 If the runtime cannot honor a requested Builder override cleanly, say so explicitly and use inherited Builder settings rather than pretending the override landed.
 
@@ -156,7 +161,7 @@ Treat current-session `master_model` / `master_thinking` plus effective `builder
 
 Runtime adapters must define:
 
-- how they observe the current session model and thinking
+- how they observe the current session model and thinking, and how they report `unknown` when the runtime does not expose an exact value
 - how an optional `Builder override` is supplied when Builder should diverge
 - how Builder settings are inherited by default and how explicit overrides are honored or rejected
 - how Builder monitoring works, including whether live status, partial output, or direct reasoning visibility actually exist in that runtime
@@ -311,7 +316,7 @@ Report events:
 
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
-When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
+When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 
 If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 

@@ -43,11 +43,13 @@ Operating contract:
    - `.cdd-runtime/master-chef/context-summary.md`
 6. Before kickoff, resolve current session settings and any optional `Builder override`:
    - read the current session model and thinking directly from the active runtime surface
-   - if either value is not visible enough to report honestly, stop before kickoff
+   - if either value is not visible enough to report exactly, record only that field as `unknown`, say the runtime does not expose it here, and continue kickoff with the active session as-is
    - if the current prompt includes a `Builder override` block, use it as the requested Builder settings for that run
    - otherwise, default Builder to inherit those settings
    - if the runtime cannot honor a requested Builder override cleanly, say so explicitly and fall back to inherited Builder settings
+   - if Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`
    - treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth; do not infer model settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
+   - do not ask the human to type replacement `master_*` settings when the runtime cannot expose them
    - keep shared docs and commits free of local-only operator overrides
 7. Before autonomous work starts, inspect:
    - current git status and branch
@@ -213,7 +215,7 @@ Report events:
 
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
-When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
+When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 
 Reporting surface:
 

@@ -20,13 +20,14 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 
 - The repo currently ships the OpenClaw adapter docs in `cdd-master-chef/openclaw/`.
 - The OpenClaw adapter is the current packaged runtime adapter, but it is not the only current adapter in this package.
+- Session-setting observation is best-effort: when OpenClaw cannot expose an exact model or thinking value, the adapter should record that field as `unknown`, report the limitation honestly, and continue kickoff.
 - The current adapter should provision the managed worktree, write worktree metadata, and stop with exact relaunch instructions before autonomous implementation starts.
 
 ### Codex
 
 - Treat Builder delegation as explicit and intentional.
 - Project-level agent configuration belongs under `.codex/agents/*.toml`.
-- The Codex adapter must define how current session model and thinking are observed, and how optional Builder overrides map onto the actual runtime configuration surface.
+- The Codex adapter must define how current session model and thinking are observed when available, how `unknown` is reported when the runtime does not expose an exact field, and how optional Builder overrides map onto the actual runtime configuration surface.
 - The Codex adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
 - The Codex adapter must also define whether a managed worktree can become active in-session or only after a fallback handoff rooted in that worktree.
 - The Codex adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
@@ -40,7 +41,7 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 - Project and user agent surfaces are `.claude/agents/` and `~/.claude/agents/`.
 - Use explicit Builder selection when the delegated role must be deterministic, even though Claude can also delegate automatically.
 - Background subagents inherit only pre-approved permissions; do not rely on them for interactive recovery.
-- The Claude adapter must define how current session model and thinking are observed, and how optional Builder overrides are honored or rejected.
+- The Claude adapter must define how current session model and thinking are observed when available, how `unknown` is reported when the runtime does not expose an exact field, and how optional Builder overrides are honored or rejected.
 - Adapter rules must distinguish in-session continuation from startup-time fallback handoff support.
 - The Claude adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
 - The Claude adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.

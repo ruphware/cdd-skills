@@ -74,7 +74,7 @@ Before `/cdd-master-chef` is used:
 1. The target workspace must be either:
    - a repo that already contains `AGENTS.md`, `README.md`, and `TODO.md` or `TODO-*.md`, or
    - a new/adoptable project folder that should first be brought into the CDD contract through `cdd-init-project`
-2. The current session model and thinking must both be visible enough to mirror into runtime state before kickoff.
+2. The current session model and thinking should be mirrored into runtime state when OpenClaw exposes them; any unresolved field is recorded as `unknown` and does not block kickoff.
 3. Any optional `Builder override` must be resolved before kickoff.
 4. A pushable upstream is required before the normal autonomous commit/push loop begins.
 5. The OpenClaw shared skills install must already contain the internal skill pack Master Chef may route through, including:
@@ -113,7 +113,8 @@ Rules:
 - If only one `builder_*` field is present, the missing field still inherits from the active session.
 - Master Chef must not infer or merge model settings from `USER.md`, memory, repo docs, previous `.cdd-runtime/master-chef/run.json`, or earlier conventions.
 - If the current OpenClaw path cannot honor a requested Builder override cleanly, say so explicitly and use inherited Builder settings instead.
-- After kickoff, copy the effective `master_*` and `builder_*` values into `.cdd-runtime/master-chef/run.json` and record whether Builder is using inherited settings or an explicit override.
+- If OpenClaw cannot expose one current-session field exactly, preserve any known field and record only the missing field as `unknown`; if Builder inherits from that unresolved field without an explicit replacement, keep the inherited Builder field as `unknown`.
+- After kickoff, copy the effective `master_*` and `builder_*` values into `.cdd-runtime/master-chef/run.json`, record whether Builder is using inherited settings or an explicit override, and never ask the human to type replacement `master_*` values.
 - Keep shared docs and commits free of local-only operator transport details.
 
 ---
@@ -142,11 +143,12 @@ On the first `/cdd-master-chef` turn:
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
    - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Report session-derived Master Chef settings and effective Builder settings:
-   - current session model as `master_model`
-   - current session thinking as `master_thinking`
+   - current session model as `master_model`, or `unknown` when OpenClaw does not expose it exactly
+   - current session thinking as `master_thinking`, or `unknown` when OpenClaw does not expose it exactly
    - effective `builder_model`
    - effective `builder_thinking`
    - whether Builder is inherited or overridden
+   - a compact note when OpenClaw does not expose one or more exact session-setting fields and Master Chef is proceeding with the active session as-is
 5. Initialize runtime files under `.cdd-runtime/master-chef/`.
 6. Ensure `.cdd-runtime/` is locally ignored.
 7. Acquire the run lease in `run.lock.json`.
@@ -224,10 +226,10 @@ Suggested shape:
   "run_id": "<utc-id>",
   "repo": "/abs/path/to/repo",
   "source_repo": "/abs/path/to/source-repo",
-  "master_model": "<model>",
-  "master_thinking": "xhigh",
-  "builder_model": "<model>",
-  "builder_thinking": "xhigh",
+  "master_model": "<model-or-unknown>",
+  "master_thinking": "<thinking-or-unknown>",
+  "builder_model": "<model-or-unknown>",
+  "builder_thinking": "<thinking-or-unknown>",
   "builder_settings_source": "inherited",
   "run_step_budget": 1,
   "steps_completed_this_run": 0,
@@ -638,7 +640,7 @@ Runtime obligations:
 - keep `run.json` focused on run state rather than extra route metadata
 - report blockers and completion clearly in the current session
 - when `BLOCKER_CLEARED` is reported, include the original blocked step, replacement step ids, preserved remaining budget, and the next delegated action
-- when the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason
+- when the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason
 
 ---
 
