@@ -73,6 +73,7 @@ Current concrete adapters in this repo:
 - Use `[CDD-4] Implementation Audit` plus `[CDD-2] Plan` when audit findings should become TODO work.
 - Use `[CDD-5] Maintain` for doc drift + upkeep, source cleanup, index refresh, or refactor architecture audit.
 - Use `cdd-master-chef` when you want an autonomous run after kickoff approval and one of the current concrete adapters fits your runtime.
+- After kickoff approval, Master Chef owns the mission under the approved run step budget: it keeps continuation and blocker decisions in-session, restarts Builders as needed, repairs or splits blocked work when safe, and ends terminal states with a final mission report covering completed work and decisions made.
 
 For `[CDD-6] Master Chef`:
 

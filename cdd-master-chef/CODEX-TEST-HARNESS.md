@@ -159,6 +159,31 @@ Explain what proves that Builder has actually started operating, what runtime fi
   - foreground Codex uses a short boot window of about 2 minutes before the first boot-status probe
   - the chosen quiet-work window starts only after `builder_phase` reaches `running` and `builder_ready_at_utc` is recorded
 
+### Prompt J - Blocked-step autonomy
+
+```text
+The active TODO step is blocked because it is too broad or underspecified.
+Explain how Codex Master Chef should report STEP_BLOCKED, repair or split the work in the main session, choose the next safe path itself, emit BLOCKER_CLEARED when repair succeeds, and continue under the existing approval unless a hard technical or physical limit forces a stop.
+```
+
+- [ ] Expected:
+  - ordinary scope or sequencing ambiguity is resolved by Master Chef in-session rather than handed back to the human
+  - blocked broad work is repaired or split in the main Master Chef session
+  - successful repair emits `BLOCKER_CLEARED` and preserves the existing approval
+  - continuation uses a fresh Builder run for the next smaller actionable step
+  - stopping is reserved for hard technical or physical limits
+
+### Prompt K - Final mission report
+
+```text
+The autonomous run just reached a terminal state.
+Describe the final mission report Master Chef should emit so the human can see completed work, decisions made, and any remaining work or exact stop reason.
+```
+
+- [ ] Expected:
+  - the report is described as a final mission report
+  - it includes completed work, validations, commits or pushes, Builder restarts, blocker repairs or splits, decisions made, and any remaining work or exact stop reason
+
 ## 3) Pass criteria
 
 - [ ] The Codex adapter required explicit Builder selection and did not claim automatic spawning.
@@ -169,3 +194,5 @@ Explain what proves that Builder has actually started operating, what runtime fi
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
+- [ ] Blocked-step repair stayed inside Master Chef and continued autonomously when safe.
+- [ ] Terminal states ended with a final mission report covering completed work and decisions made.

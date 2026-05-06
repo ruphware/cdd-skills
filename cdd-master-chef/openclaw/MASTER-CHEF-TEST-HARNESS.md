@@ -2,7 +2,7 @@
 
 This harness validates the current OpenClaw adapter against the shared Master Chef contract.
 
-Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> direct in-session Builder checks -> in-session lifecycle reporting -> final results**.
+Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local runtime state -> Builder subagent -> direct in-session Builder checks -> in-session lifecycle reporting -> final mission report**.
 
 ## 1) Preflight
 
@@ -213,7 +213,7 @@ Explain how approved findings from [CDD-4] Implementation Audit or external revi
 ```text
 /cdd-master-chef Continue the autonomous run.
 If another runnable TODO step exists after the current one, keep going automatically.
-If the run is complete, send the final results summary.
+If the run is complete, send the final mission report covering completed work and decisions made.
 ```
 
 - [ ] Expected:
@@ -222,6 +222,7 @@ If the run is complete, send the final results summary.
   - the delegated path matches the routing choice rather than defaulting blindly
   - if another runnable delegated step exists, Master Chef starts a fresh single-step Builder run for it, normally via `cdd-implement-todo`
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
+  - run completion emits a final mission report covering completed work and decisions made
   - lifecycle events such as `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are reported clearly in the current session
 
 ### Prompt J - QA reject remediation
@@ -252,7 +253,7 @@ Stop the run and report DEADLOCK_STOPPED.
 
 ```text
 /cdd-master-chef TEST ONLY: simulate that the active TODO step is blocked because it is too broad or missing implementation decisions.
-Stop the autonomous loop, report STEP_BLOCKED in the current session, inspect runtime logs and the working tree, decompose the blocked work into smaller TODO steps, clean only stale retry artifacts, and restart only from the next smaller actionable step.
+Report STEP_BLOCKED for the blocked broad step in the current session, inspect runtime logs and the working tree, decompose the blocked work into smaller TODO steps, clean only stale retry artifacts, choose the next safe path in-session, and continue from the next smaller actionable step unless a hard technical or physical limit still blocks safe autonomous continuation.
 ```
 
 - [ ] Expected:
@@ -260,9 +261,11 @@ Stop the autonomous loop, report STEP_BLOCKED in the current session, inspect ru
   - `STEP_BLOCKED` is reported in the current Master Chef session with concrete evidence
   - TODO planning is repaired into smaller decision-complete steps before another implementation attempt
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
+  - ordinary scope or decision ambiguity is resolved by Master Chef in-session rather than handed back to the human as the default path
   - successful repair emits `BLOCKER_CLEARED` with the original blocked step, replacement step ids, preserved remaining budget, and next delegated action
   - successful repair does not trigger a new kickoff or increment `steps_completed_this_run`
   - Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized
+  - the run stops only when a hard technical or physical limit still blocks safe autonomous continuation after repair
   - restart uses a fresh single-step Builder run for the next smaller actionable TODO step
 
 ### Prompt M - In-session reporting contract
@@ -311,12 +314,12 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
 - [ ] QA-rejected Builder output was remediated and rechecked before `STEP_PASS`, commit, push, and automatic continuation.
-- [ ] Blocked broad or underspecified steps stopped the autonomous loop, were decomposed into smaller TODO steps, and restarted only from a smaller actionable step.
+- [ ] Blocked broad or underspecified steps were decomposed into smaller TODO steps and normally resumed autonomously from a smaller actionable step, stopping only for hard technical or physical limits.
 - [ ] Lifecycle events were reported in the Master Chef session.
 - [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
-- [ ] Run ended with `RUN_COMPLETE`, `STEP_BLOCKED`, or `DEADLOCK_STOPPED`.
+- [ ] Run ended with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, and emitted a final mission report.
 
 ---
 

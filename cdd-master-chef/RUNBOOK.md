@@ -140,6 +140,8 @@ Use this shared rule after worktree creation:
 - if the runtime adapter can safely keep Master Chef and Builder operating from the managed worktree without losing control-plane coherence, set `worktree_continue_mode: in_session` and continue there
 - otherwise, set `worktree_continue_mode: relaunch_required`, write exact relaunch instructions, and stop before implementation begins
 
+Once kickoff approval lands and implementation starts, Master Chef owns the mission under the approved run step budget. It keeps continuation, Builder restarts, blocker repair, TODO splitting, and next-step routing in-session unless a hard technical or physical limit forces a stop.
+
 Adapters that support subagent-backed Builder runs should prefer `worktree_continue_mode: in_session` when Master Chef can keep both its own commands and Builder delegation rooted at `active_worktree_path` coherently.
 
 ### Builder monitoring evidence
@@ -175,6 +177,8 @@ Exact relaunch instructions must include:
 - the branch name
 - the required session or command shape for restarting Master Chef there
 - the instruction to treat the managed worktree as the active repo root for commit, push, QA, and TODO inspection after relaunch
+
+Terminal mission reports must cover completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
 
 ## 4) Active worktree behavior
 

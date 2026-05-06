@@ -225,7 +225,7 @@ Make `cdd-master-chef` explicitly run the normal development loop as Builder com
 
 ### Goal
 
-Make `cdd-master-chef` stop the autonomous loop on a blocked step, revise the situation, decompose the blocked work into smaller TODO steps, clean stale runtime/build state when needed, and restart only from the next smaller actionable step.
+Make `cdd-master-chef` pause delegated implementation on a blocked step, revise the situation, decompose the blocked work into smaller TODO steps, clean stale runtime/build state when needed, and restart only from the next smaller actionable step.
 
 ### Constraints
 
@@ -1234,7 +1234,7 @@ Make `cdd-master-chef` derive `master_model` and `master_thinking` directly from
 
 ### Goal
 
-Make Master Chef treat a successful oversized or underspecified-step split as blocker repair that clears the blocker and automatically continues the active run from the first new runnable step, instead of stopping at that split boundary.
+Make Master Chef treat a successful oversized or underspecified-step split as blocker repair that clears the blocker and continues the active run from the first new runnable step instead of stopping at that boundary.
 
 ### Constraints
 
@@ -1246,14 +1246,14 @@ Make Master Chef treat a successful oversized or underspecified-step split as bl
 
 ### Tasks
 
-- [x] Update `cdd-master-chef/CONTRACT.md` and `cdd-master-chef/SKILL.md` so blocked-step recovery explicitly distinguishes unresolved blockers from successful plan-shaped repair; when Master Chef decomposes a blocked oversized or underspecified step into smaller decision-complete TODO steps and produces a safe autonomous next step, it must emit `BLOCKER_CLEARED`, preserve the active run and remaining `run_step_budget`, re-inspect TODO state, and spawn a fresh Builder for the first new runnable step instead of stopping at the split boundary.
-- [x] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` and `cdd-master-chef/openclaw/README.md` so the operational path explicitly records the stop at `STEP_BLOCKED`, the main-session repair and decomposition work, the `BLOCKER_CLEARED` transition once the split succeeds, and automatic same-run continuation from the next smaller actionable step with no second kickoff.
+- [x] Update `cdd-master-chef/CONTRACT.md` and `cdd-master-chef/SKILL.md` so blocked-step recovery distinguishes unresolved blockers from successful repair; when Master Chef decomposes a blocked oversized or underspecified step into smaller decision-complete TODO steps and has a safe next step, it must emit `BLOCKER_CLEARED`, preserve the active run and remaining `run_step_budget`, re-inspect TODO state, and spawn a fresh Builder for the first new runnable step instead of stopping at the split boundary.
+- [x] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` and `cdd-master-chef/openclaw/README.md` so the operational path records the `STEP_BLOCKED` stop, the main-session repair and decomposition work, the `BLOCKER_CLEARED` transition, and same-run continuation from the next smaller actionable step with no second kickoff.
 - [x] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so blocked-step tests require both the initial blocker report and the post-repair automatic continuation path, including proof that Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized.
 - [x] Update shared reporting and runtime guidance that mentions `BLOCKER_CLEARED` so it records the original blocked step id, replacement step ids, preserved remaining budget, and the chosen next delegated action.
 
 ### Implementation notes
 
-- Differentiate two boundaries explicitly: unresolved blocker means stopped run; resolved-by-split means the same run may continue automatically after checkpoint and resume.
+- Differentiate two boundaries explicitly: unresolved blocker means stopped run; resolved-by-split means the same run may continue after a durable checkpoint.
 - A successful split is Master-Chef-direct repair, not a passed TODO step; do not emit `STEP_PASS` or consume step budget for it.
 - If `run_step_budget` is numeric, preserve the remaining budget after subtracting only already passed implementation steps.
 - Touch only the shared contract plus the canonical OpenClaw operational surfaces in this step; adapter propagation and validator expansion belong in the follow-on step.
@@ -1268,11 +1268,11 @@ Make Master Chef treat a successful oversized or underspecified-step split as bl
 - Confirm the run stays stopped only when a hard technical or physical limitation still prevents safe autonomous continuation.
 - Confirm `steps_completed_this_run` and numeric budget accounting do not change merely because the step was split.
 
-## Step 34 — Propagate post-split continuation semantics to Codex/Claude adapters and validation
+## Step 34 — Propagate mission-owned autonomy to adapters and validation
 
 ### Goal
 
-Make adapter docs, harnesses, and validators enforce the shared same-run post-split continuation contract so Codex, Claude, and OpenClaw paths no longer allow `split then stop` as compliant behavior.
+Make the shared Master Chef docs, adapter docs, harnesses, and validators enforce mission-owned autonomy so Codex, Claude, and OpenClaw no longer allow `split then stop`, routine blocker handoff to the human, or vague terminal reporting as compliant behavior.
 
 ### Constraints
 
@@ -1280,16 +1280,17 @@ Make adapter docs, harnesses, and validators enforce the shared same-run post-sp
 - Preserve selector-driven kickoff and one-step Builder delegation.
 - Prefer structural or scenario-level validation over brittle transcript wording when possible.
 - Keep true unresolved-blocker stop behavior available after the propagation lands.
+- Terminal states should end with a final mission report covering completed work and decisions made.
 
 ### Tasks
 
-- [ ] Update `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, and `cdd-master-chef/CLAUDE-TEST-HARNESS.md` so a successful split or repair inside an active run resumes automatically from the first new runnable step under the existing approval and remaining budget, rather than requiring a new kickoff or manual resume command.
-- [ ] Extend `scripts/validate_skills.py` to assert coverage for `BLOCKER_CLEARED`, preserved remaining `run_step_budget`, no budget increment for split or repair work, and rejection of `stop cleanly at the first decomposed step` as valid successful-repair behavior.
-- [ ] Tighten shared and adapter harness expectations so blocked-step decomposition proves both branches: true stopped state for unresolved blockers, and same-run continuation for successful repair.
+- [x] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/RUNBOOK.md`, `cdd-master-chef/README.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, and `cdd-master-chef/CLAUDE-RUNBOOK.md` so once kickoff is approved Master Chef clearly owns the mission under the approved run step budget, keeps continuation and blocker-resolution decisions in-session, restarts Builders as needed, and ends terminal states with a final mission report covering completed work and decisions made.
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so blocked-step recovery proves autonomous in-session repair and continuation when safe, and terminal states require a final mission report.
+- [x] Extend `scripts/validate_skills.py` to assert coverage for `BLOCKER_CLEARED`, preserved remaining `run_step_budget`, no budget increment for split or repair work, rejection of `stop cleanly at the first decomposed step` as valid successful-repair behavior, and final mission-report requirements.
 
 ### Implementation notes
 
-- Touch the shared validator, adapter runbooks, and harnesses only; no runtime implementation files exist in this repo.
+- No runtime implementation files exist in this repo; this step is contract, adapter, harness, and validator propagation only.
 - Keep adapter text focused on orchestration semantics, not unsupported runtime internals.
 - Use the existing `BLOCKER_CLEARED` event label instead of inventing another recovery event.
 
@@ -1300,6 +1301,6 @@ Make adapter docs, harnesses, and validators enforce the shared same-run post-sp
 
 ### UAT
 
-- Read Codex and Claude adapter docs and confirm they no longer leave `successful split but stopped at R05A` as acceptable.
-- Confirm the validator or harness would fail if stop-after-split drift reappears.
-- Confirm unresolved blockers still permit a stopped run.
+- Read the shared and adapter docs and confirm they no longer leave `successful split but stopped at R05A`, routine blocker handoff to the human, or vague terminal reporting as acceptable.
+- Confirm the validator or harness would fail if stop-after-split drift or missing mission-report drift reappears.
+- Confirm unresolved blockers still permit a hard-stop run only when a technical or physical limit prevents safe autonomous continuation.

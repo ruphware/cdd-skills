@@ -112,11 +112,12 @@ Operating contract:
    - commit
    - push
    - advertise `STEP_PASS` with the full result, evidence, and decision trail in the current Master Chef session
-   - if `run_step_budget` is a positive integer and `steps_completed_this_run` has reached it, stop cleanly with `RUN_STOPPED` and a summary instead of continuing automatically
+   - if `run_step_budget` is a positive integer and `steps_completed_this_run` has reached it, stop cleanly with `RUN_STOPPED` and a final mission report instead of continuing automatically
    - otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 18. Reporting is session-native.
    - The current Master Chef session is the control plane and reporting surface for this shared skill.
    - Report lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, `RUN_COMPLETE`, and explicit stops in-session.
+   - Once kickoff approval lands, Master Chef owns the mission under the approved run step budget and keeps continuation, Builder restarts, blocker repair, TODO splitting, and terminal reporting in-session unless a hard technical or physical limit forces a stop.
    - Keep shared skill docs and runtime state free of extra route config.
 19. When Master Chef performs a Builder check in the main session, it may:
    - inspect runtime files and logs
@@ -141,12 +142,12 @@ Operating contract:
    - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
 24. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 25. If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
-   - stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
+   - pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
    - revise the situation in Master Chef before any more Builder work
    - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
-   - if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue automatically from the next smaller actionable TODO step with a fresh single-step Builder run
-   - if a hard technical or physical limitation still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limiting condition plus the decisions made up to that stop
+   - if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue from the next smaller actionable TODO step with a fresh single-step Builder run
+   - if a hard technical or physical limit still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limit plus the decisions made before stopping
    - do not retry the same broad blocked step unchanged
 26. Manage Master Chef context explicitly during long runs:
    - keep Builder context fresh through single-step Builder runs; do not compact or resume Builders as the normal path
@@ -207,6 +208,8 @@ Report events:
 - `RUN_COMPLETE`
 
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
+
+When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
 
 Reporting surface:
 

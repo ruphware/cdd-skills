@@ -61,6 +61,8 @@ Follow the shared selector contract.
 
 After that selector-based approval, Master Chef owns the Builder handoff. Do not treat "here is a `codex -C ...` command for you to run" as the normal Builder-start path.
 
+Once kickoff approval lands, Master Chef owns the mission under the approved run step budget. It keeps continuation, Builder restarts, blocker repair, TODO splitting, and terminal reporting in-session unless a hard technical or physical limit forces a stop.
+
 ## 5) Approval and sidecar policy
 
 - Keep Builder interactive when the delegated step may need fresh approvals.
@@ -98,6 +100,9 @@ After that selector-based approval, Master Chef owns the Builder handoff. Do not
 
 ## 8) Blocked paths
 
+- If a step blocks because it is too broad, underspecified, or otherwise repairable, report `STEP_BLOCKED`, repair or split it in the main Master Chef session, emit `BLOCKER_CLEARED` once a safe next step exists, and continue with a fresh Builder under the existing approval.
+- Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
+- End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
 - Do not use recursive multi-level fan-out as the default Master Chef pattern.
 - Do not hide Builder override failures or inherited-setting fallback decisions.
 - Do not send approval-heavy Builder work into detached or non-interactive sidecars and expect automatic recovery.

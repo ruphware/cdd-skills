@@ -33,7 +33,7 @@ Master Chef owns:
 - QA gate and step-level UAT approval
 - commit and push
 - lifecycle reporting
-- final summary
+- final mission report
 
 ### Builder
 
@@ -55,7 +55,7 @@ The human owns:
 - the per-run step budget
 - kickoff approval
 - final review
-- intervention when Master Chef reports a blocker or deadlock
+- intervention when Master Chef reports a hard technical or physical stop or deadlock
 
 ## 2) Required repo state
 
@@ -228,6 +228,8 @@ Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can repl
 - `B. approve kickoff but do not spawn Builder yet`
 - `C. revise the next action, Builder settings, or step budget before kickoff`
 
+Once kickoff approval lands, Master Chef owns the mission under the approved run step budget. It keeps continuation, Builder restarts, blocker repair, TODO splitting, next-step routing, and terminal reporting in-session instead of handing ordinary decisions back to the human.
+
 Use single-step Builder runs only.
 
 - Each Builder run covers exactly one approved delegated action.
@@ -288,7 +290,7 @@ For each passed step:
 - commit
 - push
 - advertise `STEP_PASS` with the full result, evidence, and decision trail in the reporting surface
-- if `run_step_budget` is a positive integer and `steps_completed_this_run` has reached it, stop cleanly with `RUN_STOPPED` and a summary instead of continuing automatically
+- if `run_step_budget` is a positive integer and `steps_completed_this_run` has reached it, stop cleanly with `RUN_STOPPED` and a final mission report instead of continuing automatically
 - otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 - once the managed worktree becomes active, commit, push, QA, and TODO inspection happen against the active worktree path rather than the source checkout
 
@@ -309,16 +311,18 @@ Report events:
 
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
+When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason.
+
 If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 
 If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
 
-- stop the autonomous loop and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
+- pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
 - revise the situation in Master Chef before any more Builder work
 - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
 - clean only stale runtime or build artifacts needed for a coherent retry, and never revert unrelated user work
-- if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue automatically from the next smaller actionable TODO step with a fresh single-step Builder run
-- if a hard technical or physical limitation still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limiting condition plus the decisions made up to that stop
+- if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue from the next smaller actionable TODO step with a fresh single-step Builder run
+- if a hard technical or physical limit still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limit plus the decisions made before stopping
 - do not retry the same broad blocked step unchanged
 
 ## 10) Context compaction

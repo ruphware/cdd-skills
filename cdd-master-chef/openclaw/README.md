@@ -35,7 +35,7 @@ The packaged OpenClaw adapter has two active actors:
 - **Master Chef:** the current OpenClaw session that inspects repo state, chooses the next action, reviews Builder output, approves step-level UAT, commits, pushes, reports status, and checks Builder health directly when needed
 - **Builder:** a fresh single-step OpenClaw subagent run that executes one approved action at a time using the shared internal `cdd-*` skill pack, normally `cdd-implement-todo`
 
-There is no watchdog cron. The human verifies the current session settings, chooses any optional `Builder override`, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks final results or critical blockers.
+There is no watchdog cron. The human verifies the current session settings, chooses any optional `Builder override`, approves how many TODO steps the current run should cover, approves whether Builder should start now, approves kickoff once, and then mainly checks the final mission report or a hard stop.
 
 ## Managed worktree policy
 
@@ -173,6 +173,7 @@ Reporting is OpenClaw-native and session-native:
 
 - the current Master Chef session is the only control/reporting route described by the shared package
 - lifecycle reporting such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, and `RUN_COMPLETE` stays in that session
+- terminal states end with a final mission report covering completed work and decisions made
 - `.cdd-runtime/master-chef/run.json` stores run state, not extra route metadata
 - if a local operator wants external notifications, keep that as local-only behavior rather than shared skill config
 
@@ -215,7 +216,7 @@ Default delegated path:
 - If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
 - Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
 - if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
-- if a step is blocked, Master Chef reports `STEP_BLOCKED` in-session, repairs the plan in the main session when possible, and keeps the run stopped only when a hard technical or physical limitation still prevents safe autonomous continuation
+- if a step is blocked, Master Chef reports `STEP_BLOCKED` in-session, repairs the plan in the main session when possible, and keeps the run stopped only when a hard technical or physical limit still blocks safe autonomous continuation
 - if that repair yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids, preserved remaining budget, and next delegated action, then continues the same run from the next smaller actionable step with a fresh Builder
 
 Manual helper:

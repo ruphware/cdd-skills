@@ -4,6 +4,8 @@ This directory is the canonical committed package root for `[CDD-6] Master Chef`
 
 The shared contract treats the current session model and thinking as Master Chef facts. Builder inherits them by default unless an adapter can honor an explicit `Builder override` cleanly.
 
+After kickoff approval, Master Chef owns the mission under the approved run step budget: it keeps continuation and blocker decisions in-session, restarts Builders as needed, repairs or splits blocked work when safe, and ends terminal states with a final mission report covering completed work and decisions made.
+
 Use these files as the canonical contract surfaces:
 
 - `SKILL.md` — current installable `cdd-master-chef` skill entrypoint

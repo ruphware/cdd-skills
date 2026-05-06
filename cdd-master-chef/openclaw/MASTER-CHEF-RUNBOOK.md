@@ -37,7 +37,7 @@ The main session owns:
 - QA gate and step-level UAT approval
 - commit and push
 - in-session lifecycle reporting
-- final summary
+- final mission report
 
 ### Builder
 
@@ -63,7 +63,7 @@ The human owns:
 - the per-run step budget
 - kickoff approval
 - final review
-- intervention when Master Chef reports a blocker or deadlock
+- intervention when Master Chef reports a hard technical or physical stop or deadlock
 
 ---
 
@@ -418,7 +418,7 @@ After kickoff approval:
    - advertise `STEP_PASS` with full detail in the current Master Chef session
 11. Re-inspect TODO state.
 12. If another runnable step exists, continue automatically by spawning a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
-13. If no runnable step remains, report `RUN_COMPLETE`.
+13. If no runnable step remains, report `RUN_COMPLETE` with the final mission report.
 14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
 
 All QA, TODO inspection, commit, and push actions after worktree activation happen against the active managed worktree path rather than the original source checkout.
@@ -484,18 +484,18 @@ If repeated replacements fail without forward progress:
 
 ### If a TODO step is blocked
 
-When a step is blocked by a hard gate, ambiguous scope, missing implementation decisions, or repeated failed Builder replacements, Master Chef must stop the autonomous implementation loop instead of spawning another Builder for the same broad step.
+When a step is blocked by a hard gate, ambiguous scope, missing implementation decisions, or repeated failed Builder replacements, Master Chef must pause delegated implementation instead of spawning another Builder for the same broad step.
 
 Blocked-step recovery procedure:
 
 1. Set the run phase to `blocked`, preserve the Builder report and failed validation evidence, and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session.
 2. Inspect `git status`, the current diff, `run.json`, `master-chef.jsonl`, `builder.jsonl`, failed commands, and the selected TODO step.
-3. Decide whether the blocker is external input, repo state, or an oversized or underspecified TODO step.
+3. Decide whether the blocker is a hard external limit, repo state problem, or an oversized or underspecified TODO step.
 4. If the blocker is plan-shaped, use Master-Chef-direct planning or TODO repair before any new Builder spawn, and decompose the work into smaller decision-complete TODO steps with clear checks and UAT.
 5. Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence.
 6. If that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids, preserved remaining `run_step_budget`, and the next delegated action.
 7. Re-inspect TODO state and continue the same run from the next smaller actionable TODO step with a fresh single-step Builder run. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
-8. If a hard technical or physical limitation still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limiting condition plus the decisions Master Chef made before the stop.
+8. If a hard technical or physical limit still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limit plus the decisions Master Chef made before stopping.
 
 Default thresholds:
 
@@ -611,7 +611,7 @@ The current session gets:
 - QA/UAT verdicts
 - recovery decisions
 - blockers
-- final summary
+- final mission report
 - lifecycle events such as `START`, `BUILDER_RESTARTED`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, `RUN_STOPPED`, and `RUN_COMPLETE`
 
 Keep full operational detail here.
@@ -631,6 +631,7 @@ Runtime obligations:
 - keep `run.json` focused on run state rather than extra route metadata
 - report blockers and completion clearly in the current session
 - when `BLOCKER_CLEARED` is reported, include the original blocked step, replacement step ids, preserved remaining budget, and the next delegated action
+- when the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, decisions made, and remaining work or the exact stop reason
 
 ---
 
