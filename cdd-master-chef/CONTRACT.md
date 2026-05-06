@@ -53,7 +53,7 @@ The Builder owns:
 - writing durable step evidence
 - returning a structured report to Master Chef
 
-Each Builder run covers exactly one approved delegated action. After that action finishes or is abandoned, Master Chef re-inspects repo state and spawns a fresh Builder run for the next delegated step.
+Builder is persistent for the active autonomous run unless recovery conditions force replacement. It still handles exactly one approved delegated action at a time, but the same Builder normally continues across later delegated steps in the same run after Master Chef re-inspects state and performs any supported beginning-of-step compaction. Builder replacement is recovery-only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after compaction or direct status checks.
 
 ### Human
 
@@ -114,6 +114,10 @@ Canonical `run.json` fields:
 - `builder_spawn_requested_at_utc`
 - `builder_ready_at_utc`
 - `last_builder_direct_signal_at_utc`
+- `builder_last_compaction_attempted_at_utc`
+- `builder_last_compaction_result`
+- `builder_last_compaction_summary`
+- `builder_replacement_lineage`
 - `run_step_budget`
 - `steps_completed_this_run`
 - `active_todo_path`
@@ -138,6 +142,12 @@ Canonical `run.json` fields:
 - `builder_restart_count`
 - `dispute_loop_count`
 - `current_blocker`
+
+Runtime-state expectations for persistent Builder continuity:
+
+- `builder_session_key` is the active Builder identity and normally remains stable across delegated steps in the same run.
+- `builder_last_compaction_attempted_at_utc`, `builder_last_compaction_result`, and `builder_last_compaction_summary` capture the latest step-boundary compaction attempt or truthful fallback result such as `unsupported`, `auto`, or `native_context_management`.
+- `builder_replacement_lineage` records prior Builder identities, replacement reasons, and any parent-child handoff needed when recovery forces Builder replacement.
 
 ## 4) Session settings and Builder override
 
@@ -194,7 +204,7 @@ Master Chef chooses the internal `cdd-*` routing model.
 
 - For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
 - Builder default: `cdd-implement-todo` for the next runnable TODO step.
-- If the next runnable top-level TODO step is oversized for one Builder run, apply the compact review-first split policy rather than splitting by default. Delegate the parent step unchanged while one fresh Builder can still finish it safely in one run, repair it in place when a minimal TODO fix restores that viability without changing scope, and split only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
+- If the next runnable top-level TODO step is oversized for one Builder run, apply the compact review-first split policy rather than splitting by default. Delegate the parent step unchanged while one Builder delegation can still finish it safely in one run, repair it in place when a minimal TODO fix restores that viability without changing scope, and split only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
 - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-maintain` stay in the main session rather than being delegated to Builder.
 - Use `cdd-maintain` directly when the repo specifically needs doc drift review, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review before the normal TODO loop continues.
 - `cdd-implementation-audit` is an installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `cdd-plan` in the main session before any delegated implementation begins.
@@ -255,11 +265,13 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 
 Before Builder or `hard_gate` validation run, Master Chef must bootstrap the active worktree environment enough for the approved Builder action and the repo's hard-gate proof path. Do not treat path creation alone as worktree readiness.
 
-Use single-step Builder runs only.
+Keep one persistent Builder per active autonomous run as the normal path.
 
-- Each Builder run covers exactly one approved delegated action.
-- After a step passes, blocks, or is abandoned as stale, Master Chef must re-inspect repo state and spawn a fresh Builder for the next delegated action, normally via `cdd-implement-todo`.
-- Do not treat Builder session resurrection or multi-step continuation as a normal path.
+- Each delegated Builder action still covers exactly one approved step or same-step recovery action at a time.
+- After a step passes, after QA sends the same step back for another delegated attempt, or after blocker repair yields the same or next delegated step, Master Chef must re-inspect repo state and attempt same-Builder continuation first when the active Builder remains usable.
+- Before handing a new delegated step to the active Builder, Master Chef must attempt a Builder compaction operation when the runtime exposes a supported compaction command or API.
+- If the runtime does not expose a supported compaction command or API, keep the same Builder and rely on runtime auto-compaction or native context management instead of inventing a fake compaction path.
+- Replace Builder only as recovery after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely in the active worktree after compaction or direct status checks.
 - Immediately after a successful Builder spawn request, record `builder_session_key`, set `builder_phase: booting`, and write `builder_spawn_requested_at_utc`.
 - A returned Builder handle or session key is spawn evidence only. It is not proof that Builder has fully started operating in the managed worktree.
 - Before deep implementation begins, Builder must emit one early readiness signal. Preferred form: a concise ACK that confirms the active worktree path, the active TODO step, and whether required tool or MCP surfaces are available or already blocked.
@@ -291,7 +303,7 @@ Builder monitoring must use direct runtime evidence before heuristics:
 - In foreground Codex and Claude flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
 - Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
 - Any coherent Builder reply, including a discovery-only or partial status report, is proof of life. Classify it as progress, route drift, or an explicit blocker, not as a dead Builder.
-- Replace Builder only after direct failure or closure, an explicit Builder blocker, or no response to a direct status probe after the adapter-defined grace window.
+- Replace Builder only after direct failure or closure, an explicit Builder blocker, deadlock, unusable drift, inability to continue safely after compaction or status checks, or no response to a direct status probe after the adapter-defined grace window.
 
 ## 8) Validation, QA, and UAT
 
@@ -312,7 +324,7 @@ For each passed step:
 - increment `steps_completed_this_run`
 - ensure the Builder updated only the selected step in `TODO*.md`
 - run Master Chef QA
-- if QA rejects the Builder result, either push concrete findings to a fresh Builder run for the same step or fix the issue directly in Master Chef, then re-run QA before the step can pass
+- if QA rejects the Builder result, either push concrete findings back to the active Builder when it remains usable, replace Builder only if recovery conditions require it, or fix the issue directly in Master Chef, then re-run QA before the step can pass
 - approve step-level UAT with explicit evidence
 - commit
 - push
@@ -347,14 +359,14 @@ If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized fo
 
 - pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
 - revise the situation in Master Chef before any more Builder work
-- run the same continuation review again: inspect completed work, failed proof, remaining scope, likely recovery cost for a fresh Builder, and whether the remainder now forms cleaner child steps than the parent step did
+- run the same continuation review again: inspect completed work, failed proof, remaining scope, whether the active Builder is still usable after status or compaction checks, likely recovery cost for a replacement Builder, and whether the remainder now forms cleaner child steps than the parent step did
 - treat many checklist items, many touched files, or broad-looking wording as non-signals by themselves; use them only when they materially raise one-run failure risk
 - treat split as expensive because it adds Builder restart overhead, extra hard-gate reruns, extra QA cycles, extra mission time, and extra proof boundaries
-- prefer `continue_same_step` when progress is real and the remainder still forms one bounded proof boundary for a fresh single-step Builder run
-- if a minimal TODO repair restores one-run viability without changing the true scope, repair the step in place and continue that same parent step with a fresh single-step Builder run
+- prefer `continue_same_step` when progress is real and the remainder still forms one bounded proof boundary for the active Builder, or for one recovery replacement Builder if the active one is no longer usable
+- if a minimal TODO repair restores one-run viability without changing the true scope, repair the step in place and continue that same parent step with the active Builder when safe, otherwise with one recovery replacement Builder
 - split only the remaining work, and only when concrete evidence shows the current parent step now costs more to preserve than the split would: repeated low-forward-progress retries, recovery effort dominating completion effort, expensive hard-gate recovery loops, or proof that continuing unchanged would trigger more total hard-gate reruns than a lower-risk child-step sequence
 - clean only stale runtime or build artifacts when they are actually needed for a coherent retry, and never revert unrelated user work
-- if repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue from the same repaired parent step or the next smaller actionable child step with a fresh single-step Builder run
+- if repair or split yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue from the same repaired parent step or the next smaller actionable child step by reusing the active Builder first and replacing it only if recovery conditions require it
 - if a hard technical or physical limit still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limit plus the decisions made before stopping
 - do not retry the same broad blocked step unchanged
 
@@ -362,7 +374,8 @@ If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized fo
 
 Manage Master Chef context explicitly during long runs:
 
-- keep Builder context fresh through single-step Builder runs; do not compact or resume Builders as the normal path
+- keep persistent Builder continuation and Master Chef context compaction as separate control-loop behaviors
+- at the beginning of each new delegated step, attempt Builder compaction when the runtime supports it; otherwise keep the same Builder and rely on runtime auto-compaction or native context management
 - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
 - compact only at safe workflow boundaries, such as after kickoff state is durable, after Builder handoff, after `STEP_PASS`, after `STEP_BLOCKED` or `DEADLOCK_STOPPED`, after Master-Chef-direct planning or refactor work, or before a known large QA or planning phase once a checkpoint is written
 - do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript

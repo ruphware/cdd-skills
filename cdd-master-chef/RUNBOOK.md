@@ -75,7 +75,7 @@ If the human approves that suggestion:
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
-3. If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep the step intact while one fresh Builder can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
+3. If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep the step intact while one Builder delegation can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and fresh per-run branch name.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
@@ -108,6 +108,10 @@ Keep the existing fields and add:
 - `builder_spawn_requested_at_utc`
 - `builder_ready_at_utc`
 - `last_builder_direct_signal_at_utc`
+- `builder_last_compaction_attempted_at_utc`
+- `builder_last_compaction_result`
+- `builder_last_compaction_summary`
+- `builder_replacement_lineage`
 - `run_step_budget`
 - `steps_completed_this_run`
 
@@ -126,6 +130,10 @@ Field meanings:
 - `builder_spawn_requested_at_utc` records when Master Chef received a Builder handle from the runtime
 - `builder_ready_at_utc` records the first direct readiness signal that proves Builder started operating
 - `last_builder_direct_signal_at_utc` tracks the latest direct Builder ACK, status reply, or runtime-native child-status signal
+- `builder_last_compaction_attempted_at_utc` records the latest beginning-of-step Builder compaction attempt
+- `builder_last_compaction_result` records whether that attempt succeeded or fell back truthfully to `unsupported`, `auto`, or `native_context_management`
+- `builder_last_compaction_summary` is a concise explanation of the latest compaction attempt, fallback, or safety check outcome
+- `builder_replacement_lineage` records prior Builder identities and replacement reasons when recovery forces a new Builder
 - `run_step_budget` is either a positive integer step count or `until_blocked_or_complete`
 - `steps_completed_this_run` counts passed TODO steps in the current autonomous run
 - unresolved `master_*` or `builder_*` setting fields are stored as `unknown` rather than blocking kickoff
@@ -156,6 +164,7 @@ The durable checkpoint must now also record:
 - whether relaunch is still pending or the worktree session is active
 - the approved run step budget and how many steps have already passed in this run
 - the remaining top-level TODO step count when it drove the default budget recommendation
+- the active Builder identity, the latest step-boundary compaction attempt and result, and any replacement lineage written so far
 
 ## 3) Continuation decision rule
 
@@ -168,11 +177,18 @@ Once kickoff approval lands and implementation starts, Master Chef owns the miss
 
 Adapters that support subagent-backed Builder runs should prefer `worktree_continue_mode: in_session` when Master Chef can keep both its own commands and Builder delegation rooted at `active_worktree_path` coherently.
 
+Normal delegated-step transition uses one persistent Builder per active run.
+
+- After Master Chef re-inspects repo and TODO state, it should reuse the active Builder for the next delegated step when that Builder remains usable.
+- Before handing a new delegated step to that Builder, attempt a Builder compaction operation when the runtime exposes a supported compaction command or API.
+- If the runtime does not expose a supported compaction command or API, keep the same Builder and rely on the runtime's own auto-compaction or native context management instead of inventing a fake compaction path.
+- Replace Builder only as recovery after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after compaction or direct status checks.
+
 ### Shared Builder-run viability review
 
 Use the same split-decision rule before Builder handoff and again after any non-passing Builder attempt.
 
-- Ask whether one fresh Builder can plausibly finish the current step end-to-end without reopening planning, leaning on large context recovery, or falling into long repeated edit-validate-debug loops.
+- Ask whether one Builder delegation can plausibly finish the current step end-to-end without reopening planning, leaning on large context recovery, or falling into long repeated edit-validate-debug loops.
 - Do not treat many checklist items, many touched files, or broad-looking wording as split reasons by themselves.
 - Treat split as expensive because it adds Builder boots, extra hard-gate reruns, extra QA cycles, mission delay, and extra proof boundaries.
 - Prefer to keep the parent step intact while it still holds one coherent proof boundary and the split cost is not yet justified.
@@ -207,6 +223,7 @@ Use runtime-native Builder status surfaces before indirect repo heuristics.
 - Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
 - After that grace window, use one explicit status probe before replacement when the runtime supports it.
 - If Builder replies with a coherent discovery note, partial status, or other non-final report, treat that as proof of life and decide whether the issue is route drift or normal progress rather than declaring the Builder dead.
+- Treat a failed or unsupported step-boundary compaction attempt as replacement evidence only when the runtime also shows explicit failure, closure, deadlock, unusable drift, or inability to continue safely.
 
 Exact relaunch instructions must include:
 
