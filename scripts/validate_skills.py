@@ -1024,7 +1024,7 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"For `\[CDD-6\] Master Chef`:",
             r"remaining unfinished top-level step-heading count.*default/max step budget",
             r"fresh run from a long-lived branch.*descriptive feature branch",
-            r"reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
+            r"may split an oversized top-level step before Builder handoff|reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
             r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
             r"current session model and thinking automatically.*Builder override",
             r"how many TODO steps this run should cover",
