@@ -1795,25 +1795,25 @@ Make Master Chef verify that completed TODO steps are actually written back as d
 
 ### Tasks
 
-- [ ] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so a step cannot pass unless the selected TODO step is written back correctly and its task checklist reflects the completed work; the final mission report must name which TODO step ids were completed in the run and whether their task checklists are fully checked.
-- [ ] Update `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, and `cdd-master-chef/CLAUDE-RUNBOOK.md` so successful terminal states and `RUN_STOPPED` due to approved budget include a compact post-run recommendation bundle that conditionally covers:
+- [x] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/README.md` so a step cannot pass unless the selected TODO step is written back correctly and its task checklist reflects the completed work; the final mission report must name which TODO step ids were completed in the run and whether their task checklists are fully checked.
+- [x] Update `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, and `cdd-master-chef/CLAUDE-RUNBOOK.md` so successful terminal states and `RUN_STOPPED` due to approved budget include a compact post-run recommendation bundle that conditionally covers:
   - run `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) on the completed run scope, typically the completed TODO steps and the branch changes from that run
   - push the branch if the active branch is ahead of origin
   - open a PR once the branch is published upstream
   - clean up the managed worktree when no more work is planned there
   - return development to the source checkout or parent folder after worktree cleanup
-- [ ] Define the recommendation conditions explicitly in the shared contract so Master Chef does not recommend impossible or already-satisfied actions:
+- [x] Define the recommendation conditions explicitly in the shared contract so Master Chef does not recommend impossible or already-satisfied actions:
   - recommend `push` only when the active branch is ahead of its upstream or has no published upstream yet
   - recommend `open PR` only when the branch is pushed and PR creation is still pending
   - recommend worktree cleanup only when the run used a managed worktree that still exists and no immediate continuation is planned there
   - recommend returning to the source checkout only after cleanup or when the worktree is no longer the active development root
-- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so final mission report prompts and pass criteria require:
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so final mission report prompts and pass criteria require:
   - completed TODO step ids
   - checklist completion status for those steps
   - decisions made and exact stop reason when relevant
   - the conditional post-run recommendation bundle above
-- [ ] Update `scripts/validate_skills.py` so validation fails if Master Chef terminal reporting omits TODO completion verification or regresses to generic final-report wording that never recommends audit, publish, cleanup, and source-checkout return actions when those recommendations are actually warranted.
-- [ ] Update `scripts/test_master_chef_artifacts.sh` only as needed so the artifact layer and validator layer remain aligned on whether final-report recommendation coverage is structural or validator-owned.
+- [x] Update `scripts/validate_skills.py` so validation fails if Master Chef terminal reporting omits TODO completion verification or regresses to generic final-report wording that never recommends audit, publish, cleanup, and source-checkout return actions when those recommendations are actually warranted.
+- [x] Update `scripts/test_master_chef_artifacts.sh` only as needed so the artifact layer and validator layer remain aligned on whether final-report recommendation coverage is structural or validator-owned.
 
 ### Implementation notes
 

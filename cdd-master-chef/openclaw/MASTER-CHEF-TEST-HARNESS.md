@@ -229,7 +229,8 @@ If the run is complete, send the final mission report covering completed work an
   - the adapter should not claim a documented parent-visible Builder fullness meter, exact token-left budget, or universal numeric threshold
   - if replacement is needed instead, it is justified by explicit recovery conditions rather than treated as the normal step-transition path
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
-  - run completion emits a final mission report covering completed work and decisions made
+  - run completion emits a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, and decisions made
+  - for `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, the report includes a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder
   - lifecycle events such as `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are reported clearly in the current session
 
 ### Prompt J - QA reject remediation
@@ -332,7 +333,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
-- [ ] Run ended with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, and emitted a final mission report.
+- [ ] Run ended with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, and emitted a final mission report with completed TODO step ids, fully checked task checklists, and state-based closeout recommendations.
 
 ---
 

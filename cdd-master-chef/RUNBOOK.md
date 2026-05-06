@@ -23,6 +23,7 @@ When a shared approval or decision point is surfaced to the human through an ada
 - If Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`.
 - Do not ask the human to type replacement `master_*` settings when the runtime cannot expose them.
 - Kickoff and final mission reporting must disclose any unresolved session-setting fields explicitly and note which effective Builder settings are concrete versus `unknown`.
+- Terminal mission reports must also name the completed TODO step ids, state whether their task checklists are fully checked, and, for `RUN_COMPLETE` plus budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root.
 
 ## 1) Managed worktree policy
 

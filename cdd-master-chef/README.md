@@ -8,7 +8,7 @@ This directory is the committed package root for `[CDD-6] Master Chef`, the mult
 - Startup: on fresh runs from long-lived branches, recommend a descriptive source feature branch unless the human declines, then create a fresh per-run worktree branch, bootstrap that worktree, and wait for `env_ready` before Builder or `hard_gate` depends on it.
 - Builder lifecycle: keep one persistent Builder per active autonomous run, attempt step-start Builder compaction when the runtime supports it, and replace Builder only for recovery conditions.
 - Step shaping: review oversized-looking work before delegation, keep or minimally repair the parent step while one-run delivery is still viable, and split only when the added Builder, hard-gate, QA, and mission-delay cost is justified.
-- Mission ownership: after kickoff approval, Master Chef owns the mission under the approved run step budget and ends terminal states with a final mission report covering completed work, unresolved session-setting fields, and decisions made.
+- Mission ownership: after kickoff approval, Master Chef owns the mission under the approved run step budget, passes a step only when the selected TODO step is written back with its task checklist reflecting the completed work, and ends terminal states with a final mission report covering completed work, completed TODO step ids plus checklist state, unresolved session-setting fields, decisions made, and state-based closeout recommendations.
 
 Everything else in this package elaborates that shared flow.
 

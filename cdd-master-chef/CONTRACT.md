@@ -324,6 +324,7 @@ For each passed step:
 
 - increment `steps_completed_this_run`
 - ensure the Builder updated only the selected step in `TODO*.md`
+- verify the selected TODO step's task checklist now reflects the completed work before the step can pass
 - run Master Chef QA
 - if QA rejects the Builder result, either push concrete findings back to the active Builder when it remains usable, replace Builder only if recovery conditions require it, or fix the issue directly in Master Chef, then re-run QA before the step can pass
 - approve step-level UAT with explicit evidence
@@ -351,8 +352,10 @@ Report events:
 
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
-When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
+When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 That final mission report must also disclose the source branch, worktree branch, active worktree path, whether the default feature-branch recommendation was accepted or declined, and whether the worktree environment became `env_ready`, stayed `partial`, or stopped as `blocked`.
+For `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the active branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root.
+For hard-stop `STEP_BLOCKED` or `DEADLOCK_STOPPED`, prioritize blocker context and exact stop reason first rather than presenting cleanup as the primary next move.
 
 If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 

@@ -186,7 +186,7 @@ Reporting is OpenClaw-native and session-native:
 
 - the current Master Chef session is the only control/reporting route described by the shared package
 - lifecycle reporting such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, and `RUN_COMPLETE` stays in that session
-- terminal states end with a final mission report covering completed work, unresolved session-setting fields, and decisions made
+- terminal states end with a final mission report covering completed work, completed TODO step ids plus checklist state, unresolved session-setting fields, decisions made, and state-based closeout recommendations
 - `.cdd-runtime/master-chef/run.json` stores run state, not extra route metadata
 - if a local operator wants external notifications, keep that as local-only behavior rather than shared skill config
 
@@ -227,6 +227,7 @@ Default delegated path:
 - if that top-level TODO step looks oversized for one Builder run, Master Chef first prefers delegating it unchanged or repairing it in place; it splits only when the parent step is not safely delegable and the split cost is clearly justified, then delegates the first new runnable step
 - Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step, reusing the active Builder as the normal path across delegated steps in the same run
 - Builder updates only the selected TODO step on success
+- Master Chef does not pass the step until that selected TODO step's task checklist reflects the completed work
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
 - If Master Chef QA rejects the result, Master Chef first reuses the same Builder when it remains usable, otherwise sends concrete findings to a fresh replacement Builder for the same step or fixes the issue directly, then re-runs QA before any pass
 - Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
@@ -239,6 +240,7 @@ Default delegated path:
 - if Master Chef splits the remainder, it records what part of the parent is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward
 - if repair or split yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids when applicable, preserved remaining budget, and next delegated action, then continues the same run from the repaired parent step or first runnable child by reusing the active Builder first and replacing it only when recovery conditions require it
 - keep the run stopped only when a hard technical or physical limit still blocks safe autonomous continuation
+- for `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the branch is ahead or unpublished, open a PR only once the branch is published and still needs one, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root
 
 Manual helper:
 

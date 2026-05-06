@@ -203,7 +203,8 @@ Describe the final mission report Master Chef should emit so the human can see c
 
 - [ ] Expected:
   - the report is described as a final mission report
-  - it includes completed work, validations, commits or pushes, Builder restarts, blocker repairs or splits, decisions made, and any remaining work or exact stop reason
+  - it includes completed work, completed TODO step ids, checklist completion status for those steps, validations, commits or pushes, Builder restarts, blocker repairs or splits, decisions made, and any remaining work or exact stop reason
+  - for `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, it includes a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder
 
 ## 3) Pass criteria
 
@@ -218,4 +219,4 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
 - [ ] Normal next-step continuation reused the same Builder first, attempted step-start compaction only when supported, and used native-context or auto-compaction fallback when manual compaction was unavailable.
 - [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.
-- [ ] Terminal states ended with a final mission report covering completed work and decisions made.
+- [ ] Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and state-based closeout recommendations.

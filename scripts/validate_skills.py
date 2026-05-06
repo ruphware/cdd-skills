@@ -95,6 +95,12 @@ MASTER_CHEF_ENV_READY_REGEX = (
 MASTER_CHEF_FINAL_REPORT_REGEX = (
     r"final mission report.*completed work.*decisions made|Terminal mission reports.*completed work.*decisions made"
 )
+MASTER_CHEF_TODO_CHECKLIST_REGEX = (
+    r"(?:completed TODO step ids|which TODO step ids were completed|selected TODO step).*task checklist(?:s)?(?: are| were| is)?(?: fully)? checked|task checklist(?:s)? (?:reflect|reflects) the completed work|checklist completion status"
+)
+MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX = (
+    r"(?:post-run recommendation bundle|state-based closeout recommendations|next human actions|next operator moves).*(?:cdd-implementation-audit|Implementation Audit).*(?:push only when|conditional push|ahead of origin|still unpublished).*(?:open a PR|PR creation).*(?:clean up the managed worktree|managed-worktree cleanup).*(?:source checkout|parent folder)"
+)
 MASTER_CHEF_SAME_BUILDER_REGEX = (
     r"(?:same Builder|same-Builder|reuse the same Builder|reuse the active Builder|persistent Builder|keeps? the same Builder)"
 )
@@ -921,6 +927,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"coherent Builder reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
             MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         contract_md,
         "shared contract monitoring topics",
@@ -1010,6 +1018,8 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"coherent discovery note.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
             MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         runbook_md,
         "shared runbook monitoring topics",
@@ -1256,6 +1266,8 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"Do not split too eagerly.*one-run failure-risk evidence",
             r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
             r"final mission report.*completed work.*decisions made",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         runbook_md,
         "Codex runbook monitoring topics",
@@ -1287,7 +1299,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "Recursive default fan-out was rejected.",
             MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
             "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.",
-            "Terminal states ended with a final mission report covering completed work and decisions made.",
+            "Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and state-based closeout recommendations.",
         ),
         harness_md,
         "Codex harness coverage",
@@ -1323,6 +1335,8 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
             r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         harness_md,
         "Codex harness monitoring topics",
@@ -1514,7 +1528,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "Nested subagent spawning was rejected.",
             MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
             "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.",
-            "Terminal states ended with a final mission report covering completed work and decisions made.",
+            "Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and state-based closeout recommendations.",
         ),
         harness_md,
         "Claude harness coverage",
@@ -1550,6 +1564,8 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
             r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         harness_md,
         "Claude harness monitoring topics",
@@ -1739,6 +1755,8 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"same repaired parent step or (?:from )?the first runnable child step",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         runbook_md,
         "OpenClaw runbook config topics",
@@ -1784,6 +1802,8 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         readme_md,
         "OpenClaw README config topics",
@@ -1841,6 +1861,8 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the first runnable child step",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
         ),
         harness_md,
         "OpenClaw harness selector topics",
