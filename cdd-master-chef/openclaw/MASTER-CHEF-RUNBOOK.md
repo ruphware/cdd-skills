@@ -426,9 +426,8 @@ All QA, TODO inspection, commit, and push actions after worktree activation happ
 Only stop autonomy when:
 
 - the run is complete
-- a hard blocker requires human input
+- a hard technical or physical limitation prevents safe autonomous continuation
 - repeated Builder replacements fail without progress
-- a blocked step needs TODO decomposition or plan repair before another implementation attempt
 - the user stops the run
 
 ---
@@ -494,8 +493,9 @@ Blocked-step recovery procedure:
 3. Decide whether the blocker is external input, repo state, or an oversized or underspecified TODO step.
 4. If the blocker is plan-shaped, use Master-Chef-direct planning or TODO repair before any new Builder spawn, and decompose the work into smaller decision-complete TODO steps with clear checks and UAT.
 5. Clean only stale runtime or build artifacts required for a coherent retry; do not revert unrelated user work or discard useful failure evidence.
-6. Re-inspect TODO state and restart only from the next smaller actionable TODO step with a fresh single-step Builder run.
-7. If the blocker requires human input or cannot be decomposed safely, keep the run stopped and report the exact decision needed.
+6. If that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED` in the current session and `master-chef.jsonl`, recording the original blocked step, replacement step ids, preserved remaining `run_step_budget`, and the next delegated action.
+7. Re-inspect TODO state and continue the same run from the next smaller actionable TODO step with a fresh single-step Builder run. Do not re-run kickoff, reset the run step budget, or increment `steps_completed_this_run` for the repair itself.
+8. If a hard technical or physical limitation still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limiting condition plus the decisions Master Chef made before the stop.
 
 Default thresholds:
 
@@ -630,6 +630,7 @@ Runtime obligations:
 - append lifecycle and recovery events to `master-chef.jsonl`
 - keep `run.json` focused on run state rather than extra route metadata
 - report blockers and completion clearly in the current session
+- when `BLOCKER_CLEARED` is reported, include the original blocked step, replacement step ids, preserved remaining budget, and the next delegated action
 
 ---
 

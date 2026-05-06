@@ -307,6 +307,8 @@ Report events:
 - `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
 
+When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
+
 If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 
 If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
@@ -315,7 +317,9 @@ If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized fo
 - revise the situation in Master Chef before any more Builder work
 - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
 - clean only stale runtime or build artifacts needed for a coherent retry, and never revert unrelated user work
-- restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
+- if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue automatically from the next smaller actionable TODO step with a fresh single-step Builder run
+- if a hard technical or physical limitation still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limiting condition plus the decisions made up to that stop
+- do not retry the same broad blocked step unchanged
 
 ## 10) Context compaction
 

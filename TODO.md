@@ -1246,10 +1246,10 @@ Make Master Chef treat a successful oversized or underspecified-step split as bl
 
 ### Tasks
 
-- [ ] Update `cdd-master-chef/CONTRACT.md` and `cdd-master-chef/SKILL.md` so blocked-step recovery explicitly distinguishes unresolved blockers from successful plan-shaped repair; when Master Chef decomposes a blocked oversized or underspecified step into smaller decision-complete TODO steps without needing new human input, it must emit `BLOCKER_CLEARED`, preserve the active run and remaining `run_step_budget`, re-inspect TODO state, and spawn a fresh Builder for the first new runnable step instead of stopping at the split boundary.
-- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` and `cdd-master-chef/openclaw/README.md` so the operational path explicitly records the stop at `STEP_BLOCKED`, the main-session repair and decomposition work, the `BLOCKER_CLEARED` transition once the split succeeds, and automatic same-run continuation from the next smaller actionable step with no second kickoff.
-- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so blocked-step tests require both the initial blocker report and the post-repair automatic continuation path, including proof that Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized.
-- [ ] Update shared reporting and runtime guidance that mentions `BLOCKER_CLEARED` so it records the original blocked step id, replacement step ids, whether human input is still required, preserved remaining budget, and the chosen next delegated action.
+- [x] Update `cdd-master-chef/CONTRACT.md` and `cdd-master-chef/SKILL.md` so blocked-step recovery explicitly distinguishes unresolved blockers from successful plan-shaped repair; when Master Chef decomposes a blocked oversized or underspecified step into smaller decision-complete TODO steps and produces a safe autonomous next step, it must emit `BLOCKER_CLEARED`, preserve the active run and remaining `run_step_budget`, re-inspect TODO state, and spawn a fresh Builder for the first new runnable step instead of stopping at the split boundary.
+- [x] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` and `cdd-master-chef/openclaw/README.md` so the operational path explicitly records the stop at `STEP_BLOCKED`, the main-session repair and decomposition work, the `BLOCKER_CLEARED` transition once the split succeeds, and automatic same-run continuation from the next smaller actionable step with no second kickoff.
+- [x] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so blocked-step tests require both the initial blocker report and the post-repair automatic continuation path, including proof that Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized.
+- [x] Update shared reporting and runtime guidance that mentions `BLOCKER_CLEARED` so it records the original blocked step id, replacement step ids, preserved remaining budget, and the chosen next delegated action.
 
 ### Implementation notes
 
@@ -1265,7 +1265,7 @@ Make Master Chef treat a successful oversized or underspecified-step split as bl
 ### UAT
 
 - Simulate a blocked oversized step, decompose it into `R05A+`, and confirm Master Chef reports `STEP_BLOCKED`, repairs TODO, emits `BLOCKER_CLEARED`, and automatically starts a fresh Builder for `R05A` without a new kickoff.
-- Confirm the run stays stopped only when human input is still required or the blocker cannot be decomposed safely.
+- Confirm the run stays stopped only when a hard technical or physical limitation still prevents safe autonomous continuation.
 - Confirm `steps_completed_this_run` and numeric budget accounting do not change merely because the step was split.
 
 ## Step 34 — Propagate post-split continuation semantics to Codex/Claude adapters and validation

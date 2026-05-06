@@ -260,6 +260,9 @@ Stop the autonomous loop, report STEP_BLOCKED in the current session, inspect ru
   - `STEP_BLOCKED` is reported in the current Master Chef session with concrete evidence
   - TODO planning is repaired into smaller decision-complete steps before another implementation attempt
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
+  - successful repair emits `BLOCKER_CLEARED` with the original blocked step, replacement step ids, preserved remaining budget, and next delegated action
+  - successful repair does not trigger a new kickoff or increment `steps_completed_this_run`
+  - Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized
   - restart uses a fresh single-step Builder run for the next smaller actionable TODO step
 
 ### Prompt M - In-session reporting contract

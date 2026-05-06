@@ -116,7 +116,7 @@ Operating contract:
    - otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 18. Reporting is session-native.
    - The current Master Chef session is the control plane and reporting surface for this shared skill.
-   - Report lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, and explicit stops in-session.
+   - Report lifecycle events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, `RUN_COMPLETE`, and explicit stops in-session.
    - Keep shared skill docs and runtime state free of extra route config.
 19. When Master Chef performs a Builder check in the main session, it may:
    - inspect runtime files and logs
@@ -145,7 +145,9 @@ Operating contract:
    - revise the situation in Master Chef before any more Builder work
    - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
-   - restart only from the next smaller actionable TODO step; do not retry the same broad blocked step unchanged
+   - if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue automatically from the next smaller actionable TODO step with a fresh single-step Builder run
+   - if a hard technical or physical limitation still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limiting condition plus the decisions made up to that stop
+   - do not retry the same broad blocked step unchanged
 26. Manage Master Chef context explicitly during long runs:
    - keep Builder context fresh through single-step Builder runs; do not compact or resume Builders as the normal path
    - before Master Chef compaction, write `run.json`, `run.lock.json`, JSONL evidence, and `.cdd-runtime/master-chef/context-summary.md`
@@ -203,6 +205,8 @@ Report events:
 - `RUN_STOPPED`
 - `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
+
+When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
 Reporting surface:
 

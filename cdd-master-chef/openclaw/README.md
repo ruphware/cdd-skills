@@ -163,7 +163,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - prefer `A. approve kickoff and start the autonomous run now`, `B. approve kickoff but do not spawn Builder yet`, and `C. revise the next action, Builder settings, or step budget before kickoff`
    - replying with just `A`, `B`, or `C` is enough
 
-After that approval, Master Chef drives the Builder automatically until the run completes, blocks, or deadlocks.
+After that approval, Master Chef drives the Builder automatically until the run completes, hits a hard technical or physical stop, or deadlocks.
 
 After each passed, blocked, or stale delegated step, that Builder run is finished. If another delegated step exists, Master Chef re-inspects repo state and starts a fresh Builder run, normally via `cdd-implement-todo`.
 
@@ -172,7 +172,7 @@ After each passed, blocked, or stale delegated step, that Builder run is finishe
 Reporting is OpenClaw-native and session-native:
 
 - the current Master Chef session is the only control/reporting route described by the shared package
-- lifecycle reporting such as `START`, `STEP_PASS`, `STEP_BLOCKED`, and `RUN_COMPLETE` stays in that session
+- lifecycle reporting such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `BLOCKER_CLEARED`, and `RUN_COMPLETE` stays in that session
 - `.cdd-runtime/master-chef/run.json` stores run state, not extra route metadata
 - if a local operator wants external notifications, keep that as local-only behavior rather than shared skill config
 
@@ -215,7 +215,8 @@ Default delegated path:
 - If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
 - Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
 - if another runnable delegated step exists, Master Chef starts a new Builder run rather than continuing the old one
-- if a step is blocked, Master Chef stops the autonomous loop, reports the blocker in-session, decomposes the work into smaller TODO steps when possible, cleans only stale retry artifacts, and restarts from the next smaller actionable step
+- if a step is blocked, Master Chef reports `STEP_BLOCKED` in-session, repairs the plan in the main session when possible, and keeps the run stopped only when a hard technical or physical limitation still prevents safe autonomous continuation
+- if that repair yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids, preserved remaining budget, and next delegated action, then continues the same run from the next smaller actionable step with a fresh Builder
 
 Manual helper:
 
