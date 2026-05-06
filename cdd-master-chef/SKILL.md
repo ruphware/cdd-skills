@@ -63,7 +63,7 @@ Operating contract:
 8. Master Chef chooses the internal `cdd-*` routing model for the core `[CDD-0]` through `[CDD-5]` skills.
    - `[CDD-1] Init Project` (`cdd-init-project`): for a new or not-yet-CDD project, propose and normally start here in the main session before any autonomous TODO execution.
    - `[CDD-3] Implement TODO` (`cdd-implement-todo`): Builder default for the next runnable TODO step.
-   - If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Recompute the remaining unfinished top-level TODO step-heading count after the split, then treat the first new runnable step as the proposed delegated action.
+   - If the next runnable top-level TODO step is oversized for one Builder run, Master Chef may split it into smaller decision-complete TODO steps before delegation. Use one shared Builder-run-viability review for that choice: task count, touched-file count, or broad wording alone is not enough, but if Master Chef already has strong evidence that one fresh Builder is unlikely to finish the step safely in one run without reopening planning, relying on large context recovery, or entering long repeated edit-validate-debug loops, then split it. If a minimal TODO repair makes the step decision-complete and viable without changing its true scope, repair it in place instead. Recompute the remaining unfinished top-level TODO step-heading count after the split, then treat the first new runnable step as the proposed delegated action.
    - `[CDD-2] Plan` (`cdd-plan`): Master Chef direct path that stays in the main session rather than being delegated to Builder.
    - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`): installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `[CDD-2] Plan` before any delegated implementation begins.
    - External audit findings and review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
@@ -144,7 +144,11 @@ Operating contract:
 25. If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
    - pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
    - revise the situation in Master Chef before any more Builder work
-   - decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
+   - review the same Builder-run-viability question again: can one fresh Builder plausibly finish the remaining work end-to-end without reopening planning, relying on large context recovery, or entering unusually long repeated edit-validate-debug loops?
+   - treat many checklist items, many touched files, or broad-looking wording as non-signals by themselves; use them only when they materially increase one-run failure risk
+   - treat supporting risk signals such as several likely sequential debug or validation cycles, heavy cross-cutting coordination likely to force replanning mid-run, expensive hard-gate proof likely to create long recovery loops, or a remainder that would naturally separate into clearer executable chunks if the attempt stalls as evidence that the current step boundary is too risky
+   - if a minimal TODO repair restores one-run viability without changing the true scope, repair the step in place and continue on that same parent step with a fresh single-step Builder run
+   - otherwise, decompose the blocked work into smaller decision-complete TODO steps through Master-Chef-direct planning or TODO repair
    - clean only stale runtime/build artifacts needed for a coherent retry, and never revert unrelated user work
    - if that repair yields a safe autonomous next step, emit `BLOCKER_CLEARED`, preserve the active run plus remaining `run_step_budget`, do not increment `steps_completed_this_run`, and continue from the next smaller actionable TODO step with a fresh single-step Builder run
    - if a hard technical or physical limit still prevents safe autonomous continuation after repair, keep the run stopped and report the exact limit plus the decisions made before stopping
