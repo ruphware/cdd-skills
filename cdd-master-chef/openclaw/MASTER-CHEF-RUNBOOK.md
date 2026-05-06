@@ -659,7 +659,8 @@ Runtime obligations:
 - report blockers and completion clearly in the current session
 - when `BLOCKER_CLEARED` is reported, include the original blocked step, replacement step ids, preserved remaining budget, and the next delegated action
 - when the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason
-- for `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the active branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root
+- for `RUN_COMPLETE`, use the shared closeout recommendation bundle
+- for budget-stop `RUN_STOPPED`, use the shared continuation-aware recommendation bundle and name the remaining runnable work or next continuation target
 - for hard-stop `STEP_BLOCKED` or `DEADLOCK_STOPPED`, prioritize blocker context and exact stop reason first rather than presenting cleanup as the primary next move
 
 ---

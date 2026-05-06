@@ -139,7 +139,8 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Do not split too eagerly without one-run failure-risk evidence and explicit split-cost justification, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
 - Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
 - End terminal states with a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
-- For `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the active branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root.
+- For `RUN_COMPLETE`, use the shared closeout recommendation bundle.
+- For budget-stop `RUN_STOPPED`, use the shared continuation-aware recommendation bundle and name the remaining runnable work or next continuation target.
 - Do not treat nested subagent spawning as available.
 - Do not let a background Builder path absorb clarifying-question or permission failures silently.
 - Do not hide Builder override failures or inherited-setting fallback decisions.

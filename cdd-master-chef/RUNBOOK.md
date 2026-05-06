@@ -23,7 +23,18 @@ When a shared approval or decision point is surfaced to the human through an ada
 - If Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`.
 - Do not ask the human to type replacement `master_*` settings when the runtime cannot expose them.
 - Kickoff and final mission reporting must disclose any unresolved session-setting fields explicitly and note which effective Builder settings are concrete versus `unknown`.
-- Terminal mission reports must also name the completed TODO step ids, state whether their task checklists are fully checked, and, for `RUN_COMPLETE` plus budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the branch is ahead of origin or still unpublished, open a PR only once the branch is published and PR creation is still pending, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root.
+- Terminal mission reports must also name the completed TODO step ids and state whether their task checklists are fully checked.
+- For `RUN_COMPLETE`, append a compact closeout recommendation bundle:
+  - run `cdd-implementation-audit` on the completed run scope
+  - push only when the branch is ahead of origin or still unpublished
+  - open a PR only once the branch is published and PR creation is still pending
+  - clean up the managed worktree only when it still exists and no immediate continuation is planned there
+  - return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root
+- For budget-stop `RUN_STOPPED`, append a compact continuation-aware recommendation bundle:
+  - run `cdd-implementation-audit` on the work completed so far
+  - name the remaining runnable work or next continuation target
+  - recommend push or open-PR actions only when warranted
+  - mention managed-worktree cleanup or return to the source checkout only when no immediate continuation is planned there
 
 ## 1) Managed worktree policy
 

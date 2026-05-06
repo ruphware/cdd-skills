@@ -240,7 +240,8 @@ Default delegated path:
 - if Master Chef splits the remainder, it records what part of the parent is already done, what exact remainder is being separated, why the first child is the next runnable step, and what checks, UAT, and invariants carry forward
 - if repair or split yields a safe autonomous next step, Master Chef reports `BLOCKER_CLEARED` with the original blocked step, replacement step ids when applicable, preserved remaining budget, and next delegated action, then continues the same run from the repaired parent step or first runnable child by reusing the active Builder first and replacing it only when recovery conditions require it
 - keep the run stopped only when a hard technical or physical limit still blocks safe autonomous continuation
-- for `RUN_COMPLETE` and budget-stop `RUN_STOPPED`, append a compact post-run recommendation bundle: run `cdd-implementation-audit` on the completed run scope, push only when the branch is ahead or unpublished, open a PR only once the branch is published and still needs one, clean up the managed worktree only when it still exists and no immediate continuation is planned there, and return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root
+- for `RUN_COMPLETE`, use the shared closeout recommendation bundle
+- for budget-stop `RUN_STOPPED`, use the shared continuation-aware recommendation bundle and name the remaining runnable work or next continuation target
 
 Manual helper:
 

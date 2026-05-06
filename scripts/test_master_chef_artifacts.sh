@@ -105,6 +105,10 @@ assert_contains "$ROOT_DIR/scripts/validate_skills.py" "ROOT_README_LEGACY_MASTE
 assert_contains "$ROOT_DIR/scripts/validate_skills.py" "OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES"
 assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_TODO_CHECKLIST_REGEX"
 assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "IMPLEMENTATION_DELTA_REVIEW_REGEX"
+assert_contains "$ROOT_DIR/scripts/validate_skills.py" "IMPLEMENTATION_DELTA_SUMMARY_REGEX"
 
 echo "[MasterChefArtifacts] INFO GeneratedBuilder runtime={openclaw}"
 python3 "$ROOT_DIR/scripts/build_runtime_builder_skills.py" \

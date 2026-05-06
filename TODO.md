@@ -1911,24 +1911,24 @@ Make Master Chef treat budget-stop `RUN_STOPPED` as a continuation-aware termina
 
 ### Tasks
 
-- [ ] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, and `cdd-master-chef/RUNBOOK.md` so `RUN_COMPLETE` and budget-stop `RUN_STOPPED` have distinct post-run recommendation semantics:
+- [x] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/SKILL.md`, and `cdd-master-chef/RUNBOOK.md` so `RUN_COMPLETE` and budget-stop `RUN_STOPPED` have distinct post-run recommendation semantics:
   - `RUN_COMPLETE` recommends audit of the completed run plus normal publish, PR, cleanup, and return-to-source-checkout actions when warranted
   - budget-stop `RUN_STOPPED` recommends audit of work completed so far plus continuation-aware next actions when runnable work remains, including publish actions only when warranted and explicit continuation context rather than generic closeout wording
-- [ ] Update `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so adapter and packaged runtime docs propagate the same distinction:
+- [x] Update `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so adapter and packaged runtime docs propagate the same distinction:
   - `RUN_COMPLETE` is a true closeout
   - budget-stop `RUN_STOPPED` is a paused-but-successful checkpoint with remaining-work-aware recommendations
-- [ ] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so final mission report prompts and pass criteria require:
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so final mission report prompts and pass criteria require:
   - completed TODO step ids and checklist state
   - explicit distinction between `RUN_COMPLETE` and budget-stop `RUN_STOPPED`
   - continuation-aware recommendations for budget stops with remaining runnable work
   - blocker-first reporting for hard-stop states
-- [ ] Update `skills/cdd-implementation-audit/SKILL.md` so step-scoped audits explicitly inspect the concrete implementation delta that claims to satisfy the selected steps, such as the current branch diff, selected commits, or equivalent repo-local changed-file surface for that audit scope, in addition to reviewing each selected step’s `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT`.
-- [ ] Define the step-scoped audit output contract more explicitly in `skills/cdd-implementation-audit/SKILL.md`: when the audit scope is one or more TODO steps, the final summary must state which implementation delta was reviewed for those steps, whether that delta appears to satisfy the selected step goals and checked tasks, and where TODO, README, spec, test, or proof-surface drift remains.
-- [ ] Update `scripts/validate_skills.py` so validation fails if:
+- [x] Update `skills/cdd-implementation-audit/SKILL.md` so step-scoped audits explicitly inspect the concrete implementation delta that claims to satisfy the selected steps, such as the current branch diff, selected commits, or equivalent repo-local changed-file surface for that audit scope, in addition to reviewing each selected step’s `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT`.
+- [x] Define the step-scoped audit output contract more explicitly in `skills/cdd-implementation-audit/SKILL.md`: when the audit scope is one or more TODO steps, the final summary must state which implementation delta was reviewed for those steps, whether that delta appears to satisfy the selected step goals and checked tasks, and where TODO, README, spec, test, or proof-surface drift remains.
+- [x] Update `scripts/validate_skills.py` so validation fails if:
   - `RUN_STOPPED` is documented with the same closeout recommendations as `RUN_COMPLETE`
   - step-scoped `cdd-implementation-audit` language omits explicit implementation-delta review
   - the audit summary contract omits which changed-file or commit surface was reviewed for the selected steps
-- [ ] Update `scripts/test_master_chef_artifacts.sh` only as needed so the artifact layer remains aligned with which parts of this combined contract are structurally guarded versus validator-guarded.
+- [x] Update `scripts/test_master_chef_artifacts.sh` only as needed so the artifact layer remains aligned with which parts of this combined contract are structurally guarded versus validator-guarded.
 
 ### Implementation notes
 

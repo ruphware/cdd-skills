@@ -44,8 +44,9 @@ When the chosen scope resolves to one or more TODO steps, explicitly audit each 
   - `Implementation notes`
   - `Automated checks`
   - `UAT`
-- Check whether the observed implementation actually satisfies that step contract, not just the surrounding TODO theme.
-- Treat unchecked TODO tasks, missing evidence for completed tasks, missing or weak automated-check proof, missing or weak UAT proof, or implementation that misses the step goal as first-class findings.
+- Inspect one concrete implementation delta for that scope: current branch diff, selected commits, or another repo-local changed-file surface.
+- Judge whether that delta actually satisfies the step contract, not just the surrounding TODO theme.
+- Treat unchecked TODO tasks, missing completion evidence, weak automated-check or UAT proof, or implementation that misses the step goal as first-class findings.
 - If a selected TODO step lacks one of the preferred sections, treat that as a contract weakness or missing proof surface rather than silently skipping it.
 - Keep this step-scoped audit additive to the broader README, spec, code, test, config, manifest, and entrypoint review; do not narrow the audit into TODO-only review.
 
@@ -54,7 +55,7 @@ Audit the chosen scope against all of the following:
 
 - `spec compliance`
   - Compare implementation against `README.md`, `docs/specs/*`, the selected `TODO*.md` scope, and observable current behavior.
-  - For one-step or multi-step TODO audits, compare the implementation against each selected step's `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT`.
+  - For one-step or multi-step TODO audits, compare each selected step's `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT` against the concrete implementation delta reviewed for that scope, not only the final filesystem state.
   - Treat drift between code, tests, and docs as a real finding.
 - `code quality`
   - Default to KISS: prefer simpler, clearer solutions over clever indirection.
@@ -115,18 +116,20 @@ This skill is interactive, read-only, and decision-driven.
 1) Read the contract docs and the relevant implementation surfaces for the chosen scope.
 2) Resolve the audit scope before starting the audit proper.
 3) If the scope resolves to one or more TODO steps, record the selected step ids first and inspect each selected step's section contract before judging implementation quality.
-4) Audit code, tests, docs, configs, manifests, entrypoints, and validation surfaces together; do not audit code in isolation when the contract or tests are part of the issue.
-5) For step-scoped audits, check whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion.
-6) Normalize findings into root-cause items with explicit evidence.
-7) Report concise minor findings and surface major findings one at a time with `**Options**`.
-8) Keep a running list of:
+4) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
+5) Audit code, tests, docs, configs, manifests, entrypoints, and validation surfaces together; do not audit code in isolation when the contract or tests are part of the issue.
+6) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion.
+7) Normalize findings into root-cause items with explicit evidence.
+8) Report concise minor findings and surface major findings one at a time with `**Options**`.
+9) Keep a running list of:
    - findings approved for planning now
    - findings deferred
    - findings accepted as-is
    - findings rejected or needing more evidence
-9) When the audit is complete, return a final audit summary that includes:
+10) When the audit is complete, return a final audit summary that includes:
    - audited scope
    - selected TODO step ids when the scope is step-scoped
+   - which implementation delta or changed-file or commit surface was reviewed when the scope is step-scoped
    - findings by audit dimension
    - whether the selected steps' checked tasks appear fully done
    - whether the observed implementation matches the selected step goals
@@ -135,7 +138,7 @@ This skill is interactive, read-only, and decision-driven.
    - deferred or accepted findings
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
-10) End by recommending `$cdd-plan` for the approved findings set.
+11) End by recommending `$cdd-plan` for the approved findings set.
 
 ## Guardrails
 - If the user asks to fix findings directly from this skill, stop and recommend `$cdd-plan` first.
