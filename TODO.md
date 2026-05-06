@@ -1229,3 +1229,77 @@ Make `cdd-master-chef` derive `master_model` and `master_thinking` directly from
 - [x] Confirm default Builder behavior is reported as inheriting the current session settings when no explicit Builder override is supplied.
 - [x] Confirm an explicit Builder override, when described, is framed as a deviation from the inherited default rather than through the old four-way mapping taxonomy.
 - [x] Confirm `run.json` records the effective `master_*` and `builder_*` settings for the run.
+
+## Step 33 — Make blocked-step decomposition clear the blocker and resume the same Master Chef run
+
+### Goal
+
+Make Master Chef treat a successful oversized or underspecified-step split as blocker repair that clears the blocker and automatically continues the active run from the first new runnable step, instead of stopping at that split boundary.
+
+### Constraints
+
+- Preserve `STEP_BLOCKED` and `DEADLOCK_STOPPED` for unresolved blockers.
+- Preserve fresh single-step Builder runs and no Builder session resurrection.
+- Do not require a new human kickoff or reset the approved `run_step_budget` when the split succeeds without new human input.
+- Do not increment `steps_completed_this_run` for planning-only split or repair work.
+- Keep worktree, branch, QA/UAT, commit, and push semantics unchanged.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/CONTRACT.md` and `cdd-master-chef/SKILL.md` so blocked-step recovery explicitly distinguishes unresolved blockers from successful plan-shaped repair; when Master Chef decomposes a blocked oversized or underspecified step into smaller decision-complete TODO steps without needing new human input, it must emit `BLOCKER_CLEARED`, preserve the active run and remaining `run_step_budget`, re-inspect TODO state, and spawn a fresh Builder for the first new runnable step instead of stopping at the split boundary.
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` and `cdd-master-chef/openclaw/README.md` so the operational path explicitly records the stop at `STEP_BLOCKED`, the main-session repair and decomposition work, the `BLOCKER_CLEARED` transition once the split succeeds, and automatic same-run continuation from the next smaller actionable step with no second kickoff.
+- [ ] Update `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so blocked-step tests require both the initial blocker report and the post-repair automatic continuation path, including proof that Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized.
+- [ ] Update shared reporting and runtime guidance that mentions `BLOCKER_CLEARED` so it records the original blocked step id, replacement step ids, whether human input is still required, preserved remaining budget, and the chosen next delegated action.
+
+### Implementation notes
+
+- Differentiate two boundaries explicitly: unresolved blocker means stopped run; resolved-by-split means the same run may continue automatically after checkpoint and resume.
+- A successful split is Master-Chef-direct repair, not a passed TODO step; do not emit `STEP_PASS` or consume step budget for it.
+- If `run_step_budget` is numeric, preserve the remaining budget after subtracting only already passed implementation steps.
+- Touch only the shared contract plus the canonical OpenClaw operational surfaces in this step; adapter propagation and validator expansion belong in the follow-on step.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Simulate a blocked oversized step, decompose it into `R05A+`, and confirm Master Chef reports `STEP_BLOCKED`, repairs TODO, emits `BLOCKER_CLEARED`, and automatically starts a fresh Builder for `R05A` without a new kickoff.
+- Confirm the run stays stopped only when human input is still required or the blocker cannot be decomposed safely.
+- Confirm `steps_completed_this_run` and numeric budget accounting do not change merely because the step was split.
+
+## Step 34 — Propagate post-split continuation semantics to Codex/Claude adapters and validation
+
+### Goal
+
+Make adapter docs, harnesses, and validators enforce the shared same-run post-split continuation contract so Codex, Claude, and OpenClaw paths no longer allow `split then stop` as compliant behavior.
+
+### Constraints
+
+- Keep adapter-specific capability claims truthful.
+- Preserve selector-driven kickoff and one-step Builder delegation.
+- Prefer structural or scenario-level validation over brittle transcript wording when possible.
+- Keep true unresolved-blocker stop behavior available after the propagation lands.
+
+### Tasks
+
+- [ ] Update `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, and `cdd-master-chef/CLAUDE-TEST-HARNESS.md` so a successful split or repair inside an active run resumes automatically from the first new runnable step under the existing approval and remaining budget, rather than requiring a new kickoff or manual resume command.
+- [ ] Extend `scripts/validate_skills.py` to assert coverage for `BLOCKER_CLEARED`, preserved remaining `run_step_budget`, no budget increment for split or repair work, and rejection of `stop cleanly at the first decomposed step` as valid successful-repair behavior.
+- [ ] Tighten shared and adapter harness expectations so blocked-step decomposition proves both branches: true stopped state for unresolved blockers, and same-run continuation for successful repair.
+
+### Implementation notes
+
+- Touch the shared validator, adapter runbooks, and harnesses only; no runtime implementation files exist in this repo.
+- Keep adapter text focused on orchestration semantics, not unsupported runtime internals.
+- Use the existing `BLOCKER_CLEARED` event label instead of inventing another recovery event.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read Codex and Claude adapter docs and confirm they no longer leave `successful split but stopped at R05A` as acceptable.
+- Confirm the validator or harness would fail if stop-after-split drift reappears.
+- Confirm unresolved blockers still permit a stopped run.
