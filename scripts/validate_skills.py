@@ -119,6 +119,15 @@ LEGACY_BUILDER_LIFECYCLE_STRINGS = (
     "the next delegated step got a fresh Builder run.",
     "do not compact or resume Builders as the normal path",
 )
+ROOT_README_LEGACY_MASTER_CHEF_STRINGS = (
+    "Master Chef reads the current session model and thinking automatically; provide a `Builder override` only when Builder should diverge.",
+    "may split an oversized top-level step before Builder handoff",
+    "After approval, Master Chef manages fresh single-step Builder runs",
+)
+OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES = (
+    r"QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly",
+    r"If Master Chef QA rejects the Builder result:.*either push the findings to a fresh Builder run for the same step or fix the issue directly in Master Chef",
+)
 REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
 MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
 MASTER_CHEF_RUNBOOK_WORKTREE_ROOT = (
@@ -1056,11 +1065,13 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"For `\[CDD-6\] Master Chef`:",
             r"remaining unfinished top-level step-heading count.*default/max step budget",
             r"fresh run from a long-lived branch.*descriptive feature branch",
-            r"may split an oversized top-level step before Builder handoff|reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
+            r"managed worktree branch.*`env_ready`|fresh managed worktree branch.*`env_ready`",
+            r"reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
             r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
-            r"current session model and thinking automatically.*Builder override",
+            r"current session model and thinking.*`unknown`.*active session as-is.*Builder override|reads the current session model and thinking when the runtime exposes them.*Builder override",
             r"how many TODO steps this run should cover",
             r"whether (?:Master Chef|it) should spawn Builder now",
+            r"persistent Builder per active run.*recovery conditions|persistent Builder.*replaces Builder only for recovery conditions",
             r"No-clone upgrade path:",
             r"managed prune semantics",
             r"Adapter docs.*maintainers.*debugging.*runtime support",
@@ -1072,6 +1083,12 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         ),
         root_readme_md,
         "root README topic coverage",
+    )
+    forbid_substrings(
+        root_readme_text,
+        ROOT_README_LEGACY_MASTER_CHEF_STRINGS,
+        root_readme_md,
+        "legacy root README Master Chef lifecycle drift",
     )
     forbid_substrings(
         root_readme_text,
@@ -1851,6 +1868,12 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
         (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
         runbook_md,
         "unsupported OpenClaw context-meter claims",
+    )
+    forbid_regexes(
+        runbook_text + "\n" + readme_text,
+        OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES,
+        runbook_md,
+        "legacy OpenClaw QA-remediation drift",
     )
 
 

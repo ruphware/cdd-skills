@@ -31,10 +31,10 @@ Use one persistent Builder per active autonomous run when the active Codex surfa
 - For read-heavy repo mapping, explicitly use the built-in `explorer` agent or a project-scoped custom explorer.
 - For narrow QA or docs checks, prefer project-scoped custom agents when the task benefits from different MCP wiring, sandboxing, or model settings.
 - Each delegated Builder action still covers exactly one approved step or same-step recovery action at a time.
-- After a step passes or same-step remediation is delegated again, Master Chef should re-inspect repo and TODO state and reuse the active Builder first when it remains usable.
-- Before handing a new delegated step to the active Builder, attempt Builder compaction only if the active Codex surface exposes a supported compaction command or API.
+- After a step passes or same-step remediation is delegated again, Master Chef re-inspects repo and TODO state and reuses the active Builder first when it remains usable.
+- Before a new delegated step, attempt Builder compaction only if the active Codex surface exposes a supported command or API.
 - Current repo docs and the local `codex --help` surface do not document a clean parent-visible Builder compaction command, so this runbook does not claim one.
-- When no supported compaction command is exposed, keep the same Builder and rely on native context management or any runtime auto-compaction the active Codex surface performs.
+- When no supported compaction surface is exposed, keep the same Builder and rely on native context management or any runtime auto-compaction the active Codex surface performs.
 - Replace Builder only after explicit failure evidence, unexpected closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
 
 Adapter rule:
@@ -100,7 +100,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - The current Codex adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
 - Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Codex exposes them.
 - The current Codex adapter should not claim a clean official parent-visible subagent context meter, exact token-left budget, or other precise fullness percentage for Master Chef decisions.
-- Treat step-start compaction and context visibility separately: Master Chef may try a supported compaction surface if one ever exists in the active Codex path, but the current repo docs do not document such a parent-visible surface.
+- Treat step-start compaction and context visibility separately: Master Chef may try a supported compaction surface if one ever exists in the active Codex path, but the current repo docs do not document one today.
 - Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
 - A returned spawn handle or `builder_session_key` is spawn evidence only. It is not enough to prove that Builder has started operating.
 - Keep `builder_phase: booting` until Codex surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record in `builder.jsonl`.

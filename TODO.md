@@ -1726,3 +1726,55 @@ Make the harnesses, artifact script, and structural validator enforce persistent
 - Confirm the validator fails if docs regress to legacy fresh-Builder lifecycle wording.
 - Confirm the harnesses require same-Builder continuation across normal step transitions and only allow replacement under defined recovery conditions.
 - Confirm no proof surface forces a universal numeric context threshold without adapter support.
+
+## Step 44 — Remove persistent-Builder contract drift from OpenClaw and root README, then harden proof coverage
+
+### Goal
+
+Make the OpenClaw remediation flow, the root Master Chef entrypoint docs, and the CI proof surfaces all agree on the current persistent-Builder contract: reuse the active Builder first when it remains usable, replace Builder only for recovery conditions, and describe split and kickoff behavior with the current compact policy rather than legacy fresh-Builder wording.
+
+### Constraints
+
+- Preserve the Step 41-43 contract already implemented:
+  - persistent Builder is the normal path
+  - step-boundary Builder compaction is attempted when supported
+  - replacement is recovery-only
+  - split is costed and last-resort
+- Do not weaken adapter truthfulness or reintroduce speculative runtime claims.
+- Keep the root README concise and operator-facing rather than turning it into another full contract restatement.
+- Proof surfaces must fail on contradictory legacy remediation wording, not just on missing positive phrases.
+
+### Tasks
+
+- [x] Update `cdd-master-chef/openclaw/README.md` so QA rejection and continuation wording consistently says Master Chef reuses the same Builder first when it remains usable, and only falls back to a fresh replacement Builder when recovery conditions require it.
+- [x] Update `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so the procedural flow, QA rejection path, and continuation/recovery instructions no longer contain any stale default-to-fresh-Builder remediation wording that contradicts the persistent-Builder contract.
+- [x] Update [README.md](/Users/ruph/Workspace/cdd-skills/README.md) so the top-level Master Chef entrypoint reflects the current compact package policy:
+  - unknown session settings do not block kickoff
+  - fresh runs can recommend a source feature branch and still create a managed worktree branch
+  - persistent Builder continuation is the normal path after kickoff
+  - oversized-looking steps are reviewed first and split only when split cost is justified
+- [x] Update [scripts/validate_skills.py](/Users/ruph/Workspace/cdd-skills/scripts/validate_skills.py) so validation fails when OpenClaw docs or the root README reintroduce contradictory fresh-Builder default lifecycle or stale remediation wording.
+- [x] Update [scripts/test_master_chef_artifacts.sh](/Users/ruph/Workspace/cdd-skills/scripts/test_master_chef_artifacts.sh) only as needed so the artifact layer and validator layer agree on which public Master Chef entrypoint surfaces are structurally guarded versus validator-guarded.
+- [x] Keep root README and package README coverage intentionally separated: root README should stay brief and public-facing, while `cdd-master-chef/README.md` remains the compact package-level policy surface.
+
+### Implementation notes
+
+- Treat `fresh Builder` as valid only for recovery replacement, never as the default next-step or default QA-remediation path.
+- The OpenClaw fix should remove contradictions, not add more prose.
+- Prefer one stable phrase family for the lifecycle rule across docs and validator checks:
+  - same Builder first when still usable
+  - replacement only on recovery conditions
+- If root README coverage moves into the validator, keep it compact and concept-based rather than forcing long sentence-shaped literals.
+
+### Automated checks
+
+- `bash scripts/test_master_chef_artifacts.sh`
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read `cdd-master-chef/openclaw/README.md` and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` and confirm QA rejection and same-step continuation both prefer the same Builder first when it remains usable.
+- Read [README.md](/Users/ruph/Workspace/cdd-skills/README.md) and confirm it no longer advertises `fresh single-step Builder runs` as the normal lifecycle.
+- Confirm the validator fails if OpenClaw docs regress to `send findings to a fresh Builder run` as the default remediation path.
+- Confirm the validator or artifact coverage fails if the root README regresses to legacy Master Chef lifecycle wording.

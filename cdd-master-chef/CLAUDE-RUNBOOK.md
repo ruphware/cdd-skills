@@ -32,9 +32,9 @@ Use one persistent Builder per active autonomous run when the active Claude surf
 - For isolated planning, use `Plan` only as a sidecar; the main Master Chef control loop still owns final routing and next-step decisions.
 - For QA or docs checks, use narrow custom agents when they benefit from tighter tool scope or explicit model selection.
 - Each delegated Builder action still covers exactly one approved step or same-step recovery action at a time.
-- Claude subagents run in separate contexts, so same-Builder continuation across delegated steps does not require Master Chef and Builder to share one transcript window.
-- After a step passes or same-step remediation is delegated again, Master Chef should re-inspect repo and TODO state and reuse the active Builder first when it remains usable.
-- Before handing a new delegated step to the active Builder, attempt Builder compaction when the active Claude surface exposes slash commands such as `/compact`.
+- Claude subagents run in separate contexts, so same-Builder continuation across delegated steps does not require one shared transcript window.
+- After a step passes or same-step remediation is delegated again, Master Chef re-inspects repo and TODO state and reuses the active Builder first when it remains usable.
+- Before a new delegated step, attempt Builder compaction when the active Claude surface exposes slash commands such as `/compact`.
 - If the active surface or invocation mode does not expose manual `/compact`, keep the same Builder and rely on Claude auto-compaction or native context management instead.
 - Replace Builder only after explicit failure evidence, unexpected closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
 
@@ -107,7 +107,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - The current Claude adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
 - Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Claude exposes them.
 - Claude has separate subagent contexts, but this runbook should not claim any trustworthy parent-visible exact subagent fullness percentage or precise token-left meter.
-- Treat step-start compaction and context visibility separately: Master Chef may ask Builder to run `/compact` when that slash-command surface is available, and otherwise should rely on Claude auto-compaction or native context management without inventing a numeric threshold.
+- Treat step-start compaction and context visibility separately: Master Chef may ask Builder to run `/compact` when that surface is available, and otherwise should rely on Claude auto-compaction or native context management without inventing a numeric threshold.
 - Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
 - A returned spawn handle or `builder_session_key` is spawn evidence only. It is not enough to prove that Builder has started operating.
 - Keep `builder_phase: booting` until Claude surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record in `builder.jsonl`.

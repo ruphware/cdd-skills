@@ -14,8 +14,8 @@ Adapter note:
 
 - The runtime-agnostic Master Chef contract now lives beside this skill in `CONTRACT.md`, `RUNBOOK.md`, and `RUNTIME-CAPABILITIES.md`.
 - Current concrete adapters in this package are Codex, Claude Code, and OpenClaw.
-- Codex and Claude Code are current subagent-backed adapter docs in this package.
-- OpenClaw is the current packaged runtime adapter in this package.
+- Codex and Claude Code ship here as subagent-backed adapter docs.
+- OpenClaw is the packaged runtime adapter.
 - Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters, but no Hermes adapter ships here today.
 - Codex and Claude Code adapters should ask for the run step budget and whether to spawn Builder now, then own that Builder handoff rather than pushing the Builder-start decision back to the human.
 - Master Chef approval requests should use visible selector-based options, defaulting to `A.`, `B.`, `C.` when practical, and the selected option itself should count as the approval.
@@ -31,6 +31,7 @@ Shared policy flow:
 
 - Session settings are best-effort facts: record unresolved current-session fields as `unknown` and continue with the active session as-is.
 - Startup is branch-backed and environment-backed: on fresh runs from long-lived branches, default to recommending a descriptive source feature branch, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
+- Builder lifecycle is persistent: keep the same Builder across normal delegated-step transitions, attempt step-start compaction when supported, and replace Builder only for recovery conditions.
 - Oversized-looking work is reviewed first: keep the parent step when one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified.
 
 Operating contract:

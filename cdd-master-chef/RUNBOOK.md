@@ -10,6 +10,7 @@ When a shared approval or decision point is surfaced to the human through an ada
 
 - Session settings: record unresolved current-session fields as `unknown` and continue with the active session as-is.
 - Startup: recommend a descriptive source feature branch on fresh runs from long-lived branches, then create a fresh per-run managed worktree branch and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
+- Builder lifecycle: keep one persistent Builder per active run, attempt step-start compaction when supported, and replace Builder only for recovery conditions.
 - Step shaping: review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified.
 
 ## 0) Session settings
@@ -75,7 +76,7 @@ If the human approves that suggestion:
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive feature branch first. If approved, create it in the source checkout and refresh `source_branch` and `source_head_sha`.
-3. If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep the step intact while one Builder delegation can still finish it safely in one run; repair it in place if a minimal TODO fix restores that viability without changing scope; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and when the added split cost is clearly justified.
+3. If the next runnable top-level TODO step looks oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep it intact while one Builder delegation can still finish it safely, repair it in place if a minimal TODO fix restores that shape without changing scope, and split before delegation only when the parent step still is not safely delegable and the added split cost is clearly justified.
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and fresh per-run branch name.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout.
@@ -179,9 +180,9 @@ Adapters that support subagent-backed Builder runs should prefer `worktree_conti
 
 Normal delegated-step transition uses one persistent Builder per active run.
 
-- After Master Chef re-inspects repo and TODO state, it should reuse the active Builder for the next delegated step when that Builder remains usable.
-- Before handing a new delegated step to that Builder, attempt a Builder compaction operation when the runtime exposes a supported compaction command or API.
-- If the runtime does not expose a supported compaction command or API, keep the same Builder and rely on the runtime's own auto-compaction or native context management instead of inventing a fake compaction path.
+- Reuse the active Builder for the next delegated step whenever it remains usable.
+- Before a new delegated step, attempt Builder compaction only when the runtime exposes a supported command or API.
+- If no supported compaction surface exists, keep the same Builder and rely on runtime auto-compaction or native context management instead of inventing one.
 - Replace Builder only as recovery after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after compaction or direct status checks.
 
 ### Shared Builder-run viability review

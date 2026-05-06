@@ -20,6 +20,7 @@ Shared policy anchors for every adapter in this package:
 
 - record unresolved current-session fields as `unknown` and continue with the active session as-is
 - recommend a descriptive source feature branch on fresh runs from long-lived branches, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
+- keep Builder persistent across normal delegated-step transitions, attempt step-start compaction only when supported, and replace Builder only for recovery conditions
 - review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
 
 All adapters in this package must satisfy the same startup gate:

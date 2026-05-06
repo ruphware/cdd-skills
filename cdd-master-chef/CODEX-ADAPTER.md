@@ -4,7 +4,7 @@ This file defines how the shared `cdd-master-chef` contract maps onto Codex.
 
 Use this adapter when the controlling runtime is Codex CLI, Codex app, or another Codex surface that exposes explicit subagent workflows.
 
-This is one of the current concrete subagent-backed adapters shipped in the `cdd-master-chef` package.
+This is one of the shipped subagent-backed adapters in `cdd-master-chef`.
 
 ## 1) Delegation model
 
@@ -63,10 +63,10 @@ Adapter implication:
 
 - Master Chef should keep Builder work interactive when the delegated step may need fresh approvals.
 - Read-heavy sidecar agents are the safest place to use narrower sandboxes and specialized MCP/tool setups.
-- Same Builder continuation across delegated steps in one autonomous run is the normal path when the active Codex surface can keep the child session and managed worktree coherent.
-- Before a new delegated step, Master Chef should attempt Builder compaction only if the active Codex surface exposes a supported compaction command or API.
+- Same Builder continuation across delegated steps is the normal path when the active Codex surface can keep the child session and managed worktree coherent.
+- Before a new delegated step, attempt Builder compaction only if the active Codex surface exposes a supported command or API.
 - Current repo docs and the local `codex --help` surface do not document a clean parent-visible subagent compaction command or API, so this adapter must not invent one.
-- When no supported compaction command is exposed, keep the same Builder and rely on native context management or any runtime auto-compaction that the active Codex surface performs.
+- When no supported compaction surface is exposed, keep the same Builder and rely on native context management or any runtime auto-compaction that the active Codex surface performs.
 - Do not claim a clean official parent-visible subagent context meter, exact token-left budget, or other precise fullness percentage for Master Chef decisions.
 - Replace Builder only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
 - This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.

@@ -1,6 +1,6 @@
 # [CDD-6] Master Chef
 
-This folder contains the current OpenClaw adapter docs inside the canonical `cdd-master-chef/` package.
+This folder contains the OpenClaw adapter docs inside the canonical `cdd-master-chef/` package.
 
 Shared contract surfaces now live in the parent package root:
 
@@ -10,7 +10,7 @@ Shared contract surfaces now live in the parent package root:
 
 This `openclaw/` folder documents how the OpenClaw runtime satisfies that shared contract.
 
-It is one current concrete adapter in this package. Codex and Claude Code adapter docs live in the package root as current subagent-backed alternatives.
+It is one shipped adapter in this package. Codex and Claude Code docs live in the package root as subagent-backed alternatives.
 
 OpenClaw-specific deltas over the shared policy:
 
@@ -123,7 +123,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 ## How development starts
 
 1. Open the OpenClaw session you want to use. That session is both Master Chef and the reporting surface for the run.
-2. Make sure the current session already has the model and thinking you want Master Chef to mirror into runtime state when OpenClaw exposes them exactly.
+2. Make sure the current session already has the model and thinking you want Master Chef to use when OpenClaw can expose them exactly.
 3. If Builder should diverge from that active session, prepare an optional `Builder override` block:
 
    ```text
@@ -132,7 +132,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
      builder_thinking: xhigh
    ```
 
-4. Set the current session model before you start the run:
+4. If you want a different Master Chef model, set it before you start the run:
 
    ```text
    /model <master-model>
@@ -174,9 +174,9 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
 
 After the managed worktree becomes active, Master Chef must inspect repo-native manifests, runbook commands, and validation entrypoints there, run the required bootstrap commands in that worktree, record whether the default feature-branch recommendation was accepted or declined, and record the worktree bootstrap evidence before Builder or `hard_gate` validation rely on that worktree.
 
-After that approval, Master Chef drives the Builder automatically until the run completes, hits a hard technical or physical stop, or deadlocks.
+After kickoff approval, Master Chef drives the Builder automatically until the run completes, hits a hard technical or physical stop, or deadlocks.
 
-After each passed, blocked, or stale delegated step, Master Chef re-inspects repo state and keeps the same Builder as the normal continuation path when it remains usable. Before handing the next delegated step to that Builder, Master Chef attempts step-boundary compaction only when the active OpenClaw surface exposes a supported Builder compaction operation; this repo does not currently document one, so the truthful default is to keep the same Builder and rely on native context management. If recovery conditions force replacement, Master Chef starts a fresh Builder run, normally via `cdd-implement-todo`.
+After each passed, blocked, or stale delegated step, Master Chef re-inspects repo state and keeps the same Builder as the normal continuation path when it remains usable. Before the next delegated step, Master Chef attempts Builder compaction only when the active OpenClaw surface exposes a supported operation; this repo does not currently document one, so the truthful default is to keep the same Builder and rely on native context management. If recovery conditions force replacement, Master Chef starts a fresh Builder run, normally via `cdd-implement-todo`.
 
 Every non-passing Builder attempt becomes a continuation-review boundary. Master Chef reviews completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
 
@@ -228,7 +228,7 @@ Default delegated path:
 - Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step, reusing the active Builder as the normal path across delegated steps in the same run
 - Builder updates only the selected TODO step on success
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
-- If Master Chef QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly, then re-runs QA before any pass
+- If Master Chef QA rejects the result, Master Chef first reuses the same Builder when it remains usable, otherwise sends concrete findings to a fresh replacement Builder for the same step or fixes the issue directly, then re-runs QA before any pass
 - Passed steps are advertised as `STEP_PASS` in the current Master Chef session before automatic continuation
 - if another runnable delegated step exists, Master Chef attempts same-Builder continuation first and replaces Builder only when recovery conditions require it
 - if a Builder attempt does not pass, Master Chef chooses one of four outcomes in-session: `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`

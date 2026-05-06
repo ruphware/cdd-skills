@@ -78,10 +78,10 @@ Current concrete adapters in this repo:
 For `[CDD-6] Master Chef`:
 
 - start `cdd-master-chef` from the main session for the runtime you want to control, such as `$cdd-master-chef` in Codex or `/cdd-master-chef` in Claude Code or OpenClaw.
-- Master Chef reads the current session model and thinking automatically; provide a `Builder override` only when Builder should diverge.
-- On a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch. When the active TODO has a finite remaining unfinished top-level step-heading count, it recommends that exact count as the default/max step budget.
-- Master Chef inspects the repo, proposes the next TODO step, may split an oversized top-level step before Builder handoff, sets up `.cdd-runtime/master-chef/`, and asks how many TODO steps this run should cover.
-- Kickoff asks whether Master Chef should spawn Builder now. After approval, Master Chef manages fresh single-step Builder runs, QA, UAT evidence, commits, pushes, and blocker reporting.
+- Use it when you want one kickoff approval, worktree isolation, autonomous multi-step delivery, and a final mission report. Master Chef reads the current session model and thinking when the runtime exposes them, reports unresolved session-setting fields as `unknown`, continues with the active session as-is, and accepts a `Builder override` only when Builder should diverge.
+- On a fresh run from a long-lived branch, Master Chef can suggest a descriptive feature branch, create a fresh managed worktree branch, bootstrap that worktree to `env_ready`, and, when the remaining unfinished top-level step-heading count is finite, recommend that exact count as the default/max step budget.
+- It inspects the repo, proposes the next TODO step, reviews oversized-looking work before delegation, and splits only when the split cost is justified.
+- Kickoff asks how many TODO steps this run should cover and whether Master Chef should spawn Builder now. After approval, it keeps one persistent Builder per active run, replaces Builder only for recovery conditions, owns the mission, and ends with a final mission report covering completed work and decisions made.
 - Adapter docs are for maintainers, debugging, and runtime support: `cdd-master-chef/RUNBOOK.md`, `cdd-master-chef/CODEX-ADAPTER.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-ADAPTER.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/RUNTIME-CAPABILITIES.md`, and `cdd-master-chef/openclaw/`.
 
 ## Manual Install
