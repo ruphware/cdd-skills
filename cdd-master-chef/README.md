@@ -1,15 +1,16 @@
 # [CDD-6] Master Chef
 
-This directory is the canonical committed package root for `[CDD-6] Master Chef`, an in-development multi-runtime autonomous workflow that sits beside the core `[CDD-0]` through `[CDD-5]` CDD skills.
+This directory is the committed package root for `[CDD-6] Master Chef`, the multi-runtime autonomous workflow that complements the core `[CDD-0]` through `[CDD-5]` CDD skills.
 
 ## Compact policy flow
 
-- Session settings: treat the current session model and thinking as best-effort Master Chef facts. If a runtime cannot expose one or both exactly, record only those fields as `unknown` and continue with the active session as-is. Builder still inherits the effective settings unless an adapter can honor an explicit `Builder override` cleanly.
-- Startup: on fresh runs from long-lived branches, default to recommending a descriptive source feature branch unless the human declines. Then create a separate fresh per-run worktree branch, activate the managed worktree, bootstrap the repo-native environment there, and only let Builder or `hard_gate` validation depend on that worktree after it is `env_ready`.
-- Step shaping: review oversized-looking work before delegation. Keep the parent step intact while one fresh Builder can still finish it safely in one run, repair it in place when a minimal TODO fix restores that shape, and split only when the added Builder, hard-gate, QA, and mission-delay cost is justified.
-- Mission ownership: after kickoff approval, Master Chef owns the mission under the approved run step budget and ends terminal states with a final mission report covering completed work, unresolved session-setting fields, and decisions made.
+- Session settings: observe the current session model and thinking when the runtime exposes them, record only unresolved fields as `unknown`, and continue with the active session as-is. Builder inherits those effective settings unless an adapter can honor an explicit `Builder override` cleanly.
+- Startup: on fresh runs from long-lived branches, recommend a descriptive source feature branch unless the human declines, then create a fresh per-run worktree branch, bootstrap that worktree, and wait for `env_ready` before Builder or `hard_gate` depends on it.
+- Builder lifecycle: keep one persistent Builder per active autonomous run, attempt step-start Builder compaction when the runtime supports it, and replace Builder only for recovery conditions.
+- Step shaping: review oversized-looking work before delegation, keep or minimally repair the parent step while one-run delivery is still viable, and split only when the added Builder, hard-gate, QA, and mission-delay cost is justified.
+- Mission ownership: after kickoff approval, Master Chef owns the mission under the approved run step budget, passes a step only when the selected TODO step is written back with its task checklist reflecting the completed work, and ends terminal states with a final mission report covering completed work, completed TODO step ids plus checklist state, unresolved session-setting fields, decisions made, and state-based closeout recommendations.
 
-The rest of this package fans out from that compact shared policy.
+Everything else in this package elaborates that shared flow.
 
 Use these files as the canonical contract surfaces:
 

@@ -25,12 +25,18 @@ Typical launch controls:
 
 ## 2) Builder selection
 
-Use single-step Builder runs only.
+Use one persistent Builder per active autonomous run when the active Claude surface stays coherent.
 
 - For main implementation, prefer a project-scoped `.claude/agents/` Builder agent or an explicit named agent selection.
 - For read-heavy exploration, use `Explore` or a custom read-only agent.
 - For isolated planning, use `Plan` only as a sidecar; the main Master Chef control loop still owns final routing and next-step decisions.
 - For QA or docs checks, use narrow custom agents when they benefit from tighter tool scope or explicit model selection.
+- Each delegated Builder action still covers exactly one approved step or same-step recovery action at a time.
+- Claude subagents run in separate contexts, so same-Builder continuation across delegated steps does not require one shared transcript window.
+- After a step passes or same-step remediation is delegated again, Master Chef re-inspects repo and TODO state and reuses the active Builder first when it remains usable.
+- Before a new delegated step, attempt Builder compaction when the active Claude surface exposes slash commands such as `/compact`.
+- If the active surface or invocation mode does not expose manual `/compact`, keep the same Builder and rely on Claude auto-compaction or native context management instead.
+- Replace Builder only after explicit failure evidence, unexpected closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
 
 Adapter rule:
 
@@ -100,6 +106,8 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 
 - The current Claude adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
 - Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Claude exposes them.
+- Claude has separate subagent contexts, but this runbook should not claim any trustworthy parent-visible exact subagent fullness percentage or precise token-left meter.
+- Treat step-start compaction and context visibility separately: Master Chef may ask Builder to run `/compact` when that surface is available, and otherwise should rely on Claude auto-compaction or native context management without inventing a numeric threshold.
 - Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
 - A returned spawn handle or `builder_session_key` is spawn evidence only. It is not enough to prove that Builder has started operating.
 - Keep `builder_phase: booting` until Claude surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record in `builder.jsonl`.
@@ -114,23 +122,25 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
 - After that grace window, use one direct status request before replacement when the active Claude surface can send it coherently.
 - If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
-- Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, or no reply to that direct status probe after the grace window.
+- Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, deadlock, unusable drift, inability to continue safely after status or worktree-safety checks, or no reply to that direct status probe after the grace window.
 
 ## 9) Blocked paths
 
 - Treat every non-passing Builder attempt, including QA reject, explicit blocker, or stale replacement with no usable pass result, as a continuation-review boundary in the main Master Chef session.
 - Review completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
 - Choose one explicit outcome:
-  - `continue_same_step` when progress is coherent, the step boundary still holds, and a fresh Builder can plausibly finish the remainder without reopening planning
+  - `continue_same_step` when progress is coherent, the step boundary still holds, and the active Builder can plausibly finish the remainder without reopening planning, or one recovery replacement Builder can do so if the active one is no longer usable
   - `repair_in_place` when the step boundary still holds but the TODO step needs a tighter contract, sequencing note, or proof note before the next Builder run
   - `split_remainder_into_child_steps` only when the unfinished portion is now too risky to keep as one Builder run and preserving the parent step would cost more total retry churn than the split
   - `hard_stop` when a hard technical or physical limit still prevents safe continuation
-- If a safe next action still exists, report `STEP_BLOCKED`, keep the decision in the main session, emit `BLOCKER_CLEARED` once the next action is explicit, and continue with a fresh Builder under the existing approval.
+- If a safe next action still exists, report `STEP_BLOCKED`, keep the decision in the main session, emit `BLOCKER_CLEARED` once the next action is explicit, and continue with the same Builder when it remains usable; otherwise continue with a fresh Builder under the existing approval.
 - Treat split as expensive because it adds Builder boots, hard-gate reruns, QA cycles, mission delay, and extra proof boundaries. Do not pay that cost merely because the step looks broad or is expected to need several validation cycles.
 - If the chosen outcome is `split_remainder_into_child_steps`, record what part of the parent step is already done, what exact remainder is being separated, why the first child is the next runnable step, what checks, UAT, and invariants carry forward to the child steps, and why the split cost was justified.
 - Do not split too eagerly without one-run failure-risk evidence and explicit split-cost justification, and do not keep retrying same-step continuation after the remaining work has clearly become a lower-risk child-step sequence.
 - Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human during an active autonomous run.
-- End terminal states with a final mission report covering completed work, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
+- End terminal states with a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
+- For `RUN_COMPLETE`, use the shared closeout recommendation bundle.
+- For budget-stop `RUN_STOPPED`, use the shared continuation-aware recommendation bundle and name the remaining runnable work or next continuation target.
 - Do not treat nested subagent spawning as available.
 - Do not let a background Builder path absorb clarifying-question or permission failures silently.
 - Do not hide Builder override failures or inherited-setting fallback decisions.

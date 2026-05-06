@@ -4,7 +4,7 @@ This file defines how the shared `cdd-master-chef` contract maps onto Claude Cod
 
 Use this adapter when the controlling runtime is Claude Code and Master Chef wants Builder delegation through Claude subagents.
 
-This is one of the current concrete subagent-backed adapters shipped in the `cdd-master-chef` package.
+This is one of the shipped subagent-backed adapters in `cdd-master-chef`.
 
 ## 1) Delegation model
 
@@ -72,6 +72,12 @@ Adapter implication:
 
 - Multi-step delegation must be chained by the main Master Chef session rather than delegated recursively through Builder.
 - If a Builder step needs another agent, return control to Master Chef and let the main session launch the next agent explicitly.
+- Claude subagents run in their own contexts rather than sharing one monolithic transcript with Master Chef, so same-Builder continuation across delegated steps is compatible with separate subagent context windows.
+- Same Builder continuation across delegated steps is the normal path when the active Claude surface can keep the subagent and managed worktree coherent.
+- Before a new delegated step, attempt Builder compaction when the active Claude surface exposes slash commands such as `/compact`.
+- If the active Claude surface or invocation mode does not expose manual `/compact`, keep the same Builder and rely on Claude auto-compaction or native context management instead.
+- Do not claim exact parent-visible subagent fullness percentages, exact token-left budgets, or other precise context meters for Master Chef decisions.
+- Replace Builder only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
 - This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
 - Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Claude exposes them.
 - A returned Builder handle or session key proves only that Claude accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context.
@@ -109,6 +115,7 @@ Adapter rule:
 - Do not rely on background subagents to recover fresh approvals or clarifying questions.
 - Do not rely on background Builder work for MCP-dependent tasks.
 - Do not silently downgrade `builder_thinking` when the current Claude surface can only satisfy it through parent-session inheritance or relaunch.
+- Do not claim parent-visible exact subagent context fullness percentages, even when Claude supports long-lived sessions or manual `/compact`.
 
 ## 8) Source notes
 

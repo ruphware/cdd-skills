@@ -95,6 +95,63 @@ MASTER_CHEF_ENV_READY_REGEX = (
 MASTER_CHEF_FINAL_REPORT_REGEX = (
     r"final mission report.*completed work.*decisions made|Terminal mission reports.*completed work.*decisions made"
 )
+MASTER_CHEF_TODO_CHECKLIST_REGEX = (
+    r"(?:completed TODO step ids|which TODO step ids were completed|selected TODO step).*task checklist(?:s)?(?: are| were| is)?(?: fully)? checked|task checklist(?:s)? (?:reflect|reflects) the completed work|checklist completion status"
+)
+MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX = (
+    r"(?:post-run recommendation bundle|closeout recommendation bundle|continuation-aware recommendation bundle|state-based closeout recommendations|next human actions|next operator moves).*(?:cdd-implementation-audit|Implementation Audit).*(?:push only when|conditional push|ahead of origin|still unpublished).*(?:open a PR|PR creation).*(?:clean up the managed worktree|managed-worktree cleanup).*(?:source checkout|parent folder)"
+)
+MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX = (
+    r"`RUN_COMPLETE`.*(?:completed run|true closeout|shared closeout recommendation bundle|closeout recommendation bundle).*(?:push|open a PR|cleanup|return to the source checkout|return to source checkout)"
+)
+MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX = (
+    r"(?:budget-stop )?`RUN_STOPPED`.*(?:work completed so far|paused-but-successful checkpoint|shared continuation-aware recommendation bundle|continuation-aware recommendation bundle).*(?:remaining runnable work|next continuation target|continuation-aware)"
+)
+MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX = (
+    r"`RUN_COMPLETE`.*shared closeout recommendation bundle"
+)
+MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX = (
+    r"`RUN_STOPPED`.*shared continuation-aware recommendation bundle.*(?:remaining runnable work|next continuation target)"
+)
+MASTER_CHEF_SAME_BUILDER_REGEX = (
+    r"(?:same Builder|same-Builder|reuse the same Builder|reuse the active Builder|persistent Builder|keeps? the same Builder)"
+)
+MASTER_CHEF_STEP_COMPACTION_REGEX = (
+    r"(?:step-start|beginning-of-step|Before handing a new delegated step).*compaction|(?:attempt|attempted).*compaction.*(?:supported|supports|command|API|/compact)"
+)
+MASTER_CHEF_COMPACTION_FALLBACK_REGEX = (
+    r"(?:auto-compaction|native context management|native-context fallback|native_context_management)"
+)
+MASTER_CHEF_REPLACEMENT_ONLY_REGEX = (
+    r"(?:Replace Builder only after|replace Builder only after|replacement is reserved for|replacement only.*(?:failure|closure|deadlock|unusable drift)|recovery conditions require it|recovery-only)"
+)
+MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX = (
+    r"(?:do not claim|should not claim|no clean official|lack of any trustworthy|no documented|unsupported universal).*(?:context meter|token-left|fullness percentage|numeric threshold|context threshold)"
+)
+UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX = (
+    r"(?:\b\d{1,3}%\b.*(?:context|token|fullness)|(?:context|token|fullness).*\b\d{1,3}%\b)"
+)
+IMPLEMENTATION_DELTA_REVIEW_REGEX = (
+    r"(?:implementation delta|current branch diff|selected commits?|selected commit range|changed-file surface|repo-local changed-file surface)"
+)
+IMPLEMENTATION_DELTA_SUMMARY_REGEX = (
+    r"(?:which implementation delta(?: or changed-file or commit surface)? was reviewed|implementation delta was reviewed|changed-file or commit surface was reviewed)"
+)
+LEGACY_BUILDER_LIFECYCLE_STRINGS = (
+    "Use single-step Builder runs only.",
+    "fresh Builder for the next delegated action",
+    "the next delegated step got a fresh Builder run.",
+    "do not compact or resume Builders as the normal path",
+)
+ROOT_README_LEGACY_MASTER_CHEF_STRINGS = (
+    "Master Chef reads the current session model and thinking automatically; provide a `Builder override` only when Builder should diverge.",
+    "may split an oversized top-level step before Builder handoff",
+    "After approval, Master Chef manages fresh single-step Builder runs",
+)
+OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES = (
+    r"QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly",
+    r"If Master Chef QA rejects the Builder result:.*either push the findings to a fresh Builder run for the same step or fix the issue directly in Master Chef",
+)
 REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
 MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
 MASTER_CHEF_RUNBOOK_WORKTREE_ROOT = (
@@ -184,6 +241,14 @@ def forbid_substrings(
 ) -> None:
     """Assert that none of the forbidden tokens exist in the given text."""
     present = [pattern for pattern in patterns if pattern in text]
+    assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
+
+
+def forbid_regexes(
+    text: str, patterns: tuple[str, ...], path: Path, label: str
+) -> None:
+    """Assert that none of the forbidden regexes match in the given text."""
+    present = [pattern for pattern in patterns if re.search(pattern, text, re.M | re.S)]
     assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
 
 
@@ -284,6 +349,12 @@ def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) ->
             r"findings plus approved follow-up, not code changes",
             r"Supported audit scopes:.*last commit.*uncommitted changes.*one TODO step.*multiple TODO steps.*one TODO file.*whole codebase",
             r"missing docs, specs, or tests as findings",
+            r"scope resolves to one or more TODO steps.*selected step ids",
+            r"Step-scoped TODO contract audit",
+            r"Review each selected step's:.*Goal.*Constraints.*Tasks.*Implementation notes.*Automated checks.*UAT",
+            r"actually satisfies that step contract rather than only the broader TODO topic|not just the surrounding TODO theme",
+            r"unchecked TODO tasks.*first-class findings|missing evidence for completed tasks.*first-class findings",
+            r"do not narrow the audit into TODO-only review",
             r"`spec compliance`",
             r"`code quality`",
             r"`test quality`",
@@ -311,6 +382,14 @@ def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) ->
             r"`D\.\s*Reject finding or ask for more evidence`",
             r"Stay read-only during the audit",
             r"Do not patch code, docs, or TODO files",
+            r"selected steps' checked tasks appear fully done",
+            r"observed implementation satisfies each step goal|implementation matches the selected step goals",
+            r"automated checks plus UAT evidence support the claimed completion",
+            r"selected TODO step ids when the scope is step-scoped",
+            r"Inspect the concrete implementation delta.*current branch diff.*selected commits.*changed-file surface|step-scoped audits.*implementation delta.*current branch diff.*selected commits.*changed-file surface",
+            r"concrete implementation delta reviewed for that scope",
+            IMPLEMENTATION_DELTA_SUMMARY_REGEX,
+            r"notable missing proof surfaces, docs, specs, or tests",
             r"recommend `\$?cdd-plan`",
         ),
         skill_md,
@@ -880,6 +959,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"coherent Builder reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
             MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
+            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
+            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
         ),
         contract_md,
         "shared contract monitoring topics",
@@ -969,6 +1052,10 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"coherent discovery note.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
             MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
+            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
+            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
         ),
         runbook_md,
         "shared runbook monitoring topics",
@@ -1024,11 +1111,13 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"For `\[CDD-6\] Master Chef`:",
             r"remaining unfinished top-level step-heading count.*default/max step budget",
             r"fresh run from a long-lived branch.*descriptive feature branch",
-            r"may split an oversized top-level step before Builder handoff|reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
+            r"managed worktree branch.*`env_ready`|fresh managed worktree branch.*`env_ready`",
+            r"reviews? oversized-looking work before delegation.*split cost is justified|review an oversized top-level step before (?:Builder handoff|delegation).*split cost|cost-justified pre-delegation split review",
             r"start `(?:\$|/)?cdd-master-chef`.*main session.*runtime you want to control",
-            r"current session model and thinking automatically.*Builder override",
+            r"current session model and thinking.*`unknown`.*active session as-is.*Builder override|reads the current session model and thinking when the runtime exposes them.*Builder override",
             r"how many TODO steps this run should cover",
             r"whether (?:Master Chef|it) should spawn Builder now",
+            r"persistent Builder per active run.*recovery conditions|persistent Builder.*replaces Builder only for recovery conditions",
             r"No-clone upgrade path:",
             r"managed prune semantics",
             r"Adapter docs.*maintainers.*debugging.*runtime support",
@@ -1040,6 +1129,12 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         ),
         root_readme_md,
         "root README topic coverage",
+    )
+    forbid_substrings(
+        root_readme_text,
+        ROOT_README_LEGACY_MASTER_CHEF_STRINGS,
+        root_readme_md,
+        "legacy root README Master Chef lifecycle drift",
     )
     forbid_substrings(
         root_readme_text,
@@ -1193,15 +1288,23 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent status or discovery reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
-            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with a fresh Builder",
+            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
             r"Do not split too eagerly.*one-run failure-risk evidence",
             r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
             r"final mission report.*completed work.*decisions made",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
+            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
         ),
         runbook_md,
         "Codex runbook monitoring topics",
@@ -1216,6 +1319,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "### Prompt G - Worktree continuation",
             "### Prompt H - Long-thinking Builder monitoring",
             "### Prompt I - Builder boot readiness",
+            "### Prompt I1 - Normal next-step continuation",
             "### Prompt J - Blocked-step autonomy",
             "### Prompt K - Final mission report",
             "remaining top-level-step count is stated when finite",
@@ -1232,7 +1336,7 @@ def validate_codex_adapter(repo_root: Path) -> None:
             "Recursive default fan-out was rejected.",
             MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
             "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.",
-            "Terminal states ended with a final mission report covering completed work and decisions made.",
+            "Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and distinct closeout or continuation recommendations.",
         ),
         harness_md,
         "Codex harness coverage",
@@ -1258,14 +1362,41 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"partial progress",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
             r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
             r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
+            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
+            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
         ),
         harness_md,
         "Codex harness monitoring topics",
+    )
+    forbid_substrings(
+        runbook_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        runbook_md,
+        "legacy Codex runbook Builder lifecycle drift",
+    )
+    forbid_substrings(
+        harness_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        harness_md,
+        "legacy Codex harness Builder lifecycle drift",
+    )
+    forbid_regexes(
+        adapter_text + "\n" + runbook_text + "\n" + harness_text,
+        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
+        adapter_md,
+        "unsupported Codex context-meter claims",
     )
 
 
@@ -1390,15 +1521,23 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent status or discovery reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
-            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with a fresh Builder",
+            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
             r"Do not split too eagerly.*one-run failure-risk evidence",
             r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
             r"final mission report.*completed work.*decisions made",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
+            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
         ),
         runbook_md,
         "Claude runbook monitoring topics",
@@ -1413,6 +1552,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "### Prompt G - Worktree continuation",
             "### Prompt H - Long-thinking Builder monitoring",
             "### Prompt I - Builder boot readiness",
+            "### Prompt I1 - Normal next-step continuation",
             "### Prompt J - Blocked-step autonomy",
             "### Prompt K - Final mission report",
             "remaining top-level-step count is stated when finite",
@@ -1430,7 +1570,7 @@ def validate_claude_adapter(repo_root: Path) -> None:
             "Nested subagent spawning was rejected.",
             MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
             "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.",
-            "Terminal states ended with a final mission report covering completed work and decisions made.",
+            "Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and distinct closeout or continuation recommendations.",
         ),
         harness_md,
         "Claude harness coverage",
@@ -1456,14 +1596,41 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"partial progress",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
             r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
             r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
             r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
+            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
+            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
         ),
         harness_md,
         "Claude harness monitoring topics",
+    )
+    forbid_substrings(
+        runbook_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        runbook_md,
+        "legacy Claude runbook Builder lifecycle drift",
+    )
+    forbid_substrings(
+        harness_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        harness_md,
+        "legacy Claude harness Builder lifecycle drift",
+    )
+    forbid_regexes(
+        adapter_text + "\n" + runbook_text + "\n" + harness_text,
+        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
+        adapter_md,
+        "unsupported Claude context-meter claims",
     )
 
 
@@ -1627,8 +1794,14 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"non-passing Builder attempt.*continuation-review boundary",
             r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"same repaired parent step or (?:from )?the first runnable child step",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
+            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
         ),
         runbook_md,
         "OpenClaw runbook config topics",
@@ -1669,8 +1842,14 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"before Builder or `hard_gate` validation rely on that worktree",
             r"only split an oversized one when.*Builder, test, and QA cost.*justified|only split an oversized one when.*split cost.*justified",
             r"one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             MASTER_CHEF_FINAL_REPORT_REGEX,
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
+            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
         ),
         readme_md,
         "OpenClaw README config topics",
@@ -1720,12 +1899,51 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"partial progress",
             r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
             r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            r"fresh Builder would spend most (?:of its )?effort on recovery rather than completion",
+            MASTER_CHEF_SAME_BUILDER_REGEX,
+            MASTER_CHEF_STEP_COMPACTION_REGEX,
+            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
+            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the first runnable child step",
+            MASTER_CHEF_TODO_CHECKLIST_REGEX,
+            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
+            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
+            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
         ),
         harness_md,
         "OpenClaw harness selector topics",
+    )
+    forbid_substrings(
+        runbook_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        runbook_md,
+        "legacy OpenClaw runbook Builder lifecycle drift",
+    )
+    forbid_substrings(
+        readme_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        readme_md,
+        "legacy OpenClaw README Builder lifecycle drift",
+    )
+    forbid_substrings(
+        harness_text,
+        LEGACY_BUILDER_LIFECYCLE_STRINGS,
+        harness_md,
+        "legacy OpenClaw harness Builder lifecycle drift",
+    )
+    forbid_regexes(
+        runbook_text + "\n" + readme_text + "\n" + harness_text,
+        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
+        runbook_md,
+        "unsupported OpenClaw context-meter claims",
+    )
+    forbid_regexes(
+        runbook_text + "\n" + readme_text,
+        OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES,
+        runbook_md,
+        "legacy OpenClaw QA-remediation drift",
     )
 
 

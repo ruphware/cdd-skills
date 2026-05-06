@@ -224,22 +224,36 @@ If the run is complete, send the final mission report covering completed work an
   - this prompt is run from the managed worktree after the relaunch step
   - Master Chef reviews Builder output
   - the delegated path matches the routing choice rather than defaulting blindly
-  - if another runnable delegated step exists, Master Chef starts a fresh single-step Builder run for it, normally via `cdd-implement-todo`
+  - if another runnable delegated step exists, Master Chef reuses the same Builder first when it remains usable
+  - if the active OpenClaw surface does not expose a supported manual Builder compaction operation, the next-step handoff relies on native context management rather than inventing one
+  - the adapter should not claim a documented parent-visible Builder fullness meter, exact token-left budget, or universal numeric threshold
+  - if replacement is needed instead, it is justified by explicit recovery conditions rather than treated as the normal step-transition path
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
-  - run completion emits a final mission report covering completed work and decisions made
+  - run completion emits a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, and decisions made
+  - for `RUN_COMPLETE`, the report includes the shared closeout recommendation bundle:
+    - run `cdd-implementation-audit` on the completed run scope
+    - push only when the branch is ahead of origin or still unpublished
+    - open a PR only once the branch is published and PR creation is still pending
+    - clean up the managed worktree only when it still exists and no immediate continuation is planned there
+    - return to the source checkout or parent folder
+  - for budget-stop `RUN_STOPPED` with remaining runnable work, the report includes the shared continuation-aware recommendation bundle:
+    - run `cdd-implementation-audit` on the work completed so far
+    - name the remaining runnable work or next continuation target
+    - recommend push or open-PR actions only when warranted
+    - do not present cleanup as the primary next move while continuation is expected
   - lifecycle events such as `START` / `STEP_PASS` / `STEP_BLOCKED` / `RUN_COMPLETE` are reported clearly in the current session
 
 ### Prompt J - QA reject remediation
 
 ```text
 /cdd-master-chef TEST ONLY: simulate that Builder returned a result that fails Master Chef QA.
-Keep the same TODO step active, record concrete QA findings, choose either a fresh Builder run for the same step or a direct Master Chef fix, re-run QA/UAT, and only then commit, push, advertise STEP_PASS, and continue automatically.
+Keep the same TODO step active, record concrete QA findings, choose either the same Builder when it remains usable, a fresh Builder run for the same step when recovery requires replacement, or a direct Master Chef fix, re-run QA/UAT, and only then commit, push, advertise STEP_PASS, and continue automatically.
 ```
 
 - [ ] Expected:
   - no `STEP_PASS`, commit, or push happens before remediation and re-run QA
   - QA findings are recorded in `master-chef.jsonl`
-  - remediation uses either a fresh single-step Builder run for the same step or a direct Master Chef fix
+  - remediation uses the same Builder first when it remains usable, otherwise a fresh single-step Builder run for the same step, or a direct Master Chef fix
   - after QA passes, `STEP_PASS` is advertised in the current Master Chef session before TODO re-inspection and automatic continuation
 
 ### Prompt K - Deadlock
@@ -263,8 +277,8 @@ Report STEP_BLOCKED in the current session, inspect runtime logs and the working
 - [ ] Expected:
   - no fresh Builder is spawned blindly before the continuation review is complete
   - `STEP_BLOCKED` is reported in the current Master Chef session with concrete evidence
-  - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, and whether a fresh Builder would spend most of its effort on recovery rather than completion
-  - `continue_same_step` remains valid when the step boundary still holds and a fresh Builder can plausibly finish the remainder
+  - the continuation review inspects what completed, what failed, whether the remainder is still one bounded implementation action, whether the active Builder is still usable after status or compaction checks, and whether a recovery replacement Builder would spend most of its effort on recovery rather than completion
+  - `continue_same_step` remains valid when the step boundary still holds and the active Builder can plausibly finish the remainder, or one recovery replacement Builder can do so if the active one is no longer usable
   - TODO planning is repaired into smaller decision-complete steps only when the unfinished portion has become the lower-risk child-step sequence
   - split is justified only when its added Builder, test, and QA cost is lower than preserving the parent step
   - cleanup is scoped to stale runtime/build artifacts and does not revert unrelated user work
@@ -272,7 +286,7 @@ Report STEP_BLOCKED in the current session, inspect runtime logs and the working
   - `split_remainder_into_child_steps` records what part of the parent is already done, what exact remainder is being separated, why the first child is next, and what checks, UAT, and invariants carry forward
   - successful repair emits `BLOCKER_CLEARED` with the original blocked step, replacement step ids when applicable, preserved remaining budget, and next delegated action
   - successful repair does not trigger a new kickoff or increment `steps_completed_this_run`
-  - continuation uses a fresh single-step Builder run for the same repaired parent step or the first runnable child step, as justified by the review
+  - continuation reuses the same Builder first for the same repaired parent step or the first runnable child step, replacing only when defined recovery conditions require it
   - Master Chef does not stop cleanly at the first decomposed step when continuation is still authorized
   - the run stops only when a hard technical or physical limit still blocks safe autonomous continuation after repair
 
@@ -298,7 +312,8 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Expected:
   - `context-summary.md` records run, state, recent decisions, current diff, pending proof, and next action
   - no compaction happens while QA, commit, push, blocker strategy, or next-action details exist only in transcript
-  - Builder context remains fresh through single-step Builder runs rather than Builder compaction or session resurrection
+  - Builder continuation stays persistent across delegated steps, while Master Chef compaction remains a separate control-loop behavior
+  - if the active OpenClaw surface lacks a supported manual Builder compaction operation, step-boundary continuation falls back to native context management rather than a fake compaction command
   - resumed Master Chef state is verified against `TODO*.md`, runtime files, logs, and `git status`
 
 ---
@@ -318,7 +333,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Builder recovery stayed inside the main session.
 - [ ] Master Chef chose the correct routing path for the repo state.
 - [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
-- [ ] Builder runs stayed one-step only; the next delegated step got a fresh Builder run.
+- [ ] Normal next-step continuation reused the same Builder first, used native-context fallback when manual Builder compaction was unsupported, and replaced Builder only under defined recovery conditions.
 - [ ] Builder session resurrection was not used as the normal continuation or recovery path.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.
@@ -328,7 +343,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Session-derived Master Chef settings, effective Builder settings, and runtime state stayed free of extra route metadata.
 - [ ] Master Chef compaction happened only after a durable checkpoint and resume used runtime files, active TODO, and git state.
 - [ ] Repeated failed Builder replacements stopped the run instead of limping onward.
-- [ ] Run ended with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, and emitted a final mission report.
+- [ ] Run ended with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, and emitted a final mission report with completed TODO step ids, fully checked task checklists, and distinct closeout or continuation recommendations.
 
 ---
 
