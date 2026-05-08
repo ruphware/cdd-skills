@@ -2016,3 +2016,50 @@ Make `cdd-master-chef` state one shared Builder lifecycle for Codex, Claude, and
 - Confirm all three adapter surfaces say clearly long-running Builder work gets a longer quiet-work window before stale replacement logic begins, with only runtime-specific observation mechanics differing.
 - Confirm all three adapter surfaces say stopped, dead, or superseded Builder sessions are closed or marked no longer active once no longer needed so only one active Builder remains, while runtime lineage and logs stay preserved.
 - Confirm the validator fails if shared docs or any adapter docs reintroduce per-step respawn, premature stale classification, or adapter-specific semantic drift on stale-Builder cleanup.
+
+## Step 49 — Make cdd-plan enumerate edge cases and escalate only major clarifications
+
+### Goal
+
+Make `cdd-plan` explicitly review repo-grounded edge cases for behavior-changing or audit-derived implementation planning, list them in the plan, and turn only unresolved major edge cases into one clarifying question at a time before drafting final TODO edits.
+
+### Constraints
+
+- Keep this contract in `cdd-plan` only; do not widen `cdd-implementation-audit` in this step.
+- Trigger the edge-case pass only for behavior-changing or audit-derived implementation plans, not simple docs, upkeep, or narrow mechanical refactors.
+- `Major` means an edge case that could materially change subsystem boundaries, APIs/contracts, data/state model, user-visible behavior, rollout/migration path, or validation strategy.
+- `Minor` edge cases must not block planning; carry them forward as recommended defaults, implementation notes, assumptions, constraints, automated checks, or UAT where appropriate.
+- Preserve the existing one-substantive-question-per-message rule and selector-based decision flow.
+- If no unresolved major edge cases remain after review, continue planning without extra clarification questions.
+
+### Tasks
+
+- [x] Update `skills/cdd-plan/SKILL.md` so the Interactive planning contract and Flow add an explicit planning-time edge-case review pass for behavior-changing or audit-derived implementation requests after codebase review and before detailed TODO drafting.
+- [x] Require `skills/cdd-plan/SKILL.md` to produce a visible `Edge-case review` section in qualifying plans that lists repo-grounded edge cases, names the affected boundary, states why each case matters, and classifies each item as `major` or `minor`.
+- [x] Require `skills/cdd-plan/SKILL.md` to escalate unresolved `major` edge cases into one clarifying question at a time before finalizing the plan, with each question grounded in actual codebase findings and framed as a real plan-shaping decision rather than a preference poll.
+- [x] Require `skills/cdd-plan/SKILL.md` to keep `minor` edge cases non-blocking: state the recommended default handling in the plan itself and record it in assumptions, constraints, implementation notes, automated checks, or UAT instead of asking a clarification question.
+- [x] Extend `scripts/validate_skills.py` so validation fails if the plan skill no longer requires the qualifying-request trigger, visible `Edge-case review` section, major-edge-case escalation rule, or non-blocking minor-default handling.
+
+### Implementation notes
+
+- Keep the edge-case pass codebase-grounded: derive edge cases from reviewed code, docs, tests, entrypoints, configs, manifests, and current TODO surfaces rather than generic brainstorming.
+- Keep the classification compact: `major` versus `minor` is enough here; do not introduce audit-style severity buckets.
+- Make the major-edge threshold explicit in the skill text:
+  - `major` if it can materially change boundaries, contracts, data/state model, user-visible behavior, rollout/migration, or validation strategy
+  - `minor` if it can be handled by a recommended implementation default without changing the plan shape
+- Keep selector-based clarifying questions and the “selected option itself is the approval” rule unchanged.
+- Prefer validator coverage in the default path where practical instead of hiding this contract only behind `--include-legacy-prose`.
+- Touch only `skills/cdd-plan/SKILL.md` and `scripts/validate_skills.py` unless a failing check proves another surface is required.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `cdd-plan` skill and confirm behavior-changing or audit-derived implementation requests now require an explicit edge-case review before detailed TODO drafting.
+- Confirm qualifying plan output requires a visible `Edge-case review` section with repo-grounded items classified as `major` or `minor`.
+- Confirm unresolved `major` edge cases become one clarifying question at a time and only when they could materially change boundaries, contracts, data/state model, user-visible behavior, rollout/migration, or validation strategy.
+- Confirm `minor` edge cases stay non-blocking and are carried into the plan as recommended defaults or implementation notes rather than becoming clarification questions.
+- Confirm the validator fails if the qualifying-request trigger, `Edge-case review` section, major-edge escalation rule, or non-blocking minor-default rule is removed.

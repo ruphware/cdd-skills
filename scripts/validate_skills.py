@@ -318,6 +318,33 @@ def validate_reviewed_contract_artifacts(skill_text: str, skill_md: Path) -> Non
     )
 
 
+def validate_plan_edge_case_review_contract(skill_text: str, skill_md: Path) -> None:
+    """Assert the plan skill reviews edge cases and escalates only major ones."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"behavior-changing or audit-derived implementation (planning|requests)",
+            r"Edge-case review",
+            r"repo-grounded edge-case review.*relevant code.*docs.*tests.*entrypoints.*configs.*manifests.*current TODO surfaces",
+            r"keep it concise.*repo-grounded cases.*materially affect plan shape.*interfaces.*data/state.*rollout.*validation",
+            r"Collapse duplicate or closely related edge cases.*smallest root decision",
+            r"affected boundary.*why it matters.*`major`.*`minor`",
+            r"`Major`.*materially change.*subsystem boundaries.*APIs/contracts.*data/state model.*user-visible behavior.*rollout/migration path.*validation strategy",
+            r"`Minor`.*recommended implementation default.*plan shape",
+            r"one clarifying question.*at a time.*major|major.*one clarifying question.*at a time",
+            r"plan-shaping decisions rather than preference polls|real plan-shaping decisions rather than preference polls",
+            r"highest-leverage question first.*resolves the most downstream plan.*boundary.*sequencing.*validation uncertainty",
+            r"one combined clarification.*separate repetitive questions|combined clarification instead of separate repetitive questions",
+            r"current recommended direction.*what part of the plan would change",
+            r"Do not re-ask a question already answered.*codebase evidence.*accepted plan default",
+            r"minor.*non-blocking.*assumptions.*constraints.*implementation notes.*automated checks.*UAT",
+            r"no meaningful repo-grounded edge cases",
+        ),
+        skill_md,
+        "plan edge-case review topics",
+    )
+
+
 def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None:
     """Assert the plan skill absorbs audit-input normalization cleanly."""
     require_topic_bundle(
@@ -756,6 +783,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         validate_option_driven_approval(skill_text, skill_md)
     if skill_dir.name == "cdd-plan":
         validate_plan_final_apply_options(skill_text, skill_md)
+        validate_plan_edge_case_review_contract(skill_text, skill_md)
 
     if include_legacy_prose:
         if skill_dir.name == "cdd-implement-todo":

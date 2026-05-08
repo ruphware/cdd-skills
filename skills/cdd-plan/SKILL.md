@@ -51,13 +51,36 @@ Do not convert raw audit bullets directly into TODO tasks.
 - Inspect the relevant docs (`README.md`, `docs/specs/*`) and the corresponding tests or validation surfaces; do not audit code in isolation when doc or test drift is part of the finding.
 - Keep audit-derived execution steps at the same implementation-ready standard as any other `cdd-plan` output.
 
+## Edge-case review
+For behavior-changing or audit-derived implementation planning, do not move from codebase review straight to TODO drafting.
+
+- Run an explicit repo-grounded edge-case review after inspecting the relevant code, docs, tests, entrypoints, configs, manifests, and current TODO surfaces.
+- Keep a visible `Edge-case review` section in qualifying plans, but keep it concise and limited to repo-grounded cases that materially affect plan shape, interfaces, data/state, rollout, or validation.
+- Collapse duplicate or closely related edge cases into the smallest root decision that can be planned cleanly.
+- For each edge case, record:
+  - the affected boundary
+  - why it matters
+  - whether it is `major` or `minor`
+- `Major` means the edge case could materially change subsystem boundaries, APIs/contracts, data/state model, user-visible behavior, rollout/migration path, or validation strategy.
+- `Minor` means the edge case can be handled by a recommended implementation default without changing the plan shape.
+- If a `major` edge case remains unresolved after review, ask one clarifying question about it at a time before finalizing the plan.
+- Keep major-edge clarifying questions grounded in actual codebase findings and framed as real plan-shaping decisions rather than preference polls.
+- When several unresolved `major` edge cases remain, ask the highest-leverage question first: prefer the one whose answer resolves the most downstream plan, boundary, sequencing, or validation uncertainty.
+- When multiple `major` edge cases collapse to one underlying decision, ask one combined clarification instead of separate repetitive questions.
+- Each major-edge clarification should state the current recommended direction and what part of the plan would change if the answer differs.
+- Do not re-ask a question already answered by the user, already resolved by codebase evidence, or already covered by an accepted plan default.
+- If only `minor` edge cases remain, keep them non-blocking and carry the recommended default into assumptions, constraints, implementation notes, automated checks, or UAT instead of asking a clarification question.
+- If the review finds no meaningful repo-grounded edge cases, say so briefly and continue without inventing generic ones.
+
 ## Interactive planning contract
 Planning in this skill is interactive, review-driven, and continuously refined.
 
 - Start in planning mode when the runtime supports a native read-only or plan mode. If it does not, emulate that behavior by staying read-only until the user approves applying the plan.
 - Review the codebase before and during planning. Audit the relevant code, docs, tests, entrypoints, configs, and current TODO surfaces so the plan is grounded in the actual implementation, not just the docs or user prompt.
+- For behavior-changing or audit-derived implementation requests, run the repo-grounded edge-case review before detailed TODO drafting.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
 - Ask at most one substantive clarification or decision question per message.
+- Prefer the fewest clarification questions that resolve the most plan-shaping uncertainty.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
 - For qualifying requests that are multi-surface, ambiguous, or likely to produce more than one TODO step, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
 - For those qualifying requests, refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
@@ -88,11 +111,14 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 1) Read the contract files above, any linked sub-specs, and the relevant codebase surfaces.
    - Review the current implementation before planning: affected modules, entrypoints, tests, manifests, configs, relevant README/spec surfaces, and existing TODO steps.
    - Identify the likely boundaries, risks, and validation surfaces for the requested change.
+   - For behavior-changing or audit-derived implementation requests, run a repo-grounded edge-case review before detailed TODO drafting and classify each item as `major` or `minor`.
 2) Ask for the change request or audit items only if they are not already clear from the user prompt.
-3) Before drafting edits, identify only the blocking or plan-shaping clarifications that would materially change assumptions, goals, implementation paths, file placement, sequencing, or approval boundaries.
-4) Ask clarifying questions one at a time using the interaction contract above.
+3) Before drafting edits, identify only the blocking or plan-shaping clarifications that would materially change assumptions, goals, implementation paths, file placement, sequencing, approval boundaries, or any unresolved `major` edge case.
+   - Collapse related open questions into the fewest root decisions possible and rank them by how much downstream plan uncertainty they resolve.
+4) Ask clarifying questions one at a time using the interaction contract above, and use that path only for unresolved `major` edge cases or other plan-shaping gaps.
+   - Ask the highest-leverage unresolved question first and avoid repeating adjacent questions that the same answer would settle.
 5) If any material assumption would remain after the answers, list only those material assumptions and ask the user to confirm or correct them before continuing.
-6) If only minor defaults remain, disclose them briefly in the plan and proceed without blocking.
+6) If only minor defaults or `minor` edge cases remain, disclose them briefly in the plan and proceed without blocking.
 7) If the request is audit-driven, normalize the audit items before drafting TODO steps.
    - identify the user-visible symptom, likely root cause, affected boundary, and proof needed for each item
    - tag each item as `spec_delta`, `implementation_delta`, `verification_delta`, or `defer`
@@ -100,7 +126,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 8) For qualifying requests, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
    - Use this mode only when the request is multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step.
    - Keep the coarse pass lightweight but concrete enough to validate boundaries, dependency order, coverage, and reviewed artifacts before detailed TODO drafting begins.
-   - Include visible `Confirmed requirements coverage` and `Reviewed contract artifacts` sections before asking for approval.
+   - Include visible `Confirmed requirements coverage`, `Reviewed contract artifacts`, and `Edge-case review` sections before asking for approval.
 9) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
    - Recommend one option based on the codebase review.
    - For audit-driven requests, include the write-location choice in the same option set when possible:
@@ -113,6 +139,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
    - TODO step updates using the repo’s existing Step template
    - translate spec deltas into implementation deltas instead of restating product intent
    - for each new or revised execution step, include exact boundaries, interface or contract changes, sequencing notes, and validation evidence
+   - carry resolved `major` edge-case decisions and `minor` default handling into the resulting TODO steps rather than leaving them only in surrounding chat
    - for audit-driven requests, keep the normalized root-cause grouping, any required README/spec updates, corresponding tests, and proof surfaces explicit in the resulting TODO steps
    - keep exact implementation-driving detail in `TODO.md` and use explicit `TODO.md` follow-up for later spec/doc updates when mixed product/implementation artifacts are not becoming durable spec deltas now
    - add `Implementation notes` when the step would otherwise force the implementer to make decisions
