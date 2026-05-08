@@ -21,6 +21,7 @@ Shared policy anchors for every adapter in this package:
 - record unresolved current-session fields as `unknown` and continue with the active session as-is
 - recommend a descriptive worktree branch on fresh runs from long-lived branches, keep the source checkout on its original branch, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
 - keep Builder persistent across normal delegated-step transitions, attempt step-start compaction only when supported, and replace Builder only for recovery conditions
+- use one shared active-monitoring ladder: active Builder checks at least every 5 minutes while waiting, 10 minutes without readiness as the boot-timeout boundary, 20 minutes without direct running proof of life as a soft stale threshold that triggers an explicit probe, and 30 minutes of total running silence or 2 unanswered probes as the hard replacement boundary
 - preserve lineage and durable evidence, then close or mark older Builder sessions inactive so one active Builder remains after recovery or direct completion
 - review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
 
@@ -51,7 +52,7 @@ All adapters in this package must satisfy the same startup gate:
 - The OpenClaw adapter is the current packaged runtime adapter, but it is not the only current adapter in this package.
 - Session settings: when OpenClaw cannot expose an exact model or thinking value, record that field as `unknown`, report the limitation honestly, and continue kickoff.
 - Worktree: provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, then bootstrap the repo-native environment after relaunch before autonomous implementation starts.
-- Monitoring and compaction: same-Builder continuation remains the normal path after relaunch, but this repo does not document a manual Builder compaction command or a parent-visible context meter for OpenClaw.
+- Monitoring and compaction: same-Builder continuation remains the normal path after relaunch, active checks still follow the shared 5/10/20-soft/30-hard monitoring ladder, and this repo does not document a manual Builder compaction command or a parent-visible context meter for OpenClaw.
 - Cleanup: when an older Builder is no longer needed, close the older session when the runtime exposes that surface or otherwise mark it inactive so one active Builder identity remains in runtime state and control flow.
 
 ### Codex
@@ -59,7 +60,7 @@ All adapters in this package must satisfy the same startup gate:
 - Delegation: treat Builder delegation as explicit and intentional, and keep project-level agent configuration under `.codex/agents/*.toml`.
 - Session settings and kickoff: observe current session model and thinking when available, report `unknown` when a field is not exposed, map optional Builder overrides onto the runtime configuration surface, and keep the Builder start plus run step budget inside kickoff before any fallback handoff.
 - Worktree: define whether a managed worktree can become active in-session or only after a fallback handoff rooted in that worktree, and bootstrap plus evidence the active worktree environment before Builder or `hard_gate` validation rely on it.
-- Monitoring and compaction: do not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it; current repo docs and local `codex --help` do not document a clean parent-visible manual Builder compaction command or an official parent-visible subagent context meter.
+- Monitoring and compaction: do not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it; keep the shared 5/10/20-soft/30-hard monitoring ladder, and note that current repo docs and local `codex --help` do not document a clean parent-visible manual Builder compaction command or an official parent-visible subagent context meter.
 - Readiness and cleanup: require a real Builder readiness signal before treating the child as live, and preserve lineage and durable evidence before closing or purging older child sessions so only one live Builder remains visible after recovery or direct completion.
 - Current repo docs: `CODEX-ADAPTER.md`, `CODEX-RUNBOOK.md`, and `CODEX-TEST-HARNESS.md`.
 
@@ -71,7 +72,7 @@ All adapters in this package must satisfy the same startup gate:
 - Nesting and approvals: subagents cannot spawn other subagents, and background subagents inherit only pre-approved permissions; do not rely on them for interactive recovery.
 - Session settings and kickoff: observe current session model and thinking when available, report `unknown` when a field is not exposed, honor or reject optional Builder overrides explicitly, and keep the Builder start plus run step budget inside kickoff before any fallback handoff.
 - Worktree: distinguish in-session continuation from fallback handoff, and bootstrap plus evidence the active worktree environment before Builder or `hard_gate` validation rely on it.
-- Monitoring and compaction: do not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it; document manual `/compact` only when the active Claude surface exposes it, auto-compaction fallback when it does not, and the lack of any trustworthy parent-visible exact subagent fullness percentage.
+- Monitoring and compaction: do not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it; keep the shared 5/10/20-soft/30-hard monitoring ladder, document manual `/compact` only when the active Claude surface exposes it, auto-compaction fallback when it does not, and the lack of any trustworthy parent-visible exact subagent fullness percentage.
 - Readiness and cleanup: require a real Builder readiness signal before treating the child as live, and preserve lineage and durable evidence before closing or purging older child sessions so only one live Builder remains visible after recovery or direct completion.
 - Current repo docs: `CLAUDE-ADAPTER.md`, `CLAUDE-RUNBOOK.md`, and `CLAUDE-TEST-HARNESS.md`.
 

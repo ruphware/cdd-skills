@@ -178,6 +178,7 @@ Keep the same TODO step, update runtime state, and report BUILDER_RESTARTED.
 ```
 
 - [ ] Expected:
+  - stale means the hard no-signal boundary was crossed rather than just one short quiet period
   - Builder recovery happens in the main session
   - stale recovery prefers fresh replacement over session resurrection
   - runtime state is updated

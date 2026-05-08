@@ -125,6 +125,27 @@ MASTER_CHEF_COMPACTION_FALLBACK_REGEX = (
 MASTER_CHEF_REPLACEMENT_ONLY_REGEX = (
     r"(?:Replace Builder only after|replace Builder only after|replacement is reserved for|replacement only.*(?:failure|closure|deadlock|unusable drift)|recovery conditions require it|recovery-only)"
 )
+MASTER_CHEF_ACTIVE_CHECK_REGEX = (
+    r"(?:active Builder checks|active checks|Builder checks).*(?:at least )?every 5 minutes|5-minute cadence"
+)
+MASTER_CHEF_BOOT_TIMEOUT_REGEX = (
+    r"(?:10 minutes.*readiness|readiness.*10 minutes|10 minutes.*boot|boot.*10 minutes).*final explicit boot-status probe|boot-timeout boundary.*10 minutes"
+)
+MASTER_CHEF_RUNNING_SOFT_STALE_REGEX = (
+    r"20 minutes.*(?:direct )?(?:Builder )?proof of life.*(?:suspect|soft stale).*explicit status (?:probe|request)|20 minutes.*soft stale threshold"
+)
+MASTER_CHEF_RUNNING_HARD_STALE_REGEX = (
+    r"30 minutes.*(?:total )?running silence.*(?:hard|replacement)|2 consecutive unanswered explicit probes"
+)
+MASTER_CHEF_PROBE_STATE_REGEX = (
+    r"`builder_last_probe_at_utc`.*`builder_last_probe_result`.*`builder_suspect_since_utc`.*`builder_missed_probe_count`"
+)
+MASTER_CHEF_ACTIVE_MONITORING_REGEXES = (
+    MASTER_CHEF_ACTIVE_CHECK_REGEX,
+    MASTER_CHEF_BOOT_TIMEOUT_REGEX,
+    MASTER_CHEF_RUNNING_SOFT_STALE_REGEX,
+    MASTER_CHEF_RUNNING_HARD_STALE_REGEX,
+)
 MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX = (
     r"(?:one active Builder(?: identity)?|one active Builder remains|only one live Builder remains visible|one live Builder remains visible)"
 )
@@ -1057,15 +1078,13 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"hard technical or physical limit.*stop before implementation.*source checkout",
             r"Builder monitoring.*live status.*partial output.*direct reasoning visibility",
             r"runtime cannot expose live Builder reasoning.*streaming partial output",
-            r"two phases:.*boot/readiness.*quiet-work",
+            r"two phases:.*boot/readiness.*running-silence",
             r"spawn evidence only",
             r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
             r"timed-out wait.*no agent completed yet.*inconclusive",
             r"missing diff.*empty `builder\.jsonl`.*proof",
-            r"boot window.*boot-status probe",
-            r"(long-thinking|high-latency).*quiet-work window",
-            r"10 minutes.*quiet-work window.*high-latency",
-            r"quiet-work window.*`builder_phase`.*`running`",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
+            MASTER_CHEF_PROBE_STATE_REGEX,
             r"coherent Builder reply.*proof of life",
             MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
             MASTER_CHEF_BUILDER_CLEANUP_REGEX,
@@ -1156,14 +1175,12 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
             r"does not expose live Builder reasoning.*do not pretend",
             r"Codex- or Claude-style adapters.*completion/failure.*progress replies.*closure/errors",
-            r"two phases:.*boot/readiness.*quiet-work",
+            r"two phases:.*boot/readiness.*running-silence",
             r"returned Builder handle.*not enough to prove",
             r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
             r"timed-out wait.*no agent completed yet.*inconclusive",
-            r"boot window.*2 minutes",
-            r"(long-thinking|high-latency).*quiet-work window",
-            r"10 minutes.*quiet-work window.*high-latency",
-            r"quiet-work window.*`builder_phase`.*`running`",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
+            MASTER_CHEF_PROBE_STATE_REGEX,
             r"coherent discovery note.*proof of life",
             MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
             MASTER_CHEF_BUILDER_CLEANUP_REGEX,
@@ -1338,16 +1355,13 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"finish the active-worktree bootstrap before Builder starts",
             r"should not claim live access to Builder thinking.*streaming partial output",
             r"completion/failure notifications.*status replies.*closure/errors",
-            r"two phases:.*boot/readiness.*quiet-work",
+            r"two phases:.*boot/readiness.*running-silence",
             r"spawn evidence only",
             r"`builder_phase: booting`.*runtime child-started signal.*readiness ACK.*`BUILDER_READY`",
             r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
             r"no agent has completed yet.*`running`.*`unknown`.*`dead`",
             r"inconclusive unless Codex also reports closure or failure",
-            r"2 minutes.*boot-status probe",
-            r"(long-thinking|high-latency).*quiet-work window",
-            r"10 minutes.*high-latency",
-            r"quiet-work window.*`builder_phase`.*`running`",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
             r"coherent status or discovery reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
             r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
@@ -1412,9 +1426,8 @@ def validate_codex_adapter(repo_root: Path) -> None:
         + (
             r"direct evidence instead of guessing",
             r"spawn evidence, not readiness proof",
-            r"(long-thinking|high-latency).*quiet-work window|quiet-work window.*(long-thinking|high-latency)",
-            r"10 minutes.*high-latency",
-            r"quiet-work window.*`builder_phase`.*`running`.*`builder_ready_at_utc`",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
+            r"running-silence monitoring starts only after `builder_phase` reaches `running`.*`builder_ready_at_utc`",
             r"inconclusive unless Codex also reports closure or failure",
             r"proof of life.*step is not finished yet",
             r"`Hi\. You are Builder`",
@@ -1580,16 +1593,13 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"finish the active-worktree bootstrap before Builder starts",
             r"should not claim live access to Builder thinking.*streaming partial output",
             r"completion/failure notifications.*status replies.*closure/errors",
-            r"two phases:.*boot/readiness.*quiet-work",
+            r"two phases:.*boot/readiness.*running-silence",
             r"spawn evidence only",
             r"`builder_phase: booting`.*runtime child-started signal.*readiness ACK.*`BUILDER_READY`",
             r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
             r"quiet wait with no completion.*`running`.*`unknown`.*`dead`",
             r"inconclusive unless Claude also reports closure or failure",
-            r"2 minutes.*boot-status probe",
-            r"(long-thinking|high-latency).*quiet-work window",
-            r"10 minutes.*high-latency",
-            r"quiet-work window.*`builder_phase`.*`running`",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
             r"coherent status or discovery reply.*proof of life",
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
             r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
@@ -1655,9 +1665,8 @@ def validate_claude_adapter(repo_root: Path) -> None:
         + (
             r"direct evidence instead of guessing",
             r"spawn evidence, not readiness proof",
-            r"(long-thinking|high-latency).*quiet-work window|quiet-work window.*(long-thinking|high-latency)",
-            r"10 minutes.*high-latency",
-            r"quiet-work window.*`builder_phase`.*`running`.*`builder_ready_at_utc`",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
+            r"running-silence monitoring starts only after `builder_phase` reaches `running`.*`builder_ready_at_utc`",
             r"inconclusive unless Claude also reports closure or failure",
             r"proof of life.*step is not finished yet",
             r"`Hi\. You are Builder`",
@@ -1806,8 +1815,7 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"preferred readiness ACK.*active worktree path.*active TODO step.*tool or MCP surfaces",
             r"does not expose live Builder thinking.*`running` or `unknown`.*rather than guessing",
             r"missing diff.*empty `builder\.jsonl`.*proof",
-            r"(long-thinking|high-latency).*quiet-work window",
-            r"10 minutes.*quiet-work window.*high-latency",
+            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
             r"coherent Builder reply.*proof of life rather than proof of death",
             MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
             MASTER_CHEF_BUILDER_CLEANUP_REGEX,

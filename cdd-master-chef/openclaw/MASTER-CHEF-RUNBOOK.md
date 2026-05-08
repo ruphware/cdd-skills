@@ -264,6 +264,10 @@ Suggested shape:
   "pre_step_head_sha": "<sha>",
   "last_pass_head_sha": "<sha>",
   "last_progress_at_utc": "<ts>",
+  "builder_last_probe_at_utc": "<ts>",
+  "builder_last_probe_result": "acknowledged|no_reply|failure|unsupported",
+  "builder_suspect_since_utc": "<ts-or-empty>",
+  "builder_missed_probe_count": 0,
   "last_master_log_at_utc": "<ts>",
   "last_builder_log_at_utc": "<ts>",
   "builder_restart_count": 0,
@@ -479,14 +483,32 @@ Then inspect:
 - current phase
 - current Builder session status via native OpenClaw subagent/session tools
 
+While Master Chef is actively waiting on Builder:
+
+- perform Builder checks at least every 5 minutes
+- keep `builder_last_probe_at_utc` and `builder_last_probe_result` current when a probe is attempted
+- use direct Builder status, progress, or closure evidence before indirect repo heuristics
+- do not invent timer-based heartbeat chatter or a second control loop
+- let any coherent direct Builder reply clear `builder_suspect_since_utc` and reset `builder_missed_probe_count`
+
 If healthy:
 
 - keep the current Builder
 - update runtime/log evidence only when that check adds meaningful operational value
-- do not invent timer-based heartbeat chatter
 - do not claim a parent-visible Builder fullness meter or a manual Builder compaction command unless the active OpenClaw surface actually exposes one
 
-If stale:
+If Builder is still booting and no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`:
+
+- send one final explicit boot-status probe
+- if that still yields no readiness evidence, treat the current Builder attempt as failed to start, blocked, or replaceable
+
+If Builder is running and 20 minutes pass without direct proof of life:
+
+- set `builder_suspect_since_utc`
+- send an explicit status probe instead of replacing immediately
+- increment `builder_missed_probe_count` only when that probe is unanswered
+
+If Builder is running and either 30 minutes of total running silence or 2 consecutive unanswered explicit probes have accumulated since suspect classification:
 
 - replace it quickly with a fresh Builder run for the same step
 - increment `builder_restart_count`
@@ -527,7 +549,10 @@ Blocked-step recovery procedure:
 
 Default thresholds:
 
-- Builder stale threshold: 5 minutes without Builder progress, evaluated only when Master Chef performs a check
+- Builder active-check cadence: at least every 5 minutes while Master Chef is actively waiting
+- Builder boot timeout: 10 minutes without readiness evidence, after one final explicit boot-status probe
+- Builder running soft-stale threshold: 20 minutes without direct proof of life, which triggers suspect classification plus an explicit probe
+- Builder running hard-stale threshold: 30 minutes of total running silence or 2 consecutive unanswered explicit probes after suspect classification
 - Builder replacement budget before deadlock: 2 failed replacements without progress
 
 ---

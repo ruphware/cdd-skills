@@ -119,6 +119,10 @@ Keep the existing fields and add:
 - `builder_spawn_requested_at_utc`
 - `builder_ready_at_utc`
 - `last_builder_direct_signal_at_utc`
+- `builder_last_probe_at_utc`
+- `builder_last_probe_result`
+- `builder_suspect_since_utc`
+- `builder_missed_probe_count`
 - `builder_last_compaction_attempted_at_utc`
 - `builder_last_compaction_result`
 - `builder_last_compaction_summary`
@@ -141,6 +145,10 @@ Field meanings:
 - `builder_spawn_requested_at_utc` records when Master Chef received a Builder handle from the runtime
 - `builder_ready_at_utc` records the first direct readiness signal that proves Builder started operating
 - `last_builder_direct_signal_at_utc` tracks the latest direct Builder ACK, status reply, or runtime-native child-status signal
+- `builder_last_probe_at_utc` records the latest explicit Builder probe that Master Chef initiated
+- `builder_last_probe_result` records a concise outcome such as `acknowledged`, `no_reply`, `failure`, or `unsupported`
+- `builder_suspect_since_utc` records when the running Builder first crossed the soft stale threshold and entered suspect state
+- `builder_missed_probe_count` counts consecutive unanswered explicit probes since suspect classification and resets on any coherent direct Builder signal
 - `builder_last_compaction_attempted_at_utc` records the latest beginning-of-step Builder compaction attempt
 - `builder_last_compaction_result` records whether that attempt succeeded or fell back truthfully to `unsupported`, `auto`, or `native_context_management`
 - `builder_last_compaction_summary` is a concise explanation of the latest compaction attempt, fallback, or safety check outcome
@@ -175,6 +183,7 @@ The durable checkpoint must now also record:
 - whether relaunch is still pending or the worktree session is active
 - the approved run step budget and how many steps have already passed in this run
 - the remaining top-level TODO step count when it drove the default budget recommendation
+- the latest active-check evidence: last Builder direct signal, last explicit probe, current suspect timestamp if any, and missed-probe count
 - the active Builder identity, the latest step-boundary compaction attempt and result, and any replacement lineage written so far
 
 ## 3) Continuation decision rule
@@ -215,7 +224,7 @@ Use runtime-native Builder status surfaces before indirect repo heuristics.
 
 - If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does.
 - In Codex- or Claude-style adapters, direct status usually means final completion/failure notifications, explicit progress replies, or runtime-reported closure/errors, not live thinking traces.
-- Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
+- Treat Builder monitoring as two phases: boot/readiness first, running-silence monitoring second.
 - Immediately after spawn, record `builder_phase: booting`. A returned Builder handle or session key is not enough to prove that the child has loaded its usable repo and tool context.
 - In Codex- or Claude-style adapters, the preferred readiness signal is one early Builder ACK that confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or blocked.
 - Use this shared boot prompt:
@@ -229,11 +238,12 @@ Use runtime-native Builder status surfaces before indirect repo heuristics.
 - During quiet periods, report `running` or `unknown` rather than `stale` unless direct failure evidence exists.
 - A timed-out wait, a "no agent completed yet" result, or one unanswered status request is still inconclusive unless the runtime also reports closure or failure.
 - A returned session key, a missing diff, an empty `builder.jsonl`, or a short wait with no completion is not enough to justify Builder replacement.
-- Use a short adapter-defined boot window before the first boot-status probe; foreground Codex and Claude flows should default to about 2 minutes.
-- For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless the runtime reports direct failure sooner.
-- In foreground Codex and Claude flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
-- Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
-- After that grace window, use one explicit status probe before replacement when the runtime supports it.
+- While Builder is booting, perform active checks at least every 5 minutes while Master Chef is waiting. An adapter may probe earlier when that is cheap and coherent.
+- If no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`, send one final explicit boot-status probe before classifying the current Builder attempt as failed to start, blocked, or replaceable.
+- While Builder is running, perform active checks at least every 5 minutes while Master Chef is waiting. Earlier probes are fine, but not fewer.
+- If 20 minutes pass without direct Builder proof of life after `builder_phase` reaches `running`, set `builder_suspect_since_utc`, write `builder_last_probe_at_utc` plus `builder_last_probe_result`, increment `builder_missed_probe_count` if the probe is unanswered, and send an explicit status probe instead of replacing immediately.
+- Reset `builder_suspect_since_utc` and `builder_missed_probe_count` on any coherent direct Builder reply.
+- Replace Builder only after 30 minutes of total running silence or 2 consecutive unanswered explicit probes after suspect classification, unless direct failure, closure, blocker, deadlock, or another explicit recovery condition arrives sooner.
 - If Builder replies with a coherent discovery note, partial status, or other non-final report, treat that as proof of life and decide whether the issue is route drift or normal progress rather than declaring the Builder dead.
 - Treat a failed or unsupported step-boundary compaction attempt as replacement evidence only when the runtime also shows explicit failure, closure, deadlock, unusable drift, or inability to continue safely.
 

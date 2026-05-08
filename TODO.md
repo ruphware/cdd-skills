@@ -2245,3 +2245,71 @@ Make `cdd-implementation-audit` explicitly triage major findings for planning in
 - Confirm code-quality and test-quality findings now require concrete evidence or proof surfaces and explicitly avoid style-only low-signal findings.
 - Confirm the final closeout now uses selector-labeled next actions and makes `A. run cdd-plan on the approved findings` the first option when approved findings exist.
 - Confirm the validator fails if the flow regresses to ambiguity-only questioning, if evidence-first code-audit rules are removed, or if the final closeout loses its lettered `cdd-plan` handoff options.
+
+## Step 54 — Standardize active Builder monitoring across Master Chef adapters
+
+### Goal
+
+Make `cdd-master-chef` use one shared active-monitoring policy across OpenClaw, Codex, and Claude: while Builder is active, Master Chef checks it at least every 5 minutes, times out boot after 10 minutes without readiness, treats 20 minutes without direct running proof of life as a soft stale threshold that triggers escalation rather than immediate closure, and replaces Builder only after the harder no-signal boundary is crossed.
+
+### Constraints
+
+- Keep the current one-control-loop architecture: do not add a watchdog cron, timer-based heartbeat loop, second supervising session, or background heartbeat actor.
+- Standardize timing semantics across the shared contract and all adapter docs; runtime-specific files may differ only in probe mechanics, direct-status surfaces, and session-close behavior.
+- Preserve the current spawn/readiness boundary: a returned `builder_session_key` or spawned-agent line is spawn evidence only, not readiness proof.
+- Preserve the current proof-of-life rule: any coherent Builder status, readiness ACK, discovery note, progress reply, runtime child-status signal, or Builder-authored readiness/progress record resets the relevant silence timer.
+- Treat `10 minutes without readiness` as a boot-timeout boundary for the current Builder attempt.
+- Treat `20 minutes without direct proof of life while running` as a soft stale threshold: Master Chef must mark the Builder as suspect and perform an explicit status probe rather than closing or replacing it immediately.
+- Add one harder replacement boundary for running silence: replace or block only after either `30 minutes total running silence` or `2 consecutive unanswered explicit probes` after the soft stale threshold, whichever comes first.
+- Keep replacement and deadlock handling inside the existing recovery path; do not reinterpret the new thresholds as an automatic whole-run abort on first miss.
+- Prefer existing runtime-state timestamps where possible, but add narrow runtime-state fields when needed to prove cadence and escalation cleanly.
+
+### Tasks
+
+- [x] Update `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, and `cdd-master-chef/RUNTIME-CAPABILITIES.md` so the shared Builder lifecycle defines one monitoring ladder:
+  - active Builder checks at least every 5 minutes while Master Chef is waiting
+  - boot timeout after 10 minutes without readiness evidence, with one final explicit boot-status probe before replacement or blocked classification
+  - running soft-stale threshold after 20 minutes without direct proof of life, which triggers suspect classification plus an explicit status probe
+  - running hard-stale threshold after 30 minutes of total running silence or 2 consecutive unanswered explicit probes after the soft threshold, which enters the existing replacement-or-stop recovery path
+- [x] Extend the shared runtime-state contract so timing evidence is explicit and grep-friendly. Add `builder_last_probe_at_utc`, `builder_last_probe_result`, `builder_suspect_since_utc`, and `builder_missed_probe_count` to the documented runtime state, and describe how they interact with existing fields such as `builder_spawn_requested_at_utc`, `builder_ready_at_utc`, `last_builder_direct_signal_at_utc`, and `last_progress_at_utc`.
+- [x] Update `cdd-master-chef/CODEX-ADAPTER.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-ADAPTER.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so all adapters share the same cadence and escalation semantics, while differing only in:
+  - how Master Chef performs a probe in that runtime
+  - what counts as direct runtime status there
+  - how a superseded or failed Builder session is closed or marked inactive there
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `scripts/test_master_chef_artifacts.sh`, and `scripts/validate_skills.py` so proof surfaces fail if docs regress to:
+  - no shared 5-minute active-check cadence
+  - passive stale checks only during ad hoc status requests
+  - immediate replacement at the first 20-minute running silence threshold
+  - Codex/Claude-only quiet-work semantics without the shared soft/hard stale ladder
+  - watchdog, cron, or timer-heartbeat supervision
+- [x] Append this step to `TODO.md` using the existing step template and keep the timing model explicit enough that a later implementer does not need surrounding chat to recover the intended behavior.
+
+### Implementation notes
+
+- Follow the official long-running-operation pattern rather than ad hoc silence guesses:
+  - active polling with bounded cadence
+  - explicit last-update/proof-of-life evidence
+  - separate short liveness threshold from a longer hard timeout
+- Boot and running should use different clocks:
+  - boot is anchored to `builder_spawn_requested_at_utc` until readiness is proven
+  - running silence is anchored to the latest direct Builder signal after `builder_phase` becomes `running`
+- Keep `20 minutes` as a soft stale threshold, not a kill switch. The first action there is probe-and-classify, not immediate replacement.
+- Keep `30 minutes` or `2 missed probes` as the harder replacement boundary so Master Chef remains patient on real long-running work without drifting into indefinite silence.
+- Do not add synthetic “still alive” chatter to logs or the session. Active monitoring means periodic evidence-based checks, not heartbeat spam.
+- Preserve the existing replacement budget and deadlock logic unless implementation review shows they must move into the same shared section for consistency.
+
+### Automated checks
+
+- `bash scripts/test_master_chef_artifacts.sh`
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the shared Master Chef docs and confirm they now require active Builder checks at least every 5 minutes while waiting.
+- Confirm the docs still forbid watchdog cron, timer-based heartbeat loops, and second control loops.
+- Confirm `10 minutes without readiness` is a boot-timeout boundary.
+- Confirm `20 minutes without direct running proof of life` triggers suspect classification plus an explicit probe, not immediate replacement.
+- Confirm `30 minutes total running silence` or `2 consecutive unanswered explicit probes` is the harder replacement boundary.
+- Confirm Codex, Claude, and OpenClaw adapter docs all use the same timing semantics and differ only in runtime-specific probe mechanics.
+- Confirm the validator and artifact script fail if docs regress to passive OpenClaw-only stale checks, Codex/Claude-only quiet-work windows, or watchdog-style supervision.

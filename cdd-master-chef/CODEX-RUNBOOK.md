@@ -104,7 +104,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Codex exposes them.
 - The current Codex adapter should not claim a clean official parent-visible subagent context meter, exact token-left budget, or other precise fullness percentage for Master Chef decisions.
 - Treat step-start compaction and context visibility separately: Master Chef may try a supported compaction surface if one ever exists in the active Codex path, but the current repo docs do not document one today.
-- Treat Builder monitoring as two phases: boot/readiness first, quiet-work monitoring second.
+- Treat Builder monitoring as two phases: boot/readiness first, running-silence monitoring second.
 - A returned spawn handle or `builder_session_key` is spawn evidence only. It is not enough to prove that Builder has started operating.
 - Keep `builder_phase: booting` until Codex surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record in `builder.jsonl`.
 - Use the shared boot prompt: `Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.`
@@ -112,13 +112,12 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - A `wait` result that says no agent has completed yet means `running` or `unknown`, not `dead`.
 - One unanswered direct status request is still inconclusive unless Codex also reports closure or failure.
 - Do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
-- Use a short boot window, about 2 minutes in foreground Codex flows, before the first boot-status probe.
-- For long-thinking or otherwise high-latency Builders, choose a longer quiet-work window before the first stale probe unless Codex reports direct failure sooner.
-- In foreground Codex flows, about 10 minutes is the default quiet-work window when the approved Builder effort is clearly high-latency; otherwise state the chosen quiet-work window explicitly at spawn time.
-- Apply the chosen quiet-work window only after `builder_phase` reaches `running`.
-- After that grace window, use one direct status request before replacement when the active Codex surface can send it coherently.
+- Keep active Builder checks on at least a 5-minute cadence while Master Chef is waiting. An earlier probe is allowed when that is cheap and coherent in the active Codex surface.
+- If no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`, send one final explicit boot-status probe before classifying the current Builder attempt as failed to start, blocked, or replaceable.
+- If 20 minutes pass without direct Builder proof of life after `builder_phase` reaches `running`, set `builder_suspect_since_utc`, write `builder_last_probe_at_utc` plus `builder_last_probe_result`, and send an explicit status request instead of replacing immediately.
+- Reset `builder_suspect_since_utc` and `builder_missed_probe_count` on any coherent direct Builder reply.
+- Replace Builder only after 30 minutes of total running silence, 2 consecutive unanswered explicit probes after suspect classification, or earlier direct failure, closure, blocker, deadlock, or worktree-safety evidence.
 - If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
-- Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, deadlock, unusable drift, inability to continue safely after status or worktree-safety checks, or no reply to that direct status probe after the grace window.
 - If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 
 ## 8) Blocked paths
