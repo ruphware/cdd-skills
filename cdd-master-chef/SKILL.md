@@ -31,7 +31,7 @@ Shared policy flow:
 
 - Session settings are best-effort facts: record unresolved current-session fields as `unknown` and continue with the active session as-is.
 - Startup is branch-backed and environment-backed: on fresh runs from long-lived branches, default to recommending a descriptive source feature branch, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
-- Builder lifecycle is persistent: keep the same Builder across normal delegated-step transitions, attempt step-start compaction when supported, and replace Builder only for recovery conditions.
+- Builder lifecycle is persistent: keep the same Builder across normal delegated-step transitions, attempt step-start compaction when supported, replace Builder only for recovery conditions, and retire older Builders after preserving evidence so one active Builder remains.
 - Oversized-looking work is reviewed first: keep the parent step when one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified.
 
 Operating contract:
@@ -110,6 +110,7 @@ Operating contract:
    - Before handing a new delegated step to the active Builder, Master Chef must attempt a Builder compaction operation when the runtime exposes a supported compaction command or API.
    - If the runtime does not expose a supported compaction command or API, keep the same Builder and rely on runtime auto-compaction or native context management instead of inventing a fake compaction path.
    - Replace Builder only as recovery after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely in the active worktree after compaction or direct status checks.
+   - If an older Builder is no longer needed after replacement or direct completion, preserve `builder_replacement_lineage` plus durable evidence, then close it or mark it inactive so one active Builder remains.
 13. Both Master Chef and Builder must append JSONL logs with concrete evidence for Builder spawn, Builder readiness, step start, validation, blockers, completion, and reporting.
 14. Use `hard_gate` and `soft_signal` validation classes:
    - `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
@@ -233,6 +234,7 @@ Runtime-state expectations for persistent Builder continuity:
 - `builder_session_key` is the active Builder identity and normally remains stable across delegated steps in the same run.
 - `builder_last_compaction_attempted_at_utc`, `builder_last_compaction_result`, and `builder_last_compaction_summary` capture the latest step-boundary compaction attempt or truthful fallback result such as `unsupported`, `auto`, or `native_context_management`.
 - `builder_replacement_lineage` records prior Builder identities, replacement reasons, and any parent-child handoff needed when recovery forces Builder replacement.
+- If an older Builder is no longer needed, preserve lineage and durable evidence, then close it or mark it inactive so one active Builder remains.
 
 Report events:
 

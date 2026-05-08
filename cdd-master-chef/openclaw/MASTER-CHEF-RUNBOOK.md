@@ -434,7 +434,7 @@ After kickoff approval:
    - update runtime state
    - advertise `STEP_PASS` with full detail in the current Master Chef session
 11. Re-inspect TODO state.
-12. If another runnable step exists, re-inspect repo and TODO state, attempt Builder compaction only when the active OpenClaw surface exposes a supported operation, and continue automatically with the same Builder when it remains usable; otherwise spawn a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`.
+12. If another runnable step exists, re-inspect repo and TODO state, attempt Builder compaction only when the active OpenClaw surface exposes a supported operation, and continue automatically with the same Builder when it remains usable; otherwise spawn a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`. If an older Builder is no longer needed, preserve lineage and durable evidence, then close it when the runtime exposes an explicit shutdown surface or mark it inactive so one active Builder identity remains in runtime state and control flow.
 13. If no runnable step remains, report `RUN_COMPLETE` with the final mission report.
 14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
 

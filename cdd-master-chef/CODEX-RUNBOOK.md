@@ -116,6 +116,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 - After that grace window, use one direct status request before replacement when the active Codex surface can send it coherently.
 - If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
 - Replace Builder only after direct failure, unexpected closure, an explicit Builder blocker, deadlock, unusable drift, inability to continue safely after status or worktree-safety checks, or no reply to that direct status probe after the grace window.
+- If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 
 ## 8) Blocked paths
 

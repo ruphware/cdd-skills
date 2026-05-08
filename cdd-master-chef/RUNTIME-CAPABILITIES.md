@@ -21,6 +21,7 @@ Shared policy anchors for every adapter in this package:
 - record unresolved current-session fields as `unknown` and continue with the active session as-is
 - recommend a descriptive source feature branch on fresh runs from long-lived branches, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
 - keep Builder persistent across normal delegated-step transitions, attempt step-start compaction only when supported, and replace Builder only for recovery conditions
+- preserve lineage and durable evidence, then close or mark older Builder sessions inactive so one active Builder remains after recovery or direct completion
 - review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
 
 All adapters in this package must satisfy the same startup gate:
@@ -39,6 +40,7 @@ All adapters in this package must satisfy the same startup gate:
 - OpenClaw-specific delta: when OpenClaw cannot expose an exact model or thinking value, record that field as `unknown`, report the limitation honestly, and continue kickoff.
 - OpenClaw-specific delta: provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, and bootstrap the repo-native environment after relaunch before autonomous implementation starts.
 - OpenClaw-specific delta: the packaged path now treats same-Builder continuation across delegated steps as the normal path after relaunch, but this repo does not document a manual Builder compaction command or a parent-visible context meter for OpenClaw.
+- OpenClaw-specific delta: when an older Builder is no longer needed, keep one active Builder identity in runtime state and control flow by closing the older session when the runtime exposes that surface or otherwise marking it inactive.
 
 ### Codex
 
@@ -51,6 +53,7 @@ All adapters in this package must satisfy the same startup gate:
 - The Codex adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
 - The Codex adapter must describe persistent Builder reuse conservatively, state that the current repo docs and local `codex --help` do not document a clean parent-visible manual Builder compaction command, and avoid claiming an official parent-visible subagent context meter.
 - The Codex adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
+- The Codex adapter must preserve lineage and durable evidence, then close or purge older child sessions promptly so only one live Builder remains visible after recovery or direct completion.
 - Current repo docs: `CODEX-ADAPTER.md`, `CODEX-RUNBOOK.md`, and `CODEX-TEST-HARNESS.md`.
 
 ### Claude Code
@@ -67,6 +70,7 @@ All adapters in this package must satisfy the same startup gate:
 - The Claude adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
 - The Claude adapter should describe persistent Builder reuse, manual `/compact` when the active Claude surface exposes it, auto-compaction fallback when it does not, and the lack of any trustworthy parent-visible exact subagent fullness percentage.
 - The Claude adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
+- The Claude adapter must preserve lineage and durable evidence, then close or purge older child sessions promptly so only one live Builder remains visible after recovery or direct completion.
 - Current repo docs: `CLAUDE-ADAPTER.md`, `CLAUDE-RUNBOOK.md`, and `CLAUDE-TEST-HARNESS.md`.
 
 ### Future adapters

@@ -175,6 +175,7 @@ Explain how Codex Master Chef should continue with the active Builder, what step
   - if no supported manual compaction path is exposed, the adapter keeps the same Builder and relies on native context management or runtime auto-compaction instead of inventing one
   - the adapter should not claim a clean official parent-visible context meter, exact token-left budget, or universal numeric threshold
   - replacement is reserved for explicit failure, runtime closure, deadlock, unusable drift, or inability to continue safely after status or worktree-safety checks
+  - if an older Builder is no longer needed, that child session is closed or purged promptly so only one live Builder remains visible while lineage and logs stay preserved
 
 ### Prompt J - Blocked-step autonomy
 
@@ -228,5 +229,6 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
 - [ ] Normal next-step continuation reused the same Builder first, attempted step-start compaction only when supported, and used native-context or auto-compaction fallback when manual compaction was unavailable.
+- [ ] Replacement or direct completion left only one live Builder visible after older child sessions were closed or purged with lineage and logs preserved.
 - [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.
 - [ ] Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and distinct closeout or continuation recommendations.

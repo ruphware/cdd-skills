@@ -85,6 +85,7 @@ Adapter implication:
 - A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
 - A quiet wait or one unanswered progress request is still inconclusive unless Claude also reports closure or failure.
 - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
+- If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 - When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
 
 ## 5) Session settings and Builder override

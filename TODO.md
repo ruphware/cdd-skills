@@ -1958,3 +1958,61 @@ Make Master Chef treat budget-stop `RUN_STOPPED` as a continuation-aware termina
 - Audit multiple TODO steps from one run and confirm the summary distinguishes the selected step ids, the implementation delta reviewed for them, and any remaining TODO or proof drift per step or per shared changed-file surface.
 - Confirm the validator fails if `RUN_STOPPED` regresses to the same closeout wording as `RUN_COMPLETE`.
 - Confirm the validator fails if `cdd-implementation-audit` regresses to step-section review without explicit implementation-delta review.
+
+## Step 48 — Encode shared single-Builder continuation, patient monitoring, and one-live-Builder hygiene across adapters
+
+### Goal
+
+Make `cdd-master-chef` state one shared Builder lifecycle for Codex, Claude, and OpenClaw: reuse one live Builder across normal delegated-step transitions, wait cautiously on clearly long-running Builder work before probing or replacing it, and close stopped, dead, or superseded Builder sessions promptly after preserving evidence so only the active Builder remains live in runtime-visible state.
+
+### Constraints
+
+- The shared Master Chef contract must be the source of truth for this lifecycle; adapter docs may describe runtime-specific mechanics, but they must not imply different Builder policy.
+- Do not regress the current boot/readiness rule: a returned `builder_session_key` is spawn evidence only, not readiness proof.
+- Do not treat one quiet wait, an empty diff, or an empty `builder.jsonl` as proof that Builder has died.
+- Do not erase runtime evidence when cleaning up Builder sessions: keep `builder_replacement_lineage`, JSONL logs, runtime state, and final mission-report history intact.
+- Keep runtime-specific wording honest: adapters may differ in compaction surface, handoff path, or session-management commands, but not in the underlying continuation, patience, or cleanup semantics.
+
+### Tasks
+
+- [x] Update `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, `cdd-master-chef/SKILL.md`, and `cdd-master-chef/RUNTIME-CAPABILITIES.md` so the shared Builder lifecycle states explicitly that:
+  - a passed step does not justify spawning a fresh Builder by default
+  - clearly long-running or high-latency Builder work gets an adapter-chosen quiet-work window before replacement logic starts
+  - one timed-out wait, one unanswered probe, no diff yet, or empty `builder.jsonl` is still inconclusive unless the runtime also reports closure or failure
+  - when replacement or direct Master Chef completion makes an older Builder unnecessary, Master Chef closes or purges that stopped, dead, or superseded Builder session only after preserving lineage and durable evidence, leaving one active Builder as the normal runtime-visible state
+- [x] Update `cdd-master-chef/CODEX-ADAPTER.md`, `cdd-master-chef/CODEX-RUNBOOK.md`, `cdd-master-chef/CLAUDE-ADAPTER.md`, `cdd-master-chef/CLAUDE-RUNBOOK.md`, `cdd-master-chef/openclaw/README.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` so each adapter restates the same lifecycle semantics and only differs in runtime-specific implementation details such as:
+  - explicit versus named-agent Builder launch
+  - whether manual Builder compaction exists
+  - whether worktree continuation is in-session or requires relaunch
+  - how a stopped or superseded Builder session is closed or marked no longer active in that runtime
+- [x] Update `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, and `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md` so prompt coverage and pass criteria explicitly test shared semantics across all adapters:
+  - no per-step respawn in the normal path
+  - longer quiet-work windows for clearly long-running Builder steps
+  - cautious replacement thresholds based on direct failure or closure evidence rather than one short quiet period
+  - one-live-Builder hygiene after replacement or completion, expressed in the runtime-appropriate surface
+- [x] Extend `scripts/validate_skills.py` so validation fails if the shared docs or any adapter docs regress to per-step Builder spawning, short-wait false-death logic, or adapter-specific semantic drift on stale-Builder cleanup while evidence preservation remains required.
+
+### Implementation notes
+
+- Treat lifecycle semantics as shared and mechanics as adapter-specific:
+  - shared semantics: same-Builder continuation by default, patient monitoring, recovery-only replacement, and one-live-Builder hygiene
+  - adapter mechanics: spawn mechanism, compaction mechanism, worktree relaunch behavior, and session-closing surface
+- “Close or purge” should mean runtime-visible cleanup of stopped or superseded child sessions, not deletion of durable logs or replacement lineage.
+- OpenClaw may not expose a user-visible agent list like Codex or Claude; in that adapter, the invariant is still one active Builder identity in runtime state and control flow, with older Builder sessions explicitly no longer active after replacement.
+- Because this repo has no project-local `.codex/agents/*.toml` today, keep the built-in `worker` path as the default documented Codex Builder shape unless a custom Codex agent is introduced later.
+- Prefer validator patterns that enforce shared semantics across docs rather than one exact sentence, but add narrow negative checks for known bad patterns such as “fresh Builder for each next step”.
+
+### Automated checks
+
+- `bash scripts/test_master_chef_artifacts.sh`
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the shared Master Chef docs and confirm they define one Builder lifecycle for all adapters rather than leaving continuation, patience, or cleanup semantics to runtime-specific interpretation.
+- Read the Codex, Claude, and OpenClaw adapter docs and confirm the normal next delegated step reuses the active Builder instead of spawning a fresh Builder for every passed step.
+- Confirm all three adapter surfaces say one short quiet period, no diff yet, or empty `builder.jsonl` is not enough to stop or replace Builder.
+- Confirm all three adapter surfaces say clearly long-running Builder work gets a longer quiet-work window before stale replacement logic begins, with only runtime-specific observation mechanics differing.
+- Confirm all three adapter surfaces say stopped, dead, or superseded Builder sessions are closed or marked no longer active once no longer needed so only one active Builder remains, while runtime lineage and logs stay preserved.
+- Confirm the validator fails if shared docs or any adapter docs reintroduce per-step respawn, premature stale classification, or adapter-specific semantic drift on stale-Builder cleanup.

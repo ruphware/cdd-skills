@@ -228,6 +228,7 @@ If the run is complete, send the final mission report covering completed work an
   - if the active OpenClaw surface does not expose a supported manual Builder compaction operation, the next-step handoff relies on native context management rather than inventing one
   - the adapter should not claim a documented parent-visible Builder fullness meter, exact token-left budget, or universal numeric threshold
   - if replacement is needed instead, it is justified by explicit recovery conditions rather than treated as the normal step-transition path
+  - if an older Builder is no longer needed, it is closed when the runtime supports it or marked inactive so one active Builder identity remains in runtime state and control flow while lineage and logs stay preserved
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
   - run completion emits a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, and decisions made
   - for `RUN_COMPLETE`, the report includes the shared closeout recommendation bundle:
@@ -334,6 +335,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Master Chef chose the correct routing path for the repo state.
 - [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
 - [ ] Normal next-step continuation reused the same Builder first, used native-context fallback when manual Builder compaction was unsupported, and replaced Builder only under defined recovery conditions.
+- [ ] Replacement or direct completion left one active Builder identity in runtime state and control flow after older Builder sessions were closed or marked inactive with lineage and logs preserved.
 - [ ] Builder session resurrection was not used as the normal continuation or recovery path.
 - [ ] Passed Builder steps updated only the selected TODO step on success.
 - [ ] Passed steps included QA, UAT, commit, push, and reporting.

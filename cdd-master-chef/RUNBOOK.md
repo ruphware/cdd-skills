@@ -196,6 +196,7 @@ Normal delegated-step transition uses one persistent Builder per active run.
 - Before a new delegated step, attempt Builder compaction only when the runtime exposes a supported command or API.
 - If no supported compaction surface exists, keep the same Builder and rely on runtime auto-compaction or native context management instead of inventing one.
 - Replace Builder only as recovery after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after compaction or direct status checks.
+- If an older Builder is no longer needed after replacement or direct completion, preserve lineage and durable evidence, then close it or mark it inactive so one active Builder remains.
 
 ### Shared Builder-run viability review
 

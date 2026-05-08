@@ -125,6 +125,15 @@ MASTER_CHEF_COMPACTION_FALLBACK_REGEX = (
 MASTER_CHEF_REPLACEMENT_ONLY_REGEX = (
     r"(?:Replace Builder only after|replace Builder only after|replacement is reserved for|replacement only.*(?:failure|closure|deadlock|unusable drift)|recovery conditions require it|recovery-only)"
 )
+MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX = (
+    r"(?:one active Builder(?: identity)?|one active Builder remains|only one live Builder remains visible|one live Builder remains visible)"
+)
+MASTER_CHEF_BUILDER_CLEANUP_REGEX = (
+    r"(?:close(?:d)?|purge(?:d)?|mark(?:ed)? .*inactive|mark(?:ed)? .*no longer active|mark it inactive|mark it no longer active|marking it inactive|marking it no longer active).*(?:Builder|child session)|(?:Builder|child session).*(?:close(?:d)?|purge(?:d)?|inactive|no longer active)"
+)
+MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX = (
+    r"(?:lineage and durable evidence|`builder_replacement_lineage` plus durable evidence|lineage and logs stay preserved|after lineage and logs were preserved|lineage and logs were preserved)"
+)
 MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX = (
     r"(?:do not claim|should not claim|no clean official|lack of any trustworthy|no documented|unsupported universal).*(?:context meter|token-left|fullness percentage|numeric threshold|context threshold)"
 )
@@ -950,6 +959,9 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"10 minutes.*quiet-work window.*high-latency",
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent Builder reply.*proof of life",
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
             MASTER_CHEF_FINAL_REPORT_REGEX,
             MASTER_CHEF_TODO_CHECKLIST_REGEX,
@@ -1043,6 +1055,9 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
             r"10 minutes.*quiet-work window.*high-latency",
             r"quiet-work window.*`builder_phase`.*`running`",
             r"coherent discovery note.*proof of life",
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
             MASTER_CHEF_FINAL_REPORT_REGEX,
             MASTER_CHEF_TODO_CHECKLIST_REGEX,
@@ -1072,6 +1087,16 @@ def validate_master_chef_shared_contract(repo_root: Path) -> None:
         ),
         matrix_md,
         "runtime capability matrix entries",
+    )
+    require_regexes(
+        matrix_text,
+        (
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
+        ),
+        matrix_md,
+        "runtime capability lifecycle hygiene",
     )
 
     require_substrings(
@@ -1145,6 +1170,9 @@ def validate_codex_adapter(repo_root: Path) -> None:
             r"runtime-reported completion/failure.*status replies.*closure/error",
             r"inconclusive unless Codex also reports closure or failure",
             r"proof of life rather than proof of death",
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
         ),
         adapter_md,
         "Codex adapter monitoring topics",
@@ -1221,6 +1249,9 @@ def validate_codex_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
             MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
             r"Do not split too eagerly.*one-run failure-risk evidence",
@@ -1291,6 +1322,9 @@ def validate_codex_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
             MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
@@ -1373,6 +1407,9 @@ def validate_claude_adapter(repo_root: Path) -> None:
             r"runtime-reported completion/failure.*status replies.*closure/error",
             r"inconclusive unless Claude also reports closure or failure",
             r"proof of life rather than proof of death",
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
         ),
         adapter_md,
         "Claude adapter monitoring topics",
@@ -1454,6 +1491,9 @@ def validate_claude_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
             MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
             r"Do not split too eagerly.*one-run failure-risk evidence",
@@ -1525,6 +1565,9 @@ def validate_claude_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
             MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the next smaller actionable child step",
@@ -1655,6 +1698,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             r"(long-thinking|high-latency).*quiet-work window",
             r"10 minutes.*quiet-work window.*high-latency",
             r"coherent Builder reply.*proof of life rather than proof of death",
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
         ),
         skill_md,
         "OpenClaw skill monitoring topics",
@@ -1721,6 +1767,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_SAME_BUILDER_REGEX,
             MASTER_CHEF_STEP_COMPACTION_REGEX,
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"same repaired parent step or (?:from )?the first runnable child step",
             MASTER_CHEF_TODO_CHECKLIST_REGEX,
@@ -1769,6 +1818,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_SAME_BUILDER_REGEX,
             MASTER_CHEF_STEP_COMPACTION_REGEX,
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             MASTER_CHEF_FINAL_REPORT_REGEX,
             MASTER_CHEF_TODO_CHECKLIST_REGEX,
@@ -1828,6 +1880,9 @@ def validate_openclaw_adapter(repo_root: Path) -> None:
             MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
             MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
             MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
+            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
+            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
+            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
             r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
             r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
             r"same repaired parent step or the first runnable child step",
