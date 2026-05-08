@@ -345,6 +345,27 @@ def validate_plan_edge_case_review_contract(skill_text: str, skill_md: Path) -> 
     )
 
 
+def validate_implementation_audit_question_efficiency_contract(
+    skill_text: str, skill_md: Path
+) -> None:
+    """Assert the implementation-audit skill asks only high-yield major questions."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"(?:material edge-case and failure-path gaps|edge-case and failure-path gaps).*(?:audit conclusion|recommended `cdd-plan` follow-up)|Review edge-case and failure-path gaps only when they could materially change",
+            r"Collapse duplicate or closely related audit ambiguities.*smallest root decision",
+            r"Ask only when the answer could materially change the audit conclusion.*fewest questions.*most audit uncertainty",
+            r"highest-leverage (?:question|one) first.*finding validity.*severity.*grouping.*affected boundary.*recommended next path",
+            r"one combined clarification.*separate repetitive questions|combined clarification instead of separate repetitive questions",
+            r"current recommended finding direction.*what audit conclusion would change",
+            r"Do not re-ask a question already answered.*repo evidence.*accepted audit assumption",
+            r"minor ambiguities.*report-only|Minor findings and minor ambiguities can stay report-only",
+        ),
+        skill_md,
+        "implementation-audit question-efficiency topics",
+    )
+
+
 def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None:
     """Assert the plan skill absorbs audit-input normalization cleanly."""
     require_topic_bundle(
@@ -784,6 +805,10 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     if skill_dir.name == "cdd-plan":
         validate_plan_final_apply_options(skill_text, skill_md)
         validate_plan_edge_case_review_contract(skill_text, skill_md)
+    if skill_dir.name == "cdd-implementation-audit":
+        validate_implementation_audit_question_efficiency_contract(
+            skill_text, skill_md
+        )
 
     if include_legacy_prose:
         if skill_dir.name == "cdd-implement-todo":

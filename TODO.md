@@ -2063,3 +2063,58 @@ Make `cdd-plan` explicitly review repo-grounded edge cases for behavior-changing
 - Confirm unresolved `major` edge cases become one clarifying question at a time and only when they could materially change boundaries, contracts, data/state model, user-visible behavior, rollout/migration, or validation strategy.
 - Confirm `minor` edge cases stay non-blocking and are carried into the plan as recommended defaults or implementation notes rather than becoming clarification questions.
 - Confirm the validator fails if the qualifying-request trigger, `Edge-case review` section, major-edge escalation rule, or non-blocking minor-default rule is removed.
+
+## Step 50 — Make cdd-implementation-audit ask only the highest-yield major audit questions
+
+### Goal
+
+Make `cdd-implementation-audit` surface edge-case and failure-path gaps in an audit-native way, collapse related ambiguities into root decisions, and ask only the highest-yield unresolved major audit question at a time before finalizing findings.
+
+### Constraints
+
+- Keep `cdd-implementation-audit` read-only and audit-only; do not drift into planning or TODO drafting.
+- Do not add a planning-style standalone `Edge-case review` section.
+- `Major` audit ambiguity means it could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended `cdd-plan` follow-up.
+- Minor ambiguities should stay report-only unless they materially change the recommended follow-up.
+- Preserve the existing one-substantive-question-per-message and selector-based decision flow.
+- Do not re-ask a question already answered by the user, already resolved by repo evidence, or already covered by an accepted audit assumption.
+
+### Tasks
+
+- [x] Update `skills/cdd-implementation-audit/SKILL.md` so the Interaction contract and Flow require audit-time review of relevant edge-case and failure-path gaps when they materially affect audit conclusions, without introducing a separate planning-style section.
+- [x] Require `skills/cdd-implementation-audit/SKILL.md` to collapse duplicate or closely related audit ambiguities into the smallest root decision that can be discussed cleanly before surfacing a question.
+- [x] Require `skills/cdd-implementation-audit/SKILL.md` to ask the highest-leverage unresolved `major` audit question first, meaning the one whose answer resolves the most uncertainty about finding validity, severity, grouping, affected boundary, or recommended next path.
+- [x] Require `skills/cdd-implementation-audit/SKILL.md` to keep major audit questions efficient:
+  - combine multiple related ambiguities into one clarification when they share the same root decision
+  - state the current recommended finding direction
+  - state what audit conclusion would change if the answer differs
+  - avoid preference polls
+- [x] Require `skills/cdd-implementation-audit/SKILL.md` to keep minor ambiguities report-only by default and record them directly in findings, proof gaps, or follow-up notes instead of turning them into user questions.
+- [x] Extend `scripts/validate_skills.py` so validation fails if the audit skill no longer requires root-decision collapse, highest-yield major-question ordering, non-repetition, or report-only handling for minor ambiguities.
+
+### Implementation notes
+
+- Keep this audit-native rather than planning-native:
+  - `cdd-plan` asks plan-shaping questions
+  - `cdd-implementation-audit` asks only when unresolved ambiguity would materially change the audit conclusion
+- Acceptable audit ambiguity sources include:
+  - missing or ambiguous failure-path intent
+  - unclear contract expectations in docs or TODO steps
+  - uncertainty about whether behavior is intentional versus a defect
+  - uncertainty that changes severity or whether multiple symptoms are one root cause
+- Keep the output compact: the skill does not need a standalone edge-case section as long as those gaps are folded into normalized findings and question selection.
+- Touch only `skills/cdd-implementation-audit/SKILL.md` and `scripts/validate_skills.py` unless a failing check proves another surface is required.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated audit skill and confirm it stays read-only and audit-only while explicitly handling major edge-case and failure-path ambiguities.
+- Confirm the updated audit skill collapses related ambiguities into root decisions instead of asking repetitive adjacent questions.
+- Confirm the first audit clarification question is the highest-leverage unresolved major ambiguity rather than the first issue discovered.
+- Confirm each major audit question states the current recommended finding direction and what audit conclusion would change if answered differently.
+- Confirm minor ambiguities stay report-only unless they materially change the recommended follow-up.
+- Confirm the validator fails if root-decision collapse, highest-yield question ordering, non-repetition, or report-only minor handling is removed.

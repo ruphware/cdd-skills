@@ -87,6 +87,7 @@ Do not emit raw audit bullets as the final output.
   - evidence or proof surface
   - recommended next path
 - Collapse duplicate symptoms into the smallest root-cause finding that can be discussed and planned cleanly.
+- Fold material edge-case and failure-path gaps into normalized findings; do not add a separate planning-style section for them.
 - When follow-up should go to `cdd-plan`, map approved findings into one or more of:
   - `spec_delta`
   - `implementation_delta`
@@ -98,8 +99,15 @@ This skill is interactive, read-only, and decision-driven.
 
 - Stay read-only during the audit.
 - Do not patch code, docs, or TODO files in this skill.
+- Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended `cdd-plan` follow-up.
+- Collapse duplicate or closely related audit ambiguities into the smallest root decision that can be discussed cleanly.
 - Ask at most one substantive clarification or decision question per message.
+- Ask only when the answer could materially change the audit conclusion, and prefer the fewest questions that resolve the most audit uncertainty.
 - Major findings must be checked with the user one at a time unless multiple findings clearly collapse into one root-cause decision.
+- When several unresolved major ambiguities remain, ask the highest-leverage one first: prefer the question whose answer resolves the most uncertainty about finding validity, severity, grouping, affected boundary, or recommended next path.
+- When multiple major ambiguities share one underlying decision, ask one combined clarification instead of separate repetitive questions.
+- Each major clarification should state the current recommended finding direction and what audit conclusion would change if the answer differs.
+- Do not re-ask a question already answered by the user, already resolved by repo evidence, or already covered by an accepted audit assumption.
 - Put decision choices at the bottom under a final `**Options**` section.
 - Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key.
 - default to letters: `A.`, `B.`, `C.`.
@@ -110,7 +118,7 @@ This skill is interactive, read-only, and decision-driven.
   - `B. Postpone or backlog`
   - `C. Accept current state`
   - `D. Reject finding or ask for more evidence`
-- Minor findings can stay report-only unless they materially change the recommended follow-up.
+- Minor findings and minor ambiguities can stay report-only unless they materially change the recommended follow-up.
 
 ## Flow
 1) Read the contract docs and the relevant implementation surfaces for the chosen scope.
@@ -119,8 +127,10 @@ This skill is interactive, read-only, and decision-driven.
 4) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
 5) Audit code, tests, docs, configs, manifests, entrypoints, and validation surfaces together; do not audit code in isolation when the contract or tests are part of the issue.
 6) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion.
-7) Normalize findings into root-cause items with explicit evidence.
-8) Report concise minor findings and surface major findings one at a time with `**Options**`.
+7) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
+8) Collapse related unresolved ambiguities into root decisions. Ask only when an unresolved major ambiguity could materially change the audit conclusion; otherwise report the finding directly.
+   - Ask the highest-leverage unresolved major question first.
+   - Use one combined clarification when several related ambiguities share one underlying decision.
 9) Keep a running list of:
    - findings approved for planning now
    - findings deferred
