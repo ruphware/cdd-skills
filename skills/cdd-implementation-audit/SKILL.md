@@ -93,6 +93,8 @@ Do not emit raw audit bullets as the final output.
   - `implementation_delta`
   - `verification_delta`
   - `defer`
+- For non-trivial `code quality` and `test quality` findings, cite the file, symbol, diff, failing or missing test, or equivalent proof surface, and keep the finding concrete, evidence-backed, and behavior-relevant.
+- Prioritize correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost. Avoid style-only notes or vague refactor advice unless you can state a real behavior risk, confidence gap, or maintenance payoff.
 
 ## Interaction contract
 This skill is interactive, read-only, and decision-driven.
@@ -101,9 +103,10 @@ This skill is interactive, read-only, and decision-driven.
 - Do not patch code, docs, or TODO files in this skill.
 - Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended `cdd-plan` follow-up.
 - Collapse duplicate or closely related audit ambiguities into the smallest root decision that can be discussed cleanly.
-- Ask at most one substantive clarification or decision question per message.
-- Ask only when the answer could materially change the audit conclusion, and prefer the fewest questions that resolve the most audit uncertainty.
-- Major findings must be checked with the user one at a time unless multiple findings clearly collapse into one root-cause decision.
+- Ask at most one substantive clarification or decision question per message, and use ambiguity clarifications only when the answer could materially change the audit conclusion.
+- Prefer the fewest questions that resolve the most audit uncertainty.
+- Separate ambiguity resolution from finding approval: resolving an ambiguity does not approve a major finding for planning.
+- Once a major finding is sufficiently proven and recommends follow-up, surface it to the user one at a time unless multiple findings clearly collapse into one root-cause decision.
 - When several unresolved major ambiguities remain, ask the highest-leverage one first: prefer the question whose answer resolves the most uncertainty about finding validity, severity, grouping, affected boundary, or recommended next path.
 - When multiple major ambiguities share one underlying decision, ask one combined clarification instead of separate repetitive questions.
 - Each major clarification should state the current recommended finding direction and what audit conclusion would change if the answer differs.
@@ -114,7 +117,7 @@ This skill is interactive, read-only, and decision-driven.
 - use numbers only when the surrounding context is already numeric and that would be clearer.
 - When practical, tell the user they can reply with just the selector.
 - Default major-finding options:
-  - `A. Plan fix now in cdd-plan`
+  - `A. Approve for cdd-plan`
   - `B. Postpone or backlog`
   - `C. Accept current state`
   - `D. Reject finding or ask for more evidence`
@@ -131,12 +134,15 @@ This skill is interactive, read-only, and decision-driven.
 8) Collapse related unresolved ambiguities into root decisions. Ask only when an unresolved major ambiguity could materially change the audit conclusion; otherwise report the finding directly.
    - Ask the highest-leverage unresolved major question first.
    - Use one combined clarification when several related ambiguities share one underlying decision.
-9) Keep a running list of:
+9) Once a major finding is sufficiently proven and recommends follow-up, surface each planning-relevant major finding or collapsed root-cause finding one at a time with `**Options**` so it is either approved for planning now, deferred, accepted as-is, or rejected.
+   - Resolving ambiguity does not approve the finding for planning.
+   - Use one approval decision when several symptoms clearly collapse into one root-cause finding.
+10) Keep a running list of:
    - findings approved for planning now
    - findings deferred
    - findings accepted as-is
    - findings rejected or needing more evidence
-10) When the audit is complete, return a final audit summary that includes:
+11) When the audit is complete, return a final audit summary that includes:
    - audited scope
    - selected TODO step ids when the scope is step-scoped
    - which implementation delta or changed-file or commit surface was reviewed when the scope is step-scoped
@@ -148,7 +154,10 @@ This skill is interactive, read-only, and decision-driven.
    - deferred or accepted findings
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
-11) End by recommending `$cdd-plan` for the approved findings set.
+12) End with selector-labeled next actions.
+   - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
+   - If approved findings exist, make `A. run cdd-plan on the approved findings` the recommended first option.
+   - Otherwise, do not recommend an empty `$cdd-plan` invocation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
 - If the user asks to fix findings directly from this skill, stop and recommend `$cdd-plan` first.

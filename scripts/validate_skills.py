@@ -354,7 +354,8 @@ def validate_implementation_audit_question_efficiency_contract(
         (
             r"(?:material edge-case and failure-path gaps|edge-case and failure-path gaps).*(?:audit conclusion|recommended `cdd-plan` follow-up)|Review edge-case and failure-path gaps only when they could materially change",
             r"Collapse duplicate or closely related audit ambiguities.*smallest root decision",
-            r"Ask only when the answer could materially change the audit conclusion.*fewest questions.*most audit uncertainty",
+            r"Ask (?:ambiguity clarifications )?only when the answer could materially change the audit conclusion|ambiguity clarifications.*materially change the audit conclusion",
+            r"fewest questions.*most audit uncertainty|Prefer the fewest questions that resolve the most audit uncertainty",
             r"highest-leverage (?:question|one) first.*finding validity.*severity.*grouping.*affected boundary.*recommended next path",
             r"one combined clarification.*separate repetitive questions|combined clarification instead of separate repetitive questions",
             r"current recommended finding direction.*what audit conclusion would change",
@@ -363,6 +364,30 @@ def validate_implementation_audit_question_efficiency_contract(
         ),
         skill_md,
         "implementation-audit question-efficiency topics",
+    )
+
+
+def validate_implementation_audit_approval_closeout_contract(
+    skill_text: str, skill_md: Path
+) -> None:
+    """Assert the implementation-audit skill restores finding approval and closeout routing."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"Separate ambiguity resolution from finding approval.*does not (?:auto-approve|approve)",
+            r"sufficiently proven.*recommends follow-up.*one at a time|planning-relevant major finding.*one at a time",
+            r"`A\.\s*Approve (?:this finding )?for cdd-plan`",
+            r"Keep a running list of:.*findings approved for planning now.*findings deferred.*findings accepted as-is.*findings rejected or needing more evidence",
+            r"concrete, evidence-backed, and behavior-relevant",
+            r"Cite the file, symbol, diff, failing or missing test, or equivalent proof surface|For non-trivial `code quality` and `test quality` findings.*file, symbol, diff",
+            r"correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost",
+            r"Avoid style-only notes.*vague refactor advice.*risk.*confidence gap.*maintenance payoff|Avoid style-only notes.*vague refactor advice",
+            r"repo-local `NEXT` section.*`AGENTS\.md`.*final `\*\*Options\*\*` section|Use the repo-local `NEXT` section when `AGENTS\.md` defines one; otherwise use a final `\*\*Options\*\*` section",
+            r"`A\.\s*run cdd-plan on the approved findings`",
+            r"no approved findings.*do not recommend an empty `\$?cdd-plan` invocation|Otherwise.*do not recommend an empty `\$?cdd-plan` invocation|If no approved findings exist.*do not recommend an empty",
+        ),
+        skill_md,
+        "implementation-audit approval and closeout topics",
     )
 
 
@@ -438,8 +463,9 @@ def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) ->
             r"affected boundary",
             r"evidence or proof surface",
             r"Collapse duplicate symptoms|Collapse duplicate findings",
-            r"Major findings.*one at a time|one at a time unless multiple findings clearly collapse into one root-cause decision",
-            r"`A\.\s*Plan fix now in cdd-plan`",
+            r"Separate ambiguity resolution from finding approval.*does not (?:auto-approve|approve)",
+            r"Major findings.*one at a time|one at a time unless multiple findings clearly collapse into one root-cause decision|sufficiently proven.*recommends follow-up.*one at a time",
+            r"`A\.\s*Approve (?:this finding )?for cdd-plan`",
             r"`B\.\s*Postpone or backlog`",
             r"`C\.\s*Accept current state`",
             r"`D\.\s*Reject finding or ask for more evidence`",
@@ -453,6 +479,10 @@ def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) ->
             r"concrete implementation delta reviewed for that scope",
             IMPLEMENTATION_DELTA_SUMMARY_REGEX,
             r"notable missing proof surfaces, docs, specs, or tests",
+            r"concrete, evidence-backed, and behavior-relevant",
+            r"Cite the file, symbol, diff, failing or missing test, or equivalent proof surface|For non-trivial `code quality` and `test quality` findings.*file, symbol, diff",
+            r"Avoid style-only notes.*vague refactor advice",
+            r"`A\.\s*run cdd-plan on the approved findings`",
             r"recommend `\$?cdd-plan`",
         ),
         skill_md,
@@ -832,6 +862,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         validate_implementation_audit_question_efficiency_contract(
             skill_text, skill_md
         )
+        validate_implementation_audit_approval_closeout_contract(skill_text, skill_md)
 
     if include_legacy_prose:
         if skill_dir.name == "cdd-implement-todo":

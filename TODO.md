@@ -2198,3 +2198,50 @@ Make `cdd-plan` explicitly frame each request, follow an approval-gated bounded-
 - Confirm the updated skill includes a visible `Question economy` section with clarification priorities, prohibited low-value question types, and the default clarification budgets.
 - Confirm the old material-assumption confirmation rule is replaced by the new “ask only when the remaining assumption would invalidate or materially reshape the plan” rule.
 - Confirm the validator fails if the bounded-bisection flow, question-economy contract, or replacement assumption logic is removed, or if the old `confirm or correct them before continuing` wording returns.
+
+## Step 53 — Restore per-finding approval in cdd-implementation-audit and sharpen audit closeout
+
+### Goal
+
+Make `cdd-implementation-audit` explicitly triage major findings for planning inclusion one at a time again, improve the code-audit signal so findings stay concrete and evidence-backed, and end audit runs with selector-labeled next actions that route approved findings into `cdd-plan`.
+
+### Constraints
+
+- Keep `cdd-implementation-audit` read-only and audit-only; do not drift into planning or implementation.
+- Preserve the Step 50 ambiguity-handling improvements, but separate `ambiguity resolution` from `finding approval`: even when a major finding is already proven, it must still be surfaced to the user if it recommends planning follow-up.
+- Preserve the existing root-cause collapse rule: when multiple symptoms or ambiguities clearly collapse into one root-cause finding, one combined approval decision is enough.
+- Keep minor findings report-only by default unless they materially change the recommended follow-up.
+- Preserve letter selectors as the canonical interaction surface across the skill pack.
+- When approved findings exist, the final next-action bundle must make `A. run cdd-plan on the approved findings` the recommended first option.
+- If no approved findings exist, do not recommend an empty `cdd-plan` invocation; offer non-planning selector options instead.
+- Touch only `skills/cdd-implementation-audit/SKILL.md` and `scripts/validate_skills.py` unless a failing proof shows another surface is required.
+
+### Tasks
+
+- [x] Update `skills/cdd-implementation-audit/SKILL.md` so the Interaction contract and Flow clearly separate `major ambiguity clarification` from `major finding approval`, restoring the requirement that each major finding or collapsed root-cause finding that recommends follow-up is surfaced to the user one at a time with selector-based options that decide whether it enters the approved planning set.
+- [x] Update `skills/cdd-implementation-audit/SKILL.md` so the code audit stays higher-signal: require code-quality and test-quality findings to be concrete, evidence-backed, and behavior-relevant; cite the file/symbol/diff or proof surface for non-trivial findings; prioritize correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost; and avoid style-only or vague refactor advice without a stated risk or payoff.
+- [x] Update `skills/cdd-implementation-audit/SKILL.md` so the final audit summary ends with selector-labeled next actions using the repo-local `NEXT` section when `AGENTS.md` defines one or a final `**Options**` section otherwise; when approved findings exist, require `A. run cdd-plan on the approved findings` first, followed by concrete backlog/stop/re-audit alternatives.
+- [x] Extend `scripts/validate_skills.py` so validation fails if `cdd-implementation-audit` again allows proven major findings to bypass user approval, drops the evidence-first code-audit rules, or loses the lettered final closeout options with the `A. run cdd-plan on the approved findings` handoff when applicable.
+
+### Implementation notes
+
+- The repo-grounded drift source is commit `78a432c`, which replaced the old flow sentence `Report concise minor findings and surface major findings one at a time with **Options**` with an ambiguity-only question gate while leaving the older “major findings must be checked with the user one at a time” rule in place.
+- Fix that contradiction by restoring a two-stage audit decision flow:
+  1. resolve only material major ambiguities when needed
+  2. triage each major finding for planning inclusion even when no ambiguity remains
+- Keep the existing per-finding option family separate from the final next-action bundle. Per-finding triage decides whether a finding is approved, deferred, accepted, or rejected; the final next-action bundle decides what to do with the approved set.
+- Prefer proof surfaces keyed to behavior and capability boundaries rather than one exact sentence, but keep a small canonical phrase family for the final closeout selector so the skill pack stays grep-friendly.
+- `skills/cdd-implementation-audit/agents/openai.yaml` can remain unchanged unless the revised contract makes its short description materially misleading.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-implementation-audit/SKILL.md` and confirm major ambiguity resolution and major finding approval are separate stages.
+- Confirm a proven major finding that recommends follow-up is still surfaced to the user one at a time for approval even when no ambiguity remains.
+- Confirm code-quality and test-quality findings now require concrete evidence or proof surfaces and explicitly avoid style-only low-signal findings.
+- Confirm the final closeout now uses selector-labeled next actions and makes `A. run cdd-plan on the approved findings` the first option when approved findings exist.
+- Confirm the validator fails if the flow regresses to ambiguity-only questioning, if evidence-first code-audit rules are removed, or if the final closeout loses its lettered `cdd-plan` handoff options.
