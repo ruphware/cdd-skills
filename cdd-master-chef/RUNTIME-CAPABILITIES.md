@@ -2,7 +2,7 @@
 
 This matrix records the current capability boundaries for the shared `cdd-master-chef` contract.
 
-Runtime adapters may be stricter than this matrix, but they must not claim broader behavior than the documented or observed runtime surface can support.
+Runtime adapters may be stricter than this matrix, but they must not claim broader behavior than the documented or observed runtime surface can support, and they must not restate shared Builder lifecycle policy as if it were runtime-specific.
 
 Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. Additional adapters can be added for other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, but no such adapter ships here today.
 
@@ -24,6 +24,18 @@ Shared policy anchors for every adapter in this package:
 - preserve lineage and durable evidence, then close or mark older Builder sessions inactive so one active Builder remains after recovery or direct completion
 - review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
 
+## Runtime mechanics only
+
+The shared contract already fixes Builder continuation, monitoring, replacement thresholds, and one-active-Builder hygiene for every adapter in this package. The remaining differences are runtime mechanics only:
+
+- delegation trigger and explicit agent-selection surface
+- agent configuration and install surface
+- nesting and control-loop boundaries
+- tool, MCP, sandbox, and approval inheritance
+- worktree activation, relaunch, or fallback handoff
+- child-session visibility, compaction, and parent-visible context-budget surface
+- child-session close or inactive-marking surface after lineage and durable evidence are preserved
+
 All adapters in this package must satisfy the same startup gate:
 
 - optionally recommend and record a descriptive source feature branch on fresh runs from long-lived branches
@@ -37,40 +49,30 @@ All adapters in this package must satisfy the same startup gate:
 
 - The repo currently ships the OpenClaw adapter docs in `cdd-master-chef/openclaw/`.
 - The OpenClaw adapter is the current packaged runtime adapter, but it is not the only current adapter in this package.
-- OpenClaw-specific delta: when OpenClaw cannot expose an exact model or thinking value, record that field as `unknown`, report the limitation honestly, and continue kickoff.
-- OpenClaw-specific delta: provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, and bootstrap the repo-native environment after relaunch before autonomous implementation starts.
-- OpenClaw-specific delta: the packaged path now treats same-Builder continuation across delegated steps as the normal path after relaunch, but this repo does not document a manual Builder compaction command or a parent-visible context meter for OpenClaw.
-- OpenClaw-specific delta: when an older Builder is no longer needed, keep one active Builder identity in runtime state and control flow by closing the older session when the runtime exposes that surface or otherwise marking it inactive.
+- Session settings: when OpenClaw cannot expose an exact model or thinking value, record that field as `unknown`, report the limitation honestly, and continue kickoff.
+- Worktree: provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, then bootstrap the repo-native environment after relaunch before autonomous implementation starts.
+- Monitoring and compaction: same-Builder continuation remains the normal path after relaunch, but this repo does not document a manual Builder compaction command or a parent-visible context meter for OpenClaw.
+- Cleanup: when an older Builder is no longer needed, close the older session when the runtime exposes that surface or otherwise mark it inactive so one active Builder identity remains in runtime state and control flow.
 
 ### Codex
 
-- Treat Builder delegation as explicit and intentional.
-- Project-level agent configuration belongs under `.codex/agents/*.toml`.
-- The Codex adapter must define how current session model and thinking are observed when available, how `unknown` is reported when the runtime does not expose an exact field, and how optional Builder overrides map onto the actual runtime configuration surface.
-- The Codex adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
-- The Codex adapter must also define whether a managed worktree can become active in-session or only after a fallback handoff rooted in that worktree.
-- The Codex adapter must define how the active worktree environment is bootstrapped and evidenced before Builder or `hard_gate` validation rely on it.
-- The Codex adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
-- The Codex adapter must describe persistent Builder reuse conservatively, state that the current repo docs and local `codex --help` do not document a clean parent-visible manual Builder compaction command, and avoid claiming an official parent-visible subagent context meter.
-- The Codex adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
-- The Codex adapter must preserve lineage and durable evidence, then close or purge older child sessions promptly so only one live Builder remains visible after recovery or direct completion.
+- Delegation: treat Builder delegation as explicit and intentional, and keep project-level agent configuration under `.codex/agents/*.toml`.
+- Session settings and kickoff: observe current session model and thinking when available, report `unknown` when a field is not exposed, map optional Builder overrides onto the runtime configuration surface, and keep the Builder start plus run step budget inside kickoff before any fallback handoff.
+- Worktree: define whether a managed worktree can become active in-session or only after a fallback handoff rooted in that worktree, and bootstrap plus evidence the active worktree environment before Builder or `hard_gate` validation rely on it.
+- Monitoring and compaction: do not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it; current repo docs and local `codex --help` do not document a clean parent-visible manual Builder compaction command or an official parent-visible subagent context meter.
+- Readiness and cleanup: require a real Builder readiness signal before treating the child as live, and preserve lineage and durable evidence before closing or purging older child sessions so only one live Builder remains visible after recovery or direct completion.
 - Current repo docs: `CODEX-ADAPTER.md`, `CODEX-RUNBOOK.md`, and `CODEX-TEST-HARNESS.md`.
 
 ### Claude Code
 
 - Current local CLI surface checked in this repo on 2026-05-04: `claude 2.1.126`.
 - Visible session and runtime flags include `--agent`, `--agents`, `--worktree`, `--tmux`, `--effort`, and `--permission-mode auto`.
-- Project and user agent surfaces are `.claude/agents/` and `~/.claude/agents/`.
-- Use explicit Builder selection when the delegated role must be deterministic, even though Claude can also delegate automatically.
-- Background subagents inherit only pre-approved permissions; do not rely on them for interactive recovery.
-- The Claude adapter must define how current session model and thinking are observed when available, how `unknown` is reported when the runtime does not expose an exact field, and how optional Builder overrides are honored or rejected.
-- Adapter rules must distinguish in-session continuation from startup-time fallback handoff support.
-- The Claude adapter must also define how kickoff approval captures the run step budget and Builder start decision before any fallback handoff is used.
-- The Claude adapter must define how the active worktree environment is bootstrapped and evidenced before Builder or `hard_gate` validation rely on it.
-- The Claude adapter must not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it.
-- The Claude adapter should describe persistent Builder reuse, manual `/compact` when the active Claude surface exposes it, auto-compaction fallback when it does not, and the lack of any trustworthy parent-visible exact subagent fullness percentage.
-- The Claude adapter must require a real Builder readiness signal before treating the child as live; a spawn handle alone is not enough.
-- The Claude adapter must preserve lineage and durable evidence, then close or purge older child sessions promptly so only one live Builder remains visible after recovery or direct completion.
+- Delegation: project and user agent surfaces are `.claude/agents/` and `~/.claude/agents/`; use explicit Builder selection when the delegated role must be deterministic, even though Claude can also delegate automatically.
+- Nesting and approvals: subagents cannot spawn other subagents, and background subagents inherit only pre-approved permissions; do not rely on them for interactive recovery.
+- Session settings and kickoff: observe current session model and thinking when available, report `unknown` when a field is not exposed, honor or reject optional Builder overrides explicitly, and keep the Builder start plus run step budget inside kickoff before any fallback handoff.
+- Worktree: distinguish in-session continuation from fallback handoff, and bootstrap plus evidence the active worktree environment before Builder or `hard_gate` validation rely on it.
+- Monitoring and compaction: do not claim live Builder reasoning visibility unless a concrete runtime surface actually provides it; document manual `/compact` only when the active Claude surface exposes it, auto-compaction fallback when it does not, and the lack of any trustworthy parent-visible exact subagent fullness percentage.
+- Readiness and cleanup: require a real Builder readiness signal before treating the child as live, and preserve lineage and durable evidence before closing or purging older child sessions so only one live Builder remains visible after recovery or direct completion.
 - Current repo docs: `CLAUDE-ADAPTER.md`, `CLAUDE-RUNBOOK.md`, and `CLAUDE-TEST-HARNESS.md`.
 
 ### Future adapters

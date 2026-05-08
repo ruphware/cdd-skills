@@ -6,6 +6,10 @@ Use this adapter when the controlling runtime is Claude Code and Master Chef wan
 
 This is one of the shipped subagent-backed adapters in `cdd-master-chef`.
 
+## Runtime mechanics only
+
+The shared contract already defines Builder lifecycle, monitoring, replacement thresholds, and one-active-Builder cleanup. This adapter should document only the Claude mechanics that implement that lifecycle: explicit versus automatic delegation, foreground or background approval behavior, non-nesting, tool inheritance, worktree coherence, readiness or status visibility, and `/compact` or context-meter limits.
+
 ## 1) Delegation model
 
 - Claude Code supports built-in and custom subagents from the main Claude session.
@@ -65,28 +69,14 @@ Adapter implication:
 ## 4) Non-nesting and tool inheritance
 
 - Subagents cannot spawn other subagents.
-- If `tools` is omitted, a Claude subagent inherits the main session's tools.
-- Claude subagents can be given dedicated MCP server scope through their configured agent definition.
-
-Adapter implication:
-
-- Multi-step delegation must be chained by the main Master Chef session rather than delegated recursively through Builder.
-- If a Builder step needs another agent, return control to Master Chef and let the main session launch the next agent explicitly.
-- Claude subagents run in their own contexts rather than sharing one monolithic transcript with Master Chef, so same-Builder continuation across delegated steps is compatible with separate subagent context windows.
-- Same Builder continuation across delegated steps is the normal path when the active Claude surface can keep the subagent and managed worktree coherent.
-- Before a new delegated step, attempt Builder compaction when the active Claude surface exposes slash commands such as `/compact`.
-- If the active Claude surface or invocation mode does not expose manual `/compact`, keep the same Builder and rely on Claude auto-compaction or native context management instead.
-- Do not claim exact parent-visible subagent fullness percentages, exact token-left budgets, or other precise context meters for Master Chef decisions.
-- Replace Builder only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
-- This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
-- Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Claude exposes them.
-- A returned Builder handle or session key proves only that Claude accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context.
-- Master Chef should require one early Builder readiness ACK before treating the child as fully live. That ACK should confirm the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
-- A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
-- A quiet wait or one unanswered progress request is still inconclusive unless Claude also reports closure or failure.
-- Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
-- If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
-- When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
+- `Tool surface:` if `tools` is omitted, a Claude subagent inherits the main session's tools, and configured agents can narrow MCP server scope. Multi-step delegation must therefore be chained by the main Master Chef session rather than delegated recursively through Builder.
+- `Background use:` keep Builder in the foreground when the step may need fresh approvals, clarification, or interactive recovery. Background subagents are appropriate only for self-contained sidecar work that is read-heavy, pre-approved, and safe to fail without interactive recovery.
+- `Continuation:` Claude subagents run in their own contexts rather than sharing one monolithic transcript with Master Chef, so same-Builder continuation across delegated steps is compatible with separate subagent context windows. Same Builder continuation across delegated steps is the normal path when the active Claude surface can keep the subagent and managed worktree coherent.
+- `Compaction:` before a new delegated step, attempt Builder compaction when the active Claude surface exposes slash commands such as `/compact`. If the active Claude surface or invocation mode does not expose manual `/compact`, keep the same Builder and rely on Claude auto-compaction or native context management instead. Do not claim exact parent-visible subagent fullness percentages, exact token-left budgets, or other precise context meters for Master Chef decisions.
+- `Visibility:` this adapter does not guarantee live access to Builder chain-of-thought or streaming partial output. Direct Builder visibility is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Claude exposes them.
+- `Readiness:` a returned Builder handle or session key proves only that Claude accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context. Master Chef should require one early Builder readiness ACK before treating the child as fully live. That ACK should confirm the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
+- `Quiet periods:` a quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died. A quiet wait or one unanswered progress request is still inconclusive unless Claude also reports closure or failure. Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death. When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
+- `Replacement:` replace Builder only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks. If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 
 ## 5) Session settings and Builder override
 

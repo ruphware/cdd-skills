@@ -4,11 +4,14 @@ This runbook defines the operational Claude Code adapter path over the shared `c
 
 Use the shared contract in `CONTRACT.md` and the Claude adapter rules in `CLAUDE-ADAPTER.md` as the source of truth. Use this file for the concrete Claude operating shape.
 
-Claude-specific deltas over the shared policy:
+Claude runtime mechanics only:
 
 - how Claude reports unresolved session-setting fields as `unknown`
 - whether the active Claude surface can continue in the managed worktree in-session or needs a fallback handoff
 - what direct Builder readiness, status, and closure evidence Claude can actually expose
+- what foreground or background, `/compact`, and context-visibility surfaces Claude actually exposes
+
+Builder lifecycle semantics remain shared. Use this runbook only for the Claude controls and evidence that implement that lifecycle.
 
 ## 1) Session shape
 

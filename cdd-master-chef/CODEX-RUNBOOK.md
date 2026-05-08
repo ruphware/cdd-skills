@@ -4,11 +4,14 @@ This runbook defines the operational Codex adapter path over the shared `cdd-mas
 
 Use the shared contract in `CONTRACT.md` and the Codex adapter rules in `CODEX-ADAPTER.md` as the source of truth. Use this file for the concrete Codex operating shape.
 
-Codex-specific deltas over the shared policy:
+Codex runtime mechanics only:
 
 - how Codex reports unresolved session-setting fields as `unknown`
 - whether the active Codex surface can continue in the managed worktree in-session or needs a fallback handoff
 - what direct Builder readiness, status, and closure evidence Codex can actually expose
+- what compaction and context-visibility surfaces Codex actually documents
+
+Builder lifecycle semantics remain shared. Use this runbook only for the Codex controls and evidence that implement that lifecycle.
 
 ## 1) Session shape
 

@@ -12,6 +12,8 @@ This directory is the committed package root for `[CDD-6] Master Chef`, the mult
 
 Everything else in this package elaborates that shared flow.
 
+The remaining adapter differences are runtime mechanics only: delegation trigger, agent surface, worktree activation, tool or approval inheritance, context or compaction visibility, and child-session cleanup surface.
+
 Use these files as the canonical contract surfaces:
 
 - `SKILL.md` — current installable `cdd-master-chef` skill entrypoint

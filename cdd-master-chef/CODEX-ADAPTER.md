@@ -6,6 +6,10 @@ Use this adapter when the controlling runtime is Codex CLI, Codex app, or anothe
 
 This is one of the shipped subagent-backed adapters in `cdd-master-chef`.
 
+## Runtime mechanics only
+
+The shared contract already defines Builder lifecycle, monitoring, replacement thresholds, and one-active-Builder cleanup. This adapter should document only the Codex mechanics that implement that lifecycle: explicit delegation, agent surfaces, sandbox and approval inheritance, worktree coherence, readiness or status visibility, and documented compaction or context-meter limits.
+
 ## 1) Delegation model
 
 - Codex supports subagent workflows by spawning specialized agents in parallel and then collecting their results in one response.
@@ -52,32 +56,15 @@ Codex also supports personal agents under:
 ~/.codex/agents/*.toml
 ```
 
-## 3) Parent session and child session behavior
+## 3) Runtime mechanics in live sessions
 
-- Subagents inherit the current sandbox policy from the parent session.
-- In interactive CLI sessions, approval requests can surface from inactive agent threads.
-- In non-interactive flows, or whenever a run cannot surface a fresh approval, an action that needs new approval fails and Codex surfaces the error back to the parent workflow.
-- Codex reapplies the parent turn's live runtime overrides when it spawns a child, including interactive approval changes.
-
-Adapter implication:
-
-- Master Chef should keep Builder work interactive when the delegated step may need fresh approvals.
-- Read-heavy sidecar agents are the safest place to use narrower sandboxes and specialized MCP/tool setups.
-- Same Builder continuation across delegated steps is the normal path when the active Codex surface can keep the child session and managed worktree coherent.
-- Before a new delegated step, attempt Builder compaction only if the active Codex surface exposes a supported command or API.
-- Current repo docs and the local `codex --help` surface do not document a clean parent-visible subagent compaction command or API, so this adapter must not invent one.
-- When no supported compaction surface is exposed, keep the same Builder and rely on native context management or any runtime auto-compaction that the active Codex surface performs.
-- Do not claim a clean official parent-visible subagent context meter, exact token-left budget, or other precise fullness percentage for Master Chef decisions.
-- Replace Builder only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks.
-- This adapter does not guarantee live access to Builder chain-of-thought or streaming partial output.
-- Direct Builder visibility in this adapter is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Codex exposes them.
-- A returned Builder handle or session key proves only that Codex accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context.
-- Master Chef should require one early Builder readiness ACK before treating the child as fully live. That ACK should confirm the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
-- A quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died.
-- A timed-out wait or one unanswered progress request is still inconclusive unless Codex also reports closure or failure.
-- Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
-- If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
-- When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
+- `Approvals:` subagents inherit the current sandbox policy from the parent session. In interactive CLI sessions approval requests can surface from inactive agent threads; in non-interactive flows, or whenever a run cannot surface a fresh approval, an action that needs new approval fails and Codex surfaces the error back to the parent workflow. Keep approval-heavy Builder work interactive, and use read-heavy sidecars for narrower sandboxes or specialized MCP or tool setups.
+- `Continuation:` same Builder continuation across delegated steps is the normal path when the active Codex surface can keep the child session and managed worktree coherent.
+- `Compaction:` before a new delegated step, attempt Builder compaction only if the active Codex surface exposes a supported command or API. Current repo docs and the local `codex --help` surface do not document a clean parent-visible subagent compaction command or API, so this adapter must not invent one. When no supported compaction surface is exposed, keep the same Builder and rely on native context management or any runtime auto-compaction that the active Codex surface performs. Do not claim a clean official parent-visible subagent context meter, exact token-left budget, or other precise fullness percentage for Master Chef decisions.
+- `Visibility:` this adapter does not guarantee live access to Builder chain-of-thought or streaming partial output. Direct Builder visibility is limited to runtime-reported completion/failure, explicit status replies, and closure/error surfaces when Codex exposes them.
+- `Readiness:` a returned Builder handle or session key proves only that Codex accepted the spawn request. It does not prove that the child has loaded its usable repo, tool, or MCP context. Master Chef should require one early Builder readiness ACK before treating the child as fully live. That ACK should confirm the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
+- `Quiet periods:` a quiet agent, missing diff, or empty `builder.jsonl` is not enough by itself to prove that Builder has died. A timed-out wait or one unanswered progress request is still inconclusive unless Codex also reports closure or failure. Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death. When progress is uncertain, prefer direct runtime status, final agent messages, or one explicit progress request over guesswork.
+- `Replacement:` replace Builder only after explicit failure evidence, explicit runtime closure, deadlock, unusable drift, or inability to continue safely after direct status or worktree-safety checks. If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 
 ## 4) Session settings and Builder override
 
