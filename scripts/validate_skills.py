@@ -310,7 +310,7 @@ def validate_reviewed_contract_artifacts(skill_text: str, skill_md: Path) -> Non
             r"Reviewed contract artifacts",
             r"copied as-is.*corrected.*expanded.*removed.*left intentionally unspecified",
             r"reason for each material change.*records where each artifact was written",
-            r"Confirmed requirements coverage.*Reviewed contract artifacts.*before asking for approval",
+            r"Confirmed requirements coverage.*Reviewed contract artifacts.*before (?:asking for )?approval|before (?:asking for )?approval.*Confirmed requirements coverage.*Reviewed contract artifacts",
             r"keep exact implementation-driving detail in `TODO\.md`.*follow-up.*spec/doc",
         ),
         skill_md,
@@ -371,21 +371,32 @@ def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None
     require_topic_bundle(
         skill_text,
         (
-            r"Ask clarifying questions one at a time",
-            r"material assumptions.*confirm or correct",
-            r"minor defaults.*proceed without blocking",
+            r"## Question economy",
+            r"Before asking any clarification.*rank unresolved decisions.*downstream uncertainty",
+            r"Do not ask about.*reversible implementation details.*naming/copy polish.*file placement.*repo conventions.*defaults.*TODO step.*preferences.*plan shape.*answered by the user.*repo evidence.*accepted default",
+            r"Default clarification budget:.*small/local change: 0-1 questions.*multi-surface change: 1-2 questions.*up to 3 questions",
+            r"If more than 3 clarifications appear necessary.*best bounded plan so far.*unresolved major decisions.*next single decision",
+            r"remaining material assumption would invalidate the plan.*unsafe or destructive work.*materially change boundaries.*sequencing.*contracts.*data/state.*rollout.*validation",
+            r"only minor defaults.*carry (?:the defaults|them).*assumptions.*constraints.*implementation notes.*automated checks.*UAT|minor defaults.*disclose.*carry (?:the defaults|them)",
             r"change requests and audits|change requests and for audit findings|change requests and externally supplied audit findings|change requests or external audit findings",
             r"Do not convert raw audit bullets directly into TODO tasks",
             r"`spec_delta`.*`implementation_delta`.*`verification_delta`.*`defer`",
             r"user-visible symptom.*likely root cause.*affected boundary.*proof needed",
             r"Collapse duplicate symptoms.*root-cause work package",
             r"relevant docs.*README\.md.*docs/specs.*corresponding tests|corresponding tests.*README\.md.*docs/specs",
-            r"Use this mode only when the request is multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step",
-            r"write-location choice.*update an existing TODO file.*TODO-audit-<tag>\.md",
-            r"After applying, suggest implementing the next step via `\$?cdd-implement-todo`\.",
+            r"Flow \(approval-gated, bounded-bisection\)",
+            r"Frame the request.*Shape the plan.*Bisect uncertainty.*Produce the coarse plan.*Refine one coarse step.*Apply, hand off, and audit",
+            r"deliverable.*hardest constraint.*success signal",
+            r"`rough`:.*reversible implementation details.*`solved`:.*product, architecture, sequencing, or validation decisions.*`bounded`:.*in scope.*out of scope.*work stops",
+            r"When the work is already a single clearly bounded next step.*without forcing a coarse decomposition pass",
+            r"write-location choice.*update an existing TODO file.*TODO-audit-<tag>\.md|audit-driven requests.*update an existing TODO file.*TODO-audit-<tag>\.md",
+            r"After applying, suggest implementing the next (?:approved TODO )?step via `\$?cdd-implement-todo`\.",
         ),
         skill_md,
         "plan audit-mode topics",
+    )
+    assert "confirm or correct them before continuing" not in skill_text, (
+        f"plan skill should not revive the old assumption confirmation loop in {skill_md}"
     )
     assert "implement that step immediately" not in skill_text, (
         f"plan skill should not implement directly in {skill_md}"
@@ -816,6 +827,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     if skill_dir.name == "cdd-plan":
         validate_plan_final_apply_options(skill_text, skill_md)
         validate_plan_edge_case_review_contract(skill_text, skill_md)
+        validate_plan_audit_mode_skill_text(skill_text, skill_md)
     if skill_dir.name == "cdd-implementation-audit":
         validate_implementation_audit_question_efficiency_contract(
             skill_text, skill_md
@@ -842,7 +854,6 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         if skill_dir.name == "cdd-plan":
             validate_coarse_step_planning(skill_text, skill_md)
             validate_reviewed_contract_artifacts(skill_text, skill_md)
-            validate_plan_audit_mode_skill_text(skill_text, skill_md)
         if skill_dir.name == "cdd-implementation-audit":
             validate_implementation_audit_skill_text(skill_text, skill_md)
 

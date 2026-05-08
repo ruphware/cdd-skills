@@ -2158,3 +2158,43 @@ Make `cdd-maintain` `C. index` always regenerate `docs/INDEX.md` from a fresh re
 - Confirm Mode C now requires tool-driven source enumeration, LOC counting, and per-file keyword/meaning extraction.
 - Confirm Mode C now uses docs/specs and framework-aware project metadata as diagram and architecture inputs when present.
 - Confirm the validator fails if the full-rebuild, LOC, keyword, metadata, or diagram-synthesis rules are removed.
+
+## Step 52 — Make cdd-plan frame requests, bisect uncertainty, and budget clarifications
+
+### Goal
+
+Make `cdd-plan` explicitly frame each request, follow an approval-gated bounded-bisection planning lifecycle, minimize clarification loops through a visible question-economy contract, and ask only one highest-leverage remaining clarification when a wrong assumption would invalidate or materially reshape the plan.
+
+### Constraints
+
+- Touch only `skills/cdd-plan/SKILL.md` and `scripts/validate_skills.py` unless a failing proof shows another surface is required.
+- Preserve `cdd-plan` as read-only until approval, the one-substantive-question-per-message rule, and the existing selector-based final apply options.
+- Replace the current “material assumptions...confirm or correct” gate rather than adding a second assumption-confirmation step.
+- Do not force coarse decomposition for every request; the updated flow must still allow direct refinement of the next clear bounded step when the work is single-surface or otherwise obviously one-step.
+- Keep the canonical editable source in `skills/cdd-plan/SKILL.md`; do not patch installed runtime copies under `~/.agents/`.
+
+### Tasks
+
+- [x] Update `skills/cdd-plan/SKILL.md` to rename the flow section to `## Flow (approval-gated, bounded-bisection)` and encode the six planning phases from the approved request: frame the request, shape the plan, bisect uncertainty, produce the coarse plan, refine one coarse step, and apply/hand off/audit.
+- [x] Add a `## Question economy` section to `skills/cdd-plan/SKILL.md` that ranks unresolved decisions by uncertainty removed, limits clarifications to boundary/architecture/data-state/contract/sequencing/approval/rollout/security/validation or unresolved `major` edge cases, forbids questions about reversible details or safe defaults, sets the default clarification budgets, and requires surfacing the best bounded plan plus one next decision when more than three clarifications would otherwise be needed.
+- [x] Replace the current material-assumption rule in `skills/cdd-plan/SKILL.md` so the skill asks one highest-leverage clarification only when a remaining assumption would invalidate the plan, create unsafe or destructive work, or materially change boundaries, sequencing, contracts, data/state, rollout, or validation; otherwise the assumption must be disclosed in the plan and carried into the resulting TODO step.
+- [x] Extend `scripts/validate_skills.py` so validation requires the new bounded-bisection flow, question-economy contract, and replacement assumption logic, and fails if the old `confirm or correct them before continuing` loop or equivalent wording returns.
+
+### Implementation notes
+
+- Keep the existing Step 49 edge-case review contract and integrate the new question-economy rules around it instead of creating a competing clarification path.
+- Prefer validator coverage in the default path (`python3 scripts/validate_skills.py`) rather than hiding the new rules behind `--include-legacy-prose` only.
+- The new flow should make the coarse-plan trigger explicit for multi-surface, ambiguous, audit-driven, or likely multi-step requests, while also stating that a single clearly bounded next step can be refined directly.
+- Leave `skills/cdd-plan/agents/openai.yaml` unchanged unless the validator or repo review proves the short description is now materially misleading.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-plan/SKILL.md` and confirm the flow heading is now `Flow (approval-gated, bounded-bisection)` with all six lifecycle phases present.
+- Confirm the updated skill includes a visible `Question economy` section with clarification priorities, prohibited low-value question types, and the default clarification budgets.
+- Confirm the old material-assumption confirmation rule is replaced by the new “ask only when the remaining assumption would invalidate or materially reshape the plan” rule.
+- Confirm the validator fails if the bounded-bisection flow, question-economy contract, or replacement assumption logic is removed, or if the old `confirm or correct them before continuing` wording returns.

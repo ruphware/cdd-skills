@@ -107,46 +107,80 @@ Planning in this skill is interactive, review-driven, and continuously refined.
   - `B. apply now only`
   - `C. keep the plan read-only and revise before applying`
 
-## Flow (approval-gated)
-1) Read the contract files above, any linked sub-specs, and the relevant codebase surfaces.
-   - Review the current implementation before planning: affected modules, entrypoints, tests, manifests, configs, relevant README/spec surfaces, and existing TODO steps.
-   - Identify the likely boundaries, risks, and validation surfaces for the requested change.
-   - For behavior-changing or audit-derived implementation requests, run a repo-grounded edge-case review before detailed TODO drafting and classify each item as `major` or `minor`.
-2) Ask for the change request or audit items only if they are not already clear from the user prompt.
-3) Before drafting edits, identify only the blocking or plan-shaping clarifications that would materially change assumptions, goals, implementation paths, file placement, sequencing, approval boundaries, or any unresolved `major` edge case.
-   - Collapse related open questions into the fewest root decisions possible and rank them by how much downstream plan uncertainty they resolve.
-4) Ask clarifying questions one at a time using the interaction contract above, and use that path only for unresolved `major` edge cases or other plan-shaping gaps.
-   - Ask the highest-leverage unresolved question first and avoid repeating adjacent questions that the same answer would settle.
-5) If any material assumption would remain after the answers, list only those material assumptions and ask the user to confirm or correct them before continuing.
-6) If only minor defaults or `minor` edge cases remain, disclose them briefly in the plan and proceed without blocking.
-7) If the request is audit-driven, normalize the audit items before drafting TODO steps.
-   - identify the user-visible symptom, likely root cause, affected boundary, and proof needed for each item
-   - tag each item as `spec_delta`, `implementation_delta`, `verification_delta`, or `defer`
-   - merge duplicates and split mixed-surface findings before detailed TODO drafting
-8) For qualifying requests, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
-   - Use this mode only when the request is multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step.
-   - Keep the coarse pass lightweight but concrete enough to validate boundaries, dependency order, coverage, and reviewed artifacts before detailed TODO drafting begins.
-   - Include visible `Confirmed requirements coverage`, `Reviewed contract artifacts`, and `Edge-case review` sections before asking for approval.
-9) Before drafting TODO edits, present 2-3 plan shapes when there is a real grouping, sequencing, or write-location decision to make.
-   - Recommend one option based on the codebase review.
-   - For audit-driven requests, include the write-location choice in the same option set when possible:
+## Question economy
+Minimize clarification loops.
+
+- Before asking any clarification, rank unresolved decisions by how much downstream uncertainty they remove.
+- Prefer questions that affect boundaries, sequencing, interfaces, data/state, rollout, validation, or approval safety.
+- Do not ask about reversible implementation details, naming/copy polish, file placement already implied by repo conventions, defaults that can be safely documented in the TODO step, preferences that do not change plan shape, or questions already answered by the user, repo evidence, or an accepted default.
+- Default clarification budget:
+  - small/local change: 0-1 questions
+  - multi-surface change: 1-2 questions
+  - audit, migration, security, external contract, or destructive change: up to 3 questions
+- If more than 3 clarifications appear necessary, stop expanding the question list. Present the best bounded plan so far, mark unresolved major decisions, recommend the next single decision, and proceed only through selector-based options.
+
+## Flow (approval-gated, bounded-bisection)
+1) Frame the request.
+   - Read the repo contract files plus the relevant docs/specs, TODO surfaces, affected code, tests, entrypoints, configs, and manifests.
+   - Reduce the request to one concise frame:
+     - deliverable
+     - hardest constraint
+     - success signal
+   - If the change request or audit finding is not clear enough to frame, ask one clarification before continuing.
+   - Do not draft TODO edits before the request has a concrete frame.
+2) Shape the plan.
+   - Create a plan that is rough, solved, and bounded:
+     - `rough`: do not over-specify reversible implementation details
+     - `solved`: remove ambiguity that would force the implementer to invent product, architecture, sequencing, or validation decisions
+     - `bounded`: state what is in scope, what is out of scope, and where the work stops
+   - Identify affected boundaries, risks, dependency order, validation surfaces, and likely write locations.
+   - For behavior-changing or audit-derived requests, run the repo-grounded edge-case review before detailed TODO drafting.
+   - For audit-driven requests, normalize audit items before drafting TODO steps.
+3) Bisect uncertainty.
+   - List unresolved plan-shaping decisions privately before asking the user anything.
+   - Ask only the highest-leverage unresolved decision first.
+   - A clarification is allowed only when the answer would materially change product or architecture boundaries, data/state, contracts or APIs, file/write location, sequencing, approval boundaries, migration/rollback/rollout, security/privacy/permission behavior, validation strategy, or an unresolved `major` edge case.
+   - Collapse related open questions into the fewest root decisions possible.
+   - If only minor defaults or `minor` edge cases remain, disclose them briefly and carry them into assumptions, constraints, implementation notes, automated checks, or UAT.
+   - If a remaining material assumption would invalidate the plan, create unsafe or destructive work, or materially change boundaries, sequencing, contracts, data/state, rollout, or validation, ask one highest-leverage clarification. Otherwise, disclose it in the plan and carry it into the relevant TODO step.
+4) Produce the coarse plan.
+   - For requests that are multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step, produce a coarse dependency-ordered decomposition before detailed TODO drafting.
+   - Keep the coarse pass lightweight but concrete enough to validate:
+     - boundaries
+     - dependency order
+     - coverage
+     - reviewed artifacts
+     - unresolved major decisions
+     - validation surfaces
+   - Include visible sections when applicable:
+     - `Frame`
+     - `Recommended shape`
+     - `Confirmed requirements coverage`
+     - `Reviewed contract artifacts`
+     - `Audit normalization`
+     - `Edge-case review`
+     - `Coarse dependency-ordered steps`
+     - `Material assumptions`
+   - When those sections apply, show `Confirmed requirements coverage` and `Reviewed contract artifacts` before approval.
+   - Before drafting TODO edits, present 2-3 plan shapes only when there is a real grouping, sequencing, scope, or write-location decision to make.
+   - For audit-driven requests, include the write-location choice in the same option set when practical:
      - default: update an existing TODO file
      - alternative: create `TODO-audit-<tag>.md`
-   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
    - Ask for a short tag only if the user chose the new-file option.
-10) Draft proposed edits (grouped by file):
-   - PRD/Blueprint deltas only if required
-   - TODO step updates using the repo’s existing Step template
-   - translate spec deltas into implementation deltas instead of restating product intent
-   - for each new or revised execution step, include exact boundaries, interface or contract changes, sequencing notes, and validation evidence
-   - carry resolved `major` edge-case decisions and `minor` default handling into the resulting TODO steps rather than leaving them only in surrounding chat
-   - for audit-driven requests, keep the normalized root-cause grouping, any required README/spec updates, corresponding tests, and proof surfaces explicit in the resulting TODO steps
-   - keep exact implementation-driving detail in `TODO.md` and use explicit `TODO.md` follow-up for later spec/doc updates when mixed product/implementation artifacts are not becoming durable spec deltas now
-   - add `Implementation notes` when the step would otherwise force the implementer to make decisions
-   - for qualifying requests, refine one coarse step at a time into runnable TODO steps rather than drafting a single mixed-surface detailed plan in one jump
-   - split oversized mixed-surface work into dependency-ordered steps
-   - plans may be long and include many steps when the confirmed scope requires it
-11) Present final selector-based apply options instead of a second approval question.
-   - When a clear next execution step exists, prefer exactly three selectors: `A. apply now and continue with the recommended next step`, `B. apply now only`, `C. keep the plan read-only and revise before applying`.
+5) Refine one coarse step.
+   - After the coarse plan is accepted or the next step is clear, refine only the next coarse step into one or more runnable TODO steps.
+   - Do not jump straight to a full mixed-surface detailed plan when the work is multi-step.
+   - When the work is already a single clearly bounded next step, refine that step directly without forcing a coarse decomposition pass.
+   - For each new or revised execution step, produce an implementation-ready TODO contract using the repo’s existing Step template when possible.
+   - Each runnable TODO step must include enough product, architecture, sequencing, and validation detail that the implementer does not need to reopen PRD/Blueprint or surrounding chat to fill gaps.
+   - Keep exact implementation-driving detail in `TODO.md` or the selected TODO file.
+6) Apply, hand off, and audit.
+   - Present final selector-based apply options instead of a second approval question.
+   - When a clear next execution step exists, prefer exactly three selectors:
+     - `A. apply now and continue with the recommended next step`
+     - `B. apply now only`
+     - `C. keep the plan read-only and revise before applying`
    - If no immediate follow-on step is clear, still use 2-4 selector-based apply/revise/stop options.
-12) After applying, suggest implementing the next step via `$cdd-implement-todo`.
+   - The selected option itself is the approval.
+   - After applying, suggest implementing the next approved TODO step via `$cdd-implement-todo`.
+   - After implementation, validation, or audit reveals new evidence, return to this planning flow only for newly discovered plan-shaping deltas.
