@@ -22,7 +22,7 @@ Design principle: **soft reasoning, hard state**.
 Treat these rules as the canonical policy flow for `cdd-master-chef`:
 
 1. Session settings are best-effort facts. Observe the current session model and thinking when the runtime exposes them, record unresolved fields as `unknown`, and continue with the active session as-is rather than blocking kickoff.
-2. Startup is branch-backed and environment-backed. On fresh runs from long-lived branches, default to recommending a descriptive source feature branch, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate` validation rely on it.
+2. Startup is branch-backed and environment-backed. On fresh runs from long-lived branches, default to recommending a descriptive worktree branch, keep the source checkout on its original branch unless the human explicitly asks otherwise, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate` validation rely on it.
 3. Builder lifecycle is persistent. Keep one Builder across normal delegated-step transitions, attempt step-start compaction when supported, replace Builder only for recovery conditions, and retire older Builders after preserving evidence so one active Builder remains.
 4. Oversized-looking work is reviewed first. Keep the parent step while one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified by lower total delivery churn.
 
@@ -83,7 +83,7 @@ Before autonomous work begins:
    - next runnable TODO step when present
    - whether the next runnable top-level TODO step is oversized for one Builder run
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
-   - whether this is a fresh run from a long-lived branch and should first suggest a descriptive feature branch
+   - whether this is a fresh run from a long-lived branch and should first suggest a descriptive worktree branch
    - whether the repo first needs `cdd-init-project`
    - which repo-native install, dependency, build, test, or validation entrypoints must be prepared in the active worktree before Builder or `hard_gate` validation rely on it
 5. Before kickoff, the source checkout must be clean. If it is dirty, stop and ask the human to stash, commit, or discard changes before managed worktree creation.
@@ -218,12 +218,13 @@ Runtime adapters must define the install roots, invocation surface, and delegati
 
 Master Chef runs against a managed worktree rather than mutating the source checkout in place.
 
-- If this is a fresh run from a long-lived branch such as `main`, `master`, or `trunk`, and no existing managed worktree is being resumed, suggest creating a descriptive feature branch in the source checkout first.
-- If the human approves that suggestion, create the feature branch in the source checkout and then create the managed worktree from that feature branch `HEAD`.
-- Create the managed worktree from the current branch `HEAD`.
-- Use a fresh per-run branch rather than reusing the source checkout branch.
+- If this is a fresh run from a long-lived branch such as `main`, `master`, or `trunk`, and no existing managed worktree is being resumed, suggest a descriptive worktree branch first.
+- Use the approved branch name as `worktree_branch`; otherwise fall back to a fresh per-run branch such as `master-chef/<run-id>`.
+- Create the managed worktree from the current branch `HEAD` on `worktree_branch`.
+- Keep the source checkout on its original branch unless the human explicitly asks to move it.
+- Do not switch the source checkout onto the active worktree branch as part of normal kickoff.
 - Record the source checkout path separately from the active worktree path.
-- Record whether the default feature-branch recommendation was accepted, declined, or not applicable.
+- Record whether the default worktree-branch recommendation was accepted, declined, or not applicable.
 - Initialize runtime state in the managed worktree before implementation begins.
 - Continue in the worktree only when the runtime adapter can safely re-root the active control loop there.
 - Otherwise, stop with exact relaunch instructions and mark the run as `relaunch_required` before any implementation starts.
@@ -247,7 +248,7 @@ Before implementation starts, present one kickoff approval that covers:
 - current session model
 - current session thinking
 - effective Builder settings
-- any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
+- any fresh-start worktree-branch suggestion when the source checkout is still on a long-lived branch
 - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
 - the approved run step budget
 - whether to spawn Builder now and start the autonomous run
@@ -355,7 +356,7 @@ Report events:
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
 When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
-That final mission report must also disclose the source branch, worktree branch, active worktree path, whether the default feature-branch recommendation was accepted or declined, and whether the worktree environment became `env_ready`, stayed `partial`, or stopped as `blocked`.
+That final mission report must also disclose the source branch, worktree branch, active worktree path, whether the default worktree-branch recommendation was accepted or declined, and whether the worktree environment became `env_ready`, stayed `partial`, or stopped as `blocked`.
 For `RUN_COMPLETE`, append a compact closeout recommendation bundle:
 - run `cdd-implementation-audit` on the completed run scope
 - push only when the active branch is ahead of origin or still unpublished

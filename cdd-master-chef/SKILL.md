@@ -30,7 +30,7 @@ References:
 Shared policy flow:
 
 - Session settings are best-effort facts: record unresolved current-session fields as `unknown` and continue with the active session as-is.
-- Startup is branch-backed and environment-backed: on fresh runs from long-lived branches, default to recommending a descriptive source feature branch, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
+- Startup is branch-backed and environment-backed: on fresh runs from long-lived branches, default to recommending a descriptive worktree branch, keep the source checkout on its original branch unless the human explicitly asks otherwise, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
 - Builder lifecycle is persistent: keep the same Builder across normal delegated-step transitions, attempt step-start compaction when supported, replace Builder only for recovery conditions, and retire older Builders after preserving evidence so one active Builder remains.
 - Oversized-looking work is reviewed first: keep the parent step when one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified.
 
@@ -66,7 +66,7 @@ Operating contract:
    - next runnable TODO step when present
    - whether the next runnable top-level TODO step is oversized for one Builder run
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
-   - whether this looks like a fresh run from a long-lived branch and should first suggest a descriptive feature branch
+   - whether this looks like a fresh run from a long-lived branch and should first suggest a descriptive worktree branch
    - whether the repo first needs `cdd-init-project` before the normal TODO loop can start
    - whether the source checkout is clean enough for managed worktree creation
    - which repo-native install, dependency, build, test, or validation entrypoints will have to be prepared in the active worktree before Builder or `hard_gate` validation can rely on it
@@ -82,9 +82,9 @@ Operating contract:
    - Treat the installed `cdd-*` skills as internal Master Chef workflows, not standalone user commands during an active Master Chef run.
 9. Use a managed worktree before implementation:
    - require a clean source checkout before kickoff; if dirty, stop and ask the human to stash, commit, or discard changes first
-   - if this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, default to recommending a descriptive feature branch first; if approved, create it in the source checkout before the per-run worktree branch
-   - create a fresh per-run branch from the current branch `HEAD`
+   - if this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, default to recommending a descriptive worktree branch first; use it as `worktree_branch` when approved, otherwise fall back to a fresh per-run branch such as `master-chef/<run-id>`; create the managed worktree from source `HEAD` without switching the source checkout away from its current branch
    - prefer `.cdd-runtime/worktrees/<run-id>/` as the managed worktree path
+   - keep the source checkout on its original branch unless the human explicitly asks to move it; do not switch the source checkout onto `worktree_branch` as part of normal kickoff
    - record `source_repo`, `source_branch`, `source_head_sha`, `source_branch_decision`, `active_worktree_path`, `worktree_branch`, and `worktree_continue_mode` in runtime state
    - the active runtime adapter either continues in-session from the managed worktree or stops with exact relaunch instructions; keep `worktree_continue_mode` explicit
    - once the managed worktree becomes active, bootstrap the repo-native environment there before Builder or `hard_gate` validation rely on it
@@ -94,7 +94,7 @@ Operating contract:
    - current session model
    - current session thinking
    - effective Builder settings
-   - any fresh-start feature-branch suggestion when the source checkout is still on a long-lived branch
+   - any fresh-start worktree-branch suggestion when the source checkout is still on a long-lived branch
    - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
    - the approved run step budget
    - whether to spawn Builder now and start the autonomous run
@@ -118,7 +118,7 @@ Operating contract:
 15. Use working-tree-aware discovery checks when unstaged files matter:
    - `rg --files`
    - `git ls-files --cached --others --exclude-standard`
-16. After relaunch into the managed worktree, treat that worktree as the active repo root for TODO inspection, environment bootstrap, QA, commit, and push.
+16. After relaunch into the managed worktree, treat that worktree as the active repo root for TODO inspection, environment bootstrap, QA, commit, push, and `.cdd-runtime/master-chef/` runtime state.
    - inspect repo-native manifests, runbook commands, and validation entrypoints from the active worktree
    - run the required dependency, build, install, or test-prep commands in that worktree
    - keep `worktree_env_status` at `preparing` until the worktree is ready, then move it to `env_ready`, `partial`, or `blocked` with durable evidence

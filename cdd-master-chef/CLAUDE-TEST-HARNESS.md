@@ -36,7 +36,7 @@ Goal: validate **explicit Builder selection -> current-session settings plus Bui
 ```text
 Use the shared Master Chef contract for this repo under the Claude Code adapter.
 Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and name the explicit Builder path you would use.
-If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive feature branch before managed worktree kickoff.
+If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive worktree branch before managed worktree kickoff.
 If the next top-level TODO step looks oversized for one Builder run, say that you would review it in Master Chef first, keep it intact unless the split cost is clearly justified, and recompute the remaining top-level-step count only if a split is actually chosen.
 Do not rely only on automatic delegation for the main Builder handoff.
 ```
@@ -44,7 +44,7 @@ Do not rely only on automatic delegation for the main Builder handoff.
 - [ ] Expected:
   - the Builder path is explicit
   - the remaining top-level-step count is stated when finite
-  - a fresh-start feature-branch suggestion is surfaced when applicable
+  - a fresh-start worktree-branch suggestion is surfaced when applicable
   - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
   - automatic delegation is not treated as the only control mechanism
   - the answer distinguishes Builder from exploration or planning sidecars

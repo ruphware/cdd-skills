@@ -67,7 +67,7 @@ Before autonomous implementation starts, Master Chef should present one selector
 - current session model
 - current session thinking
 - effective Builder settings
-- the shared kickoff recommendation for fresh-start feature-branch creation and default/max step budget
+- the shared kickoff recommendation for fresh-start worktree-branch creation and default/max step budget
 - the approved run step budget for this run: a positive integer count such as `1` or `3`, or `until_blocked_or_complete`
 - whether to spawn Builder now and start the autonomous run
 
@@ -90,7 +90,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 ## 6) Worktree hand-off
 
 - Follow the shared clean-checkout-first worktree contract.
-- If the shared kickoff rule approved a feature branch, create it in the source checkout first; then provision the managed worktree from that branch `HEAD`.
+- If the shared kickoff rule approved a descriptive worktree branch, keep the source checkout on its original branch and provision the managed worktree directly on that branch name from source `HEAD`.
 - Prefer `worktree_continue_mode: in_session` when the active Codex surface can keep Master Chef and Builder operating against `active_worktree_path` coherently.
 - Once `active_worktree_path` is active, inspect repo-native manifests, runbook commands, and validation entrypoints there, bootstrap the required dependency, build, install, or test-prep environment in that worktree, and record `source_branch_decision`, `worktree_env_status`, `worktree_env_prepared_at_utc`, and a concise `worktree_env_bootstrap_summary`.
 - Do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`.

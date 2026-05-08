@@ -19,7 +19,7 @@ Current concrete adapters in this package are OpenClaw, Codex, and Claude Code. 
 Shared policy anchors for every adapter in this package:
 
 - record unresolved current-session fields as `unknown` and continue with the active session as-is
-- recommend a descriptive source feature branch on fresh runs from long-lived branches, still create a fresh per-run managed worktree branch, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
+- recommend a descriptive worktree branch on fresh runs from long-lived branches, keep the source checkout on its original branch, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`
 - keep Builder persistent across normal delegated-step transitions, attempt step-start compaction only when supported, and replace Builder only for recovery conditions
 - preserve lineage and durable evidence, then close or mark older Builder sessions inactive so one active Builder remains after recovery or direct completion
 - review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
@@ -38,8 +38,8 @@ The shared contract already fixes Builder continuation, monitoring, replacement 
 
 All adapters in this package must satisfy the same startup gate:
 
-- optionally recommend and record a descriptive source feature branch on fresh runs from long-lived branches
-- always create a separate fresh per-run managed worktree branch
+- optionally recommend and record a descriptive worktree branch on fresh runs from long-lived branches
+- otherwise create a separate fresh per-run managed worktree branch
 - activate or relaunch into that managed worktree
 - bootstrap the repo-native environment there
 - record `source_branch_decision`, `worktree_env_status`, `worktree_env_prepared_at_utc`, and `worktree_env_bootstrap_summary`

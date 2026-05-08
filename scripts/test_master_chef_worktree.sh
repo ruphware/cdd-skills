@@ -55,8 +55,8 @@ echo "[MasterChefWorktree] INFO CleanRepoPrepared repo={$clean_repo}"
 assert_clean_checkout "$clean_repo"
 
 run_id="run-001"
-worktree_branch="master-chef/$run_id"
-worktree_path="$clean_repo/.cdd-runtime/worktrees/$run_id"
+worktree_branch="gateway-20260508"
+worktree_path="$clean_repo/.cdd-runtime/worktrees/$worktree_branch"
 
 git -C "$clean_repo" worktree add "$worktree_path" -b "$worktree_branch" HEAD >/dev/null
 assert_exists "$worktree_path/.git"
@@ -73,7 +73,17 @@ worktree_head="$(git -C "$worktree_path" rev-parse HEAD)"
 
 echo "[MasterChefWorktree] INFO WorktreeCreated branch={$worktree_branch} path={$worktree_path}"
 
-second_path="$clean_repo/.cdd-runtime/worktrees/run-002"
+fallback_run_id="run-002"
+fallback_branch="master-chef/$fallback_run_id"
+fallback_path="$clean_repo/.cdd-runtime/worktrees/$fallback_run_id"
+
+git -C "$clean_repo" worktree add "$fallback_path" -b "$fallback_branch" HEAD >/dev/null
+[[ "$(git -C "$fallback_path" branch --show-current)" == "$fallback_branch" ]] || fail "Unexpected fallback worktree branch"
+[[ "$(git -C "$clean_repo" branch --show-current)" == "main" ]] || fail "Fallback worktree creation moved the source branch"
+
+echo "[MasterChefWorktree] INFO FallbackWorktreeCreated branch={$fallback_branch} path={$fallback_path}"
+
+second_path="$clean_repo/.cdd-runtime/worktrees/run-003"
 if git -C "$clean_repo" worktree add "$second_path" "$worktree_branch" >/dev/null 2>&1; then
   fail "Expected same-branch second worktree creation to fail"
 fi
@@ -92,8 +102,10 @@ echo "[MasterChefWorktree] INFO DirtyPreflightRejected repo={$dirty_repo}"
 assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "source checkout must be clean|Before kickoff.*clean"
 assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "active_worktree_path"
 assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "$expected_worktree_root"
+assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "keep the source checkout on its original branch|Do not switch the source checkout onto the active worktree branch"
 assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
 assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "$expected_runbook_worktree_root"
+assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" 'descriptive worktree branch|Do not `git switch` the source checkout onto <branch>'
 assert_matches "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
 assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "$expected_worktree_root"
 assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"

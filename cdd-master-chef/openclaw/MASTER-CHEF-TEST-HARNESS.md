@@ -79,7 +79,7 @@ Inspect the repo, tell me which TODO step is next, and prepare selector-driven k
   - TODO inspection
   - proposed next runnable step
   - remaining unfinished top-level TODO step-heading count is stated when finite
-  - a fresh-start feature-branch suggestion is surfaced when the source checkout is still on a long-lived branch
+  - a fresh-start worktree-branch suggestion is surfaced when the source checkout is still on a long-lived branch
   - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
   - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
   - explicit selector-driven kickoff approval request
@@ -109,12 +109,12 @@ Require a clean source checkout, create the managed worktree and fresh branch, i
 
 - [ ] Expected:
   - the source checkout is refused if dirty
-  - any approved fresh-start feature branch is created before managed worktree creation
+  - any approved fresh-start descriptive worktree branch becomes the managed worktree branch without switching the source checkout away from its original branch
   - a managed worktree is created on a fresh branch from the current `HEAD`
   - the managed worktree contains `.cdd-runtime/master-chef/`
   - `run.json`, `run.lock.json`, `master-chef.jsonl`, and `builder.jsonl` exist in the managed worktree
   - `run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata, using `unknown` for only the unresolved session-setting fields
-  - `run.json` also records whether the default feature-branch recommendation was accepted or declined and the current worktree environment status
+  - `run.json` also records whether the default worktree-branch recommendation was accepted or declined and the current worktree environment status
   - kickoff approval is presented with selector-based options rather than a free-form approval question
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
