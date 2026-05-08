@@ -2118,3 +2118,43 @@ Make `cdd-implementation-audit` surface edge-case and failure-path gaps in an au
 - Confirm each major audit question states the current recommended finding direction and what audit conclusion would change if answered differently.
 - Confirm minor ambiguities stay report-only unless they materially change the recommended follow-up.
 - Confirm the validator fails if root-decision collapse, highest-yield question ordering, non-repetition, or report-only minor handling is removed.
+
+## Step 51 — Make `cdd-maintain` index mode fully rebuild `docs/INDEX.md` from repo signals
+
+### Goal
+
+Make `cdd-maintain` `C. index` always regenerate `docs/INDEX.md` from a fresh repo scan that enumerates source files, counts LOC, extracts per-file keywords and meaning, combines those signals with docs/specs and framework-aware project metadata, and derives the index diagrams from that rebuilt model.
+
+### Constraints
+
+- Keep `index` mode write-scoped to `docs/INDEX.md` only.
+- Full rebuild means `docs/INDEX.md` is output-only in this mode; do not reuse prior index prose or diagrams as semantic input.
+- Require repo-local tool use to enumerate tracked source files and compute LOC, but do not freeze one specific command shape in the skill text.
+- Treat `README.md`, `TODO*.md`, `docs/specs/*`, and project metadata files such as `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `mix.exs`, and `requirements*.txt` as supporting inputs when present.
+- If docs/specs or project metadata are missing, continue with available repo signals and report the missing inputs rather than failing or inventing content.
+- Validation must fail if the maintain contract regresses to incremental refresh or drops file enumeration, LOC counting, keyword extraction, metadata intake, or evidence-grounded diagram synthesis.
+
+### Tasks
+
+- [x] Update `skills/cdd-maintain/SKILL.md` Mode C so it explicitly requires a fresh, tool-driven scan of relevant tracked source files, tests, configs, manifests, and support-doc signals before generating `docs/INDEX.md`.
+- [x] Require Mode C to build LOC plus per-file keyword/meaning inventory data and to synthesize the 2-4 GitHub-safe mermaid diagrams from the rebuilt repo model rather than stale `docs/INDEX.md` content.
+- [x] Update `skills/cdd-maintain/agents/openai.yaml` if needed so the default maintain prompt reflects the new full-rebuild index contract instead of a generic refresh summary.
+- [x] Extend `scripts/validate_skills.py` so validation fails if `cdd-maintain` index mode no longer requires full rebuild, repo-tool file enumeration, LOC counting, keyword/meaning extraction, manifest/spec-aware synthesis, graceful missing-input handling, and evidence-grounded diagram generation.
+
+### Implementation notes
+
+- Keep this step confined to the maintain contract and its proof surfaces; do not add a new standalone indexer unless a failing proof shows the skill text cannot carry the behavior cleanly.
+- Preserve the existing `docs/INDEX.md` section/output contract unless a narrow validator update is required to support the stronger rebuild semantics.
+- Because this repo currently has no `docs/` tree, the resulting contract should allow creating `docs/INDEX.md` from scratch during an approved index pass.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-maintain/SKILL.md` and confirm Mode C now says `docs/INDEX.md` is fully rebuilt from current repo signals rather than refreshed from prior index content.
+- Confirm Mode C now requires tool-driven source enumeration, LOC counting, and per-file keyword/meaning extraction.
+- Confirm Mode C now uses docs/specs and framework-aware project metadata as diagram and architecture inputs when present.
+- Confirm the validator fails if the full-rebuild, LOC, keyword, metadata, or diagram-synthesis rules are removed.
