@@ -73,11 +73,11 @@ For behavior-changing or audit-derived implementation planning, do not move from
 - If the review finds no meaningful repo-grounded edge cases, say so briefly and continue without inventing generic ones.
 
 ## Intent and assumption checkpoint
-Planning must resolve intent and material assumptions before implementation-detail clarification.
+Resolve intent and material assumptions before detailed implementation planning.
 
-- Working rule: do not ask a lower-level question while a higher-level unresolved intent, assumption, or direction decision could still invalidate the answer.
-- Before asking detailed implementation questions, drafting TODO edits, or selecting a plan shape, produce an intent frame from the user request, repo contract files, and reviewed repo evidence.
-- The intent frame must identify:
+- Working rule: do not ask a lower-level question while a higher-level unresolved decision about intent, assumptions, or direction could still invalidate the answer.
+- Before detailed implementation questions, TODO drafting, or plan-shape selection, build an intent frame from the user request, repo contract files, and reviewed repo evidence.
+- The intent frame records:
   - `Requested change`
   - `Suspected intent`
   - `Success signal`
@@ -94,8 +94,8 @@ Planning must resolve intent and material assumptions before implementation-deta
   - whether the work should be implemented, deferred, audited, or converted into a spec or TODO delta
   - validation or UAT requirements
   - risk, rollback, migration, privacy, security, or permission behavior
-- If the intent is unclear, ask one intent-level clarification first. Do not ask implementation-detail questions as a substitute for resolving intent.
-- When the intent is clear enough but assumptions remain, classify each material assumption as:
+- If intent is unclear, ask one intent-level clarification first. Do not use implementation-detail questions to substitute for intent resolution.
+- If intent is stable but assumptions remain, classify each material assumption as:
   - `confirmed`
   - `repo-inferred`
   - `recommended default`
@@ -114,10 +114,10 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Ask at most one substantive clarification or decision question per message.
 - Prefer the fewest clarification questions that resolve the most plan-shaping uncertainty.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
-- Treat a request as intent-qualifying when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to produce more than one TODO step.
-- For intent-qualifying requests, add a visible `Intent and assumptions` section that records requested change, suspected intent, success signal, recommended direction, material assumptions by status, non-goals, and any blocking intent question. Keep it compact when the plan is otherwise simple.
-- For requests that are multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step, first produce a coarse dependency-ordered step decomposition before detailed TODO drafting.
-- For those qualifying requests, refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
+- Treat a request as `intent-qualifying` when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to need more than one TODO step.
+- For `intent-qualifying` requests, add a compact visible `Intent and assumptions` section covering requested change, suspected intent, success signal, recommended direction, material assumptions by status, non-goals, and any blocking intent question.
+- If the request is ambiguous, multi-surface, audit-driven, or likely to need more than one TODO step, start with a coarse dependency-ordered step decomposition before detailed TODO drafting.
+- For requests that need coarse decomposition, refine one coarse step at a time into runnable TODO steps rather than jumping straight to a full mixed-surface detailed plan.
 - During the coarse planning phase, review any user-provided contract details, content details, and other implementation-driving artifacts, expand them into the plan, and keep exact implementation-driving detail in `TODO.md` rather than leaving it only in surrounding chat.
 - If a reviewed artifact is a mixed product and implementation detail surface, keep the exact implementation-driving detail in `TODO.md` and add explicit `TODO.md` follow-up for the relevant spec/doc update unless a durable spec delta is intentionally being drafted now.
 - Add a visible `Confirmed requirements coverage` section that records which user requirements were confirmed, which were excluded by user decision or repo fit, and where each confirmed requirement is represented in the plan.
@@ -144,8 +144,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 ## Question economy
 Minimize clarification loops.
 
-- Do not ask a lower-level question while a higher-level unresolved intent, assumption, or direction decision could still invalidate the answer.
-- Rank unresolved decisions in this order:
+- Use this order when ranking unresolved decisions:
   1. intent and outcome
   2. material assumptions and non-goals
   3. planning direction
@@ -153,8 +152,9 @@ Minimize clarification loops.
   5. data/state/contracts/APIs
   6. sequencing, rollout, migration, rollback, validation
   7. implementation details
+- Before asking any clarification, rank unresolved decisions by how much downstream uncertainty they remove, then ask the highest unresolved level first.
+- Do not ask a lower-level question while a higher-level unresolved decision could still invalidate it.
 - Ask intent and assumption questions before detailed implementation questions.
-- Before asking any clarification, rank unresolved decisions by how much downstream uncertainty they remove.
 - Prefer questions that affect boundaries, sequencing, interfaces, data/state, rollout, validation, or approval safety.
 - Do not ask about reversible implementation details, naming/copy polish, file placement already implied by repo conventions, defaults that can be safely documented in the TODO step, preferences that do not change plan shape, or questions already answered by the user, repo evidence, or an accepted default.
 - Default clarification budget:
@@ -175,9 +175,9 @@ Avoid these planning failures:
 - Using many small detail questions to avoid asking one hard direction question.
 
 ## Flow (approval-gated, bounded-bisection)
-1) Frame the request.
-   - Read the repo contract files plus the relevant docs/specs, TODO surfaces, affected code, tests, entrypoints, configs, and manifests.
-   - First review only enough to understand the request, existing contract, and likely affected surfaces. Do not deep-dive into detailed implementation choices before intent is stable.
+1) Frame intent before details.
+   - Read the repo contract files plus the relevant docs/specs, TODO surfaces, affected code, tests, entrypoints, configs, and manifests, but only far enough to stabilize intent, the existing contract, and the likely affected surfaces.
+   - Do not deep-dive into reversible implementation choices before intent is stable.
    - Reduce the request to one concise intent frame:
      - requested change
      - suspected intent
@@ -188,14 +188,15 @@ Avoid these planning failures:
      - material assumptions
      - recommended direction
      - unstable points
-   - If the change request or audit finding is not clear enough to frame intent and direction, ask one intent-level clarification before continuing.
-   - Do not draft TODO edits before the request has a concrete frame.
-2) Shape the plan.
+   - Challenge only assumptions that would materially change scope, direction, sequencing, validation, or whether the work should be done at all.
+   - If the change request or audit finding still cannot support an intent frame, ask one intent-level clarification before continuing.
+   - Do not draft TODO edits until the request has a concrete frame.
+2) Shape the planning direction.
    - Create a plan that is rough, solved, and bounded:
      - `rough`: do not over-specify reversible implementation details
      - `solved`: remove ambiguity that would force the implementer to invent product, architecture, sequencing, or validation decisions
      - `bounded`: state what is in scope, what is out of scope, and where the work stops
-   - Use the intent frame to choose the planning direction before decomposing implementation. Decide whether the request is primarily:
+   - Choose the primary planning direction before decomposing implementation. Decide whether the request is primarily:
      - `feature`
      - `bugfix`
      - `audit_fix`
@@ -204,11 +205,11 @@ Avoid these planning failures:
      - `maintenance`
      - `investigation`
      - `defer`
-   - If the category is ambiguous and materially changes the plan, ask one direction-level clarification before detailed planning.
+   - If the category is ambiguous and would materially change boundaries, sequencing, or validation, ask one direction-level clarification before detailed planning.
    - Identify affected boundaries, risks, dependency order, validation surfaces, and likely write locations.
    - For behavior-changing or audit-derived requests, run the repo-grounded edge-case review before detailed TODO drafting.
    - For audit-driven requests, normalize audit items before drafting TODO steps.
-3) Bisect uncertainty.
+3) Bisect uncertainty before detailed drafting.
    - List unresolved plan-shaping decisions privately before asking the user anything.
    - Tag each unresolved decision as:
      - `intent`
@@ -217,13 +218,14 @@ Avoid these planning failures:
      - `boundary`
      - `implementation`
      - `validation`
-   - Ask only the highest-leverage unresolved decision first.
+   - Resolve `intent`, `assumption`, and `direction` uncertainty before `boundary`, `implementation`, or detailed `validation` questions unless a safety constraint forces otherwise.
+   - Ask the highest-leverage unresolved decision first, preferring the highest unresolved level that could still invalidate downstream planning.
    - A clarification is allowed only when the answer would materially change product or architecture boundaries, data/state, contracts or APIs, file/write location, sequencing, approval boundaries, migration/rollback/rollout, security/privacy/permission behavior, validation strategy, or an unresolved `major` edge case.
    - Collapse related open questions into the fewest root decisions possible.
    - If only minor defaults or `minor` edge cases remain, disclose them briefly and carry them into assumptions, constraints, implementation notes, automated checks, or UAT.
    - If a remaining material assumption would invalidate the plan, create unsafe or destructive work, or materially change boundaries, sequencing, contracts, data/state, rollout, or validation, ask one highest-leverage clarification. Otherwise, disclose it in the plan and carry it into the relevant TODO step.
 4) Produce the coarse plan.
-   - For requests that are multi-surface, ambiguous, audit-driven, or likely to produce more than one TODO step, produce a coarse dependency-ordered decomposition before detailed TODO drafting.
+   - If the request is ambiguous, multi-surface, audit-driven, or likely to need more than one TODO step, produce a coarse dependency-ordered decomposition before detailed TODO drafting.
    - Keep the coarse pass lightweight but concrete enough to validate:
      - boundaries
      - dependency order
