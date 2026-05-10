@@ -297,3 +297,44 @@ Make `cdd-master-chef` use one shared active-monitoring policy across OpenClaw, 
 - Confirm `30 minutes total running silence` or `2 consecutive unanswered explicit probes` is the harder replacement boundary.
 - Confirm Codex, Claude, and OpenClaw adapter docs all use the same timing semantics and differ only in runtime-specific probe mechanics.
 - Confirm the validator and artifact script fail if docs regress to passive OpenClaw-only stale checks, Codex/Claude-only quiet-work windows, or watchdog-style supervision.
+
+## Step 55 — Add intent-first framing to cdd-plan bounded-bisection planning
+
+### Goal
+
+Make `cdd-plan` resolve intent, material assumptions, and planning direction before it asks lower-level implementation questions or drafts runnable TODO edits.
+
+### Constraints
+
+- Layer this change onto the existing `Question economy` and `Flow (approval-gated, bounded-bisection)` contract; do not replace the upstream bounded-bisection lifecycle.
+- Preserve the Step 49 edge-case review, Step 52 clarification-budget and single-step-refinement rules, the approval-gated read-only model, and selector-based final apply options.
+- Do not reintroduce a blanket “confirm or correct all material assumptions before continuing” loop. Keep the Step 52 rule that only invalidating or materially plan-shaping assumptions block progress.
+- Keep the visible intent output lightweight and require it only when the request is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to produce more than one TODO step.
+- Touch only `skills/cdd-plan/SKILL.md` and `scripts/validate_skills.py` unless a failing proof shows another surface is required.
+
+### Tasks
+
+- [x] Add an `## Intent and assumption checkpoint` section to `skills/cdd-plan/SKILL.md` that requires an intent frame before detailed implementation questions, TODO drafting, or plan-shape selection.
+- [x] Extend `skills/cdd-plan/SKILL.md` so `Question economy` ranks unresolved decisions from intent and assumptions down to implementation details and forbids lower-level questions while higher-level direction is still unstable.
+- [x] Require intent-qualifying plans to show a compact visible `Intent and assumptions` section with requested change, suspected intent, success signal, recommended direction, material assumptions by status, non-goals, and any blocking intent question.
+- [x] Add a `## Planning anti-patterns` section to `skills/cdd-plan/SKILL.md` that forbids premature implementation-detail questioning, unchallenged assumptions, and premature TODO drafting.
+- [x] Extend `scripts/validate_skills.py` so the default path keeps the upstream bounded-bisection and audit-normalization checks while also enforcing the new intent-checkpoint structure, and `--include-legacy-prose` covers the assumption taxonomy, direction taxonomy, anti-patterns, and visible intent-output contract.
+
+### Implementation notes
+
+- Reuse the existing `Interactive planning contract`, `Question economy`, and `Flow (approval-gated, bounded-bisection)` sections instead of creating a second competing planning framework.
+- Keep the visible `Intent and assumptions` trigger separate from the coarse-plan trigger: behavior-changing requests may need intent framing without forcing a coarse decomposition unless they are also ambiguous, multi-surface, audit-driven, or likely multi-step.
+- Preserve the repo’s validator strategy from Step 20: keep structural and order-sensitive checks in the default path, and put deeper topic-bundle coverage under `--include-legacy-prose` where exact structure is less machine-checkable.
+- Keep canonical `cdd-plan` validation additive: intent-checkpoint coverage must sit alongside the upstream audit-mode and bounded-bisection checks, not replace them.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `cdd-plan` skill and confirm it resolves intent and material assumptions before lower-level implementation questions.
+- Confirm `Question economy` now orders unresolved decisions from intent and assumptions down to implementation details and still preserves the upstream clarification-budget contract.
+- Confirm intent-qualifying plans now include a compact visible `Intent and assumptions` section without forcing coarse decomposition for every behavior change.
+- Confirm the validator fails if the intent checkpoint, decision-order hierarchy, anti-pattern section, or visible intent-output contract is removed, or if the Step 52 bounded-bisection checks are displaced.

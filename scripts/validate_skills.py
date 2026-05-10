@@ -308,7 +308,7 @@ def validate_coarse_step_planning(skill_text: str, skill_md: Path) -> None:
     require_topic_bundle(
         skill_text,
         (
-            r"multi-surface.*ambiguous.*more than one TODO step",
+            r"(?:multi-surface.*ambiguous|ambiguous.*multi-surface).*more than one TODO step",
             r"coarse (dependency-ordered step decomposition|root-cause work packages).*before detailed TODO drafting",
             r"refine one coarse (step|root-cause work package) at a time.*runnable TODO steps",
             r"Confirmed requirements coverage",
@@ -363,6 +363,53 @@ def validate_plan_edge_case_review_contract(skill_text: str, skill_md: Path) -> 
         ),
         skill_md,
         "plan edge-case review topics",
+    )
+
+
+def validate_plan_intent_checkpoint_contract(skill_text: str, skill_md: Path) -> None:
+    """Assert the plan skill resolves intent before implementation details."""
+    require_headings(
+        skill_text,
+        ("## Intent and assumption checkpoint", "## Planning anti-patterns"),
+        skill_md,
+        "plan intent-checkpoint headings",
+    )
+    require_topic_bundle(
+        skill_text,
+        (
+            r"Before asking detailed implementation questions.*intent frame",
+            r"Working rule: do not ask a lower-level question while a higher-level unresolved intent, assumption, or direction decision could still invalidate the answer",
+            r"Rank unresolved decisions in this order:.*1\.\s*intent and outcome.*2\.\s*material assumptions and non-goals.*3\.\s*planning direction.*4\.\s*product and architecture boundaries.*5\.\s*data/state/contracts/APIs.*6\.\s*sequencing, rollout, migration, rollback, validation.*7\.\s*implementation details",
+            r"Ask intent and assumption questions before detailed implementation questions",
+            r"`Intent and assumptions` section",
+        ),
+        skill_md,
+        "plan intent-checkpoint topics",
+    )
+
+
+def validate_plan_intent_framing_topics(skill_text: str, skill_md: Path) -> None:
+    """Assert the plan skill carries the deeper intent-framing contract."""
+    require_topic_bundle(
+        skill_text,
+        (
+            r"`Requested change`.*`Suspected intent`.*`Success signal`.*`Non-goals`.*`Material assumptions`.*`Recommended direction`.*`Unstable points`",
+            r"requested change.*suspected intent.*deliverable.*hardest constraint.*success signal.*non-goals.*material assumptions.*recommended direction.*unstable points",
+            r"actual problem being solved.*user-visible outcome.*product or architecture boundaries.*in scope or out of scope.*sequencing of work.*implemented, deferred, audited, or converted into a spec or TODO delta.*validation or UAT requirements.*risk, rollback, migration, privacy, security, or permission behavior",
+            r"`confirmed`.*`repo-inferred`.*`recommended default`.*`risky`.*`excluded`",
+            r"Only `risky` assumptions block planning",
+            r"`feature`.*`bugfix`.*`audit_fix`.*`spec_delta`.*`refactor`.*`maintenance`.*`investigation`.*`defer`",
+            r"`intent`.*`assumption`.*`direction`.*`boundary`.*`implementation`.*`validation`",
+            r"Treat a request as intent-qualifying when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to produce more than one TODO step",
+            r"`Intent and assumptions` section.*requested change.*suspected intent.*success signal.*recommended direction.*material assumptions by status.*non-goals.*blocking intent question",
+            r"Asking implementation-detail questions before the intent is clear",
+            r"Treating the user's first wording as the confirmed intent",
+            r"Converting an audit bullet directly into implementation work",
+            r"file placement.*naming.*UI copy.*endpoint shape.*schema fields.*test mechanics",
+            r"many small detail questions.*one hard direction question",
+        ),
+        skill_md,
+        "plan intent-framing topics",
     )
 
 
@@ -432,7 +479,7 @@ def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None
             r"relevant docs.*README\.md.*docs/specs.*corresponding tests|corresponding tests.*README\.md.*docs/specs",
             r"Flow \(approval-gated, bounded-bisection\)",
             r"Frame the request.*Shape the plan.*Bisect uncertainty.*Produce the coarse plan.*Refine one coarse step.*Apply, hand off, and audit",
-            r"deliverable.*hardest constraint.*success signal",
+            r"requested change.*suspected intent.*deliverable.*hardest constraint.*success signal",
             r"`rough`:.*reversible implementation details.*`solved`:.*product, architecture, sequencing, or validation decisions.*`bounded`:.*in scope.*out of scope.*work stops",
             r"When the work is already a single clearly bounded next step.*without forcing a coarse decomposition pass",
             r"write-location choice.*update an existing TODO file.*TODO-audit-<tag>\.md|audit-driven requests.*update an existing TODO file.*TODO-audit-<tag>\.md",
@@ -879,6 +926,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         validate_plan_final_apply_options(skill_text, skill_md)
         validate_plan_edge_case_review_contract(skill_text, skill_md)
         validate_plan_audit_mode_skill_text(skill_text, skill_md)
+        validate_plan_intent_checkpoint_contract(skill_text, skill_md)
     if skill_dir.name == "cdd-implementation-audit":
         validate_implementation_audit_question_efficiency_contract(
             skill_text, skill_md
@@ -906,6 +954,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         if skill_dir.name == "cdd-plan":
             validate_coarse_step_planning(skill_text, skill_md)
             validate_reviewed_contract_artifacts(skill_text, skill_md)
+            validate_plan_intent_framing_topics(skill_text, skill_md)
         if skill_dir.name == "cdd-implementation-audit":
             validate_implementation_audit_skill_text(skill_text, skill_md)
 
@@ -2121,6 +2170,9 @@ def validate_generated_openclaw_builder_skills(
                 validate_option_driven_approval(skill_text, skill_md)
             if skill_name == "cdd-plan":
                 validate_plan_final_apply_options(skill_text, skill_md)
+                validate_plan_edge_case_review_contract(skill_text, skill_md)
+                validate_plan_audit_mode_skill_text(skill_text, skill_md)
+                validate_plan_intent_checkpoint_contract(skill_text, skill_md)
 
             if include_legacy_prose:
                 if skill_name == "cdd-implement-todo":
@@ -2143,7 +2195,7 @@ def validate_generated_openclaw_builder_skills(
                 if skill_name == "cdd-plan":
                     validate_coarse_step_planning(skill_text, skill_md)
                     validate_reviewed_contract_artifacts(skill_text, skill_md)
-                    validate_plan_audit_mode_skill_text(skill_text, skill_md)
+                    validate_plan_intent_framing_topics(skill_text, skill_md)
                 if skill_name == "cdd-implementation-audit":
                     validate_implementation_audit_skill_text(skill_text, skill_md)
 
