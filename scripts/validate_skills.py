@@ -726,8 +726,8 @@ def validate_maintain_mode_boundaries(skill_text: str, skill_md: Path) -> None:
             r"multiple modes are selected.*Omit non-selected mode status blocks",
             # Runbooks in canonical set + ad-hoc + subsystem cluster paths in read discipline
             r"Treat `README\.md`, repo-root `RUNBOOK\.md` and `docs/runbooks/\*\.md` when present, `docs/specs/prd\.md`",
-            r"repo-root `RUNBOOK\.md` and `docs/runbooks/\*\.md` when present, every `\*\.md` under `docs/` not in a canonical-role subdirectory",
-            r"every detected subsystem doc-cluster file \(`<subsystem>/README\.md`, `<subsystem>/RUNBOOK\.md`, `<subsystem>/CONTRACT\.md`, `<subsystem>/SKILL\.md`",
+            r"repo-root `RUNBOOK\.md` and `docs/runbooks/\*\.md` when present, every detected subsystem doc cluster",
+            r"the cluster's `README\.md`, `RUNBOOK\.md`, `CONTRACT\.md`, and `SKILL\.md` files as canonical",
             # Subsystem doc clusters subsection
             r"### Mode A — Subsystem doc clusters",
             r"Detect a subsystem doc cluster when a directory contains `README\.md` and at least one of `RUNBOOK\.md`, `CONTRACT\.md`, or `SKILL\.md`",
@@ -769,7 +769,7 @@ def validate_maintain_mode_boundaries(skill_text: str, skill_md: Path) -> None:
             r"Use the bounded checks and orphaned-topic check defined in `Mode A — Codebase-comparison checks` below",
             # Ad-hoc support doc archive rules subsection (Step 58)
             r"### Mode A — Ad-hoc support doc archive rules",
-            r"Primary trigger is.*`stale-candidate`.*orphaned-topic evidence recorded by `Mode A — Codebase-comparison checks`",
+            r"Primary trigger is.*`stale-candidate`.*orphaned-topic.*`Mode A — Codebase-comparison checks`",
             r"Secondary trigger is an explicit retirement marker.*frontmatter `Deprecated:`.*frontmatter `Superseded by:`.*frontmatter `Status:`",
             r"`Superseded`, `Rejected`, or `Withdrawn`",
             r"Never silent\. Documentation approval is required for every archive move",

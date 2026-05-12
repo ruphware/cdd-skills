@@ -14,7 +14,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Do not front-load support-doc, journal, or runtime review when the selected mode does not require it.
 
 ## Mode-scoped read discipline
-- `A. doc drift + upkeep`: read `README.md`, `TODO.md` and adjacent `TODO*.md`, `docs/JOURNAL.md` as the stable journal entrypoint, plus `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active, `docs/INDEX.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `docs/specs/*-definition.md` files when present, `docs/prompts/PROMPT-INDEX.md` if present, repo-root `RUNBOOK.md` and `docs/runbooks/*.md` when present, every `*.md` under `docs/` not in a canonical-role subdirectory (ad-hoc support docs), every non-canonical `*.md` at repo root (ad-hoc support docs, excluding the protected names `README.md`, `AGENTS.md`, `CLAUDE.md`, `TODO.md`, `TODO-*.md`, `CHANGELOG.md`, `LICENSE`, `CONTRIBUTING.md`), every detected subsystem doc-cluster file (`<subsystem>/README.md`, `<subsystem>/RUNBOOK.md`, `<subsystem>/CONTRACT.md`, `<subsystem>/SKILL.md`, plus every other `*.md` adjacent in the same `<subsystem>/` directory), repo-local `.agents/skills/*/SKILL.md` files when present, repo-local `.cdd-runtime/` when present, and manifests, entrypoints, or scripts needed to verify drift or upkeep decisions.
+- `A. doc drift + upkeep`: read `README.md`, `TODO.md` and adjacent `TODO*.md`, `docs/JOURNAL.md` as the stable journal entrypoint, plus `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active, `docs/INDEX.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `docs/specs/*-definition.md` files when present, `docs/prompts/PROMPT-INDEX.md` if present, repo-root `RUNBOOK.md` and `docs/runbooks/*.md` when present, every detected subsystem doc cluster (see `Mode A — Subsystem doc clusters`), every ad-hoc support doc (see `Mode A — Ad-hoc support docs`), repo-local `.agents/skills/*/SKILL.md` files when present, repo-local `.cdd-runtime/` when present, and manifests, entrypoints, or scripts needed to verify drift or upkeep decisions.
 - `B. source cleanup`: start from tracked source, tests, configs, manifests, and entrypoints, plus repo-native dead-code or unused-code tooling when present. Read `README.md`, `TODO*.md`, journal surfaces, repo-local `.agents/skills/*/SKILL.md`, or `.cdd-runtime/` only when one of those surfaces is needed as proof for a specific cleanup candidate.
 - `C. index`: read only the project content needed to regenerate `docs/INDEX.md`.
 - `D. refactor`: read `docs/INDEX.md` plus the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context needed for the selected architecture audit.
@@ -71,10 +71,9 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
 ### Mode A — Subsystem doc clusters
-- Detect a subsystem doc cluster when a directory contains `README.md` and at least one of `RUNBOOK.md`, `CONTRACT.md`, or `SKILL.md`.
-- Treat each detected `<subsystem>/README.md`, `<subsystem>/RUNBOOK.md`, `<subsystem>/CONTRACT.md`, and `<subsystem>/SKILL.md` file as canonical for that subsystem only.
-- Root `README.md` remains the repo runbook entrypoint; subsystem `README.md` is canonical for its subsystem only. Both can hold the canonical label without conflict.
-- Treat every other `*.md` file inside a detected subsystem cluster (i.e., not the cluster's `README.md` / `RUNBOOK.md` / `CONTRACT.md` / `SKILL.md`) as a subsystem-internal ad-hoc support doc per `Mode A — Ad-hoc support docs`.
+- Detect a subsystem doc cluster when a directory contains `README.md` and at least one of `RUNBOOK.md`, `CONTRACT.md`, or `SKILL.md`. Treat the cluster's `README.md`, `RUNBOOK.md`, `CONTRACT.md`, and `SKILL.md` files as canonical for that subsystem only.
+- Root `README.md` stays the repo runbook entrypoint; a subsystem `README.md` is canonical only for its subsystem — both scopes coexist.
+- Treat every other `*.md` inside a detected cluster as a subsystem-internal ad-hoc support doc per `Mode A — Ad-hoc support docs`.
 
 ### Mode A — Ad-hoc support docs
 - Treat the following as ad-hoc support docs and walk them on every Mode A invocation:
@@ -83,19 +82,17 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
   - every subsystem-internal non-canonical `*.md` file inside a detected subsystem doc cluster
 - This covers mockups, scratch RFCs, design notes, retired drafts, source mockups, and similar exploratory artifacts. RFCs are one example of an ad-hoc support doc, not a privileged class.
 - Non-`.md` files (images, JSON, binaries) are out of scope for Mode A.
-- Classify each ad-hoc support doc using the classification line above and report them under `Support documentation status`.
-- Classifying an ad-hoc support doc as `stale-candidate` does not by itself archive anything; archive moves go through the documentation-approval flow per the ad-hoc support doc archive rules when those are in scope.
+- Classify each ad-hoc support doc using the classification line above and report them under `Support documentation status`. Archive proposals follow `Mode A — Ad-hoc support doc archive rules`.
 
 ### Mode A — Codebase-comparison checks
 - Run these bounded checks against canonical support docs and ad-hoc support docs. Use repo-native search only; no full static analysis or symbol-graph traversal.
 - A failed bounded check produces a `drifted` classification with the specific claim cited.
-- Bounded check list:
-  - **Script-name claims**: any doc string of the form `npm run <name>`, `pnpm <name>`, `yarn <name>`, `make <target>`, `pdm run <name>`, `cargo <command>`, `go run <path>`, `python -m <module>`, or any quoted command pointing at a repo script — verify the target resolves to an entry in the relevant manifest (`package.json`, `pyproject.toml`, `Makefile`, `scripts/`, `Cargo.toml`, `go.mod`, `mix.exs`, etc.).
-  - **File-path claims**: any doc reference to a repo-relative path or backticked path — verify the path exists in the current tree.
-  - **Symbol claims**: any doc reference to a function, class, module, or CLI command name — best-effort repo-grep. Report `unclear` if not found rather than auto-`drifted`.
-  - **Entrypoint claims**: any doc reference to a main / CLI / service / handler — verify the named entrypoint file exists and is referenced from the relevant manifest.
-  - **Skill-reference claims**: any doc reference of the form `$cdd-<x>` or `skills/<x>` — verify the skill directory and `SKILL.md` exist.
-  - **Manifest-field claims**: any doc reference to a package name, version range, or dependency — verify the field is present in the relevant manifest.
+- **Script-name claims** (`npm run <name>`, `pnpm <name>`, `yarn <name>`, `make <target>`, `pdm run <name>`, `cargo <command>`, `go run <path>`, `python -m <module>`, or any quoted command pointing at a repo script): verify the target resolves to an entry in the relevant manifest (`package.json`, `pyproject.toml`, `Makefile`, `scripts/`, `Cargo.toml`, `go.mod`, `mix.exs`, etc.).
+- **File-path claims** (any repo-relative path or backticked path in a doc): verify the path exists in the current tree.
+- **Symbol claims** (function, class, module, or CLI command name in a doc): best-effort repo-grep. Report `unclear` if not found rather than auto-`drifted`.
+- **Entrypoint claims** (a main / CLI / service / handler in a doc): verify the named entrypoint file exists and is referenced from the relevant manifest.
+- **Skill-reference claims** (`$cdd-<x>` or `skills/<x>` in a doc): verify the skill directory and `SKILL.md` exist.
+- **Manifest-field claims** (package name, version range, or dependency in a doc): verify the field is present in the relevant manifest.
 - Orphaned-topic check (ad-hoc support docs only):
   - Extract the doc's primary subject from filename, H1 heading, and first-paragraph keywords.
   - Grep the subject across (a) the codebase, (b) the active TODO step list (`TODO.md` + adjacent `TODO-*.md`), (c) the active specs and blueprint (`docs/specs/*`), and (d) the last 30 days of journal activity. Locate journal sources per the existing single-vs-split rules in `Mode A — Journal archive rules`.
@@ -128,18 +125,17 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present. If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
 
 ### Mode A — Ad-hoc support doc archive rules
-- Trigger model:
-  - Primary trigger is `Mode A — Ad-hoc support docs` classified as `stale-candidate` with the orphaned-topic evidence recorded by `Mode A — Codebase-comparison checks`. Cite which evidence surfaces returned no hits when proposing archive.
-  - Secondary trigger is an explicit retirement marker in the doc itself: frontmatter `Deprecated:`, frontmatter `Superseded by:`, or frontmatter `Status:` with value `Superseded`, `Rejected`, or `Withdrawn`. Frontmatter markers are strong signals when present but are not required; judgement-based `stale-candidate` proposals are also valid.
-  - Never silent. Documentation approval is required for every archive move.
+- Primary trigger is an ad-hoc support doc classified as `stale-candidate` by the orphaned-topic check in `Mode A — Codebase-comparison checks`. Cite which evidence surfaces returned no hits when proposing archive.
+- Secondary trigger is an explicit retirement marker in the doc — frontmatter `Deprecated:`, frontmatter `Superseded by:`, or frontmatter `Status:` with value `Superseded`, `Rejected`, or `Withdrawn`. Strong signals when present but not required; judgement-based `stale-candidate` proposals are also valid.
+- Never silent. Documentation approval is required for every archive move.
 - The destination layout mirrors the source location:
   - `docs/foo.md` → `docs/archive/foo_YYYY-MM-DD.md`
   - `docs/<sub>/bar.md` → `docs/archive/<sub>/bar_YYYY-MM-DD.md`
   - Repo-root non-canonical `*.md` such as `NOTES.md` → `docs/archive/NOTES_YYYY-MM-DD.md`
   - Subsystem-internal `<subsystem>/scratch.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD.md` (local archive so the subsystem stays self-contained)
 - Same-day archive append: if the destination archive file already exists for the same date, append the newly archived sections to that file rather than overwriting it.
-- Ask once for documentation approval using selector-based options. Allow per-file or batched approval — user picks granularity. Reuse the existing documentation-approval flow defined in `## Approval contract`. Keep ad-hoc-doc archive approval separate from stale TODO deletion approval and runtime-cleanup approval.
-- Journal archive rules (`### Mode A — Journal archive rules`) and TODO archive rules (`### Mode A — TODO archive rules`) are unchanged. The ad-hoc support doc archive contract is parallel and additive; it does not override the existing rules. Journals continue to follow the single-vs-split policy defined in `Mode A — Journal archive rules`; TODO archives continue to follow `Mode A — TODO archive rules`.
+- Ask once for documentation approval using selector-based options; allow per-file or batched approval — user picks granularity. Reuse the existing documentation-approval flow defined in `## Approval contract`. Keep ad-hoc-doc archive approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- Journal archive rules (`### Mode A — Journal archive rules`) and TODO archive rules (`### Mode A — TODO archive rules`) are unchanged; the ad-hoc support doc archive contract is parallel and additive.
 
 ### Mode A — Local runtime cleanup review
 - Inspect repo-local `.cdd-runtime/` when present, especially `.cdd-runtime/master-chef/`.
