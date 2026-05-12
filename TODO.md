@@ -400,3 +400,102 @@ Rename the `cdd-implementation-audit` skill to `cdd-audit` across folder, frontm
 - `scripts/test_installers.sh` passes, including an upgrade-cleanup case that removes a pre-existing `cdd-implementation-audit/` fixture.
 - `skills/cdd-init-project/SKILL.md:55` references `$cdd-audit`.
 - Closed historical steps in `TODO.md` (Steps 49–55) are unchanged.
+
+## Step 57 — Broaden `cdd-maintain` Mode A surface + codebase-comparison rigor (runbooks + subsystem clusters + ad-hoc support docs + bounded checks + orphaned-topic detection)
+
+### Goal
+
+Make `cdd-maintain` Mode A:
+1. Read, classify, and report drift on canonical docs (README + specs + runbooks + INDEX + PROMPT-INDEX + repo-local skill manifests), detected subsystem doc clusters, AND every ad-hoc support doc under `docs/`, at repo root, and inside subsystem clusters — using a five-label classification (`current` / `drifted` / `stale-candidate` / `missing` / `unclear`).
+2. Run concrete bounded codebase-comparison checks against canonical docs (script-name / file-path / symbol / entrypoint / skill-reference / manifest-field), plus orphaned-topic detection for ad-hoc support docs (subject grep against codebase + active TODO + active specs + recent journal), so the runner does not invent rules.
+
+### Constraints
+
+- Touch only `skills/cdd-maintain/SKILL.md` and `scripts/validate_skills.py` unless a failing proof shows another surface is required.
+- Do not remove any existing Mode A rule; only add new doc classes, the new classification label, the new subsections, and the new checks subsection.
+- **Ad-hoc support doc** is defined as: any `*.md` under `docs/` not in a canonical-role subdir (`docs/specs/`, `docs/prompts/`, `docs/runbooks/`, `docs/archive/`, `docs/journal/`, `docs/INDEX.md`, `docs/JOURNAL.md`); plus any non-canonical `*.md` at repo root (excluding the protected names: `README.md`, `AGENTS.md`, `CLAUDE.md`, `TODO.md`, `TODO-*.md`, `CHANGELOG.md`, `LICENSE`, `CONTRIBUTING.md`); plus subsystem-internal non-canonical `*.md` files inside detected subsystem clusters (i.e., not the cluster's `README.md` / `RUNBOOK.md` / `CONTRACT.md` / `SKILL.md`).
+- Non-`.md` files (images, JSON, binaries) are out of scope for Mode A.
+- Subsystem-cluster detection: a directory qualifies when it contains `README.md` and at least one of `RUNBOOK.md` / `CONTRACT.md` / `SKILL.md`.
+- Classification labels expand to `current` / `drifted` / `stale-candidate` / `missing` / `unclear`. `stale-candidate` is ad-hoc-doc-only and is populated only by the orphaned-topic check; classifying a doc as `stale-candidate` does not by itself archive anything — Step 58's approval-gated contract handles that.
+- Bounded checks: language-agnostic; repo-native search only; no full static analysis; no symbol-graph traversal. A failed bounded check → `drifted` with the specific claim cited.
+- Orphaned-topic check applies only to ad-hoc support docs. Result map: 0 evidence hits across all four surfaces → `stale-candidate`; 1-2 weak hits → `unclear`; 3+ hits → `current`.
+- Root `README.md` remains the repo runbook entrypoint; subsystem `README.md` is canonical for its subsystem only — both hold the canonical label without conflict.
+- **Journal archive rules are unchanged** (lines 90–96 of current `skills/cdd-maintain/SKILL.md`). They already correctly implement the single-vs-split policy from `cdd-boilerplate/.agents/skills/cdd-drift-guard/SKILL.md`: single-journal mode → `docs/archive/`; split-journal mode → `docs/journal/SUMMARY.md` (condensed) + `docs/journal/archive/` (raw batches). This step does not touch journal archive behavior. Orphaned-topic detection respects the existing single-vs-split rules when locating recent journal entries.
+- Preserve existing Mode A TODO archive rules, stale-adjacent-TODO handling, journal archive rules, `Safe write behavior`, `Approval contract`, and `Output` schema. The new ad-hoc archive contract arrives in Step 58.
+
+### Tasks
+
+- [ ] Extend `## Mode-scoped read discipline` row `A. doc drift + upkeep` in `skills/cdd-maintain/SKILL.md` to additionally read: repo-root `RUNBOOK.md`, `docs/runbooks/*.md`, every `*.md` under `docs/` not in a canonical-role subdir, every non-canonical `*.md` at repo root, and every detected subsystem doc-cluster file (`<subsystem>/README.md`, `<subsystem>/RUNBOOK.md`, `<subsystem>/CONTRACT.md`, `<subsystem>/SKILL.md`, plus every other `*.md` adjacent in the same `<subsystem>/` directory).
+- [ ] Extend the canonical-support-docs paragraph at the top of `## Mode A — Doc drift + upkeep` so `RUNBOOK.md`, `docs/runbooks/*.md`, and detected-subsystem README/RUNBOOK/CONTRACT/SKILL files are listed as canonical alongside README and specs.
+- [ ] Add a `### Mode A — Subsystem doc clusters` subsection defining: detection rule (`README.md` + at least one of `RUNBOOK.md` / `CONTRACT.md` / `SKILL.md`); routing rule (root README = repo entrypoint, subsystem README = canonical for that subsystem only); and that subsystem-internal non-canonical `*.md` files are subsystem-internal ad-hoc support docs.
+- [ ] Add a `### Mode A — Ad-hoc support docs` subsection defining the ad-hoc scope and stating that Mode A walks every ad-hoc doc on every invocation, classifies each, and reports them under `Support documentation status`. State explicitly that this covers mockups, scratch RFCs, design notes, retired drafts, and similar exploratory artifacts — RFCs are one example, not a privileged class.
+- [ ] Add the `stale-candidate` classification label to Mode A. Update the classification line so the full label set reads `current` / `drifted` / `stale-candidate` / `missing` / `unclear`. State that `stale-candidate` applies only to ad-hoc support docs and is populated only by the orphaned-topic check, and that classifying a doc as `stale-candidate` does not by itself archive anything.
+- [ ] Add a `### Mode A — Codebase-comparison checks` subsection enumerating the bounded checks: **script-name claims** (`npm run X` / `pnpm X` / `yarn X` / `make X` / `pdm run X` / `cargo X` / `go run X` / `python -m X` etc. resolve to the relevant manifest); **file-path claims** (path exists in the current tree); **symbol claims** (function / class / module / CLI name best-effort repo-grep; `unclear` if not found rather than auto-`drifted`); **entrypoint claims** (file exists + referenced from the relevant manifest); **skill-reference claims** (`$cdd-<x>` or `skills/<x>` resolves to a real skill dir with `SKILL.md`); **manifest-field claims** (package / version named in a doc still present in the relevant manifest). For each, a failed check → `drifted` with the specific claim cited.
+- [ ] Add the orphaned-topic check to the same `### Mode A — Codebase-comparison checks` subsection, scoped to ad-hoc docs only: extract the doc's primary subject (filename + H1 + first-paragraph keywords); grep across (a) the codebase, (b) the active TODO step list (`TODO.md` + adjacent `TODO-*.md`), (c) the active specs / blueprint (`docs/specs/*`), (d) the last 30 days of journal activity (locate journal sources per the existing single-vs-split rules in the journal-archive subsection). Map hit count to label: 0 → `stale-candidate`; 1-2 weak → `unclear`; 3+ → `current`.
+- [ ] Cross-reference: in the existing "compare each support doc against the current repo state" paragraph (around line 57), link/reference the new `### Mode A — Codebase-comparison checks` subsection.
+- [ ] Extend `scripts/validate_skills.py` so validation fails if Mode A no longer requires: runbooks (root + `docs/runbooks/*`) in canonical set; subsystem-doc-cluster detection rule; `Ad-hoc support docs` subsection with scope + walk-and-classify; `stale-candidate` classification label; `Codebase-comparison checks` subsection with the bounded check list + orphaned-topic check.
+
+### Implementation notes
+
+- Touch points in `skills/cdd-maintain/SKILL.md`:
+  - Line 17 area (`Mode-scoped read discipline` row `A`) — extend the read list.
+  - Lines 54–58 (`Mode A — Doc drift + upkeep` canonical-doc paragraph) — add runbooks.
+  - Insert new `### Mode A — Subsystem doc clusters` subsection.
+  - Insert new `### Mode A — Ad-hoc support docs` subsection. Place after the canonical-doc paragraph and before the existing TODO archive rules.
+  - Line 64 (`Classify each support doc`) — generalize to the five-label set with `stale-candidate` documented as ad-hoc-only.
+  - Insert new `### Mode A — Codebase-comparison checks` subsection (bounded checks + orphaned-topic check). Place adjacent to the existing comparison paragraph; the existing paragraph links/references the new subsection.
+- Do not introduce a new approval gate; reuse the existing documentation-approval flow when Step 58 adds the archive contract.
+- Do not touch Mode B / C / D, the `Approval contract`, `Safe write behavior` (other than what Step 58 adds), or the `Output` section schema. `Support documentation status` already covers the new doc classes implicitly.
+- Do not touch the existing journal archive rules (lines 90–96) — they already correctly implement the single-vs-split policy from `cdd-boilerplate/.agents/skills/cdd-drift-guard/SKILL.md`.
+- Validator coverage (`scripts/validate_skills.py`): add a `_check_maintain_*` function matching the existing naming pattern (precedent: Step 51's Mode C validator). Assert: read-discipline row mentions runbooks + ad-hoc patterns + subsystem clusters; canonical-doc paragraph names runbooks; subsystem-cluster detection rule is present; ad-hoc-support-docs subsection exists with the per-file walk; `stale-candidate` label is in the classification line; codebase-comparison-checks subsection exists with the bounded check list and orphaned-topic check.
+- Keep validator regexes anchored on stable phrasing (e.g., `runbook`, `docs/runbooks/`, `subsystem doc cluster`, `ad-hoc support doc`, `stale-candidate`, `orphaned-topic`, `codebase-comparison checks`) rather than full sentence matches.
+- After editing SKILL.md, run the validator both default and with `--include-legacy-prose`.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-maintain/SKILL.md` Mode A section and confirm runbooks (root + `docs/runbooks/*`) are now canonical alongside README and specs.
+- Confirm `Mode-scoped read discipline` row `A` enumerates runbook paths, every `*.md` under `docs/` not in a canonical-role subdir, every non-canonical `*.md` at repo root, and subsystem-cluster paths.
+- Confirm the subsystem-doc-cluster detection rule is present: `README.md` + at least one of `RUNBOOK.md` / `CONTRACT.md` / `SKILL.md`.
+- Confirm Mode A has an `Ad-hoc support docs` subsection with the scope definition and walk-and-classify rule, with mockups / scratch RFCs / design notes / retired drafts called out as examples (RFCs not privileged).
+- Confirm the classification line now uses the five-label set with `stale-candidate` documented as ad-hoc-only.
+- Confirm Mode A has a `Codebase-comparison checks` subsection listing the bounded checks (script-name / file-path / symbol / entrypoint / skill-reference / manifest-field) and the orphaned-topic check for ad-hoc docs with the 0 / 1-2 / 3+ threshold map across codebase + active TODO + active specs + last 30 days of journal.
+- Confirm the existing Journal archive rules (single-vs-split pattern from `cdd-drift-guard`) are unchanged.
+- Confirm `python3 scripts/validate_skills.py` and `--include-legacy-prose` both pass.
+- Confirm the validator fails if any of the following are removed: runbook coverage, subsystem-cluster detection rule, ad-hoc-support-docs subsection, `stale-candidate` label, codebase-comparison-checks subsection (bounded check list or orphaned-topic check).
+
+## Step 58 — Add `cdd-maintain` Mode A ad-hoc-doc archive contract (coarse — refine before implementation)
+
+### Goal
+
+Define a judgement-based, evidence-backed, approval-gated archive contract for ad-hoc support docs (mockups, scratch RFCs, design notes, retired drafts, and similar exploratory artifacts) — without changing TODO or journal archive rules.
+
+### Constraints
+
+- Touch only `skills/cdd-maintain/SKILL.md` and `scripts/validate_skills.py` unless a failing proof shows another surface is required.
+- Never silent. Every archive move requires documentation approval.
+- Primary trigger: Step 57's `stale-candidate` classification with orphaned-topic evidence. Explicit frontmatter markers (`Deprecated:`, `Superseded by:`, `Status: Superseded` / `Rejected` / `Withdrawn`) are strong signals when present but not required.
+- Archive destination mirrors source location:
+  - `docs/foo.md` → `docs/archive/foo_YYYY-MM-DD.md`
+  - `docs/<sub>/bar.md` → `docs/archive/<sub>/bar_YYYY-MM-DD.md`
+  - Repo-root non-canonical `*.md` (e.g., `NOTES.md`) → `docs/archive/<name>_YYYY-MM-DD.md`
+  - Subsystem-internal `<subsystem>/scratch.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD.md` (local archive so the subsystem stays self-contained)
+- Same-day archive files append rather than overwrite.
+- Per-file or batched approval via selector options; user picks granularity.
+- **Journal archive rules unchanged.** They already correctly implement the single-vs-split policy from `cdd-boilerplate/.agents/skills/cdd-drift-guard/SKILL.md` (single mode → `docs/archive/`; split mode → `docs/journal/SUMMARY.md` + `docs/journal/archive/`). The new ad-hoc archive contract is parallel and additive; it does not override journal rules.
+- TODO archive rules (current lines 72–82 of `skills/cdd-maintain/SKILL.md`) and journal archive rules (current lines 90–96) are untouched.
+- `## Safe write behavior` gains one new bullet: `Apply ad-hoc-doc archive moves only after documentation approval.`
+- Depends on Step 57.
+
+### Tasks
+
+- [ ] Coarse — refine into a runnable step via `$cdd-plan` before implementation. Initial spec from `/Users/ruph/.claude/plans/happy-stirring-bunny.md` Step 2. Add a `### Mode A — Ad-hoc support doc archive rules` subsection after the existing journal archive rules; spell out trigger model (primary: `stale-candidate` classification + orphaned-topic evidence; secondary: frontmatter markers); destination layout (mirror under `docs/archive/` for repo-level docs and repo-root scratch; under `<subsystem>/_archive/` for subsystem-internal docs); same-day append rule; per-file or batched approval rule. Add the new `Safe write behavior` bullet. Validator must fail if the subsection is missing, the trigger model is silent-only, the destination layout omits the subsystem-local case, the same-day-append rule is removed, or the new `Safe write behavior` bullet is removed.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
