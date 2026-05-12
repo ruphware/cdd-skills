@@ -468,7 +468,7 @@ Make `cdd-maintain` Mode A:
 - Confirm `python3 scripts/validate_skills.py` and `--include-legacy-prose` both pass.
 - Confirm the validator fails if any of the following are removed: runbook coverage, subsystem-cluster detection rule, ad-hoc-support-docs subsection, `stale-candidate` label, codebase-comparison-checks subsection (bounded check list or orphaned-topic check).
 
-## Step 58 — Add `cdd-maintain` Mode A ad-hoc-doc archive contract (coarse — refine before implementation)
+## Step 58 — Add `cdd-maintain` Mode A ad-hoc-doc archive contract
 
 ### Goal
 
@@ -487,15 +487,43 @@ Define a judgement-based, evidence-backed, approval-gated archive contract for a
 - Same-day archive files append rather than overwrite.
 - Per-file or batched approval via selector options; user picks granularity.
 - **Journal archive rules unchanged.** They already correctly implement the single-vs-split policy from `cdd-boilerplate/.agents/skills/cdd-drift-guard/SKILL.md` (single mode → `docs/archive/`; split mode → `docs/journal/SUMMARY.md` + `docs/journal/archive/`). The new ad-hoc archive contract is parallel and additive; it does not override journal rules.
-- TODO archive rules (current lines 72–82 of `skills/cdd-maintain/SKILL.md`) and journal archive rules (current lines 90–96) are untouched.
+- TODO archive rules and journal archive rules (existing `### Mode A — TODO archive rules` and `### Mode A — Journal archive rules` subsections) are untouched.
 - `## Safe write behavior` gains one new bullet: `Apply ad-hoc-doc archive moves only after documentation approval.`
 - Depends on Step 57.
 
 ### Tasks
 
-- [ ] Coarse — refine into a runnable step via `$cdd-plan` before implementation. Initial spec from `/Users/ruph/.claude/plans/happy-stirring-bunny.md` Step 2. Add a `### Mode A — Ad-hoc support doc archive rules` subsection after the existing journal archive rules; spell out trigger model (primary: `stale-candidate` classification + orphaned-topic evidence; secondary: frontmatter markers); destination layout (mirror under `docs/archive/` for repo-level docs and repo-root scratch; under `<subsystem>/_archive/` for subsystem-internal docs); same-day append rule; per-file or batched approval rule. Add the new `Safe write behavior` bullet. Validator must fail if the subsection is missing, the trigger model is silent-only, the destination layout omits the subsystem-local case, the same-day-append rule is removed, or the new `Safe write behavior` bullet is removed.
+- [x] Add a new `### Mode A — Ad-hoc support doc archive rules` subsection to `skills/cdd-maintain/SKILL.md`, placed immediately after the existing `### Mode A — Journal archive rules` subsection and before `### Mode A — Local runtime cleanup review`. Spell out the trigger model: primary trigger is Step 57's `stale-candidate` classification with the orphaned-topic evidence recorded by `Mode A — Codebase-comparison checks`; secondary trigger is an explicit retirement marker in the doc itself — frontmatter `Deprecated:`, frontmatter `Superseded by:`, or frontmatter `Status:` with value `Superseded`, `Rejected`, or `Withdrawn` (strong signals when present but not required); never silent — documentation approval is required for every archive move.
+- [x] In the same subsection, spell out the mirrored destination layout: `docs/foo.md` → `docs/archive/foo_YYYY-MM-DD.md`; `docs/<sub>/bar.md` → `docs/archive/<sub>/bar_YYYY-MM-DD.md`; repo-root non-canonical `*.md` (e.g., `NOTES.md`) → `docs/archive/<name>_YYYY-MM-DD.md`; subsystem-internal `<subsystem>/scratch.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD.md` (local archive so the subsystem stays self-contained).
+- [x] In the same subsection, state the same-day archive append rule: if the destination archive file already exists for the same date, append the newly archived sections to that file rather than overwriting it.
+- [x] In the same subsection, state the approval rule: ask once for documentation approval using selector-based options; allow per-file or batched approval — the user picks granularity; reuse the existing documentation-approval flow defined in `## Approval contract`; keep ad-hoc-doc archive approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- [x] In the same subsection, state explicitly that journal archive rules (`### Mode A — Journal archive rules`) and TODO archive rules (`### Mode A — TODO archive rules`) are unchanged; the ad-hoc-doc archive contract is parallel and additive and does not override them.
+- [x] Add a new bullet to `## Safe write behavior` in `skills/cdd-maintain/SKILL.md`: `Apply ad-hoc-doc archive moves only after documentation approval.` Place it immediately after the existing `Apply safe archive moves immediately.` bullet so the two related rules sit together.
+- [x] Extend `scripts/validate_skills.py` (add regexes to the `validate_maintain_mode_boundaries` topic bundle) so validation fails if any of the following are removed: the `### Mode A — Ad-hoc support doc archive rules` subsection heading; the never-silent rule; the primary `stale-candidate`-based trigger; the secondary frontmatter-marker trigger; the mirrored destination layout including the subsystem-local `<subsystem>/_archive/` case; the same-day-append rule; the per-file-or-batched approval rule; the explicit "journal and TODO archive rules unchanged" acknowledgment; the new `Safe write behavior` bullet `Apply ad-hoc-doc archive moves only after documentation approval`.
+
+### Implementation notes
+
+- Touch points in `skills/cdd-maintain/SKILL.md`:
+  - Insert new `### Mode A — Ad-hoc support doc archive rules` subsection immediately after the existing `### Mode A — Journal archive rules` subsection (locate by heading; line numbers shifted after Step 57's edits).
+  - `## Safe write behavior` — insert new bullet right after `- Apply safe archive moves immediately.`
+- Reuse the existing documentation-approval flow defined in `## Approval contract`; do not introduce a new approval gate.
+- Keep journal archive rules and TODO archive rules untouched. The new subsection acknowledges them as parallel and additive, but does not modify them.
+- Validator coverage (`scripts/validate_skills.py`): add new regexes to the existing `validate_maintain_mode_boundaries` topic bundle (precedent: Step 57 added the broader Mode A coverage there). Anchor regexes on stable phrasing (`### Mode A — Ad-hoc support doc archive rules`, `ad-hoc support doc archive`, `Apply ad-hoc-doc archive moves only after documentation approval`, `docs/archive/`, `<subsystem>/_archive/`, `same-day archive`, etc.) rather than full sentence matches.
+- After editing SKILL.md, run the validator both default and with `--include-legacy-prose`.
 
 ### Automated checks
 
 - `python3 scripts/validate_skills.py`
 - `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-maintain/SKILL.md` Mode A section and confirm a new `### Mode A — Ad-hoc support doc archive rules` subsection now sits immediately after `### Mode A — Journal archive rules` and before `### Mode A — Local runtime cleanup review`.
+- Confirm the subsection states: never silent, documentation approval required for every archive move; primary trigger is Step 57's `stale-candidate` classification with orphaned-topic evidence; frontmatter markers (`Deprecated:`, `Superseded by:`, `Status: Superseded` / `Rejected` / `Withdrawn`) are accepted as strong signals when present but not required.
+- Confirm the destination layout is mirrored, including the subsystem-internal `<subsystem>/_archive/` local-archive case.
+- Confirm the same-day archive append rule and the per-file-or-batched approval rule are stated.
+- Confirm the subsection explicitly states that journal and TODO archive rules are unchanged.
+- Confirm `## Safe write behavior` now contains the new bullet `Apply ad-hoc-doc archive moves only after documentation approval.` immediately after `Apply safe archive moves immediately.`
+- Confirm existing journal archive rules and TODO archive rules subsections are unchanged.
+- Confirm `python3 scripts/validate_skills.py` and `--include-legacy-prose` both pass.
+- Confirm the validator fails if any of the following are removed: the new subsection heading, the never-silent rule, the primary `stale-candidate`-based trigger, the secondary frontmatter-marker trigger, the mirrored destination layout (including the subsystem-local case), the same-day-append rule, the per-file-or-batched approval rule, the "journal and TODO archive rules unchanged" acknowledgment, or the new `Safe write behavior` bullet.

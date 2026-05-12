@@ -41,6 +41,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 
 ## Safe write behavior
 - Apply safe archive moves immediately.
+- Apply ad-hoc-doc archive moves only after documentation approval.
 - Ask before deleting stale adjacent `TODO*.md` files.
 - Do not silently rewrite support docs.
 - Do not silently delete `.cdd-runtime/` content.
@@ -125,6 +126,20 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal. In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
 - Do not precreate split-journal files before split-journal mode is active.
 - In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present. If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
+
+### Mode A — Ad-hoc support doc archive rules
+- Trigger model:
+  - Primary trigger is `Mode A — Ad-hoc support docs` classified as `stale-candidate` with the orphaned-topic evidence recorded by `Mode A — Codebase-comparison checks`. Cite which evidence surfaces returned no hits when proposing archive.
+  - Secondary trigger is an explicit retirement marker in the doc itself: frontmatter `Deprecated:`, frontmatter `Superseded by:`, or frontmatter `Status:` with value `Superseded`, `Rejected`, or `Withdrawn`. Frontmatter markers are strong signals when present but are not required; judgement-based `stale-candidate` proposals are also valid.
+  - Never silent. Documentation approval is required for every archive move.
+- The destination layout mirrors the source location:
+  - `docs/foo.md` → `docs/archive/foo_YYYY-MM-DD.md`
+  - `docs/<sub>/bar.md` → `docs/archive/<sub>/bar_YYYY-MM-DD.md`
+  - Repo-root non-canonical `*.md` such as `NOTES.md` → `docs/archive/NOTES_YYYY-MM-DD.md`
+  - Subsystem-internal `<subsystem>/scratch.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD.md` (local archive so the subsystem stays self-contained)
+- Same-day archive append: if the destination archive file already exists for the same date, append the newly archived sections to that file rather than overwriting it.
+- Ask once for documentation approval using selector-based options. Allow per-file or batched approval — user picks granularity. Reuse the existing documentation-approval flow defined in `## Approval contract`. Keep ad-hoc-doc archive approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- Journal archive rules (`### Mode A — Journal archive rules`) and TODO archive rules (`### Mode A — TODO archive rules`) are unchanged. The ad-hoc support doc archive contract is parallel and additive; it does not override the existing rules. Journals continue to follow the single-vs-split policy defined in `Mode A — Journal archive rules`; TODO archives continue to follow `Mode A — TODO archive rules`.
 
 ### Mode A — Local runtime cleanup review
 - Inspect repo-local `.cdd-runtime/` when present, especially `.cdd-runtime/master-chef/`.
