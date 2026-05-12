@@ -14,7 +14,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   ls ~/.openclaw/skills/cdd-init-project/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-plan/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-implement-todo/SKILL.md >/dev/null
-  ls ~/.openclaw/skills/cdd-implementation-audit/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-audit/SKILL.md >/dev/null
   ```
 
 - [ ] Repo is CDD-ready:
@@ -202,15 +202,15 @@ Refuse to start a duplicate run and report the active lease owner.
 Use Builder via [CDD-3] Implement TODO (`cdd-implement-todo`) for a normal runnable TODO step.
 Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
 Explain why [CDD-5] Maintain (`cdd-maintain`) is used directly when the repo specifically needs doc drift review, codebase cleanup, docs/INDEX.md refresh, or refactor architecture audit.
-Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Implementation Audit (`cdd-implementation-audit`), or [CDD-5] Maintain (`cdd-maintain`) directly in Master Chef when setup, planning, implementation audit, or maintenance work is needed.
-Explain how approved findings from [CDD-4] Implementation Audit or external review should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation.
+Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Audit (`cdd-audit`), or [CDD-5] Maintain (`cdd-maintain`) directly in Master Chef when setup, planning, audit, or maintenance work is needed.
+Explain how approved findings from [CDD-4] Audit or external review should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation.
 ```
 
 - [ ] Expected:
   - `[CDD-0] Boot` is called out as a manual / non-routed helper
   - `[CDD-5] Maintain` is called out as a direct maintenance helper
   - `[CDD-3] Implement TODO` is the default Builder path
-  - `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-4] Implementation Audit`, and `[CDD-5] Maintain` are treated as Master-Chef-direct skills
+  - `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-4] Audit`, and `[CDD-5] Maintain` are treated as Master-Chef-direct skills
   - audit findings are routed through `[CDD-2] Plan` before delegated implementation
 
 ### Prompt I - Continue the run
@@ -233,13 +233,13 @@ If the run is complete, send the final mission report covering completed work an
   - passed steps include TODO writeback, QA, UAT, commit, push, and `STEP_PASS`
   - run completion emits a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, and decisions made
   - for `RUN_COMPLETE`, the report includes the shared closeout recommendation bundle:
-    - run `cdd-implementation-audit` on the completed run scope
+    - run `cdd-audit` on the completed run scope
     - push only when the branch is ahead of origin or still unpublished
     - open a PR only once the branch is published and PR creation is still pending
     - clean up the managed worktree only when it still exists and no immediate continuation is planned there
     - return to the source checkout or parent folder
   - for budget-stop `RUN_STOPPED` with remaining runnable work, the report includes the shared continuation-aware recommendation bundle:
-    - run `cdd-implementation-audit` on the work completed so far
+    - run `cdd-audit` on the work completed so far
     - name the remaining runnable work or next continuation target
     - recommend push or open-PR actions only when warranted
     - do not present cleanup as the primary next move while continuation is expected

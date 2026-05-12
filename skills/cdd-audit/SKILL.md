@@ -1,10 +1,10 @@
 ---
-name: cdd-implementation-audit
+name: cdd-audit
 description: "Audit implementation scope for spec drift, code quality, test quality, accidental complexity, and documentation drift; triage major findings; then route approved follow-up into cdd-plan (explicit-only)."
 disable-model-invocation: true
 ---
 
-# CDD Implementation Audit (explicit-only)
+# CDD Audit (explicit-only)
 
 Use this skill for explicit implementation or codebase audits. Output findings plus approved follow-up, not code changes.
 

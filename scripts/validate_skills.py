@@ -31,7 +31,7 @@ CDD_DISPLAY_NAMES = {
     "cdd-init-project": "[CDD-1] Init Project",
     "cdd-plan": "[CDD-2] Plan",
     "cdd-implement-todo": "[CDD-3] Implement TODO",
-    "cdd-implementation-audit": "[CDD-4] Implementation Audit",
+    "cdd-audit": "[CDD-4] Audit",
     "cdd-maintain": "[CDD-5] Maintain",
 }
 CDD_CORE_LABELS = tuple(CDD_DISPLAY_NAMES.values())
@@ -41,7 +41,7 @@ OPENCLAW_ROUTING_LABELS = (
     "[CDD-1] Init Project",
     "[CDD-2] Plan",
     "[CDD-3] Implement TODO",
-    "[CDD-4] Implementation Audit",
+    "[CDD-4] Audit",
     "[CDD-5] Maintain",
 )
 MASTER_CHEF_KICKOFF_OPTION_STRINGS = (
@@ -99,7 +99,7 @@ MASTER_CHEF_TODO_CHECKLIST_REGEX = (
     r"(?:completed TODO step ids|which TODO step ids were completed|selected TODO step).*task checklist(?:s)?(?: are| were| is)?(?: fully)? checked|task checklist(?:s)? (?:reflect|reflects) the completed work|checklist completion status"
 )
 MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX = (
-    r"(?:post-run recommendation bundle|closeout recommendation bundle|continuation-aware recommendation bundle|state-based closeout recommendations|next human actions|next operator moves).*(?:cdd-implementation-audit|Implementation Audit).*(?:push only when|conditional push|ahead of origin|still unpublished).*(?:open a PR|PR creation).*(?:clean up the managed worktree|managed-worktree cleanup).*(?:source checkout|parent folder)"
+    r"(?:post-run recommendation bundle|closeout recommendation bundle|continuation-aware recommendation bundle|state-based closeout recommendations|next human actions|next operator moves).*(?:cdd-audit|\[CDD-4\] Audit).*(?:push only when|conditional push|ahead of origin|still unpublished).*(?:open a PR|PR creation).*(?:clean up the managed worktree|managed-worktree cleanup).*(?:source checkout|parent folder)"
 )
 MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX = (
     r"`RUN_COMPLETE`.*(?:completed run|true closeout|shared closeout recommendation bundle|closeout recommendation bundle).*(?:push|open a PR|cleanup|return to the source checkout|return to source checkout)"
@@ -414,10 +414,10 @@ def validate_plan_intent_framing_topics(skill_text: str, skill_md: Path) -> None
     )
 
 
-def validate_implementation_audit_question_efficiency_contract(
+def validate_audit_question_efficiency_contract(
     skill_text: str, skill_md: Path
 ) -> None:
-    """Assert the implementation-audit skill asks only high-yield major questions."""
+    """Assert the audit skill asks only high-yield major questions."""
     require_topic_bundle(
         skill_text,
         (
@@ -432,14 +432,14 @@ def validate_implementation_audit_question_efficiency_contract(
             r"minor ambiguities.*report-only|Minor findings and minor ambiguities can stay report-only",
         ),
         skill_md,
-        "implementation-audit question-efficiency topics",
+        "audit question-efficiency topics",
     )
 
 
-def validate_implementation_audit_approval_closeout_contract(
+def validate_audit_approval_closeout_contract(
     skill_text: str, skill_md: Path
 ) -> None:
-    """Assert the implementation-audit skill restores finding approval and closeout routing."""
+    """Assert the audit skill restores finding approval and closeout routing."""
     require_topic_bundle(
         skill_text,
         (
@@ -456,7 +456,7 @@ def validate_implementation_audit_approval_closeout_contract(
             r"no approved findings.*do not recommend an empty `\$?cdd-plan` invocation|Otherwise.*do not recommend an empty `\$?cdd-plan` invocation|If no approved findings exist.*do not recommend an empty",
         ),
         skill_md,
-        "implementation-audit approval and closeout topics",
+        "audit approval and closeout topics",
     )
 
 
@@ -497,8 +497,8 @@ def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None
     )
 
 
-def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the implementation-audit skill keeps its audit-only contract."""
+def validate_audit_skill_text(skill_text: str, skill_md: Path) -> None:
+    """Assert the audit skill keeps its audit-only contract."""
     require_topic_bundle(
         skill_text,
         (
@@ -555,10 +555,10 @@ def validate_implementation_audit_skill_text(skill_text: str, skill_md: Path) ->
             r"recommend `\$?cdd-plan`",
         ),
         skill_md,
-        "implementation-audit topics",
+        "audit topics",
     )
     assert "implement directly from this skill" not in skill_text, (
-        f"implementation-audit skill should stay audit-only in {skill_md}"
+        f"audit skill should stay audit-only in {skill_md}"
     )
 
 
@@ -815,7 +815,7 @@ def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
             r"\[!\[CDD Project\]",
             r"\[!\[CDD Skills\]",
             r"This repo follows the \[`CDD Project`\].*\[`AGENTS\.md`\]",
-            r"Start with .*cdd-boot.*cdd-implementation-audit.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*doc drift.*codebase cleanup.*index refresh.*refactor architecture audit",
+            r"Start with .*cdd-boot.*cdd-audit.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*doc drift.*codebase cleanup.*index refresh.*refactor architecture audit",
             r"existing-repo adoption.*explicit confirmation.*README\.md edit",
             r"Avoid duplicating the block if it or its badges already exist",
             r"source of truth for the CDD contract.*existing repo",
@@ -904,7 +904,7 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
     if skill_dir.name in {
         "cdd-boot",
         "cdd-plan",
-        "cdd-implementation-audit",
+        "cdd-audit",
         "cdd-init-project",
         "cdd-maintain",
         "cdd-implement-todo",
@@ -928,11 +928,11 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         validate_plan_edge_case_review_contract(skill_text, skill_md)
         validate_plan_audit_mode_skill_text(skill_text, skill_md)
         validate_plan_intent_checkpoint_contract(skill_text, skill_md)
-    if skill_dir.name == "cdd-implementation-audit":
-        validate_implementation_audit_question_efficiency_contract(
+    if skill_dir.name == "cdd-audit":
+        validate_audit_question_efficiency_contract(
             skill_text, skill_md
         )
-        validate_implementation_audit_approval_closeout_contract(skill_text, skill_md)
+        validate_audit_approval_closeout_contract(skill_text, skill_md)
 
     if include_legacy_prose:
         if skill_dir.name == "cdd-implement-todo":
@@ -956,8 +956,8 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
             validate_coarse_step_planning(skill_text, skill_md)
             validate_reviewed_contract_artifacts(skill_text, skill_md)
             validate_plan_intent_framing_topics(skill_text, skill_md)
-        if skill_dir.name == "cdd-implementation-audit":
-            validate_implementation_audit_skill_text(skill_text, skill_md)
+        if skill_dir.name == "cdd-audit":
+            validate_audit_skill_text(skill_text, skill_md)
 
 
 def validate_master_chef_shared_contract(repo_root: Path) -> None:
@@ -2154,7 +2154,7 @@ def validate_generated_openclaw_builder_skills(
             if skill_name in {
                 "cdd-boot",
                 "cdd-plan",
-                "cdd-implementation-audit",
+                "cdd-audit",
                 "cdd-init-project",
                 "cdd-maintain",
                 "cdd-implement-todo",
@@ -2197,8 +2197,8 @@ def validate_generated_openclaw_builder_skills(
                     validate_coarse_step_planning(skill_text, skill_md)
                     validate_reviewed_contract_artifacts(skill_text, skill_md)
                     validate_plan_intent_framing_topics(skill_text, skill_md)
-                if skill_name == "cdd-implementation-audit":
-                    validate_implementation_audit_skill_text(skill_text, skill_md)
+                if skill_name == "cdd-audit":
+                    validate_audit_skill_text(skill_text, skill_md)
 
 def main(argv: list[str] | None = None) -> int:
     """Validate the current repository layout and print a success marker."""

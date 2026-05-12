@@ -57,8 +57,8 @@ The core loop is intentionally simple: boot context, plan work, implement one st
  *cdd-implement-todo*
   Implement exactly one approved TODO step and mark it done. 
 
-- **[CDD-4] Implementation Audit**
- *cdd-implementation-audit*
+- **[CDD-4] Audit**
+ *cdd-audit*
  Audit spec, code, tests, complexity, and docs, then route approved follow-up into planning. 
 
 - **[CDD-5] Maintain**
@@ -118,7 +118,7 @@ No Hermes adapter ships in this repo today.
 ## 📖 Typical Workflows
 
 * **Human-guided feature work:** `[CDD-0] Boot` → `[CDD-2] Plan` → `[CDD-3] Implement TODO`.
-* **Post-implementation review:** `[CDD-4] Implementation Audit` → `[CDD-2] Plan` for approved follow-up.
+* **Post-implementation review:** `[CDD-4] Audit` → `[CDD-2] Plan` for approved follow-up.
 * **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactor review.
 * **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution after kickoff approval.
 
@@ -148,7 +148,7 @@ Common variants:
 Quick first install for Codex, Claude Code, and Gemini CLI only:
 
 ```bash
-npx skills add https://github.com/ruphware/cdd-skills/ --skill cdd-boot --skill cdd-init-project --skill cdd-plan --skill cdd-implement-todo --skill cdd-implementation-audit --skill cdd-maintain --skill cdd-master-chef -a codex -a claude-code -a gemini-cli -g
+npx skills add https://github.com/ruphware/cdd-skills/ --skill cdd-boot --skill cdd-init-project --skill cdd-plan --skill cdd-implement-todo --skill cdd-audit --skill cdd-maintain --skill cdd-master-chef -a codex -a claude-code -a gemini-cli -g
 ```
 
 This path does not provide the repo-managed update or uninstall flow and does not preserve managed prune semantics.

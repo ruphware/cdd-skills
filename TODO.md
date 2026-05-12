@@ -338,3 +338,65 @@ Make `cdd-plan` resolve intent, material assumptions, and planning direction bef
 - Confirm `Question economy` now orders unresolved decisions from intent and assumptions down to implementation details and still preserves the upstream clarification-budget contract.
 - Confirm intent-qualifying plans now include a compact visible `Intent and assumptions` section without forcing coarse decomposition for every behavior change.
 - Confirm the validator fails if the intent checkpoint, decision-order hierarchy, anti-pattern section, or visible intent-output contract is removed, or if the Step 52 bounded-bisection checks are displaced.
+
+## Step 56 — Rename `cdd-implementation-audit` skill to `cdd-audit` (slug + label)
+
+### Goal
+
+Rename the `cdd-implementation-audit` skill to `cdd-audit` across folder, frontmatter, slash-command slug, user-facing label `[CDD-4] Implementation Audit` → `[CDD-4] Audit`, validator, installer, test harness, and all in-repo cross-references; retire the old folder on upgrade; keep the help/description text and audit behavior unchanged.
+
+### Constraints
+
+- Slug change: `cdd-implementation-audit` → `cdd-audit`. Label change: `[CDD-4] Implementation Audit` → `[CDD-4] Audit`. The skill's description/help one-liner stays the same.
+- Audit behavior, contract, approval flow, finding format, and the Step 50/53 contracts remain unchanged.
+- Do not edit historical TODO step bodies (Steps 49–55); they are an immutable record of what was planned at the time.
+- The installer must retire the old folder on upgrade by adding it to `delete_retired_skill_artifacts_in_target()` in `scripts/install.sh`, mirroring the precedent for `cdd-audit-and-implement` at `scripts/install.sh:227-241`.
+- Validator regex patterns must anchor on `cdd-audit` or the bracketed label `[CDD-4] Audit` — never bare `Audit` — to avoid false matches.
+- Replace `Implementation Audit` (proper-noun, refers to the skill) with `Audit` everywhere except inside `TODO.md` history; leave lowercase generic prose unchanged where it describes a generic activity rather than the skill.
+- Touch only the surfaces listed in the file plan unless a failing check proves another surface is required.
+
+### Tasks
+
+- [x] Rename `skills/cdd-implementation-audit/` to `skills/cdd-audit/` using `git mv` so folder history is preserved.
+- [x] Update `skills/cdd-audit/SKILL.md` frontmatter `name: cdd-implementation-audit` → `name: cdd-audit`, the H1 `# CDD Implementation Audit (explicit-only)` → `# CDD Audit (explicit-only)`, and any in-body proper-noun "Implementation Audit" references to the skill; preserve the `description:` text and all other body content.
+- [x] Update `scripts/install.sh delete_retired_skill_artifacts_in_target()` (around lines 227-241) to include `"$dest_root"/cdd-implementation-audit` and `"$dest_root"/cdd-implementation-audit.pruned.*`, alongside the existing retirements for `cdd-audit-and-implement`, `cdd-index`, and `cdd-refactor`.
+- [x] Update `scripts/validate_skills.py`: change the title-map entry at line 34 to `"cdd-audit": "[CDD-4] Audit"`; rewrite the regex at line 102 so it anchors on `cdd-audit` / `[CDD-4] Audit`; rename all dict keys and skill-name list entries (lines 818, 907, 931, 959, 2157, 2200) from `cdd-implementation-audit` to `cdd-audit`; rename internal Python function names matching `_check_implementation_audit_*` to `_check_audit_*` and identifier strings like `"implementation-audit topics"` to `"audit topics"` so the validator remains readable. Keep all assertion semantics unchanged.
+- [x] Update `scripts/test_installers.sh` so every fixture path, expected output string, and assertion that references `cdd-implementation-audit` switches to `cdd-audit`; add or extend a case that asserts an upgrade from a fixture containing `cdd-implementation-audit/` prunes that folder via the new retirement entry.
+- [x] Update `README.md` Skill Map and Typical Workflows so `[CDD-4] Implementation Audit` becomes `[CDD-4] Audit` and `cdd-implementation-audit` becomes `cdd-audit`; preserve the descriptive one-liner.
+- [x] Update Master Chef package docs — `cdd-master-chef/SKILL.md`, `CONTRACT.md`, `RUNBOOK.md`, `CODEX-TEST-HARNESS.md`, `CLAUDE-TEST-HARNESS.md`, `openclaw/README.md`, `openclaw/MASTER-CHEF-RUNBOOK.md`, `openclaw/MASTER-CHEF-TEST-HARNESS.md` — so every proper-noun `[CDD-4] Implementation Audit` and slug `cdd-implementation-audit` switches to `[CDD-4] Audit` and `cdd-audit`. Include the harness fixture assertion `ls ~/.openclaw/skills/cdd-implementation-audit/SKILL.md` at `MASTER-CHEF-TEST-HARNESS.md:17`. Leave lowercase generic phrases ("implementation audit") only where they describe an activity rather than the skill.
+- [x] Update `skills/cdd-init-project/SKILL.md:55` so the scaffolded `<sup>` help line names `$cdd-audit` instead of `$cdd-implementation-audit`; do not touch any other scaffolded text.
+
+### Implementation notes
+
+- File plan:
+  - Renamed: `skills/cdd-implementation-audit/` → `skills/cdd-audit/` (`git mv`).
+  - Edited: `skills/cdd-audit/SKILL.md` (post-rename), `scripts/install.sh`, `scripts/validate_skills.py`, `scripts/test_installers.sh`, `README.md`, `cdd-master-chef/SKILL.md`, `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/RUNBOOK.md`, `cdd-master-chef/CODEX-TEST-HARNESS.md`, `cdd-master-chef/CLAUDE-TEST-HARNESS.md`, `cdd-master-chef/openclaw/README.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md`, `cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `skills/cdd-init-project/SKILL.md`.
+- Order:
+  1. `git mv` the folder.
+  2. Update `skills/cdd-audit/SKILL.md` name/heading.
+  3. Update validator (`validate_skills.py`) and installer (`install.sh`, `test_installers.sh`) — these are the gates.
+  4. Sweep `README.md`, Master Chef package, `cdd-init-project/SKILL.md`.
+- Validator regex (line 102): the long alternation must read `(?:cdd-audit|\[CDD-4\] Audit)` (or equivalent precise form), not bare `Audit`. The full regex covers post-run recommendation bundle phrasing — its semantics stay identical.
+- Master Chef proper-noun vs. generic: in `MASTER-CHEF-RUNBOOK.md:151` the phrase "when the repo needs setup, planning, implementation audit, doc drift review …" describes activities; rewrite to "audit" (it pairs with the renamed skill) but keep the surrounding list grammatical. Where the phrase is unambiguously a skill reference (`[CDD-4] Implementation Audit`), rename strictly.
+- No `TODO.md` edits to closed steps (Steps 49–55). This Step 56 entry is the only `TODO.md` mention of the new slug.
+- History preservation: prefer `git mv skills/cdd-implementation-audit skills/cdd-audit` so the folder rename shows up as a rename in `git log --follow`.
+- Two-pass safety: after the sweep, run `grep -rn 'cdd-implementation-audit\|\[CDD-4\] Implementation Audit' . --exclude-dir=.git --exclude-dir=.cdd-runtime --exclude=TODO.md` and confirm zero hits.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_installers.sh`
+- `grep -rn 'cdd-implementation-audit\|\[CDD-4\] Implementation Audit' . --exclude-dir=.git --exclude-dir=.cdd-runtime --exclude=TODO.md` returns no matches.
+
+### UAT
+
+- `skills/cdd-audit/SKILL.md` exists, has frontmatter `name: cdd-audit`, heading `# CDD Audit (explicit-only)`, and the original `description:` text intact.
+- `skills/cdd-implementation-audit/` no longer exists.
+- `README.md` Skill Map shows `[CDD-4] Audit` paired with `cdd-audit` and a description equivalent to the previous one.
+- Master Chef package docs reference `[CDD-4] Audit` and `cdd-audit`; no proper-noun `Implementation Audit` strings remain outside `TODO.md` history.
+- `scripts/install.sh delete_retired_skill_artifacts_in_target()` contains `cdd-implementation-audit` and its `.pruned.*` glob.
+- `python3 scripts/validate_skills.py` and `--include-legacy-prose` both pass.
+- `scripts/test_installers.sh` passes, including an upgrade-cleanup case that removes a pre-existing `cdd-implementation-audit/` fixture.
+- `skills/cdd-init-project/SKILL.md:55` references `$cdd-audit`.
+- Closed historical steps in `TODO.md` (Steps 49–55) are unchanged.

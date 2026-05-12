@@ -208,13 +208,13 @@ Describe the final mission report Master Chef should emit so the human can see c
   - the report is described as a final mission report
   - it includes completed work, completed TODO step ids, checklist completion status for those steps, validations, commits or pushes, Builder restarts, blocker repairs or splits, decisions made, and any remaining work or exact stop reason
   - for `RUN_COMPLETE`, it includes the shared closeout recommendation bundle:
-    - run `cdd-implementation-audit` on the completed run scope
+    - run `cdd-audit` on the completed run scope
     - push only when the branch is ahead of origin or still unpublished
     - open a PR only once the branch is published and PR creation is still pending
     - clean up the managed worktree only when it still exists and no immediate continuation is planned there
     - return to the source checkout or parent folder
   - for budget-stop `RUN_STOPPED` with remaining runnable work, it includes the shared continuation-aware recommendation bundle:
-    - run `cdd-implementation-audit` on the work completed so far
+    - run `cdd-audit` on the work completed so far
     - name the remaining runnable work or next continuation target
     - recommend push or open-PR actions only when warranted
     - do not present cleanup as the primary next move while continuation is expected

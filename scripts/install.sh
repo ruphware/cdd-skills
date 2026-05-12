@@ -230,6 +230,8 @@ delete_retired_skill_artifacts_in_target() {
   for d in \
     "$dest_root"/cdd-audit-and-implement \
     "$dest_root"/cdd-audit-and-implement.pruned.* \
+    "$dest_root"/cdd-implementation-audit \
+    "$dest_root"/cdd-implementation-audit.pruned.* \
     "$dest_root"/cdd-index \
     "$dest_root"/cdd-index.pruned.* \
     "$dest_root"/cdd-refactor \

@@ -75,7 +75,7 @@ Operating contract:
    - `[CDD-3] Implement TODO` (`cdd-implement-todo`): Builder default for the next runnable TODO step.
    - If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting by default. Prefer delegating the step unchanged while one Builder delegation can still finish it safely in one run; if a minimal TODO fix restores that viability without changing scope, repair it in place; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then treat the first new runnable step as the proposed delegated action.
    - `[CDD-2] Plan` (`cdd-plan`): Master Chef direct path that stays in the main session rather than being delegated to Builder.
-   - `[CDD-4] Implementation Audit` (`cdd-implementation-audit`): installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `[CDD-2] Plan` before any delegated implementation begins.
+   - `[CDD-4] Audit` (`cdd-audit`): installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `[CDD-2] Plan` before any delegated implementation begins.
    - External audit findings and review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
    - `[CDD-0] Boot` (`cdd-boot`): installed helper, but not part of the normal Master Chef routing flow.
    - `[CDD-5] Maintain` (`cdd-maintain`): installed direct maintenance helper for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review when one of those tasks is the actual next action.
@@ -259,13 +259,13 @@ When `BLOCKER_CLEARED` is emitted after a successful repair, record the original
 
 When the run ends with `RUN_COMPLETE`, `RUN_STOPPED`, a hard-stop `STEP_BLOCKED`, or `DEADLOCK_STOPPED`, emit a final mission report covering completed work, completed TODO step ids plus whether their task checklists are fully checked, validations and pushes, Builder restarts or blocker repairs, unresolved session-setting fields, which effective Builder settings were concrete versus `unknown`, decisions made, and remaining work or the exact stop reason.
 For `RUN_COMPLETE`, append a compact closeout recommendation bundle:
-- run `cdd-implementation-audit` on the completed run scope
+- run `cdd-audit` on the completed run scope
 - push only when the active branch is ahead of origin or still unpublished
 - open a PR only once the branch is published and PR creation is still pending
 - clean up the managed worktree only when it still exists and no immediate continuation is planned there
 - return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root
 For budget-stop `RUN_STOPPED`, append a compact continuation-aware recommendation bundle:
-- run `cdd-implementation-audit` on the work completed so far
+- run `cdd-audit` on the work completed so far
 - name the remaining runnable work or next continuation target
 - recommend push or open-PR actions only when warranted
 - mention managed-worktree cleanup or return to the source checkout only when no immediate continuation is planned there

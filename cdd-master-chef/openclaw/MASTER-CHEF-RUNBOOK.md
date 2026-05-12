@@ -92,7 +92,7 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-init-project`
    - `~/.openclaw/skills/cdd-plan`
    - `~/.openclaw/skills/cdd-implement-todo`
-   - `~/.openclaw/skills/cdd-implementation-audit`
+   - `~/.openclaw/skills/cdd-audit`
 6. If Builder should diverge from the active session, prepare an optional `Builder override` that contains `builder_model`, `builder_thinking`, or both.
 
 The current Master Chef session is implicitly the control/reporting surface.
@@ -148,8 +148,8 @@ On the first `/cdd-master-chef` turn:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
    - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
    - if the next runnable top-level TODO step looks oversized for one Builder run, review it in Master Chef first and keep it intact unless the parent step is not safely delegable as one coherent Builder action and the split cost is clearly justified; only then split into smaller decision-complete TODO steps and recompute the remaining top-level-step count
-   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Implementation Audit` (`cdd-implementation-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, implementation audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
-   - approved findings from `[CDD-4] Implementation Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
+   - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Audit` (`cdd-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
+   - approved findings from `[CDD-4] Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Report session-derived Master Chef settings and effective Builder settings:
    - current session model as `master_model`, or `unknown` when OpenClaw does not expose it exactly
    - current session thinking as `master_thinking`, or `unknown` when OpenClaw does not expose it exactly
@@ -377,12 +377,12 @@ Master Chef chooses the routing path.
 
 - `[CDD-1] Init Project` (`cdd-init-project`)
 - `[CDD-2] Plan` (`cdd-plan`)
-- `[CDD-4] Implementation Audit` (`cdd-implementation-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
+- `[CDD-4] Audit` (`cdd-audit`) when the human explicitly wants an implementation or codebase audit checkpoint
 - `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs maintenance, cleanup, index refresh, or refactor architecture audit before delegated implementation
 
 **Audit findings:**
 
-- approved findings from `[CDD-4] Implementation Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+- approved findings from `[CDD-4] Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
 
 Default spawn shape:
 
@@ -425,7 +425,7 @@ After kickoff approval:
 1. Initialize or refresh runtime files.
 2. Write `run.json` and `run.lock.json`.
 3. If the chosen action is Builder-delegated, spawn the Builder subagent with an explicit handoff that names the delegated internal skill path.
-4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-implementation-audit`, or `cdd-maintain`), run it in the main session before any Builder spawn.
+4. If the chosen action is Master-Chef-direct (`cdd-init-project`, `cdd-plan`, `cdd-audit`, or `cdd-maintain`), run it in the main session before any Builder spawn.
 5. Record the Builder session key in runtime state when a Builder is used.
 6. If a Builder was spawned, let it work, review the Builder report when it returns, and treat that delegated action as finished while keeping the Builder session available for same-run continuation when it remains usable.
 7. If the Builder appears stale during an active main-session turn, inspect it directly, replace it quickly with a fresh single-step Builder run for the same step, and update runtime/log evidence immediately.
