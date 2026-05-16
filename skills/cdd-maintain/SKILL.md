@@ -38,6 +38,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - The selected option itself is the approval; do not append a separate free-form approval question after selector options.
 - Keep documentation approval, stale TODO deletion approval, and runtime-cleanup approval separate even when the same report surfaces all three.
 - When a single apply decision is ready, prefer `A. apply now`, `B. keep the report only`, and `C. revise scope first`.
+- When the report surfaces multiple separate approval decisions (documentation + ad-hoc archive + stale-TODO deletion + runtime cleanup + source cleanup batches), present them one at a time as a loop: surface the highest-priority approval first, wait for the user's selector, apply the approved actions for that decision, then surface the next remaining approval. Do not list multiple approval decisions in one message as a checklist for the user to triage at once.
 
 ## Safe write behavior
 - Apply safe archive moves immediately.
@@ -57,6 +58,9 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Treat repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces tied to the repo's documented workflow.
 - Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs. Use the bounded checks and orphaned-topic check defined in `Mode A — Codebase-comparison checks` below. When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract.
 - Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, doc-role boundaries, journal topology, and workflow-skill expectations still match the repo.
+- Beyond presence-and-name checks, hunt for lifecycle-mismatch narration: future-tense language for work that has already shipped, in-progress narration ("currently implementing", "we are migrating", "the next phase will") for work that has completed, present-tense documentation of removed or renamed surfaces, deprecated paths still presented as the primary recommendation, and roadmap or "coming soon" items that were delivered but never struck from the roadmap.
+- For `README.md` specifically, flag historical project narration (step-by-step development summaries, "implemented X in commit Y" stories, retired roadmap entries that were once aspirational and are now history) that belongs in journal/changelog rather than in the runbook entrypoint.
+- For `docs/runbooks/*.md` and repo-root `RUNBOOK.md`, flag procedures or commands for decommissioned, renamed, or removed services, scripts, or entrypoints; the runbook is for current operations, not archaeology.
 - For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression. If `README.md` includes a CDD contract note, keep it as a low-visibility bottom footer.
 - If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
 - For `docs/specs/prd.md`: treat it as the product-manager view.
@@ -93,6 +97,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - **Entrypoint claims** (a main / CLI / service / handler in a doc): verify the named entrypoint file exists and is referenced from the relevant manifest.
 - **Skill-reference claims** (`$cdd-<x>` or `skills/<x>` in a doc): verify the skill directory and `SKILL.md` exist.
 - **Manifest-field claims** (package name, version range, or dependency in a doc): verify the field is present in the relevant manifest.
+- **Lifecycle-mismatch claims** (narrative content that talks about work as future, in-progress, current, or past): cross-check against current code, active TODO surfaces, and recent journal or commit activity. Future-tense work that already shipped, in-progress narration of completed work, present-tense documentation of removed surfaces, and retired roadmap or "coming soon" items still presented as future are all `drifted` findings — cite the specific phrase and the evidence that contradicts it.
 - Orphaned-topic check (ad-hoc support docs only):
   - Extract the doc's primary subject from filename, H1 heading, and first-paragraph keywords.
   - Grep the subject across (a) the codebase, (b) the active TODO step list (`TODO.md` + adjacent `TODO-*.md`), (c) the active specs and blueprint (`docs/specs/*`), and (d) the last 30 days of journal activity. Locate journal sources per the existing single-vs-split rules in `Mode A — Journal archive rules`.
@@ -160,6 +165,11 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
   - stale feature code no longer wired into entrypoints
   - obsolete generated leftovers
   - unused exports when the evidence is strong
+  - prototype, POC, or experimental code paths (signaled by names like `prototype_*`, `poc_*`, `experimental_*`, `scratch_*`, `sandbox_*`; comments like `// XXX`, `// TODO remove`, `// experimental`, `// throwaway`; or directory placement like `prototypes/`, `scratch/`, `sandbox/`, `_experiments/`) that never shipped or were superseded by a production path
+  - backward-compatibility shims, legacy bridges, or deprecated APIs (often in files like `compat.*`, `legacy.*`, `deprecated.*` or function names like `*_v1`, `legacy_*`, `compat_*`, `old_*`) with no remaining callers in the repo; verify call sites with repo-grep before flagging
+  - feature flags, config gates, or env-var toggles that are permanently ON or permanently OFF in current code paths and no longer guard real branching
+  - migration helpers, one-shot data backfill code, or schema-translation shims from completed migrations
+  - removed-vendor or removed-integration adapters whose external dependency or sidecar has already been deleted from manifests/configs
 - Classify each cleanup candidate as `confirmed_cleanup`, `probable_cleanup`, or `unclear`.
 - For each candidate, record:
   - affected boundary
@@ -169,7 +179,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Do not remove anything classified as `unclear`.
 - Do not silently refactor, redesign, or broaden the scope while cleaning.
 - If cleanup needs matching test, config, or doc deletion to keep the repo coherent, include those edits in the same proposed cleanup patch.
-- Group approved removals into one cleanup patch and ask once using selector-based options.
+- Group approved removals into cleanup patches by concern (e.g. prototypes, backcompat shims, dead modules, unused exports, completed-migration helpers). When the pass produces multiple distinct concern batches, surface them one at a time per the loop rule in `Approval contract`: ask approval on the highest-priority concern, wait, apply approved removals for that batch, then surface the next concern. Do not present multiple concern batches in one message as a checklist.
 - If the user approves, remove only the approved dead lines, files, folders, tests, configs, or generated leftovers.
 - If the user does not approve, leave code unchanged and report the remaining cleanup candidates clearly.
 
