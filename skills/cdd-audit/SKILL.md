@@ -14,8 +14,10 @@ Read:
 - `README.md`
 - `TODO.md` and adjacent `TODO*.md`
 - `docs/specs/prd.md`
-- `docs/specs/blueprint.md`
+- `docs/specs/blueprint.md` and connected `docs/specs/*-definition.md` leaf specs when present
 - `docs/INDEX.md` when present (also `docs/index/**` siblings when INDEX split is active)
+- `docs/runbooks/*.md` and repo-root `RUNBOOK.md` when present
+- the current-state header of `docs/JOURNAL.md` (and split-journal index when active) for recent activity context
 - relevant code, tests, configs, manifests, entrypoints, and validation surfaces for the chosen scope
 
 Treat missing docs, specs, or tests as findings. Do not invent missing contract surfaces during the audit.
@@ -71,9 +73,12 @@ Audit the chosen scope against all of the following:
 - `accidental complexity`
   - Expose speculative abstraction, wrapper indirection, generic APIs with one concrete use, parameterization without real consumers, and ceremony that does not protect a real boundary.
 - `documentation`
-  - Audit `README.md` and `docs/specs/*` when present.
+  - Audit `README.md`, `docs/specs/*` (PRD, blueprint, and connected `*-definition.md` leaf specs), `docs/INDEX.md` (with `docs/index/**` siblings when INDEX split is active), `docs/runbooks/*.md`, repo-root `RUNBOOK.md`, and the current-state header of `docs/JOURNAL.md` when present.
   - Documentation should stay compact and optimized for reading.
-  - Specs should match the current codebase or clearly intended future implementation.
+  - Specs should match the current codebase or clearly intended future implementation. Specs for removed features are `drifted` findings; major implementation areas without spec coverage are `missing` findings (treat as findings, do not invent specs during the audit).
+  - For `docs/INDEX.md`: verify the entrypoint layout matches the actual mode per the boilerplate INDEX-split scaling rules — single-file mode should not carry a Layout pointer block; split mode should carry Layout pointers and keep diagram/inventory bodies in `docs/index/**` siblings rather than inline. A single-file INDEX exceeding ~300 lines or with unbounded-growth sections is a structural drift finding — recommend INDEX split via `cdd-maintain` index mode. Stale INDEX (clearly older than current TODO or journal activity) is also a `documentation` finding.
+  - For mermaid diagrams (inline in `docs/INDEX.md` for single-file mode, or in `docs/index/DIAGRAMS.md` for split mode): verify each diagram still matches the current supervision tree, flow shape, module boundaries, or component layout it claims to represent. Diagrams referencing removed components, missing newly-added ones, or showing structurally outdated edges are `drifted` findings — cite the specific node or edge.
+  - For `docs/runbooks/*.md` and repo-root `RUNBOOK.md`: verify each documented procedure or command still resolves to a live entrypoint, service, or script. Procedures for decommissioned, renamed, or removed surfaces are `drifted` findings.
 
 ## Finding normalization
 Do not emit raw audit bullets as the final output.
