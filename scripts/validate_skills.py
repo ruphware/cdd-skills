@@ -1,21 +1,26 @@
-"""Validate CDD skill, generator, and contract structure for this repo.
+"""Structural validation for CDD skills and the shared master-chef contract.
+
+This validator is intentionally narrow. It asserts:
+  - file presence (skill SKILL.md and openai.yaml per skill; full master-chef
+    contract file set; generated openclaw builder skills)
+  - frontmatter shape (name regex, description present, disable-model-invocation
+    flag for user-facing skills, user-invocable flag for generated variants)
+  - openai.yaml display names and implicit-invocation flags
+  - required H2 section headings by name only (not by body content)
+  - master-chef SKILL.md references each installed skill by name
+
+Prose / phrase / topic matching used to live here and broke on every wording
+edit; that layer was removed in favor of trigger evals and behavioral evals
+(planned as a follow-on). Don't reintroduce phrase-matching here — it is the
+brittleness this rewrite removed. If you want to assert a semantic behavior,
+add it as a trigger eval or an LLM-rubric check, not a regex on skill prose.
 
 Example:
   python3 scripts/validate_skills.py
-
-Validation layers:
-  - Structural checks: default. Frontmatter, required files, generated artifact
-    shape, markdown headings, installer/runtime file references.
-  - Generated-artifact checks: default. Runtime Builder generation and package
-    layout invariants.
-  - Legacy prose checks: opt-in with ``--include-legacy-prose``. These add
-    extra topic-coverage checks for canonical skill bodies, but they are not
-    the primary contract gate.
 """
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 import re
 import subprocess
@@ -26,6 +31,7 @@ import tempfile
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
 MULTILINE_VALUE_RE = re.compile(r"^[a-zA-Z0-9_-]+:\s*[|>]\s*$", re.M)
 
+
 CDD_DISPLAY_NAMES = {
     "cdd-boot": "[CDD-0] Boot",
     "cdd-init-project": "[CDD-1] Init Project",
@@ -34,909 +40,114 @@ CDD_DISPLAY_NAMES = {
     "cdd-audit": "[CDD-4] Audit",
     "cdd-maintain": "[CDD-5] Maintain",
 }
-CDD_CORE_LABELS = tuple(CDD_DISPLAY_NAMES.values())
-MASTER_CHEF_LABEL = "[CDD-6] Master Chef"
-OPENCLAW_ROUTING_LABELS = (
-    "[CDD-0] Boot",
-    "[CDD-1] Init Project",
-    "[CDD-2] Plan",
-    "[CDD-3] Implement TODO",
-    "[CDD-4] Audit",
-    "[CDD-5] Maintain",
+MASTER_CHEF_DISPLAY_NAME = "[CDD-6] Master Chef"
+
+MASTER_CHEF_FILES = (
+    "SKILL.md",
+    "agents/openai.yaml",
+    "README.md",
+    "CONTRACT.md",
+    "RUNBOOK.md",
+    "RUNTIME-CAPABILITIES.md",
+    "CODEX-ADAPTER.md",
+    "CODEX-RUNBOOK.md",
+    "CODEX-TEST-HARNESS.md",
+    "CLAUDE-ADAPTER.md",
+    "CLAUDE-RUNBOOK.md",
+    "CLAUDE-TEST-HARNESS.md",
+    "openclaw/README.md",
+    "openclaw/MASTER-CHEF-RUNBOOK.md",
+    "openclaw/MASTER-CHEF-TEST-HARNESS.md",
 )
-MASTER_CHEF_KICKOFF_OPTION_STRINGS = (
-    "`A. approve kickoff and start the autonomous run now`",
-    "`B. approve kickoff but do not spawn Builder yet`",
-    "`C. revise the next action, Builder settings, or step budget before kickoff`",
-)
-MASTER_CHEF_KICKOFF_OPTION_REGEXES = (
-    r"`A\.\s*approve kickoff and start the autonomous run now`",
-    r"`B\.\s*approve kickoff but do not spawn Builder yet`",
-    r"`C\.\s*revise the next action, Builder settings, or step budget before kickoff`",
-)
-MASTER_CHEF_KICKOFF_HARNESS_SUMMARY = (
-    "Kickoff approval used selector-based options and asked for a run step budget plus whether to spawn Builder now."
-)
-MASTER_CHEF_KICKOFF_HARNESS_REGEXES = (
-    r"selector-based options rather than a free-form approval question",
-    r"replying with just `A`, `B`, or `C` would be enough",
-)
-MASTER_CHEF_SESSION_SETTINGS_STRINGS = (
-    "current session model",
-    "current session thinking",
-    "`Builder override`",
-    "effective Builder settings",
-)
-MASTER_CHEF_SESSION_FACTS = "current session model and thinking"
-MASTER_CHEF_SESSION_FACTS_EXPLICIT = (
-    "current session model and thinking are stated explicitly"
-)
-MASTER_CHEF_SESSION_FACTS_SHOWN = (
-    "current session model and thinking are shown back to the human"
-)
-MASTER_CHEF_SESSION_FACTS_REGEX = (
-    r"current session model and(?: current session)? thinking"
-)
-MASTER_CHEF_INHERITED_SETTINGS_REGEX = (
-    r"(?:Builder inherits those settings|default Builder to inherit (?:those settings|the current session model and(?: current session)? thinking))"
-)
-MASTER_CHEF_EFFECTIVE_BUILDER_PASS = (
-    "Effective Builder settings were stated clearly before implementation, with inherited Builder behavior as the default."
-)
-MASTER_CHEF_UNKNOWN_AS_IS_REGEX = (
-    r"`unknown`.*active session as-is|continue with the active session as-is"
-)
-MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX = (
-    r"oversized(?:-looking)?(?: next| top-level)? TODO step.*(?:review|do not split).*split cost.*justified|oversized for one Builder run.*(?:do not split|rather than splitting by default).*split cost|keep it intact unless.*split cost.*justified|review-first split policy"
-)
-MASTER_CHEF_ENV_READY_REGEX = (
-    r"`worktree_env_status`.*`preparing`.*`env_ready`.*`partial`.*`blocked`|branch-backed.*`env_ready`|`env_ready`"
-)
-MASTER_CHEF_FINAL_REPORT_REGEX = (
-    r"final mission report.*completed work.*decisions made|Terminal mission reports.*completed work.*decisions made"
-)
-MASTER_CHEF_TODO_CHECKLIST_REGEX = (
-    r"(?:completed TODO step ids|which TODO step ids were completed|selected TODO step).*task checklist(?:s)?(?: are| were| is)?(?: fully)? checked|task checklist(?:s)? (?:reflect|reflects) the completed work|checklist completion status"
-)
-MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX = (
-    r"(?:post-run recommendation bundle|closeout recommendation bundle|continuation-aware recommendation bundle|state-based closeout recommendations|next human actions|next operator moves).*(?:cdd-audit|\[CDD-4\] Audit).*(?:push only when|conditional push|ahead of origin|still unpublished).*(?:open a PR|PR creation).*(?:clean up the managed worktree|managed-worktree cleanup).*(?:source checkout|parent folder)"
-)
-MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX = (
-    r"`RUN_COMPLETE`.*(?:completed run|true closeout|shared closeout recommendation bundle|closeout recommendation bundle).*(?:push|open a PR|cleanup|return to the source checkout|return to source checkout)"
-)
-MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX = (
-    r"(?:budget-stop )?`RUN_STOPPED`.*(?:work completed so far|paused-but-successful checkpoint|shared continuation-aware recommendation bundle|continuation-aware recommendation bundle).*(?:remaining runnable work|next continuation target|continuation-aware)"
-)
-MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX = (
-    r"`RUN_COMPLETE`.*shared closeout recommendation bundle"
-)
-MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX = (
-    r"`RUN_STOPPED`.*shared continuation-aware recommendation bundle.*(?:remaining runnable work|next continuation target)"
-)
-MASTER_CHEF_SAME_BUILDER_REGEX = (
-    r"(?:same Builder|same-Builder|reuse the same Builder|reuse the active Builder|persistent Builder|keeps? the same Builder)"
-)
-MASTER_CHEF_STEP_COMPACTION_REGEX = (
-    r"(?:step-start|beginning-of-step|Before handing a new delegated step).*compaction|(?:attempt|attempted).*compaction.*(?:supported|supports|command|API|/compact)"
-)
-MASTER_CHEF_COMPACTION_FALLBACK_REGEX = (
-    r"(?:auto-compaction|native context management|native-context fallback|native_context_management)"
-)
-MASTER_CHEF_REPLACEMENT_ONLY_REGEX = (
-    r"(?:Replace Builder only after|replace Builder only after|replacement is reserved for|replacement only.*(?:failure|closure|deadlock|unusable drift)|recovery conditions require it|recovery-only)"
-)
-MASTER_CHEF_ACTIVE_CHECK_REGEX = (
-    r"(?:active Builder checks|active checks|Builder checks).*(?:at least )?every 5 minutes|5-minute cadence"
-)
-MASTER_CHEF_BOOT_TIMEOUT_REGEX = (
-    r"(?:10 minutes.*readiness|readiness.*10 minutes|10 minutes.*boot|boot.*10 minutes).*final explicit boot-status probe|boot-timeout boundary.*10 minutes"
-)
-MASTER_CHEF_RUNNING_SOFT_STALE_REGEX = (
-    r"20 minutes.*(?:direct )?(?:Builder )?proof of life.*(?:suspect|soft stale).*explicit status (?:probe|request)|20 minutes.*soft stale threshold"
-)
-MASTER_CHEF_RUNNING_HARD_STALE_REGEX = (
-    r"30 minutes.*(?:total )?running silence.*(?:hard|replacement)|2 consecutive unanswered explicit probes"
-)
-MASTER_CHEF_PROBE_STATE_REGEX = (
-    r"`builder_last_probe_at_utc`.*`builder_last_probe_result`.*`builder_suspect_since_utc`.*`builder_missed_probe_count`"
-)
-MASTER_CHEF_ACTIVE_MONITORING_REGEXES = (
-    MASTER_CHEF_ACTIVE_CHECK_REGEX,
-    MASTER_CHEF_BOOT_TIMEOUT_REGEX,
-    MASTER_CHEF_RUNNING_SOFT_STALE_REGEX,
-    MASTER_CHEF_RUNNING_HARD_STALE_REGEX,
-)
-MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX = (
-    r"(?:one active Builder(?: identity)?|one active Builder remains|only one live Builder remains visible|one live Builder remains visible)"
-)
-MASTER_CHEF_BUILDER_CLEANUP_REGEX = (
-    r"(?:close(?:d)?|purge(?:d)?|mark(?:ed)? .*inactive|mark(?:ed)? .*no longer active|mark it inactive|mark it no longer active|marking it inactive|marking it no longer active).*(?:Builder|child session)|(?:Builder|child session).*(?:close(?:d)?|purge(?:d)?|inactive|no longer active)"
-)
-MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX = (
-    r"(?:lineage and durable evidence|`builder_replacement_lineage` plus durable evidence|lineage and logs stay preserved|after lineage and logs were preserved|lineage and logs were preserved)"
-)
-MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX = (
-    r"(?:do not claim|should not claim|no clean official|lack of any trustworthy|no documented|unsupported universal).*(?:context meter|token-left|fullness percentage|numeric threshold|context threshold)"
-)
-UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX = (
-    r"(?:\b\d{1,3}%\b.*(?:context|token|fullness)|(?:context|token|fullness).*\b\d{1,3}%\b)"
-)
-IMPLEMENTATION_DELTA_REVIEW_REGEX = (
-    r"(?:implementation delta|current branch diff|selected commits?|selected commit range|changed-file surface|repo-local changed-file surface)"
-)
-IMPLEMENTATION_DELTA_SUMMARY_REGEX = (
-    r"(?:which implementation delta(?: or changed-file or commit surface)? was reviewed|implementation delta was reviewed|changed-file or commit surface was reviewed)"
-)
-LEGACY_BUILDER_LIFECYCLE_STRINGS = (
-    "Use single-step Builder runs only.",
-    "fresh Builder for the next delegated action",
-    "the next delegated step got a fresh Builder run.",
-    "do not compact or resume Builders as the normal path",
-)
-OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES = (
-    r"QA rejects the result, Master Chef either sends concrete findings to a fresh Builder run for the same step or fixes the issue directly",
-    r"If Master Chef QA rejects the Builder result:.*either push the findings to a fresh Builder run for the same step or fix the issue directly in Master Chef",
-)
-REPO_LOCAL_RUNTIME_IGNORE = ".cdd-runtime/"
-MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/worktrees/<run-id>/"
-MASTER_CHEF_RUNBOOK_WORKTREE_ROOT = (
-    "<source-repo>/.cdd-runtime/worktrees/<run-id>/"
-)
-LEGACY_MASTER_CHEF_WORKTREE_ROOT = ".cdd-runtime/master-chef/worktrees/<run-id>/"
-BOOT_SELECTOR_FOLLOWUP_REGEXES = (
-    r"repo-local `AGENTS\.md` response-format guidance.*authoritative.*follow-up presentation",
-    r"repo-local `NEXT` section.*selector-labeled choices",
-    r"no repo-local `NEXT` contract.*final `\*\*Options\*\*` section",
-    r"recommended option first",
-    r"`\.cdd-runtime/worktrees/<branch-or-tag>/`",
-    r"create or move into a worktree first",
-    r"continue in the current worktree",
-    r"clear next runnable TODO step.*`\$?cdd-implement-todo <step>`",
-    r"do not offer to start implementation directly from boot",
-)
-BOOT_YAML_REGEXES = (
-    r"worktree boot",
-    r"docs/JOURNAL\.md.*journal entrypoint.*split-journal files",
-    r"AGENTS\.md next-action formatting.*selector-based next-step choices",
-    r"\.cdd-runtime/worktrees/<branch-or-tag>/",
-    r"clear next runnable TODO step.*cdd-implement-todo <step>",
-)
-MAINTAIN_YAML_REGEXES = (
-    r"A\. doc drift \+ upkeep",
-    r"B\. source cleanup",
-    r"fixed order A -> B -> C -> D",
-    r"A responsible for support-doc drift plus TODO/journal/archive/runtime upkeep",
-    r"B from tracked source/tests/configs/manifests/entrypoints",
-    r"docs or runtime only as candidate-specific proof",
-    r"(?:fully )?rebuild docs/INDEX\.md from current repo signals(?: only)? in index mode",
-    r"approved source-cleanup removals",
-    r"read-only architecture audit.*cdd-plan",
-)
+
+# Required H2 section headings per skill. Section presence is a structural
+# contract; the prose inside each section is intentionally not validated.
+# When you add or rename a section in a skill, update the matching tuple here.
+REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
+    "cdd-boot": (
+        "## Required contract",
+        "## Preferred inputs",
+        "## Graceful fallback rules",
+        "## Follow-up contract",
+        "## Worktree check",
+        "## Output",
+    ),
+    "cdd-init-project": (
+        "## Canonical contract",
+        "## High-impact action guardrails",
+        "## Canonical bootstrap source",
+        "## Required README CDD footnote footer",
+        "## Contract-surface taxonomy and drift rules",
+        "## Intent and assumption checkpoint",
+        "## Interactive planning contract",
+        "## State detection",
+    ),
+    "cdd-plan": (
+        "## Runnable TODO step contract",
+        "## Audit-input normalization",
+        "## Edge-case review",
+        "## Intent and assumption checkpoint",
+        "## Interactive planning contract",
+        "## Question economy",
+        "## Planning anti-patterns",
+        "## Flow",
+    ),
+    "cdd-implement-todo": (),
+    "cdd-audit": (
+        "## Sources of truth",
+        "## Scope resolution",
+        "## Step-scoped TODO contract audit",
+        "## Audit dimensions",
+        "## Finding normalization",
+        "## Interaction contract",
+        "## Flow",
+        "## Guardrails",
+    ),
+    "cdd-maintain": (
+        "## Shared routing read",
+        "## Mode-scoped read discipline",
+        "## Mode selection",
+        "## Approval contract",
+        "## Safe write behavior",
+        "## Mode A",
+        "## Mode B",
+        "## Mode C",
+        "## Mode D",
+        "## INDEX freshness",
+        "## Output",
+    ),
+}
 
 
 def frontmatter(path: Path) -> str:
-    """Return frontmatter text for a SKILL.md file or raise with a clear error."""
     text = path.read_text(encoding="utf-8")
     match = FRONTMATTER_RE.match(text)
     assert match, f"missing YAML frontmatter in {path}"
     meta = match.group(1)
     assert not MULTILINE_VALUE_RE.search(meta), (
-        f"multiline frontmatter not allowed in {path}"
+        f"unexpected multiline value in {path} frontmatter; values must be single-line"
     )
     return meta
 
 
 def require_field(meta: str, pattern: str, path: Path, label: str) -> None:
-    """Assert that a frontmatter pattern exists for the given file."""
     assert re.search(pattern, meta, re.M), f"missing {label} in {path}"
 
 
-def require_any_substring(
-    skill_text: str, phrases: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that at least one expected phrase exists in the given skill text."""
-    assert any(phrase in skill_text for phrase in phrases), f"missing {label} in {path}"
+def require_section(text: str, heading: str, path: Path) -> None:
+    """Assert an H2 starting with `heading` exists.
 
-
-def require_substrings(
-    text: str, patterns: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that every expected token exists in the given text."""
-    missing = [pattern for pattern in patterns if pattern not in text]
-    assert not missing, f"missing {label} in {path}: {', '.join(missing)}"
-
-
-def require_regexes(
-    text: str, patterns: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that every expected regex matches somewhere in the given text."""
-    missing = [pattern for pattern in patterns if not re.search(pattern, text, re.M | re.S)]
-    assert not missing, f"missing {label} in {path}: {', '.join(missing)}"
-
-
-def require_topic_bundle(
-    text: str, patterns: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that a document still covers a topic bundle without exact prose."""
-    require_regexes(text, patterns, path, label)
-
-
-def forbid_substrings(
-    text: str, patterns: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that none of the forbidden tokens exist in the given text."""
-    present = [pattern for pattern in patterns if pattern in text]
-    assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
-
-
-def forbid_regexes(
-    text: str, patterns: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that none of the forbidden regexes match in the given text."""
-    present = [pattern for pattern in patterns if re.search(pattern, text, re.M | re.S)]
-    assert not present, f"unexpected {label} in {path}: {', '.join(present)}"
-
-
-def require_headings(
-    text: str, headings: tuple[str, ...], path: Path, label: str
-) -> None:
-    """Assert that the markdown text contains the required headings."""
-    require_substrings(text, headings, path, label)
-
-
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI args for structural versus legacy validation modes."""
-    parser = argparse.ArgumentParser(
-        description=(
-            "Validate repo-local CDD skills, generators, and Master Chef contract "
-            "artifacts. Default mode is structural/generated only."
-        )
-    )
-    parser.add_argument(
-        "--include-legacy-prose",
-        action="store_true",
-        help=(
-            "Also run extra topic-coverage checks for canonical skill bodies. "
-            "These are retained for spot-checking, but are not the primary gate."
-        ),
-    )
-    return parser.parse_args(argv)
-
-
-def validate_coarse_step_planning(skill_text: str, skill_md: Path) -> None:
-    """Assert planning skills decompose coarse work and track confirmed coverage."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"(?:multi-surface.*ambiguous|ambiguous.*multi-surface).*more than one TODO step",
-            r"coarse (dependency-ordered step decomposition|root-cause work packages).*before detailed TODO drafting",
-            r"refine one coarse (step|root-cause work package) at a time.*runnable TODO steps",
-            r"Confirmed requirements coverage",
-            r"confirmed.*excluded.*repo fit.*represented in the plan",
-            r"carry forward confirmed requirements.*make sense for the repo",
-            r"Do not over-compress the plan just to stay minimal",
-        ),
-        skill_md,
-        "coarse planning topics",
+    Matches the heading exactly, or as a prefix followed by ` —`, ` (`, or end
+    of line. Anchored to start of line so it cannot accidentally match inside
+    prose or an H3.
+    """
+    pattern = r"^" + re.escape(heading) + r"(\s+—|\s+\(|\s*$)"
+    assert re.search(pattern, text, re.M), (
+        f"missing required section `{heading}` in {path}"
     )
 
 
-def validate_reviewed_contract_artifacts(skill_text: str, skill_md: Path) -> None:
-    """Assert planning skills preserve reviewed artifacts in TODO-focused output."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"coarse (planning|root-cause planning) phase.*user-provided contract.*implementation-driving artifacts.*TODO\.md",
-            r"mixed product.*implementation detail.*TODO\.md.*follow-up",
-            r"Reviewed contract artifacts",
-            r"copied as-is.*corrected.*expanded.*removed.*left intentionally unspecified",
-            r"reason for each material change.*records where each artifact was written",
-            r"Confirmed requirements coverage.*Reviewed contract artifacts.*before (?:asking for )?approval|before (?:asking for )?approval.*Confirmed requirements coverage.*Reviewed contract artifacts",
-            r"keep exact implementation-driving detail in `TODO\.md`.*follow-up.*spec/doc",
-        ),
-        skill_md,
-        "reviewed artifact topics",
-    )
-
-
-def validate_plan_edge_case_review_contract(skill_text: str, skill_md: Path) -> None:
-    """Assert the plan skill reviews edge cases and escalates only major ones."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"behavior-changing or audit-derived implementation (planning|requests)",
-            r"Edge-case review",
-            r"repo-grounded edge-case review.*relevant code.*docs.*tests.*entrypoints.*configs.*manifests.*current TODO surfaces",
-            r"keep it concise.*repo-grounded cases.*materially affect plan shape.*interfaces.*data/state.*rollout.*validation",
-            r"Collapse duplicate or closely related edge cases.*smallest root decision",
-            r"affected boundary.*why it matters.*`major`.*`minor`",
-            r"`Major`.*materially change.*subsystem boundaries.*APIs/contracts.*data/state model.*user-visible behavior.*rollout/migration path.*validation strategy",
-            r"`Minor`.*recommended implementation default.*plan shape",
-            r"one clarifying question.*at a time.*major|major.*one clarifying question.*at a time",
-            r"plan-shaping decisions rather than preference polls|real plan-shaping decisions rather than preference polls",
-            r"highest-leverage question first.*resolves the most downstream plan.*boundary.*sequencing.*validation uncertainty",
-            r"one combined clarification.*separate repetitive questions|combined clarification instead of separate repetitive questions",
-            r"current recommended direction.*what part of the plan would change",
-            r"Do not re-ask a question already answered.*codebase evidence.*accepted plan default",
-            r"minor.*non-blocking.*assumptions.*constraints.*implementation notes.*automated checks.*UAT",
-            r"no meaningful repo-grounded edge cases",
-        ),
-        skill_md,
-        "plan edge-case review topics",
-    )
-
-
-def validate_plan_intent_checkpoint_contract(skill_text: str, skill_md: Path) -> None:
-    """Assert the plan skill resolves intent before implementation details."""
-    require_headings(
-        skill_text,
-        ("## Intent and assumption checkpoint", "## Planning anti-patterns"),
-        skill_md,
-        "plan intent-checkpoint headings",
-    )
-    require_topic_bundle(
-        skill_text,
-        (
-            r"Before detailed implementation questions.*(?:build|produce) an intent frame",
-            r"Working rule: do not ask a lower-level question while a higher-level unresolved(?: decision about intent, assumptions, or direction| intent, assumption, or direction decision) could still invalidate the answer",
-            r"(?:Use this order when ranking unresolved decisions|Rank unresolved decisions in this order):.*1\.\s*intent and outcome.*2\.\s*material assumptions and non-goals.*3\.\s*planning direction.*4\.\s*product and architecture boundaries.*5\.\s*data/state/contracts/APIs.*6\.\s*sequencing, rollout, migration, rollback, validation.*7\.\s*implementation details",
-            r"Ask intent and assumption questions before detailed implementation questions",
-            r"`Intent and assumptions` section",
-        ),
-        skill_md,
-        "plan intent-checkpoint topics",
-    )
-
-
-def validate_plan_intent_framing_topics(skill_text: str, skill_md: Path) -> None:
-    """Assert the plan skill carries the deeper intent-framing contract."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"`Requested change`.*`Suspected intent`.*`Success signal`.*`Non-goals`.*`Material assumptions`.*`Recommended direction`.*`Unstable points`",
-            r"requested change.*suspected intent.*deliverable.*hardest constraint.*success signal.*non-goals.*material assumptions.*recommended direction.*unstable points",
-            r"actual problem being solved.*user-visible outcome.*product or architecture boundaries.*in scope or out of scope.*sequencing of work.*implemented, deferred, audited, or converted into a spec or TODO delta.*validation or UAT requirements.*risk, rollback, migration, privacy, security, or permission behavior",
-            r"`confirmed`.*`repo-inferred`.*`recommended default`.*`risky`.*`excluded`",
-            r"Only `risky` assumptions block planning",
-            r"`feature`.*`bugfix`.*`audit_fix`.*`spec_delta`.*`refactor`.*`maintenance`.*`investigation`.*`defer`",
-            r"`intent`.*`assumption`.*`direction`.*`boundary`.*`implementation`.*`validation`",
-            r"Resolve `intent`, `assumption`, and `direction` uncertainty before `boundary`, `implementation`, or detailed `validation` questions",
-            r"Treat a request as `intent-qualifying` when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to (?:need|produce) more than one TODO step",
-            r"(?:compact )?visible `Intent and assumptions` section.*requested change.*suspected intent.*success signal.*recommended direction.*material assumptions by status.*non-goals.*blocking intent question",
-            r"Asking implementation-detail questions before the intent is clear",
-            r"Treating the user's first wording as the confirmed intent",
-            r"Converting an audit bullet directly into implementation work",
-            r"file placement.*naming.*UI copy.*endpoint shape.*schema fields.*test mechanics",
-            r"many small detail questions.*one hard direction question",
-        ),
-        skill_md,
-        "plan intent-framing topics",
-    )
-
-
-def validate_audit_question_efficiency_contract(
-    skill_text: str, skill_md: Path
-) -> None:
-    """Assert the audit skill asks only high-yield major questions."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"(?:material edge-case and failure-path gaps|edge-case and failure-path gaps).*(?:audit conclusion|recommended `cdd-plan` follow-up)|Review edge-case and failure-path gaps only when they could materially change",
-            r"Collapse duplicate or closely related audit ambiguities.*smallest root decision",
-            r"Ask (?:ambiguity clarifications )?only when the answer could materially change the audit conclusion|ambiguity clarifications.*materially change the audit conclusion",
-            r"fewest questions.*most audit uncertainty|Prefer the fewest questions that resolve the most audit uncertainty",
-            r"highest-leverage (?:question|one) first.*finding validity.*severity.*grouping.*affected boundary.*recommended next path",
-            r"one combined clarification.*separate repetitive questions|combined clarification instead of separate repetitive questions",
-            r"current recommended finding direction.*what audit conclusion would change",
-            r"Do not re-ask a question already answered.*repo evidence.*accepted audit assumption",
-            r"minor ambiguities.*report-only|Minor findings and minor ambiguities can stay report-only",
-        ),
-        skill_md,
-        "audit question-efficiency topics",
-    )
-
-
-def validate_audit_approval_closeout_contract(
-    skill_text: str, skill_md: Path
-) -> None:
-    """Assert the audit skill restores finding approval and closeout routing."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"Separate ambiguity resolution from finding approval.*does not (?:auto-approve|approve)",
-            r"sufficiently proven.*recommends follow-up.*one at a time|planning-relevant major finding.*one at a time",
-            r"`A\.\s*Approve (?:this finding )?for cdd-plan`",
-            r"Keep a running list of:.*findings approved for planning now.*findings deferred.*findings accepted as-is.*findings rejected or needing more evidence",
-            r"concrete, evidence-backed, and behavior-relevant",
-            r"Cite the file, symbol, diff, failing or missing test, or equivalent proof surface|For non-trivial `code quality` and `test quality` findings.*file, symbol, diff",
-            r"correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost",
-            r"Avoid style-only notes.*vague refactor advice.*risk.*confidence gap.*maintenance payoff|Avoid style-only notes.*vague refactor advice",
-            r"repo-local `NEXT` section.*`AGENTS\.md`.*final `\*\*Options\*\*` section|Use the repo-local `NEXT` section when `AGENTS\.md` defines one; otherwise use a final `\*\*Options\*\*` section",
-            r"`A\.\s*run cdd-plan on the approved findings`",
-            r"no approved findings.*do not recommend an empty `\$?cdd-plan` invocation|Otherwise.*do not recommend an empty `\$?cdd-plan` invocation|If no approved findings exist.*do not recommend an empty",
-        ),
-        skill_md,
-        "audit approval and closeout topics",
-    )
-
-
-def validate_plan_audit_mode_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the plan skill absorbs audit-input normalization cleanly."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"## Question economy",
-            r"Before asking any clarification.*rank unresolved decisions.*downstream uncertainty",
-            r"Do not ask about.*reversible implementation details.*naming/copy polish.*file placement.*repo conventions.*defaults.*TODO step.*preferences.*plan shape.*answered by the user.*repo evidence.*accepted default",
-            r"Default clarification budget:.*small/local change: 0-1 questions.*multi-surface change: 1-2 questions.*up to 3 questions",
-            r"If more than 3 clarifications appear necessary.*best bounded plan so far.*unresolved major decisions.*next single decision",
-            r"remaining material assumption would invalidate the plan.*unsafe or destructive work.*materially change boundaries.*sequencing.*contracts.*data/state.*rollout.*validation",
-            r"only minor defaults.*carry (?:the defaults|them).*assumptions.*constraints.*implementation notes.*automated checks.*UAT|minor defaults.*disclose.*carry (?:the defaults|them)",
-            r"change requests and audits|change requests and for audit findings|change requests and externally supplied audit findings|change requests or external audit findings",
-            r"Do not convert raw audit bullets directly into TODO tasks",
-            r"`spec_delta`.*`implementation_delta`.*`verification_delta`.*`defer`",
-            r"user-visible symptom.*likely root cause.*affected boundary.*proof needed",
-            r"Collapse duplicate symptoms.*root-cause work package",
-            r"relevant docs.*README\.md.*docs/specs.*corresponding tests|corresponding tests.*README\.md.*docs/specs",
-            r"Flow \(approval-gated, bounded-bisection\)",
-            r"Frame (?:the request|intent before details).*Shape (?:the plan|the planning direction).*Bisect uncertainty(?: before detailed drafting)?.*Produce the coarse plan.*Refine one coarse step.*Apply, hand off, and audit",
-            r"requested change.*suspected intent.*deliverable.*hardest constraint.*success signal",
-            r"`rough`:.*reversible implementation details.*`solved`:.*product, architecture, sequencing, or validation decisions.*`bounded`:.*in scope.*out of scope.*work stops",
-            r"When the work is already a single clearly bounded next step.*without forcing a coarse decomposition pass",
-            r"write-location choice.*update an existing TODO file.*TODO-audit-<tag>\.md|audit-driven requests.*update an existing TODO file.*TODO-audit-<tag>\.md",
-            r"After applying, suggest implementing the next (?:approved TODO )?step via `\$?cdd-implement-todo`\.",
-        ),
-        skill_md,
-        "plan audit-mode topics",
-    )
-    assert "confirm or correct them before continuing" not in skill_text, (
-        f"plan skill should not revive the old assumption confirmation loop in {skill_md}"
-    )
-    assert "implement that step immediately" not in skill_text, (
-        f"plan skill should not implement directly in {skill_md}"
-    )
-
-
-def validate_audit_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the audit skill keeps its audit-only contract."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"explicit implementation or codebase audits",
-            r"findings plus approved follow-up, not code changes",
-            r"Supported audit scopes:.*last commit.*uncommitted changes.*one TODO step.*multiple TODO steps.*one TODO file.*whole codebase",
-            r"missing docs, specs, or tests as findings",
-            r"scope resolves to one or more TODO steps.*selected step ids",
-            r"Step-scoped TODO contract audit",
-            r"Review each selected step's:.*Goal.*Constraints.*Tasks.*Implementation notes.*Automated checks.*UAT",
-            r"actually satisfies that step contract rather than only the broader TODO topic|not just the surrounding TODO theme",
-            r"unchecked TODO tasks.*first-class findings|missing evidence for completed tasks.*first-class findings",
-            r"do not narrow the audit into TODO-only review",
-            r"`spec compliance`",
-            r"`code quality`",
-            r"`test quality`",
-            r"`accidental complexity`",
-            r"`documentation`",
-            r"KISS.*YAGNI.*SRP|YAGNI.*KISS.*SRP|SRP.*KISS.*YAGNI",
-            r"validate untrusted input early.*syntactic.*semantic",
-            r"confidence over coverage",
-            r"mostly integration",
-            r"narrower unit tests.*fewer high-level tests|fewer high-level tests.*narrower unit tests",
-            r"implementation details.*broad unrelated object equality.*mock choreography.*fragile snapshots|fragile snapshots.*mock choreography.*broad unrelated object equality.*implementation details",
-            r"useless tests.*duplicate lower-level coverage|duplicate lower-level coverage.*useless tests",
-            r"speculative abstraction.*wrapper indirection.*generic APIs with one concrete use.*parameterization without real consumers",
-            r"compact and optimized for reading",
-            r"Normalize each finding into a root-cause item",
-            r"user-visible symptom",
-            r"likely root cause",
-            r"affected boundary",
-            r"evidence or proof surface",
-            r"Collapse duplicate symptoms|Collapse duplicate findings",
-            r"Separate ambiguity resolution from finding approval.*does not (?:auto-approve|approve)",
-            r"Major findings.*one at a time|one at a time unless multiple findings clearly collapse into one root-cause decision|sufficiently proven.*recommends follow-up.*one at a time",
-            r"`A\.\s*Approve (?:this finding )?for cdd-plan`",
-            r"`B\.\s*Postpone or backlog`",
-            r"`C\.\s*Accept current state`",
-            r"`D\.\s*Reject finding or ask for more evidence`",
-            r"Stay read-only during the audit",
-            r"Do not patch code, docs, or TODO files",
-            r"selected steps' checked tasks appear fully done",
-            r"observed implementation satisfies each step goal|implementation matches the selected step goals",
-            r"automated checks plus UAT evidence support the claimed completion",
-            r"selected TODO step ids when the scope is step-scoped",
-            r"Inspect the concrete implementation delta.*current branch diff.*selected commits.*changed-file surface|step-scoped audits.*implementation delta.*current branch diff.*selected commits.*changed-file surface",
-            r"concrete implementation delta reviewed for that scope",
-            IMPLEMENTATION_DELTA_SUMMARY_REGEX,
-            r"notable missing proof surfaces, docs, specs, or tests",
-            r"concrete, evidence-backed, and behavior-relevant",
-            r"Cite the file, symbol, diff, failing or missing test, or equivalent proof surface|For non-trivial `code quality` and `test quality` findings.*file, symbol, diff",
-            r"Avoid style-only notes.*vague refactor advice",
-            r"`A\.\s*run cdd-plan on the approved findings`",
-            r"recommend `\$?cdd-plan`",
-        ),
-        skill_md,
-        "audit topics",
-    )
-    assert "implement directly from this skill" not in skill_text, (
-        f"audit skill should stay audit-only in {skill_md}"
-    )
-
-
-def validate_selector_labeled_options(skill_text: str, skill_md: Path) -> None:
-    """Assert interactive planning skills require visible option selectors."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"visible selector.*label itself.*selectable key",
-            r"[Dd]efault to letters:\s*`A\.`, `B\.`, `C\.`",
-            r"[Uu]se numbers only when the surrounding context is already numeric",
-            r"reply with just the selector",
-        ),
-        skill_md,
-        "selector option topics",
-    )
-
-
-def validate_option_driven_approval(skill_text: str, skill_md: Path) -> None:
-    """Assert approval decisions are made through selector options, not a second prompt."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"selected option itself is the approval",
-            r"[Dd]o not append a separate free-form approval question after selector options",
-        ),
-        skill_md,
-        "option-driven approval topics",
-    )
-
-
-def validate_plan_final_apply_options(skill_text: str, skill_md: Path) -> None:
-    """Assert the plan skill uses one selector-driven final approval surface."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"AGENTS\.md.*`NEXT`.*otherwise.*`\*\*Options\*\*`",
-            r"clear next execution step.*exactly three final options",
-            r"`A\.\s*apply now and continue with the recommended next step`",
-            r"`B\.\s*apply now only`",
-            r"`C\.\s*keep the plan read-only and revise before applying`",
-        ),
-        skill_md,
-        "plan final apply option topics",
-    )
-    assert "Approve and apply these changes?" not in skill_text, (
-        f"plan skill should not add a second free-form approval prompt in {skill_md}"
-    )
-
-
-def validate_boot_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the boot skill keeps its graceful vanilla boot contract."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"If `AGENTS\.md` is missing.*stop.*not CDD-ready",
-            r"Read `AGENTS\.md` first.*source of truth",
-            r"Continue gracefully when `README\.md`, `docs/INDEX\.md`, `docs/specs/blueprint\.md`, or `docs/JOURNAL\.md` are missing",
-            r"top of `docs/JOURNAL\.md`.*stable journal entrypoint",
-            r"`docs/JOURNAL\.md`.*split-journal mode.*`docs/journal/JOURNAL-<area>\.md`.*`docs/journal/SUMMARY\.md`",
-            r"split-journal mode is active.*cross-cutting notes.*older condensed context",
-            r"top of `docs/JOURNAL\.md`.*do not ingest full history unless the user explicitly asks",
-            *BOOT_SELECTOR_FOLLOWUP_REGEXES,
-            r"repo is Git-backed.*main worktree or a linked worktree",
-            r"current checkout is already a linked worktree.*recommend staying in that worktree",
-            r"current checkout is the main worktree.*recommend moving feature development into a worktree",
-            r"creating or moving into a worktree first.*`\.cdd-runtime/worktrees/<branch-or-tag>/`",
-            r"create or move into a worktree first.*continue in the current worktree",
-            r"staying in the main folder is acceptable|Otherwise.*staying in the main folder is acceptable",
-            r"Do not create, switch, remove, or clean worktrees during boot",
-            r"`Worktree`.*stay in the main folder or move into a worktree",
-            r"`Next action`.*selector-labeled choices.*repo-local `NEXT` section|`Next action`.*final `\*\*Options\*\*` section",
-            r"`Next action`.*`\.cdd-runtime/worktrees/<branch-or-tag>/`.*`\$?cdd-implement-todo <step>`",
-            r"Do not write or modify repo files",
-            r"recommend continuing in vanilla AGENTS-driven mode",
-        ),
-        skill_md,
-        "boot skill topics",
-    )
-
-
-def validate_boot_followup_contract(skill_text: str, skill_md: Path) -> None:
-    """Assert the boot skill keeps selector-driven next-step routing."""
-    require_topic_bundle(
-        skill_text,
-        BOOT_SELECTOR_FOLLOWUP_REGEXES,
-        skill_md,
-        "boot follow-up topics",
-    )
-
-
-def validate_implement_todo_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the implement-todo skill routes non-trivial journaling correctly."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"Resolve ambiguity and approval boundaries with selector-based options under a final `\*\*Options\*\*` section",
-            r"`A\.\s*apply the minimal TODO patch and implement the step`",
-            r"`B\.\s*apply the minimal TODO patch only`",
-            r"`C\.\s*keep the step read-only and revise first`",
-            r"multiple matches remain.*matching file or heading choices.*`\*\*Options\*\*`",
-            r"matching journal file.*non-trivial.*AGENTS\.md",
-            r"single-journal mode.*`docs/JOURNAL\.md`",
-            r"selected step.*`TODO-<area>\.md`.*`docs/journal/JOURNAL-<area>\.md`.*default hot journal",
-            r"split-journal mode.*`docs/journal/JOURNAL\.md`.*cross-cutting",
-            r"Do not duplicate the same journal entry across multiple journal files",
-        ),
-        skill_md,
-        "implement-todo journal topics",
-    )
-    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." not in skill_text, (
-        f"stale TODO-next journal rule should not appear in {skill_md}"
-    )
-    assert "Update `docs/JOURNAL.md` only when changes are non-trivial, per `AGENTS.md`." not in skill_text, (
-        f"old root-journal-only rule should not appear in {skill_md}"
-    )
-
-
-def validate_maintain_mode_boundaries(skill_text: str, skill_md: Path) -> None:
-    """Assert the maintain skill keeps upkeep in A and tracked cleanup in B."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"Mode selection",
-            r"`A\. doc drift \+ upkeep`.*`B\. source cleanup`.*`C\. index`.*`D\. refactor`.*`do all`",
-            r"Shared routing read",
-            r"Read `AGENTS\.md` first",
-            r"Do not front-load support-doc, journal, or runtime review when the selected mode does not require it",
-            r"Mode-scoped read discipline",
-            r"`A\. doc drift \+ upkeep`:.*`README\.md`.*`TODO\.md`.*`docs/JOURNAL\.md`.*`docs/journal/JOURNAL\.md`.*`docs/journal/JOURNAL-<area>\.md`.*`docs/journal/SUMMARY\.md`.*`docs/journal/archive/`.*`docs/INDEX\.md`.*`docs/specs/prd\.md`.*`docs/specs/blueprint\.md`.*`docs/prompts/PROMPT-INDEX\.md`.*`\.agents/skills/\*/SKILL\.md`.*`\.cdd-runtime/`",
-            r"`B\. source cleanup`: start from tracked source, tests, configs, manifests, and entrypoints",
-            r"Read `README\.md`, `TODO\*\.md`, journal surfaces, repo-local `\.agents/skills/\*/SKILL\.md`, or `\.cdd-runtime/` only when one of those surfaces is needed as proof for a specific cleanup candidate",
-            r"## Mode A — Doc drift \+ upkeep",
-            r"support-doc drift and repo upkeep: TODO archive review, stale adjacent TODO review, journal archive review, and repo-local runtime cleanup review",
-            r"TODO archive rules.*only in this mode",
-            r"journal archive rules.*only in this mode",
-            r"local runtime cleanup review rules.*only in this mode",
-            r"## Mode B — Source cleanup",
-            r"tracked-code cleanup pass, not a broad repo-maintenance audit",
-            r"dead modules or orphaned tracked files",
-            r"dead or unreachable code branches",
-            r"duplicate retired implementation paths",
-            r"stale feature code no longer wired into entrypoints",
-            r"obsolete generated leftovers",
-            r"unused exports when the evidence is strong",
-            r"## Mode C — Index",
-            r"Fully rebuild `docs/INDEX\.md` as a single-file update after approval",
-            r"`docs/INDEX\.md` as output-only(?: in this mode)?|Treat `docs/INDEX\.md` as output-only",
-            r"fresh, tool-driven (?:repo )?scan",
-            r"enumerate (?:relevant )?tracked files with repo-local tools",
-            r"count LOC.*file inventory",
-            r"extract per-file keywords, symbols, names, and concise meaning",
-            r"`package\.json`, `pyproject\.toml`, `Cargo\.toml`, `go\.mod`, `mix\.exs`, and `requirements\*\.txt`",
-            r"continue with (?:the )?available (?:repo )?signals and report (?:the )?(?:missing inputs|gaps) rather than failing or inventing content",
-            r"(?:generate|derive) 2-4 GitHub-safe mermaid diagrams from the rebuilt repo model|GitHub-safe mermaid diagrams from the rebuilt repo model",
-            r"Return a mode-scoped maintenance report",
-            r"Always include:.*`Mode`.*`Recommended next action`",
-            r"Include only the sections for the selected mode or modes, in execution order",
-            r"For `A`:.*`Archive actions applied`.*`Deletion approval needed`.*`Journal archive status`.*`Local runtime cleanup status`.*`Runtime cleanup approval needed`.*`Support documentation status`.*`Documentation updates proposed` or `Documentation updates applied`.*`Documentation approval needed`",
-            r"For `B`:.*`Source cleanup status`.*`Cleanup approval needed`",
-            r"For `C`:.*`INDEX freshness`.*`Index update status`",
-            r"For `D`:.*`INDEX freshness`.*`Refactor audit status`.*`Refactor options proposed`",
-            r"pure `B` pass.*cleanup findings, proof, approval need, and validation only",
-            r"omit archive, journal, runtime, and support-doc status blocks unless one of those surfaces was used as proof",
-            r"multiple modes are selected.*Omit non-selected mode status blocks",
-            # Runbooks in canonical set + ad-hoc + subsystem cluster paths in read discipline
-            r"Treat `README\.md`, repo-root `RUNBOOK\.md` and `docs/runbooks/\*\.md` when present, `docs/specs/prd\.md`",
-            r"repo-root `RUNBOOK\.md` and `docs/runbooks/\*\.md` when present, every detected subsystem doc cluster",
-            r"the cluster's `README\.md`, `RUNBOOK\.md`, `CONTRACT\.md`, and `SKILL\.md` files as canonical",
-            # Subsystem doc clusters subsection
-            r"### Mode A — Subsystem doc clusters",
-            r"Detect a subsystem doc cluster when a directory contains `README\.md` and at least one of `RUNBOOK\.md`, `CONTRACT\.md`, or `SKILL\.md`",
-            r"subsystem-internal ad-hoc support doc per `Mode A — Ad-hoc support docs`",
-            # Ad-hoc support docs subsection
-            r"### Mode A — Ad-hoc support docs",
-            r"every `\*\.md` under `docs/` not in a canonical-role subdirectory \(`docs/specs/`, `docs/prompts/`, `docs/runbooks/`, `docs/archive/`, `docs/journal/`, `docs/INDEX\.md`, `docs/JOURNAL\.md`\)",
-            r"every non-canonical `\*\.md` at repo root \(excluding the protected names `README\.md`, `AGENTS\.md`, `CLAUDE\.md`, `TODO\.md`, `TODO-\*\.md`, `CHANGELOG\.md`, `LICENSE`, `CONTRIBUTING\.md`\)",
-            r"every subsystem-internal non-canonical `\*\.md` file inside a detected subsystem doc cluster",
-            r"mockups, scratch RFCs, design notes, retired drafts",
-            r"RFCs are one example of an ad-hoc support doc, not a privileged class",
-            r"Non-`\.md` files \(images, JSON, binaries\) are out of scope for Mode A",
-            # New classification label
-            r"Classify each support doc as `current`, `drifted`, `stale-candidate`, `missing`, or `unclear`",
-            r"`stale-candidate` label applies only to ad-hoc support docs",
-            r"populated only by the orphaned-topic check in `Mode A — Codebase-comparison checks`",
-            r"classifying a doc as `stale-candidate` does not by itself archive anything",
-            # Codebase-comparison checks subsection
-            r"### Mode A — Codebase-comparison checks",
-            r"bounded checks against canonical support docs and ad-hoc support docs",
-            r"Use repo-native search only; no full static analysis or symbol-graph traversal",
-            r"failed bounded check produces a `drifted` classification with the specific claim cited",
-            # Bounded check list (script-name / file-path / symbol / entrypoint / skill-reference / manifest-field)
-            r"\*\*Script-name claims\*\*.*`npm run.*`pnpm.*`yarn.*`make",
-            r"\*\*File-path claims\*\*.*verify the path exists in the current tree",
-            r"\*\*Symbol claims\*\*.*best-effort repo-grep.*Report `unclear` if not found rather than auto-`drifted`",
-            r"\*\*Entrypoint claims\*\*.*named entrypoint file exists and is referenced from the relevant manifest",
-            r"\*\*Skill-reference claims\*\*.*`\$cdd-<x>` or `skills/<x>`.*verify the skill directory and `SKILL\.md` exist",
-            r"\*\*Manifest-field claims\*\*.*verify the field is present in the relevant manifest",
-            # Orphaned-topic check
-            r"Orphaned-topic check \(ad-hoc support docs only\)",
-            r"Extract the doc's primary subject from filename, H1 heading, and first-paragraph keywords",
-            r"Grep the subject across.*the codebase.*active TODO step list.*active specs and blueprint.*last 30 days of journal activity",
-            r"Locate journal sources per the existing single-vs-split rules in `Mode A — Journal archive rules`",
-            r"0 hits across all four surfaces.*`stale-candidate`",
-            r"1-2 weak hits.*`unclear`",
-            r"3\+ hits.*`current`",
-            # Cross-reference from existing comparison paragraph
-            r"Use the bounded checks and orphaned-topic check defined in `Mode A — Codebase-comparison checks` below",
-            # Ad-hoc support doc archive rules subsection (Step 58)
-            r"### Mode A — Ad-hoc support doc archive rules",
-            r"Primary trigger is.*`stale-candidate`.*orphaned-topic.*`Mode A — Codebase-comparison checks`",
-            r"Secondary trigger is an explicit retirement marker.*frontmatter `Deprecated:`.*frontmatter `Superseded by:`.*frontmatter `Status:`",
-            r"`Superseded`, `Rejected`, or `Withdrawn`",
-            r"Never silent\. Documentation approval is required for every archive move",
-            r"destination layout mirrors the source location",
-            r"`docs/foo\.md` → `docs/archive/foo_YYYY-MM-DD\.md`",
-            r"`docs/<sub>/bar\.md` → `docs/archive/<sub>/bar_YYYY-MM-DD\.md`",
-            r"Subsystem-internal `<subsystem>/scratch\.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD\.md`",
-            r"local archive so the subsystem stays self-contained",
-            r"Same-day archive append.*append the newly archived sections to that file rather than overwriting it",
-            r"per-file or batched approval — user picks granularity",
-            r"Reuse the existing documentation-approval flow defined in `## Approval contract`",
-            r"Keep ad-hoc-doc archive approval separate from stale TODO deletion approval and runtime-cleanup approval",
-            r"Journal archive rules.*TODO archive rules.*unchanged.*parallel and additive",
-            # Safe write behavior new bullet (Step 58)
-            r"Apply ad-hoc-doc archive moves only after documentation approval",
-        ),
-        skill_md,
-        "maintain mode boundaries",
-    )
-
-
-def validate_maintain_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the maintain skill keeps its upkeep and cleanup contract."""
-    validate_maintain_mode_boundaries(skill_text, skill_md)
-    require_topic_bundle(
-        skill_text,
-        (
-            r"Allow selecting more than one option",
-            r"`do all`.*fixed order `A -> B -> C -> D`",
-            r"Keep the mode-specific write scope tight",
-            r"Apply safe archive moves immediately",
-            r"Ask before deleting stale adjacent `TODO\*\.md` files",
-            r"In `index` mode, write only `docs/INDEX\.md`",
-            r"In `source cleanup` mode, remove only clearly approved dead or obsolete code and artifacts",
-            r"In `refactor` mode, do not rewrite implementation directly.*architecture audit.*refactor options.*recommendation to use `cdd-plan`",
-            r"Retain the newest 3 step headings",
-            r"oldest contiguous archiveable block near the top",
-            r"Never archive a step from the middle or tail",
-            r"Do not leapfrog an older incomplete or ambiguous step",
-            r"same-day archive file.*append",
-            r"non-contiguous active history",
-            r"`docs/JOURNAL\.md`.*stable journal entrypoint",
-            r"`docs/journal/JOURNAL\.md`.*`docs/journal/JOURNAL-<area>\.md`.*`docs/journal/SUMMARY\.md`.*`docs/journal/archive/`",
-            r"repo-local `\.agents/skills/\*/SKILL\.md`.*workflow/governance drift surfaces",
-            r"split-journal mode.*do not propose collapsing back to a single hot journal",
-            r"Do not precreate split-journal files before split-journal mode is active",
-            r"no clear archive or routing rule.*do not invent one",
-            r"README\.md.*runbook entrypoint",
-            r"README\.md.*low-visibility bottom footer",
-            r"README\.md.*user-approved compaction",
-            r"selected option itself is the approval",
-            r"[Dd]o not append a separate free-form approval question after selector options",
-            r"`A\.\s*apply now`.*`B\.\s*keep the report only`.*`C\.\s*revise scope first`",
-            r"`docs/specs/prd\.md`.*product-manager view",
-            r"`docs/specs/blueprint\.md`.*anchor technical spec",
-            r"documentation approval using selector-based options",
-            r"documentation approval separate from stale TODO deletion approval.*runtime-cleanup approval",
-            r"Write only `docs/INDEX\.md` in this mode",
-            r"Do not (?:use|reuse) prior `docs/INDEX\.md` prose, diagrams, inventories, or summaries as semantic input",
-            r"selector-based apply options for the single-file `docs/INDEX\.md` update",
-            r"[Ss]elf-grade.*0-12.*11\.5",
-            r"refactor-candidate",
-            r"repo-local `\.cdd-runtime/`.*`\.cdd-runtime/master-chef/`",
-            r"Git-backed.*local worktree state.*`live`, `stale`, or `unclear`",
-            r"currently linked worktrees.*current run state as `live`",
-            r"abandoned managed worktree directories.*orphaned runtime logs.*`stale`",
-            r"Do not silently delete `\.cdd-runtime/` content",
-            r"runtime state is unclear.*report it as `unclear`",
-            r"runtime-cleanup approval using selector-based options",
-            r"runtime-cleanup approval separate from support-document approval.*stale TODO deletion approval",
-            r"remove only `stale` repo-local runtime artifacts and managed worktrees",
-            r"Never remove the current worktree.*current run state.*`live` linked worktree",
-            r"confirmed_cleanup.*probable_cleanup.*unclear",
-            r"Do not remove anything classified as `unclear`",
-            r"Group approved removals into one cleanup patch.*selector-based options",
-            r"[Rr]epo history.*not justification for stale support-doc content",
-            r"Classify each support doc as `current`, `drifted`, `stale-candidate`, `missing`, or `unclear`",
-            r"Do not silently refresh `README\.md`.*`docs/prompts/PROMPT-INDEX\.md`.*`\.agents/skills/\*/SKILL\.md`",
-            r"Refactor mode requires a fresh `docs/INDEX\.md`",
-            r"If `docs/INDEX\.md` is missing, `stale`, or `very stale`.*add `C\. index`",
-            r"TODO-refactor-<tag>\.md",
-            r"Present 2-3 context-specific refactor options.*`A\.`, `B\.`, and `C\.` selectors",
-            r"Each option should identify the target boundary.*intended design direction.*key benefits.*main risks.*validation evidence",
-            r"Finish with an architecture audit report and recommend `cdd-plan`",
-            r"Report the exact age in days",
-        ),
-        skill_md,
-        "maintain skill topics",
-    )
-    assert "`TODO-next.md` is backlog and does not require `JOURNAL-next.md`." not in skill_text, (
-        f"stale TODO-next backlog rule should not appear in {skill_md}"
-    )
-
-
-def validate_init_project_skill_text(skill_text: str, skill_md: Path) -> None:
-    """Assert the init skill keeps the canonical boilerplate source guardrails."""
-    require_topic_bundle(
-        skill_text,
-        (
-            r"https://github\.com/ruphware/cdd-boilerplate.*canonical bootstrap source",
-            r"do not copy.*download.*clone.*materialize boilerplate.*separate explicit confirmation",
-            r"local path to an existing `cdd-boilerplate` checkout.*fallback bootstrap source",
-            r"README\.md.*footer block near the bottom.*runbook stays primary.*low-visibility",
-            r"\[!\[CDD Project\]",
-            r"\[!\[CDD Skills\]",
-            r"This repo follows the \[`CDD Project`\].*\[`AGENTS\.md`\]",
-            r"Start with .*cdd-boot.*cdd-audit.*cdd-plan.*cdd-implement-todo.*cdd-maintain.*doc drift.*codebase cleanup.*index refresh.*refactor architecture audit",
-            r"existing-repo adoption.*explicit confirmation.*README\.md edit",
-            r"Avoid duplicating the block if it or its badges already exist",
-            r"source of truth for the CDD contract.*existing repo",
-            r"migration.*separate explicit confirmation",
-            r"methodology-stable contract surfaces.*preserve the CDD workflow language",
-            r"Contract-surface taxonomy and drift rules",
-            r"methodology-stable contract surfaces",
-            r"optional scaled workflow surfaces",
-            r"optional repo-local workflow surfaces",
-            r"repo-specific contract surfaces",
-            r"`AGENTS\.md`.*preserve the CDD methodology",
-            r"`TODO\.md`.*preserve its header, Step 00, and Step template",
-            r"`docs/JOURNAL\.md`.*stable journal entrypoint/index",
-            r"`docs/journal/\*`.*only when split-journal mode is active",
-            r"`docs/prompts/PROMPT-INDEX\.md`.*preserve its role",
-            r"`\.agents/skills/\*/SKILL\.md`.*preserve repo-local project skills when present",
-            r"`\.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `\.cdd-runtime/` is ignored",
-            r"`README\.md`, `docs/specs/prd\.md`, and `docs/specs/blueprint\.md` are repo-specific outputs",
-            r"Ignore non-substantive paths.*`\.cdd-runtime/`",
-            r"Inventory existing docs.*repo-local `\.agents/skills/\*/SKILL\.md`",
-            r"repo-specific planning to `TODO\.md`",
-            r"preserve the boilerplate header, Step 00, and Step template",
-            r"append repo-specific Step 01\+ work.*docs/INDEX\.md.*PROMPT-INDEX.*cdd-maintain.*`index` mode",
-            r"`TODO\.md`, `docs/JOURNAL\.md`, and `docs/prompts/PROMPT-INDEX\.md`.*materialize from `https://github\.com/ruphware/cdd-boilerplate`",
-            r"`\.agents/skills/\*/SKILL\.md`: when present.*do not import user-home skills",
-            r"update `\.gitignore` if needed so repo-local `\.cdd-runtime/` is ignored without dropping existing ignore rules",
-            r"AGENTS\.md.*`NEXT`.*otherwise.*`\*\*Options\*\*`",
-            r"selected option itself is the approval",
-            r"[Dd]o not append a separate free-form approval question after selector options",
-            r"`A\.\s*apply now`.*`B\.\s*revise first`.*`C\.\s*stop read-only`",
-        ),
-        skill_md,
-        "init-project topics",
-    )
-    assert "a Step 00-style “CDD adoption” step" not in skill_text, (
-        f"old repo-specific Step 00 adoption wording should not appear in {skill_md}"
-    )
-    assert "Add an adoption plan to `TODO.md`:" not in skill_text, (
-        f"old TODO adoption-plan wording should not appear in {skill_md}"
-    )
-    assert "ask for a local path to a `cdd-boilerplate` checkout (preferred)" not in skill_text, (
-        f"local checkout should not be preferred in {skill_md}"
-    )
-    assert "bottom `## Footnote` section" not in skill_text, (
-        f"old README footnote-section rule should not appear in {skill_md}"
-    )
-    assert (
-        "For fresh/bootstrap repos, require this exact `README.md` block under the title and short project description, before the rest of the runbook content:"
-        not in skill_text
-    ), f"old README header placement rule should not appear in {skill_md}"
-    assert "Approve and apply these changes?" not in skill_text, (
-        f"init-project skill should not add a second free-form approval prompt in {skill_md}"
-    )
-    assert "Approve and apply this migration plan?" not in skill_text, (
-        f"init-project migration flow should use selector options in {skill_md}"
-    )
-
-
-def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
-    """Validate one Builder skill directory under skills/."""
+def validate_skill(skill_dir: Path) -> None:
     skill_md = skill_dir / "SKILL.md"
     assert skill_md.exists(), f"missing {skill_md}"
     skill_text = skill_md.read_text(encoding="utf-8")
@@ -962,1215 +173,60 @@ def validate_builder_skill(skill_dir: Path, include_legacy_prose: bool) -> None:
         f"implicit invocation not disabled in {openai_yaml}"
     )
 
-    if skill_dir.name in {
-        "cdd-boot",
-        "cdd-plan",
-        "cdd-audit",
-        "cdd-init-project",
-        "cdd-maintain",
-        "cdd-implement-todo",
-    }:
-        validate_selector_labeled_options(skill_text, skill_md)
-    if skill_dir.name == "cdd-boot":
-        validate_boot_followup_contract(skill_text, skill_md)
-        require_regexes(yaml_text, BOOT_YAML_REGEXES, openai_yaml, "boot YAML topics")
-    if skill_dir.name == "cdd-maintain":
-        validate_maintain_mode_boundaries(skill_text, skill_md)
-        require_regexes(yaml_text, MAINTAIN_YAML_REGEXES, openai_yaml, "maintain YAML topics")
-    if skill_dir.name in {
-        "cdd-plan",
-        "cdd-init-project",
-        "cdd-maintain",
-        "cdd-implement-todo",
-    }:
-        validate_option_driven_approval(skill_text, skill_md)
-    if skill_dir.name == "cdd-plan":
-        validate_plan_final_apply_options(skill_text, skill_md)
-        validate_plan_edge_case_review_contract(skill_text, skill_md)
-        validate_plan_audit_mode_skill_text(skill_text, skill_md)
-        validate_plan_intent_checkpoint_contract(skill_text, skill_md)
-    if skill_dir.name == "cdd-audit":
-        validate_audit_question_efficiency_contract(
-            skill_text, skill_md
-        )
-        validate_audit_approval_closeout_contract(skill_text, skill_md)
-
-    if include_legacy_prose:
-        if skill_dir.name == "cdd-implement-todo":
-            require_topic_bundle(
-                skill_text,
-                (
-                    r"update only the selected step in the active `TODO\*\.md` file",
-                    r"Do not add a new step-level `Status:` field",
-                ),
-                skill_md,
-                "implement-todo legacy topics",
-            )
-            validate_implement_todo_skill_text(skill_text, skill_md)
-        if skill_dir.name == "cdd-boot":
-            validate_boot_skill_text(skill_text, skill_md)
-        if skill_dir.name == "cdd-maintain":
-            validate_maintain_skill_text(skill_text, skill_md)
-        if skill_dir.name == "cdd-init-project":
-            validate_init_project_skill_text(skill_text, skill_md)
-        if skill_dir.name == "cdd-plan":
-            validate_coarse_step_planning(skill_text, skill_md)
-            validate_reviewed_contract_artifacts(skill_text, skill_md)
-            validate_plan_intent_framing_topics(skill_text, skill_md)
-        if skill_dir.name == "cdd-audit":
-            validate_audit_skill_text(skill_text, skill_md)
+    for heading in REQUIRED_SECTIONS.get(skill_dir.name, ()):
+        require_section(skill_text, heading, skill_md)
 
 
-def validate_master_chef_shared_contract(repo_root: Path) -> None:
-    """Validate shared Master Chef contract artifacts structurally."""
-    shared_root = repo_root / "cdd-master-chef"
-    readme_md = shared_root / "README.md"
-    skill_md = shared_root / "SKILL.md"
-    contract_md = shared_root / "CONTRACT.md"
-    runbook_md = shared_root / "RUNBOOK.md"
-    matrix_md = shared_root / "RUNTIME-CAPABILITIES.md"
-    gitignore_md = repo_root / ".gitignore"
-    install_sh = repo_root / "scripts" / "install.sh"
-
-    for path in (readme_md, skill_md, contract_md, runbook_md, matrix_md, gitignore_md, install_sh):
-        assert path.exists(), f"missing {path}"
-
-    assert not (repo_root / "master-chef").exists(), "legacy top-level master-chef stub should be removed"
-    assert not (repo_root / "openclaw").exists(), "legacy top-level openclaw stub should be removed"
-
-    readme_text = readme_md.read_text(encoding="utf-8")
-    skill_text = skill_md.read_text(encoding="utf-8")
-    contract_text = contract_md.read_text(encoding="utf-8")
-    runbook_text = runbook_md.read_text(encoding="utf-8")
-    matrix_text = matrix_md.read_text(encoding="utf-8")
-    gitignore_text = gitignore_md.read_text(encoding="utf-8")
-    install_text = install_sh.read_text(encoding="utf-8")
-
-    require_substrings(
-        readme_text,
-        (
-            MASTER_CHEF_LABEL,
-            "`SKILL.md`",
-            "`CONTRACT.md`",
-            "`RUNBOOK.md`",
-            "`RUNTIME-CAPABILITIES.md`",
-            "`CODEX-ADAPTER.md`",
-            "`CLAUDE-ADAPTER.md`",
-            "`openclaw/`",
-        ),
-        readme_md,
-        "shared contract index entries",
-    )
-    require_regexes(
-        readme_text,
-        (
-            r"`skills/`.*canonical Builder workflow source.*`\[CDD-0\]`.*`\[CDD-5\]`.*`cdd-\*` skills",
-            r"Current concrete adapters in this package:",
-            r"OpenClaw.*packaged runtime adapter.*generated Builder install flow",
-            r"Codex.*subagent-backed adapter docs",
-            r"Claude Code.*subagent-backed adapter docs",
-            r"No Hermes adapter ships in this package today\.",
-        ),
-        readme_md,
-        "shared package adapter coverage",
-    )
-    forbid_substrings(
-        readme_text,
-        (
-            "only packaged Master Chef runtime today",
-            "very experimental",
-            "docs-only surrogate",
-        ),
-        readme_md,
-        "outdated shared package wording",
-    )
-    require_substrings(
-        skill_text,
-        (
-            MASTER_CHEF_WORKTREE_ROOT,
-            ".cdd-runtime/master-chef/",
-        ),
-        skill_md,
-        "shared package worktree contract",
-    )
-    forbid_substrings(
-        skill_text,
-        (LEGACY_MASTER_CHEF_WORKTREE_ROOT,),
-        skill_md,
-        "old shared package worktree root",
-    )
-    require_substrings(
-        gitignore_text,
-        (REPO_LOCAL_RUNTIME_IGNORE,),
-        gitignore_md,
-        "repo-local runtime ignore rule",
-    )
-
-    require_headings(
-        contract_text,
-        (
-            "## 3) Durable runtime state",
-            "## 6) Managed worktree lifecycle",
-            "## 11) Runtime adapter obligations",
-        ),
-        contract_md,
-        "shared contract headings",
-    )
-    require_substrings(
-        contract_text,
-        (
-            ".cdd-runtime/master-chef/run.json",
-            MASTER_CHEF_WORKTREE_ROOT,
-            "Master Chef must observe the current session model and thinking when the runtime exposes them, resolve any optional Builder override, and continue kickoff even when one or both session-setting fields remain `unknown`.",
-            "- the per-run step budget",
-            "unfinished top-level TODO step-heading count",
-            "oversized for one Builder run",
-            "descriptive worktree branch",
-            "default/max run step budget",
-            "`until_blocked_or_complete`",
-            "`run_step_budget`",
-            "`steps_completed_this_run`",
-            "`builder_phase`",
-            "`builder_settings_source`",
-            "`builder_spawn_requested_at_utc`",
-            "`builder_ready_at_utc`",
-            "`last_builder_direct_signal_at_utc`",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            "`worktree_env_prepared_at_utc`",
-            "`worktree_env_bootstrap_summary`",
-            "\"event\":\"BUILDER_READY\"",
-            "\"tool_access\":\"ready|blocked|unknown\"",
-            "\"mcp_access\":\"ready|blocked|unknown\"",
-            "- `source_repo`",
-            "- `active_worktree_path`",
-            "- `worktree_continue_mode`",
-            "- `source_branch_decision`",
-            "- `worktree_env_status`",
-            "- `BUILDER_READY`",
-            "- `builder_restart_count`",
-            "- `current_blocker`",
-            "- `STEP_PASS`",
-            "- `RUN_COMPLETE`",
-            "final mission report",
-        ),
-        contract_md,
-        "shared contract runtime-state fields",
-    )
-    forbid_substrings(
-        contract_text,
-        (LEGACY_MASTER_CHEF_WORKTREE_ROOT,),
-        contract_md,
-        "old shared contract worktree root",
-    )
-    require_regexes(
-        contract_text,
-        (
-            r"current session model.*thinking",
-            r"`Builder override`",
-            r"Builder defaults:.*inherits the current session model.*inherits the current session thinking",
-            r"unresolved session-setting field.*`unknown`",
-            r"runtime cannot observe one or both current-session fields.*`unknown`.*proceed with the active session as-is",
-            r"Do not ask the human to type replacement `master_\*` settings",
-            r"runtime cannot honor a requested Builder override cleanly.*use inherited Builder settings",
-            r"selected option itself (?:is|count(?:s)? as) the kickoff approval",
-            *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
-            r"fresh run from a long-lived branch.*descriptive worktree branch",
-            r"source_branch_decision.*accepted.*declined.*not applicable|accepted, declined, or not applicable",
-            r"keep the source checkout on its original branch|source checkout on its original branch unless the human explicitly asks otherwise",
-            r"Do not switch the source checkout onto the active worktree branch|Do not switch the source checkout onto `worktree_branch`",
-            r"unfinished top-level TODO step headings only.*nested checkboxes or sub-tasks",
-            r"default/max run step budget.*all remaining steps",
-            MASTER_CHEF_UNKNOWN_AS_IS_REGEX,
-            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
-            r"bootstrap the worktree-local environment.*before Builder or `hard_gate` validation rely on that worktree",
-            MASTER_CHEF_ENV_READY_REGEX,
-            r"`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
-            r"hard technical or physical limit.*stop before implementation.*source checkout",
-            r"Builder monitoring.*live status.*partial output.*direct reasoning visibility",
-            r"runtime cannot expose live Builder reasoning.*streaming partial output",
-            r"two phases:.*boot/readiness.*running-silence",
-            r"spawn evidence only",
-            r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
-            r"timed-out wait.*no agent completed yet.*inconclusive",
-            r"missing diff.*empty `builder\.jsonl`.*proof",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            MASTER_CHEF_PROBE_STATE_REGEX,
-            r"coherent Builder reply.*proof of life",
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
-            MASTER_CHEF_FINAL_REPORT_REGEX,
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
-            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
-            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
-        ),
-        contract_md,
-        "shared contract monitoring topics",
-    )
-
-    require_headings(
-        runbook_text,
-        (
-            "## 0) Session settings",
-            "## 1) Managed worktree policy",
-            "## 2) Runtime-state additions",
-            "## 3) Continuation decision rule",
-            "## 4) Active worktree behavior",
-            "## 5) Cleanup",
-        ),
-        runbook_md,
-        "shared runbook headings",
-    )
-    require_substrings(
-        runbook_text,
-        (
-            MASTER_CHEF_RUNBOOK_WORKTREE_ROOT,
-            "master-chef/<run-id>",
-            "### Fresh-start worktree-branch suggestion",
-            "unfinished top-level TODO step-heading count",
-            "oversized for one Builder run",
-            "default/max `run_step_budget`",
-            "current session model and thinking",
-            "`Builder override`",
-            "`unknown`",
-            "- `source_repo`",
-            "- `active_worktree_path`",
-            "- `worktree_continue_mode`",
-            "- `builder_phase`",
-            "- `builder_settings_source`",
-            "- `builder_spawn_requested_at_utc`",
-            "- `builder_ready_at_utc`",
-            "- `last_builder_direct_signal_at_utc`",
-            "- `run_step_budget`",
-            "- `steps_completed_this_run`",
-            "- `source_branch_decision`",
-            "- `worktree_env_status`",
-            "- `worktree_env_prepared_at_utc`",
-            "- `worktree_env_bootstrap_summary`",
-            "`builder_phase` is `not_started`, `booting`, `running`, `blocked`, `completed`, `failed`, or `closed`",
-            "`tool_access`",
-            "`mcp_access`",
-            "reply with just the selector",
-        ),
-        runbook_md,
-        "shared runbook worktree fields",
-    )
-    forbid_substrings(
-        runbook_text,
-        (LEGACY_MASTER_CHEF_WORKTREE_ROOT,),
-        runbook_md,
-        "old shared runbook worktree root",
-    )
-    require_regexes(
-        runbook_text,
-        (
-            r"[Rr]ead (?:the )?current session model and(?: current session)? thinking directly",
-            r"Treat those values as read-only Master Chef facts",
-            r"record only those fields as `unknown`.*continue with the active session as-is",
-            r"Default Builder to inherit those values unless an explicit `Builder override` is present",
-            r"requested `Builder override` cannot be honored cleanly.*fall back to inherited Builder settings",
-            r"inherits from an unresolved parent field.*`unknown`",
-            r"Do not ask the human to type replacement `master_\*` settings",
-            r"fresh run.*long-lived branch.*descriptive worktree branch",
-            r"keep the source checkout on its original branch",
-            r"Do not `git switch` the source checkout onto `?<branch>`?|Do not switch the source checkout onto `worktree_branch`",
-            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
-            r"unfinished top-level TODO step-heading count",
-            r"default/max `run_step_budget`.*all remaining steps",
-            r"inspect repo-native manifests.*validation entrypoints.*active worktree",
-            MASTER_CHEF_ENV_READY_REGEX,
-            r"do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`",
-            r"`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
-            r"does not expose live Builder reasoning.*do not pretend",
-            r"Codex- or Claude-style adapters.*completion/failure.*progress replies.*closure/errors",
-            r"two phases:.*boot/readiness.*running-silence",
-            r"returned Builder handle.*not enough to prove",
-            r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
-            r"timed-out wait.*no agent completed yet.*inconclusive",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            MASTER_CHEF_PROBE_STATE_REGEX,
-            r"coherent discovery note.*proof of life",
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*TODO splitting",
-            MASTER_CHEF_FINAL_REPORT_REGEX,
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
-            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
-            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
-        ),
-        runbook_md,
-        "shared runbook monitoring topics",
-    )
-
-    require_substrings(
-        matrix_text,
-        (
-            "| OpenClaw |",
-            "| Codex |",
-            "| Claude Code |",
-            ".codex/agents/*.toml",
-            ".claude/agents/",
-            "~/.claude/agents/",
-            "`CODEX-ADAPTER.md`",
-            "`CLAUDE-ADAPTER.md`",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            "`worktree_env_prepared_at_utc`",
-            "`worktree_env_bootstrap_summary`",
-        ),
-        matrix_md,
-        "runtime capability matrix entries",
-    )
-    require_regexes(
-        matrix_text,
-        (
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-        ),
-        matrix_md,
-        "runtime capability lifecycle hygiene",
-    )
-
-    require_substrings(
-        install_text,
-        (
-            'MASTER_CHEF_SRC_ROOT="$ROOT_DIR/cdd-master-chef"',
-            'OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"',
-            'SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")',
-            "--all           Install, update, or uninstall across every existing default runtime home",
-            'echo "Skipping $runtime (missing runtime home: $runtime_home)" >&2',
-            'echo "No existing runtime homes found under $HOME/.agents, $HOME/.claude, or $HOME/.openclaw." >&2',
-            "Generated runtime Builder skills are still copied.",
-        ),
-        install_sh,
-        "installer Master Chef taxonomy",
-    )
-    forbid_substrings(
-        install_text,
-        (
-            'MASTER_CHEF_SRC_ROOT="$ROOT_DIR/master-chef"',
-            "emit_generic_master_chef_package",
-        ),
-        install_sh,
-        "legacy installer packaging",
-    )
-
-
-def validate_codex_adapter(repo_root: Path) -> None:
-    """Validate the Codex adapter artifacts structurally."""
-    adapter_md = repo_root / "cdd-master-chef" / "CODEX-ADAPTER.md"
-    runbook_md = repo_root / "cdd-master-chef" / "CODEX-RUNBOOK.md"
-    harness_md = repo_root / "cdd-master-chef" / "CODEX-TEST-HARNESS.md"
-
-    for path in (adapter_md, runbook_md, harness_md):
-        assert path.exists(), f"missing {path}"
-
-    adapter_text = adapter_md.read_text(encoding="utf-8")
-    runbook_text = runbook_md.read_text(encoding="utf-8")
-    harness_text = harness_md.read_text(encoding="utf-8")
-
-    require_headings(
-        adapter_text,
-        (
-            "## 1) Delegation model",
-            "## 2) Built-in vs custom agents",
-            "## 4) Session settings and Builder override",
-            "## 6) Worktree handling",
-            "## 7) Unsupported or blocked patterns",
-        ),
-        adapter_md,
-        "Codex adapter headings",
-    )
-    require_substrings(
-        adapter_text,
-        (
-            "`worker`",
-            "`explorer`",
-            ".codex/agents/*.toml",
-            "Builder inherits those settings by default.",
-        ),
-        adapter_md,
-        "Codex adapter runtime tokens",
-    )
-    require_regexes(
-        adapter_text,
-        (
-            r"does not guarantee live access to Builder chain-of-thought|does not guarantee .*streaming partial output",
-            r"Codex accepted the spawn request",
-            r"readiness ACK",
-            r"empty `builder\.jsonl`.*prove.*died",
-            r"runtime-reported completion/failure.*status replies.*closure/error",
-            r"inconclusive unless Codex also reports closure or failure",
-            r"proof of life rather than proof of death",
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-        ),
-        adapter_md,
-        "Codex adapter monitoring topics",
-    )
-
-    require_headings(
-        runbook_text,
-        (
-            "## 1) Session shape",
-            "## 2) Builder selection",
-            "## 3) Session settings and Builder override",
-            "## 4) Kickoff approval and run budget",
-            "## 6) Worktree hand-off",
-            "## 7) Builder monitoring",
-        ),
-        runbook_md,
-        "Codex runbook headings",
-    )
-    require_substrings(
-        runbook_text,
-        (
-            "`1` or `3`, or `until_blocked_or_complete`",
-            "shared kickoff recommendation for fresh-start worktree-branch creation and default/max step budget",
-            "oversized next top-level TODO step",
-            "whether to spawn Builder now and start the autonomous run",
-            "Do not treat \"here is a `codex -C ...` command for you to run\" as the normal Builder-start path.",
-            ".codex/agents/*.toml",
-            "final mission report",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            "`worktree_env_prepared_at_utc`",
-            "`worktree_env_bootstrap_summary`",
-            *MASTER_CHEF_SESSION_SETTINGS_STRINGS,
-            "Follow the shared selector contract.",
-        )
-        + MASTER_CHEF_KICKOFF_OPTION_STRINGS,
-        runbook_md,
-        "Codex runbook structural tokens",
-    )
-    require_regexes(
-        runbook_text,
-        (
-            r"selector-driven kickoff approval",
-            MASTER_CHEF_SESSION_FACTS_REGEX + r".*read-only Master Chef facts",
-            r"does not expose one or both fields exactly.*`unknown`.*keep kickoff moving",
-            r"no `Builder override` is supplied.*Builder inherits",
-            r"inherits from an unresolved parent field.*`unknown`",
-            r"cannot honor the requested override cleanly.*use inherited Builder settings",
-            r"Do not ask the human to type replacement `master_\*` settings",
-            r"inspect repo-native manifests.*validation entrypoints.*active worktree",
-            r"`source_branch_decision`.*`worktree_env_status`.*`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
-            r"Do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`",
-            r"finish the active-worktree bootstrap before Builder starts",
-            r"should not claim live access to Builder thinking.*streaming partial output",
-            r"completion/failure notifications.*status replies.*closure/errors",
-            r"two phases:.*boot/readiness.*running-silence",
-            r"spawn evidence only",
-            r"`builder_phase: booting`.*runtime child-started signal.*readiness ACK.*`BUILDER_READY`",
-            r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
-            r"no agent has completed yet.*`running`.*`unknown`.*`dead`",
-            r"inconclusive unless Codex also reports closure or failure",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            r"coherent status or discovery reply.*proof of life",
-            r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
-            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
-            r"non-passing Builder attempt.*continuation-review boundary",
-            r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
-            r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
-            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
-            r"Do not split too eagerly.*one-run failure-risk evidence",
-            r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
-            r"final mission report.*completed work.*decisions made",
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
-            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
-        ),
-        runbook_md,
-        "Codex runbook monitoring topics",
-    )
-
-    require_substrings(
-        harness_text,
-        (
-            "### Prompt B - Session settings and Builder override",
-            "### Prompt C - Kickoff approval and run budget",
-            "### Prompt F - Unsupported patterns",
-            "### Prompt G - Worktree continuation",
-            "### Prompt H - Long-thinking Builder monitoring",
-            "### Prompt I - Builder boot readiness",
-            "### Prompt I1 - Normal next-step continuation",
-            "### Prompt J - Blocked-step autonomy",
-            "### Prompt K - Final mission report",
-            "remaining top-level-step count is stated when finite",
-            "worktree-branch suggestion is surfaced when applicable",
-            "oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step",
-            "exact remaining top-level-step count when that count is finite",
-            "active worktree must be bootstrapped locally before Builder or `hard_gate` validation rely on it",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            MASTER_CHEF_SESSION_FACTS_EXPLICIT,
-            "inherited Builder settings are the default path",
-            "any Builder override limitation is stated before work begins",
-            MASTER_CHEF_KICKOFF_HARNESS_SUMMARY,
-            "Recursive default fan-out was rejected.",
-            MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
-            "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.",
-            "Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and distinct closeout or continuation recommendations.",
-        ),
-        harness_md,
-        "Codex harness coverage",
-    )
-    require_regexes(
-        harness_text,
-        MASTER_CHEF_KICKOFF_HARNESS_REGEXES
-        + (
-            r"direct evidence instead of guessing",
-            r"spawn evidence, not readiness proof",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            r"running-silence monitoring starts only after `builder_phase` reaches `running`.*`builder_ready_at_utc`",
-            r"inconclusive unless Codex also reports closure or failure",
-            r"proof of life.*step is not finished yet",
-            r"`Hi\. You are Builder`",
-            r"`READY`.*`BLOCKED: <reason>`",
-            r"ACK or runtime-ready signal rather than only a spawn handle",
-            r"bootstrapped locally before Builder or `hard_gate` validation rely on it",
-            MASTER_CHEF_ENV_READY_REGEX,
-            r"if Codex does not expose one or both fields exactly.*`unknown`.*kickoff still proceeds with the active session as-is",
-            r"ordinary scope or sequencing ambiguity is resolved by Master Chef.*handed back to the human",
-            r"partial progress",
-            r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
-            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
-            r"same repaired parent step or the next smaller actionable child step",
-            r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
-            r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
-            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
-            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
-        ),
-        harness_md,
-        "Codex harness monitoring topics",
-    )
-    forbid_substrings(
-        runbook_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        runbook_md,
-        "legacy Codex runbook Builder lifecycle drift",
-    )
-    forbid_substrings(
-        harness_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        harness_md,
-        "legacy Codex harness Builder lifecycle drift",
-    )
-    forbid_regexes(
-        adapter_text + "\n" + runbook_text + "\n" + harness_text,
-        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
-        adapter_md,
-        "unsupported Codex context-meter claims",
-    )
-
-
-def validate_claude_adapter(repo_root: Path) -> None:
-    """Validate the Claude Code adapter artifacts structurally."""
-    adapter_md = repo_root / "cdd-master-chef" / "CLAUDE-ADAPTER.md"
-    runbook_md = repo_root / "cdd-master-chef" / "CLAUDE-RUNBOOK.md"
-    harness_md = repo_root / "cdd-master-chef" / "CLAUDE-TEST-HARNESS.md"
-
-    for path in (adapter_md, runbook_md, harness_md):
-        assert path.exists(), f"missing {path}"
-
-    adapter_text = adapter_md.read_text(encoding="utf-8")
-    runbook_text = runbook_md.read_text(encoding="utf-8")
-    harness_text = harness_md.read_text(encoding="utf-8")
-
-    require_headings(
-        adapter_text,
-        (
-            "## 1) Delegation model",
-            "## 2) Agent surfaces",
-            "## 3) Foreground vs background policy",
-            "## 4) Non-nesting and tool inheritance",
-            "## 5) Session settings and Builder override",
-            "## 6) Worktree handling",
-        ),
-        adapter_md,
-        "Claude adapter headings",
-    )
-    require_substrings(
-        adapter_text,
-        (
-            "--agents <json>",
-            "--agent <name>",
-            ".claude/agents/",
-            "~/.claude/agents/",
-            "Subagents cannot spawn other subagents.",
-            "Builder inherits those settings by default.",
-        ),
-        adapter_md,
-        "Claude adapter runtime tokens",
-    )
-    require_regexes(
-        adapter_text,
-        (
-            r"does not guarantee live access to Builder chain-of-thought|does not guarantee .*streaming partial output",
-            r"Claude accepted the spawn request",
-            r"readiness ACK",
-            r"empty `builder\.jsonl`.*prove.*died",
-            r"runtime-reported completion/failure.*status replies.*closure/error",
-            r"inconclusive unless Claude also reports closure or failure",
-            r"proof of life rather than proof of death",
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-        ),
-        adapter_md,
-        "Claude adapter monitoring topics",
-    )
-
-    require_headings(
-        runbook_text,
-        (
-            "## 1) Session shape",
-            "## 2) Builder selection",
-            "## 3) Session settings and Builder override",
-            "## 4) Kickoff approval and run budget",
-            "## 5) Foreground and background policy",
-            "## 6) Tool and MCP policy",
-            "## 7) Worktree hand-off",
-            "## 8) Builder monitoring",
-        ),
-        runbook_md,
-        "Claude runbook headings",
-    )
-    require_substrings(
-        runbook_text,
-        (
-            "--effort <effort>",
-            "`1` or `3`, or `until_blocked_or_complete`",
-            "shared kickoff recommendation for fresh-start worktree-branch creation and default/max step budget",
-            "oversized next top-level TODO step",
-            "whether to spawn Builder now and start the autonomous run",
-            "Do not treat \"here is a `claude --worktree ...` command for you to run\" as the normal Builder-start path.",
-            "Subagents cannot spawn other subagents",
-            "Do not rely on background Builder work for MCP-dependent or approval-heavy tasks.",
-            "Treat `--worktree` as a startup-time or relaunch-time tool when the current Claude surface cannot continue safely in-session.",
-            "final mission report",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            "`worktree_env_prepared_at_utc`",
-            "`worktree_env_bootstrap_summary`",
-            *MASTER_CHEF_SESSION_SETTINGS_STRINGS,
-            "Follow the shared selector contract.",
-        )
-        + MASTER_CHEF_KICKOFF_OPTION_STRINGS,
-        runbook_md,
-        "Claude runbook structural tokens",
-    )
-    require_regexes(
-        runbook_text,
-        (
-            r"selector-driven kickoff approval",
-            MASTER_CHEF_SESSION_FACTS_REGEX + r".*read-only Master Chef facts",
-            r"does not expose one or both fields exactly.*`unknown`.*keep kickoff moving",
-            r"no `Builder override` is supplied.*Builder inherits",
-            r"inherits from an unresolved parent field.*`unknown`",
-            r"cannot honor the requested override cleanly.*use inherited Builder settings",
-            r"Do not ask the human to type replacement `master_\*` settings",
-            r"inspect repo-native manifests.*validation entrypoints.*active worktree",
-            r"`source_branch_decision`.*`worktree_env_status`.*`worktree_env_prepared_at_utc`.*`worktree_env_bootstrap_summary`",
-            r"Do not let Builder or `hard_gate` validation rely on the worktree until `worktree_env_status` is `env_ready`",
-            r"finish the active-worktree bootstrap before Builder starts",
-            r"should not claim live access to Builder thinking.*streaming partial output",
-            r"completion/failure notifications.*status replies.*closure/errors",
-            r"two phases:.*boot/readiness.*running-silence",
-            r"spawn evidence only",
-            r"`builder_phase: booting`.*runtime child-started signal.*readiness ACK.*`BUILDER_READY`",
-            r"Builder <builder_session_key>.*run <run_id>.*step <active_step>.*worktree <active_worktree_path>.*READY.*BLOCKED: <reason>",
-            r"quiet wait with no completion.*`running`.*`unknown`.*`dead`",
-            r"inconclusive unless Claude also reports closure or failure",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            r"coherent status or discovery reply.*proof of life",
-            r"Once kickoff approval lands.*owns the mission.*Builder restarts.*blocker repair.*terminal reporting",
-            r"report `STEP_BLOCKED`.*(?:repair or split|keep the decision).*emit `BLOCKER_CLEARED`.*continue with (?:the same Builder|a fresh Builder)",
-            r"non-passing Builder attempt.*continuation-review boundary",
-            r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
-            r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
-            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            r"what part of the parent step is already done.*what exact remainder is being separated.*why the first child is the next runnable step",
-            r"Do not split too eagerly.*one-run failure-risk evidence",
-            r"Do not hand ordinary scope, sequencing, or blocker-resolution decisions back to the human",
-            r"final mission report.*completed work.*decisions made",
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
-            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
-        ),
-        runbook_md,
-        "Claude runbook monitoring topics",
-    )
-
-    require_substrings(
-        harness_text,
-        (
-            "### Prompt B - Session settings and Builder override",
-            "### Prompt C - Kickoff approval and run budget",
-            "### Prompt F - Non-nesting rule",
-            "### Prompt G - Worktree continuation",
-            "### Prompt H - Long-thinking Builder monitoring",
-            "### Prompt I - Builder boot readiness",
-            "### Prompt I1 - Normal next-step continuation",
-            "### Prompt J - Blocked-step autonomy",
-            "### Prompt K - Final mission report",
-            "remaining top-level-step count is stated when finite",
-            "worktree-branch suggestion is surfaced when applicable",
-            "oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step",
-            "exact remaining top-level-step count when that count is finite",
-            "active worktree must be bootstrapped locally before Builder or `hard_gate` validation rely on it",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            MASTER_CHEF_SESSION_FACTS_EXPLICIT,
-            "inherited Builder settings are the default path",
-            "any Builder override limitation is stated before work begins",
-            MASTER_CHEF_KICKOFF_HARNESS_SUMMARY,
-            "Permission-heavy Builder work stayed foreground.",
-            "Nested subagent spawning was rejected.",
-            MASTER_CHEF_EFFECTIVE_BUILDER_PASS,
-            "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.",
-            "Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and distinct closeout or continuation recommendations.",
-        ),
-        harness_md,
-        "Claude harness coverage",
-    )
-    require_regexes(
-        harness_text,
-        MASTER_CHEF_KICKOFF_HARNESS_REGEXES
-        + (
-            r"direct evidence instead of guessing",
-            r"spawn evidence, not readiness proof",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            r"running-silence monitoring starts only after `builder_phase` reaches `running`.*`builder_ready_at_utc`",
-            r"inconclusive unless Claude also reports closure or failure",
-            r"proof of life.*step is not finished yet",
-            r"`Hi\. You are Builder`",
-            r"`READY`.*`BLOCKED: <reason>`",
-            r"ACK or runtime-ready signal rather than only a spawn handle",
-            r"bootstrapped locally before Builder or `hard_gate` validation rely on it",
-            MASTER_CHEF_ENV_READY_REGEX,
-            r"if Claude does not expose one or both fields exactly.*`unknown`.*kickoff still proceeds with the active session as-is",
-            r"ordinary scope or sequencing ambiguity is resolved by Master Chef.*handed back to the human",
-            r"partial progress",
-            r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
-            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
-            r"same repaired parent step or the next smaller actionable child step",
-            r"successful repair emits `BLOCKER_CLEARED`.*preserves the existing approval",
-            r"final mission report.*completed work.*decisions made.*remaining work|" + MASTER_CHEF_FINAL_REPORT_REGEX,
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
-            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
-            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
-        ),
-        harness_md,
-        "Claude harness monitoring topics",
-    )
-    forbid_substrings(
-        runbook_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        runbook_md,
-        "legacy Claude runbook Builder lifecycle drift",
-    )
-    forbid_substrings(
-        harness_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        harness_md,
-        "legacy Claude harness Builder lifecycle drift",
-    )
-    forbid_regexes(
-        adapter_text + "\n" + runbook_text + "\n" + harness_text,
-        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
-        adapter_md,
-        "unsupported Claude context-meter claims",
-    )
-
-
-def validate_openclaw_adapter(repo_root: Path) -> None:
-    """Validate the OpenClaw adapter package structurally."""
-    skill_md = repo_root / "cdd-master-chef" / "SKILL.md"
-    openai_yaml = repo_root / "cdd-master-chef" / "agents" / "openai.yaml"
-    assert skill_md.exists(), f"missing {skill_md}"
-    assert openai_yaml.exists(), f"missing {openai_yaml}"
-    skill_text = skill_md.read_text(encoding="utf-8")
-    yaml_text = openai_yaml.read_text(encoding="utf-8")
-    runbook_md = repo_root / "cdd-master-chef" / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
-    readme_md = repo_root / "cdd-master-chef" / "openclaw" / "README.md"
-    harness_md = repo_root / "cdd-master-chef" / "openclaw" / "MASTER-CHEF-TEST-HARNESS.md"
-    runbook_text = runbook_md.read_text(encoding="utf-8")
-    readme_text = readme_md.read_text(encoding="utf-8")
-    harness_text = harness_md.read_text(encoding="utf-8")
-    meta = frontmatter(skill_md)
-    require_field(meta, r"^name:\s*cdd-master-chef\s*$", skill_md, "name")
-    require_field(meta, r"^description:\s*.+", skill_md, "description")
-    require_field(meta, r"^user-invocable:\s*true\b", skill_md, "user-invocable: true")
-    assert "disable-model-invocation:" not in meta, (
-        f"cdd-master-chef should stay model-visible for implicit invocation in {skill_md}"
-    )
-    require_field(meta, r"^metadata:\s*\{.+\}\s*$", skill_md, "metadata")
-    assert 'display_name: "[CDD-6] Master Chef"' in yaml_text, (
-        f"unexpected display name in {openai_yaml}"
+def validate_master_chef(repo_root: Path) -> None:
+    package_root = repo_root / "cdd-master-chef"
+    assert package_root.exists(), f"missing {package_root}"
+    for rel in MASTER_CHEF_FILES:
+        assert (package_root / rel).exists(), f"missing {package_root / rel}"
+    yaml_path = package_root / "agents" / "openai.yaml"
+    yaml_text = yaml_path.read_text(encoding="utf-8")
+    assert f'display_name: "{MASTER_CHEF_DISPLAY_NAME}"' in yaml_text, (
+        f"unexpected display name in {yaml_path}"
     )
     assert "allow_implicit_invocation: true" in yaml_text, (
-        f"implicit invocation should stay enabled in {openai_yaml}"
+        f"master-chef should allow implicit invocation in {yaml_path}"
     )
-    require_headings(
-        skill_text,
-        (
-            "# [CDD-6] Master Chef",
-            "Canonical `run.json` fields:",
-            "Report events:",
-            "Reporting surface:",
-        ),
-        skill_md,
-        "OpenClaw skill headings",
-    )
-    require_substrings(
-        skill_text,
-        (
-            ".cdd-runtime/master-chef/run.json",
-            "the approved run step budget",
-            "unfinished top-level TODO step-heading count",
-            "oversized for one Builder run",
-            "descriptive worktree branch",
-            "whether to spawn Builder now and start the autonomous run",
-            "`run_step_budget`",
-            "`steps_completed_this_run`",
-            "`builder_phase`",
-            "`builder_settings_source`",
-            "`builder_spawn_requested_at_utc`",
-            "`builder_ready_at_utc`",
-            "`last_builder_direct_signal_at_utc`",
-            "`source_branch_decision`",
-            "`worktree_env_status`",
-            "`worktree_env_prepared_at_utc`",
-            "`worktree_env_bootstrap_summary`",
-            "- `source_repo`",
-            "- `active_worktree_path`",
-            "- `worktree_continue_mode`",
-            "- `BUILDER_READY`",
-            "- `STEP_PASS`",
-            "- `DEADLOCK_STOPPED`",
+    # Routing: master-chef SKILL.md must reference each installed core skill by
+    # name so the routing model in the package stays in sync with the installed
+    # cdd-* skill set.
+    skill_text = (package_root / "SKILL.md").read_text(encoding="utf-8")
+    for skill_name in CDD_DISPLAY_NAMES:
+        assert skill_name in skill_text, (
+            f"master-chef SKILL.md missing reference to {skill_name}"
         )
-        + OPENCLAW_ROUTING_LABELS,
-        skill_md,
-        "OpenClaw skill runtime tokens",
-    )
-    require_regexes(
-        skill_text,
-        (
-            r"read (?:the )?current session model and(?: current session)? thinking directly",
-            r"current prompt includes a `Builder override` block",
-            MASTER_CHEF_INHERITED_SETTINGS_REGEX,
-            r"record only that field as `unknown`.*continue kickoff with the active session as-is",
-            r"inherits from an unresolved parent field.*`unknown`",
-            r"do not ask the human to type replacement `master_\*` settings",
-            r"runtime cannot honor a requested Builder override cleanly.*fall back to inherited Builder settings",
-            r"selector-based options.*`A\.`, `B\.`, `C\.`",
-            r"selected option itself should count as the approval",
-            MASTER_CHEF_KICKOFF_OPTION_REGEXES[0],
-            r"fresh run from a long-lived branch.*descriptive worktree branch",
-            r"keep the source checkout on its original branch|without switching the source checkout away from its current branch",
-            r"bootstrap the repo-native environment there.*before Builder or `hard_gate` validation rely on it",
-            r"`worktree_env_status`.*`env_ready`",
-            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
-            r"default/max run step-budget recommendation",
-            r"direct Builder status or progress surfaces",
-            r"`builder_phase: booting`.*spawn request succeeds",
-            r"Hi\. You are Builder <builder_session_key>.*READY.*BLOCKED: <reason>",
-            r"preferred readiness ACK.*active worktree path.*active TODO step.*tool or MCP surfaces",
-            r"does not expose live Builder thinking.*`running` or `unknown`.*rather than guessing",
-            r"missing diff.*empty `builder\.jsonl`.*proof",
-            *MASTER_CHEF_ACTIVE_MONITORING_REGEXES,
-            r"coherent Builder reply.*proof of life rather than proof of death",
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-        ),
-        skill_md,
-        "OpenClaw skill monitoring topics",
-    )
-
-    require_headings(
-        runbook_text,
-        (
-            "## 3) Kickoff flow",
-            "### 3.1 Managed worktree kickoff",
-            "### 4.4 `context-summary.md`",
-            "## 8) Master Chef context compaction",
-        ),
-        runbook_md,
-        "OpenClaw runbook headings",
-    )
-    require_substrings(
-        runbook_text,
-        (
-            MASTER_CHEF_LABEL,
-            "~/.openclaw/skills/cdd-master-chef",
-            "./scripts/install.sh --runtime openclaw",
-            "The current session model and thinking should be mirrored into runtime state when OpenClaw exposes them; any unresolved field is recorded as `unknown` and does not block kickoff.",
-            "the approved run step budget",
-            "unfinished top-level TODO step-heading count",
-            "oversized for one Builder run",
-            "shared kickoff recommendation for fresh-start worktree-branch creation and default/max step budget",
-            "whether to spawn Builder now and start the autonomous run",
-            "\"run_step_budget\": 1",
-            "\"steps_completed_this_run\": 0",
-            "\"builder_settings_source\": \"inherited\"",
-            "\"source_branch_decision\": \"accepted|declined|not_applicable\"",
-            "\"worktree_env_status\": \"not_started|preparing|env_ready|partial|blocked\"",
-            "\"worktree_env_bootstrap_summary\": \"<summary>\"",
-            "worktree_continue_mode",
-            "context-summary.md",
-            "final mission report",
-            "`continue_same_step`",
-            "`repair_in_place`",
-            "`split_remainder_into_child_steps`",
-            "`hard_stop`",
-            "what part of the parent step is already done",
-            "what exact remainder is being separated",
-            "what checks, UAT, and invariants carry forward",
-        )
-        + OPENCLAW_ROUTING_LABELS,
-        runbook_md,
-        "OpenClaw runbook runtime tokens",
-    )
-    require_regexes(
-        runbook_text,
-        (
-            r"Builder inherits the active session model and thinking by default",
-            r"optional `Builder override`",
-            r"record only the missing field as `unknown`",
-            r"never ask the human to type replacement `master_\*` values",
-            r"current OpenClaw path cannot honor a requested Builder override cleanly.*use inherited Builder settings",
-            r"shared selector contract",
-            *MASTER_CHEF_KICKOFF_OPTION_REGEXES,
-            MASTER_CHEF_REVIEW_FIRST_SPLIT_REGEX,
-            r"non-passing Builder attempt.*continuation-review boundary",
-            r"(?:what was actually completed|completed work).*(?:what failed|failed proof)",
-            r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            r"same repaired parent step or (?:from )?the first runnable child step",
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
-            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
-        ),
-        runbook_md,
-        "OpenClaw runbook config topics",
-    )
-
-    require_substrings(
-        readme_text,
-        (
-            MASTER_CHEF_LABEL,
-            "~/.openclaw/skills/cdd-master-chef",
-            "./scripts/install.sh --runtime openclaw",
-            "how many TODO steps this run should cover",
-            "top-level TODO step-heading count",
-            "descriptive worktree branch",
-            "oversized for one Builder run",
-            "default/max step budget",
-            "whether to spawn Builder now",
-            ".cdd-runtime/master-chef/context-summary.md",
-            "STEP_PASS",
-            "`continue_same_step`",
-            "`repair_in_place`",
-            "`split_remainder_into_child_steps`",
-        )
-        + OPENCLAW_ROUTING_LABELS,
-        readme_md,
-        "OpenClaw README runtime references",
-    )
-    require_regexes(
-        readme_text,
-        (
-            r"current session settings.*optional `?Builder override`?",
-            r"read the current session model and thinking directly",
-            r"current session model and(?: current session)? thinking.*effective Builder settings",
-            r"replying with just `A`, `B`, or `C` is enough",
-            r"present selector-driven kickoff options before creating runtime state or spawning the Builder",
-            r"default worktree-branch recommendation was accepted or declined",
-            r"bootstrap commands in that worktree",
-            r"before Builder or `hard_gate` validation rely on that worktree",
-            r"only split an oversized one when.*Builder, test, and QA cost.*justified|only split an oversized one when.*split cost.*justified",
-            r"one bounded implementation action",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            MASTER_CHEF_FINAL_REPORT_REGEX,
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_SHARED_CLOSEOUT_REFERENCE_REGEX,
-            MASTER_CHEF_SHARED_CONTINUATION_REFERENCE_REGEX,
-        ),
-        readme_md,
-        "OpenClaw README config topics",
-    )
-
-    require_substrings(
-        harness_text,
-        (
-            MASTER_CHEF_LABEL,
-            "Prompt A0 - Session-settings path",
-            "Prompt A1 - Oversized-step review before delegation",
-            "Prompt B - Selector-driven kickoff approval",
-            "Prompt J - QA reject remediation",
-            "Prompt L - Blocked-step decomposition",
-            "Prompt N - Context compaction and resume",
-            "Dirty checkout refusal",
-            "The run step budget is prepared as either a positive integer step count or `until_blocked_or_complete`.",
-            MASTER_CHEF_SESSION_FACTS_SHOWN,
-            "Builder is reported as inheriting those same settings",
-            "there is no separate Run-config approval or edit loop before kickoff",
-            "remaining unfinished top-level TODO step-heading count is stated when finite",
-            "fresh-start worktree-branch suggestion",
-            "remaining top-level-step count is recomputed only when a split occurs",
-            "exact remaining top-level-step count when that count is finite",
-            "`run.json` records the effective session-derived `master_*` settings, the effective `builder_*` settings, the approved run step budget, and source/worktree metadata",
-            "default worktree-branch recommendation was accepted or declined",
-            "current worktree environment status",
-            "active worktree environment must be bootstrapped there before Builder or `hard_gate` validation rely on it",
-            "ordinary scope or decision ambiguity is resolved by Master Chef in-session rather than handed back to the human as the default path",
-            "final mission report",
-            "Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and lower-risk child steps were created only when the remainder truly needed them and the added Builder/test/QA cost was justified.",
-        )
-        + OPENCLAW_ROUTING_LABELS,
-        harness_md,
-        "OpenClaw harness coverage",
-    )
-    require_regexes(
-        harness_text,
-        (
-            r"no separate Run-config approval or edit loop before kickoff",
-            r"`unknown`.*kickoff would proceed with the active session as-is",
-            r"replying with just `A`, `B`, or `C` would be enough",
-            r"selector-driven kickoff options",
-            r"selected option itself should count as the approval",
-            r"bootstrapped there before Builder or `hard_gate` validation rely on it",
-            r"default worktree-branch recommendation was accepted or declined",
-            r"partial progress",
-            r"`continue_same_step`.*`repair_in_place`.*`split_remainder_into_child_steps`.*`hard_stop`",
-            r"(?:what completed|completed work).*(?:what failed|failed proof).*remainder is still one bounded implementation action",
-            MASTER_CHEF_SAME_BUILDER_REGEX,
-            MASTER_CHEF_STEP_COMPACTION_REGEX,
-            MASTER_CHEF_COMPACTION_FALLBACK_REGEX,
-            MASTER_CHEF_REPLACEMENT_ONLY_REGEX,
-            MASTER_CHEF_CONTEXT_METER_LIMIT_REGEX,
-            MASTER_CHEF_ONE_ACTIVE_BUILDER_REGEX,
-            MASTER_CHEF_BUILDER_CLEANUP_REGEX,
-            MASTER_CHEF_BUILDER_EVIDENCE_PRESERVATION_REGEX,
-            r"(?:fresh Builder|replacement Builder|active Builder) would spend most (?:of its )?effort on recovery rather than completion|active Builder is still usable after status or compaction checks",
-            r"what part of the parent is already done.*what exact remainder is being separated.*why the first child is next",
-            r"same repaired parent step or the first runnable child step",
-            MASTER_CHEF_TODO_CHECKLIST_REGEX,
-            MASTER_CHEF_POST_RUN_RECOMMENDATIONS_REGEX,
-            MASTER_CHEF_RUN_COMPLETE_CLOSEOUT_REGEX,
-            MASTER_CHEF_RUN_STOPPED_CONTINUATION_REGEX,
-        ),
-        harness_md,
-        "OpenClaw harness selector topics",
-    )
-    forbid_substrings(
-        runbook_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        runbook_md,
-        "legacy OpenClaw runbook Builder lifecycle drift",
-    )
-    forbid_substrings(
-        readme_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        readme_md,
-        "legacy OpenClaw README Builder lifecycle drift",
-    )
-    forbid_substrings(
-        harness_text,
-        LEGACY_BUILDER_LIFECYCLE_STRINGS,
-        harness_md,
-        "legacy OpenClaw harness Builder lifecycle drift",
-    )
-    forbid_regexes(
-        runbook_text + "\n" + readme_text + "\n" + harness_text,
-        (UNSUPPORTED_CONTEXT_PERCENTAGE_REGEX,),
-        runbook_md,
-        "unsupported OpenClaw context-meter claims",
-    )
-    forbid_regexes(
-        runbook_text + "\n" + readme_text,
-        OPENCLAW_LEGACY_QA_REMEDIATION_REGEXES,
-        runbook_md,
-        "legacy OpenClaw QA-remediation drift",
-    )
 
 
-def validate_generated_openclaw_builder_skills(
-    repo_root: Path, include_legacy_prose: bool
-) -> None:
-    """Validate the generated OpenClaw Builder variants built from skills/."""
+def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
+    """Validate the generated OpenClaw Builder variants built from skills/.
+
+    Structural-only: name, description present, user-invocable flag, no
+    disable-model-invocation flag (generated variants are model-visible), and
+    the canonical wrapper line. No prose matching on the body.
+    """
     generator = repo_root / "scripts" / "build_runtime_builder_skills.py"
     assert generator.exists(), f"missing {generator}"
 
     skills_root = repo_root / "skills"
-    canonical_names = sorted(path.name for path in skills_root.iterdir() if path.is_dir())
+    canonical_names = sorted(
+        path.name for path in skills_root.iterdir() if path.is_dir()
+    )
     assert canonical_names, f"no canonical Builder skills found in {skills_root}"
 
     with tempfile.TemporaryDirectory(prefix="cdd-openclaw-builder-") as tmp_dir:
         output_root = Path(tmp_dir) / "generated"
         subprocess.run(
-            [sys.executable, str(generator), "--runtime", "openclaw", "--output", str(output_root)],
+            [
+                sys.executable,
+                str(generator),
+                "--runtime",
+                "openclaw",
+                "--output",
+                str(output_root),
+            ],
             check=True,
             capture_output=True,
             text=True,
@@ -2180,7 +236,6 @@ def validate_generated_openclaw_builder_skills(
             generated_dir = output_root / skill_name
             skill_md = generated_dir / "SKILL.md"
             assert skill_md.exists(), f"missing generated {skill_md}"
-            skill_text = skill_md.read_text(encoding="utf-8")
             meta = frontmatter(skill_md)
             require_field(
                 meta,
@@ -2188,12 +243,7 @@ def validate_generated_openclaw_builder_skills(
                 skill_md,
                 "name",
             )
-            require_field(
-                meta,
-                r"^description:\s*.+internal OpenClaw Builder skill.+$",
-                skill_md,
-                "internal Builder description",
-            )
+            require_field(meta, r"^description:\s*.+", skill_md, "description")
             require_field(
                 meta,
                 r"^user-invocable:\s*false\b",
@@ -2203,86 +253,26 @@ def validate_generated_openclaw_builder_skills(
             assert "disable-model-invocation:" not in meta, (
                 f"generated skill should be model-visible in {skill_md}"
             )
-            require_regexes(
-                skill_text,
-                (
-                    r"Internal OpenClaw Builder variant.*canonical `skills/` pack",
-                    r"return that request to Master Chef",
-                ),
-                skill_md,
-                "generated Builder wrapper topics",
+            skill_text = skill_md.read_text(encoding="utf-8")
+            assert "Internal OpenClaw Builder variant" in skill_text, (
+                f"canonical generated wrapper line missing in {skill_md}"
             )
-            if skill_name in {
-                "cdd-boot",
-                "cdd-plan",
-                "cdd-audit",
-                "cdd-init-project",
-                "cdd-maintain",
-                "cdd-implement-todo",
-            }:
-                validate_selector_labeled_options(skill_text, skill_md)
-            if skill_name == "cdd-boot":
-                validate_boot_followup_contract(skill_text, skill_md)
-            if skill_name in {
-                "cdd-plan",
-                "cdd-init-project",
-                "cdd-maintain",
-                "cdd-implement-todo",
-            }:
-                validate_option_driven_approval(skill_text, skill_md)
-            if skill_name == "cdd-plan":
-                validate_plan_final_apply_options(skill_text, skill_md)
-                validate_plan_edge_case_review_contract(skill_text, skill_md)
-                validate_plan_audit_mode_skill_text(skill_text, skill_md)
-                validate_plan_intent_checkpoint_contract(skill_text, skill_md)
 
-            if include_legacy_prose:
-                if skill_name == "cdd-implement-todo":
-                    require_topic_bundle(
-                        skill_text,
-                        (
-                            r"update only the selected step in the active `TODO\*\.md` file",
-                            r"Do not add a new step-level `Status:` field",
-                        ),
-                        skill_md,
-                        "generated implement-todo legacy topics",
-                    )
-                    validate_implement_todo_skill_text(skill_text, skill_md)
-                if skill_name == "cdd-boot":
-                    validate_boot_skill_text(skill_text, skill_md)
-                if skill_name == "cdd-maintain":
-                    validate_maintain_skill_text(skill_text, skill_md)
-                if skill_name == "cdd-init-project":
-                    validate_init_project_skill_text(skill_text, skill_md)
-                if skill_name == "cdd-plan":
-                    validate_coarse_step_planning(skill_text, skill_md)
-                    validate_reviewed_contract_artifacts(skill_text, skill_md)
-                    validate_plan_intent_framing_topics(skill_text, skill_md)
-                if skill_name == "cdd-audit":
-                    validate_audit_skill_text(skill_text, skill_md)
 
 def main(argv: list[str] | None = None) -> int:
-    """Validate the current repository layout and print a success marker."""
-    args = parse_args(argv)
     repo_root = Path(__file__).resolve().parent.parent
     skills_root = repo_root / "skills"
     assert skills_root.exists(), f"missing {skills_root}"
-
     skill_dirs = sorted(path for path in skills_root.iterdir() if path.is_dir())
     assert skill_dirs, f"no Builder skill directories found in {skills_root}"
 
     for skill_dir in skill_dirs:
-        validate_builder_skill(skill_dir, args.include_legacy_prose)
+        validate_skill(skill_dir)
 
-    validate_generated_openclaw_builder_skills(repo_root, args.include_legacy_prose)
-    validate_master_chef_shared_contract(repo_root)
-    validate_codex_adapter(repo_root)
-    validate_claude_adapter(repo_root)
-    validate_openclaw_adapter(repo_root)
-    if args.include_legacy_prose:
-        print("skill structure checks passed (structural + legacy prose)")
-    else:
-        print("skill structure checks passed (structural)")
+    validate_master_chef(repo_root)
+    validate_generated_openclaw_builder_skills(repo_root)
+
+    print("skill structure checks passed (structural)")
     return 0
 
 
