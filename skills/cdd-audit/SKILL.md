@@ -1,6 +1,6 @@
 ---
 name: cdd-audit
-description: "Audit implementation scope for spec drift, code quality, test quality, accidental complexity, and documentation drift; triage major findings; then route approved follow-up into cdd-plan (explicit-only)."
+description: "Audit implementation scope for spec drift, code quality, test quality, accidental complexity, and documentation drift; triage major findings; then route approved follow-up into cdd-plan, direct implementation, or backlog (explicit-only)."
 disable-model-invocation: true
 ---
 
@@ -101,7 +101,7 @@ This skill is interactive, read-only, and decision-driven.
 
 - Stay read-only during the audit.
 - Do not patch code, docs, or TODO files in this skill.
-- Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended `cdd-plan` follow-up.
+- Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended follow-up route.
 - Collapse duplicate or closely related audit ambiguities into the smallest root decision that can be discussed cleanly.
 - Ask at most one substantive clarification or decision question per message, and use ambiguity clarifications only when the answer could materially change the audit conclusion.
 - Treat clarification as a loop, not a batch: after each user answer, re-rank the remaining unresolved ambiguities and ask the next single highest-leverage question, then wait again. Never list multiple open clarification questions in one message as a checklist for the user to answer all at once.
@@ -117,8 +117,8 @@ This skill is interactive, read-only, and decision-driven.
 - default to letters: `A.`, `B.`, `C.`.
 - use numbers only when the surrounding context is already numeric and that would be clearer.
 - When practical, tell the user they can reply with just the selector.
-- Default major-finding options:
-  - `A. Approve for cdd-plan`
+- Default major-finding options (per-finding triage; route choice happens at step 12):
+  - `A. Approve for follow-up`
   - `B. Postpone or backlog`
   - `C. Accept current state`
   - `D. Reject finding or ask for more evidence`
@@ -135,11 +135,11 @@ This skill is interactive, read-only, and decision-driven.
 8) Collapse related unresolved ambiguities into root decisions. Ask only when an unresolved major ambiguity could materially change the audit conclusion; otherwise report the finding directly.
    - Ask the highest-leverage unresolved major question first, applying the loop rule from `Interaction contract`: one question per message, then refresh remaining ambiguities and ask the next after the user answers.
    - Use one combined clarification when several related ambiguities share one underlying decision.
-9) Once a major finding is sufficiently proven and recommends follow-up, surface each planning-relevant major finding or collapsed root-cause finding one at a time with `**Options**` so it is either approved for planning now, deferred, accepted as-is, or rejected. After each approval decision, refresh the remaining major-finding list and surface the next one; do not batch approvals into one checklist.
-   - Resolving ambiguity does not approve the finding for planning.
+9) Once a major finding is sufficiently proven and recommends follow-up, surface each planning-relevant major finding or collapsed root-cause finding one at a time with `**Options**` so it is either approved for follow-up now, deferred, accepted as-is, or rejected. After each approval decision, refresh the remaining major-finding list and surface the next one; do not batch approvals into one checklist.
+   - Resolving ambiguity does not approve the finding for follow-up.
    - Use one approval decision when several symptoms clearly collapse into one root-cause finding.
 10) Keep a running list of:
-   - findings approved for planning now
+   - findings approved for follow-up
    - findings deferred
    - findings accepted as-is
    - findings rejected or needing more evidence
@@ -151,16 +151,19 @@ This skill is interactive, read-only, and decision-driven.
    - whether the selected steps' checked tasks appear fully done
    - whether the observed implementation matches the selected step goals
    - whether automated checks and UAT evidence support the claimed completion
-   - approved findings mapped for `cdd-plan`
+   - approved findings (mapped to `cdd-plan` types — `spec_delta`, `implementation_delta`, `verification_delta`, `defer` — when the planning route is the recommended next action)
    - deferred or accepted findings
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
 12) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
-   - If approved findings exist, make `A. run cdd-plan on the approved findings` the recommended first option.
-   - Otherwise, do not recommend an empty `$cdd-plan` invocation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
+   - When approved findings exist, present three routing options and put the recommended one first:
+     - `A. run cdd-plan on the approved findings` — recommended default; normalizes findings into runnable TODO steps before any implementation begins
+     - `B. implement approved findings directly` — fast path for trivial findings (single-file fixes, doc drift, test cleanup); use `$cdd-implement-todo` when findings map to existing TODO steps, otherwise direct edits in a follow-up session; the user explicitly accepts skipping the cdd-plan gate
+     - `C. backlog the approved findings or stop without further action this session` — defer to a later audit/plan cycle or close out
+   - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- If the user asks to fix findings directly from this skill, stop and recommend `$cdd-plan` first.
+- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act on approved findings, surface the step 12 routing options so they can choose `cdd-plan`, direct implementation in a separate session, or backlog/stop.
 - If the audited scope is too large to review sanely in one pass, propose a smaller first audit slice before continuing.
 - If docs or specs are intentionally future-state, say that explicitly and audit for clarity rather than forcing current-state wording onto planned behavior.
