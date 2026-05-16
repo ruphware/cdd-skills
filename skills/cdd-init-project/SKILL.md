@@ -85,6 +85,18 @@ ___
 - `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored in fresh/bootstrap and adoption outputs.
 - `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
 
+## Intent and assumption checkpoint
+
+Resolve project intent and material assumptions before drafting `docs/specs/prd.md`, `docs/specs/blueprint.md`, repo-specific `README.md` content, or Step 01+ TODO items. These are the repo-specific contract surfaces that must reflect the actual product and architecture vision, not boilerplate placeholders or guesses.
+
+- Build a project intent frame from the user request, the canonical bootstrap source, the workspace audit, and any discovered source documents.
+- Project intent frame fields: `Project purpose`, `Target user or audience`, `Deliverable`, `Hardest constraint`, `Success signal`, `Non-goals`, `Material assumptions`, `Recommended starting shape`, `Unstable points`.
+- Challenge a material assumption when it could change the product purpose, the target user, the architecture or tech stack, scope or non-goals, the deployment or distribution target, the sequencing of Step 01+ work, integration or external-dependency requirements, validation or UAT shape, or risk/privacy/security/permission behavior.
+- If project intent is unclear from the user request and workspace evidence, ask one intent-level clarification first per the loop rule in `Interactive planning contract`. Do not use detail questions (file paths, framework choice, repo name, GitHub-vs-local) to substitute for intent resolution.
+- If intent is stable but assumptions remain, classify each material assumption as `confirmed`, `derived-from-docs`, `recommended default`, `risky`, or `excluded`. Only `risky` blocks drafting; carry `recommended default` into PRD/Blueprint constraints, README posture, or TODO Step 01+ implementation notes.
+- Include a compact visible `Intent and assumptions` section in the proposed init or adoption plan covering project purpose, target user, success signal, recommended starting shape, material assumptions by status, non-goals, and any blocking intent question.
+- Apply order: resolve intent → fill PRD → fill Blueprint → align README and TODO Step 01+. Do not let boilerplate placeholders or template wording stand in for an unresolved intent frame.
+
 ## Interactive planning contract
 Planning in this skill is interactive, review-driven, and continuously refined.
 
@@ -92,6 +104,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Review the workspace before and during planning. Audit the relevant docs, code, manifests, configs, runbook files, and current TODO surfaces so the init or adoption plan reflects the real repo state.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
 - Ask at most one substantive clarification or decision question per message.
+- Treat clarification as a loop, not a batch: after each user answer, re-rank the remaining unresolved decisions and ask the next single highest-leverage question, then wait again. Never list multiple open questions in one message as a checklist for the user to answer all at once.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update state classification, source inputs, sequencing, assumptions, and validation requirements before continuing.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
@@ -182,7 +195,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - materialize the approved boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
-7) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
+7) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
    - Recommend one option based on the workspace review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file) to:
@@ -230,7 +243,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - materialize the approved boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
-10) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
+10) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
     - Recommend one option based on the workspace review.
     - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 11) Draft proposed edits (grouped by file) to:
@@ -254,7 +267,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 4) Show the detected document list and ask only about, using the interaction contract above:
    - documents to exclude
    - important external documents not present in the workspace
-5) Before drafting edits, present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
+5) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
    - Recommend one option based on the workspace review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 6) Draft proposed edits (grouped by file) to:
@@ -284,7 +297,7 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 4) Ask only blocking questions one at a time using the interaction contract above (for example, docs that must keep their path due to external links).
 
 ### Phase 2 — Draft migration plan (proposal)
-Before drafting the patch proposal, present 2-3 migration shapes when there is a real decision about scope, doc reorganization, or TODO placement.
+Before drafting the patch proposal, resolve project intent per `Intent and assumption checkpoint` (for existing-repo adoption, derive the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief), then present 2-3 migration shapes when there is a real decision about scope, doc reorganization, or TODO placement.
 - Recommend one option based on the workspace review.
 - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 - Use `https://github.com/ruphware/cdd-boilerplate` as the source of truth for the CDD contract when migrating an existing repo.
