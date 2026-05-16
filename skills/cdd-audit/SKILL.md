@@ -15,7 +15,7 @@ Read:
 - `TODO.md` and adjacent `TODO*.md`
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
-- `docs/INDEX.md` when present
+- `docs/INDEX.md` when present (also `docs/index/**` siblings when INDEX split is active)
 - relevant code, tests, configs, manifests, entrypoints, and validation surfaces for the chosen scope
 
 Treat missing docs, specs, or tests as findings. Do not invent missing contract surfaces during the audit.

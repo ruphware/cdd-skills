@@ -14,7 +14,7 @@ Treat the target repo’s CDD contract files as the source of truth:
 - `TODO.md` (and/or `TODO-*.md`)
 - `docs/specs/prd.md`
 - `docs/specs/blueprint.md`
-- `docs/INDEX.md` (if present)
+- `docs/INDEX.md` (if present; also `docs/index/**` siblings when INDEX split is active)
 
 ## Runnable TODO step contract
 For any new or rewritten execution step, produce an implementation-ready step rather than a placeholder summary.

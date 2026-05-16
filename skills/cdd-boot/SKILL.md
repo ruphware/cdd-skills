@@ -22,6 +22,7 @@ Role:
 Project:
 - `README.md`
 - `docs/INDEX.md`
+- matching `docs/index/**` siblings when `docs/INDEX.md` points to them (INDEX split mode)
 - `docs/specs/blueprint.md`
 
 Development:
@@ -30,7 +31,8 @@ Development:
 
 ## Graceful fallback rules
 - Read `AGENTS.md` first and treat it as the source of truth for role and response format.
-- Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing.
+- Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/index/**` siblings, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing.
+- Use `docs/INDEX.md` to detect INDEX layout. If it contains a `## Layout` pointer block referencing `docs/index/**`, treat INDEX split mode as active and continue with the matching `docs/index/DIAGRAMS.md` and `docs/index/INVENTORY-*.md` siblings as needed for the boot summary. Otherwise treat `docs/INDEX.md` as a single-file index.
 - Use `docs/JOURNAL.md` to detect journal layout first. If it indicates split-journal mode, continue with the matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` as needed.
 - For missing project context, use the first existing curated fallback in this order:
   - `README*.md`
@@ -81,4 +83,4 @@ Return a concise boot report that includes:
 On success, recommend continuing in vanilla AGENTS-driven mode.
 
 ## Example prompt
-`$cdd-boot Ingest AGENTS.md and assume the role. Read README.md docs/INDEX.md docs/specs/blueprint.md to understand the project. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them.`
+`$cdd-boot Ingest AGENTS.md and assume the role. Read README.md docs/INDEX.md docs/specs/blueprint.md to understand the project, and continue with matching docs/index/** siblings when docs/INDEX.md points to them. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them.`
