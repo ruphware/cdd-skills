@@ -104,9 +104,10 @@ This skill is interactive, read-only, and decision-driven.
 - Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended `cdd-plan` follow-up.
 - Collapse duplicate or closely related audit ambiguities into the smallest root decision that can be discussed cleanly.
 - Ask at most one substantive clarification or decision question per message, and use ambiguity clarifications only when the answer could materially change the audit conclusion.
+- Treat clarification as a loop, not a batch: after each user answer, re-rank the remaining unresolved ambiguities and ask the next single highest-leverage question, then wait again. Never list multiple open clarification questions in one message as a checklist for the user to answer all at once.
 - Prefer the fewest questions that resolve the most audit uncertainty.
 - Separate ambiguity resolution from finding approval: resolving an ambiguity does not approve a major finding for planning.
-- Once a major finding is sufficiently proven and recommends follow-up, surface it to the user one at a time unless multiple findings clearly collapse into one root-cause decision.
+- Once a major finding is sufficiently proven and recommends follow-up, surface it to the user one at a time unless multiple findings clearly collapse into one root-cause decision. After each approval decision (approve/defer/accept/reject), refresh the remaining major-finding list and surface the next one. Do not present multiple major findings as a batch approval checklist for the user to triage at once.
 - When several unresolved major ambiguities remain, ask the highest-leverage one first: prefer the question whose answer resolves the most uncertainty about finding validity, severity, grouping, affected boundary, or recommended next path.
 - When multiple major ambiguities share one underlying decision, ask one combined clarification instead of separate repetitive questions.
 - Each major clarification should state the current recommended finding direction and what audit conclusion would change if the answer differs.
@@ -132,9 +133,9 @@ This skill is interactive, read-only, and decision-driven.
 6) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion.
 7) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
 8) Collapse related unresolved ambiguities into root decisions. Ask only when an unresolved major ambiguity could materially change the audit conclusion; otherwise report the finding directly.
-   - Ask the highest-leverage unresolved major question first.
+   - Ask the highest-leverage unresolved major question first, applying the loop rule from `Interaction contract`: one question per message, then refresh remaining ambiguities and ask the next after the user answers.
    - Use one combined clarification when several related ambiguities share one underlying decision.
-9) Once a major finding is sufficiently proven and recommends follow-up, surface each planning-relevant major finding or collapsed root-cause finding one at a time with `**Options**` so it is either approved for planning now, deferred, accepted as-is, or rejected.
+9) Once a major finding is sufficiently proven and recommends follow-up, surface each planning-relevant major finding or collapsed root-cause finding one at a time with `**Options**` so it is either approved for planning now, deferred, accepted as-is, or rejected. After each approval decision, refresh the remaining major-finding list and surface the next one; do not batch approvals into one checklist.
    - Resolving ambiguity does not approve the finding for planning.
    - Use one approval decision when several symptoms clearly collapse into one root-cause finding.
 10) Keep a running list of:
