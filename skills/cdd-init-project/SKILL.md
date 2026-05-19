@@ -93,9 +93,24 @@ Resolve project intent and material assumptions before drafting `docs/specs/prd.
 - Project intent frame fields: `Project purpose`, `Target user or audience`, `Deliverable`, `Hardest constraint`, `Success signal`, `Non-goals`, `Material assumptions`, `Recommended starting shape`, `Unstable points`.
 - Challenge a material assumption when it could change the product purpose, the target user, the architecture or tech stack, scope or non-goals, the deployment or distribution target, the sequencing of Step 01+ work, integration or external-dependency requirements, validation or UAT shape, or risk/privacy/security/permission behavior.
 - If project intent is unclear from the user request and workspace evidence, ask one intent-level clarification first per the loop rule in `Interactive planning contract`. Do not use detail questions (file paths, framework choice, repo name, GitHub-vs-local) to substitute for intent resolution.
-- If intent is stable but assumptions remain, classify each material assumption as `confirmed`, `derived-from-docs`, `recommended default`, `risky`, or `excluded`. Only `risky` blocks drafting; carry `recommended default` into PRD/Blueprint constraints, README posture, or TODO Step 01+ implementation notes.
+- If intent is stable but assumptions remain, classify each material assumption as `confirmed`, `derived-from-docs`, `recommended default`, `risky`, or `excluded`. Only `risky` assumptions block drafting by themselves. Use a `recommended default` directly only when choosing differently would not create a live `Open decisions` item; otherwise keep the choice visible and recommend the repo-backed default.
 - Include a compact visible `Intent and assumptions` section in the proposed init or adoption plan covering project purpose, target user, success signal, recommended starting shape, material assumptions by status, non-goals, and any blocking intent question.
 - Apply order: resolve intent → fill PRD → fill Blueprint → align README and TODO Step 01+. Do not let boilerplate placeholders or template wording stand in for an unresolved intent frame.
+
+## Open decisions queue
+
+Make remaining init/adoption-shaping choices visible before final apply planning.
+
+- Once the project intent frame and workspace review stabilize the request, surface unresolved plan-shaping choices in a visible `Open decisions` section before emitting a finished init or adoption plan.
+- Use this queue only for choices where a different answer would materially change project purpose, target user, architecture or stack direction, source inputs, repo or bootstrap posture, doc/write location, Step 01+ stop point, or validation/UAT shape.
+- A repo-backed recommendation is not closure. `derived-from-docs` and `recommended default` justify the recommended option, but they do not close a live plan-shaping decision by themselves.
+- Close a decision only by explicit user instruction, a hard workspace/contract constraint, or a true minor default that does not change plan shape.
+- For each open decision, record: short label, affected boundary, why it matters, current recommended option, and status.
+- Status values:
+  - `asking now` = the single highest-leverage open decision for this message
+  - `queued` = still unresolved, visible to the user, but not asked yet
+- Keep the queue compact. Collapse duplicates into the smallest root decision and exclude reversible implementation details, minor wording, or file-placement questions implied by repo conventions.
+- If no plan-shaping open decisions remain, say so briefly and continue.
 
 ## Interactive planning contract
 Planning in this skill is interactive, review-driven, and continuously refined.
@@ -105,6 +120,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
 - Ask at most one substantive clarification or decision question per message.
 - Treat clarification as a loop, not a batch: after each user answer, re-rank the remaining unresolved decisions and ask the next single highest-leverage question, then wait again. Never list multiple open questions in one message as a checklist for the user to answer all at once.
+- Visibility is broader than questioning. When multiple plan-shaping decisions remain, show them in `Open decisions`, mark one `asking now`, and leave the rest `queued`; do not ask them all at once.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update state classification, source inputs, sequencing, assumptions, and validation requirements before continuing.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
 - For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
@@ -118,6 +134,7 @@ Planning in this skill is interactive, review-driven, and continuously refined.
   - when practical, tell the user they can reply with just the selector
 - When a draft init or adoption plan is ready for application, use the final repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
 - The selected option itself is the approval; do not append a separate free-form approval question after selector options.
+- Do not emit a finished init or adoption plan while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the item stays visible instead of being treated as closed.
 - Default final apply choices to `A. apply now`, `B. revise first`, and `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.
 
 ## State detection (required)
@@ -195,7 +212,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - materialize the approved boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
-7) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
+7) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
    - Recommend one option based on the workspace review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 8) Draft proposed edits (grouped by file) to:
@@ -216,9 +233,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
 Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discovered source material, and build Step 00 from it inside this repo.
 
 1) Inventory the current folder for candidate source/reference documents before asking any questions.
-2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices) and ask only about, using the interaction contract above:
-   - documents to exclude
-   - important external documents not present in the workspace
+2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices). If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
 3) Derive the current directory basename and propose it as the default repo name.
 4) Ask the user to confirm or edit that repo name before any bootstrap step, using the interaction contract above.
 5) Ask whether they want, using the interaction contract above:
@@ -243,7 +258,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - materialize the approved boilerplate into the current folder without changing directories
    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
-10) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
+10) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
     - Recommend one option based on the workspace review.
     - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 11) Draft proposed edits (grouped by file) to:
@@ -264,10 +279,8 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 1) Read the canonical contract files above.
 2) Use `TODO.md` **Step 00** as the checklist (do not re-define it).
 3) Inventory the current workspace for candidate source/reference documents before asking questions.
-4) Show the detected document list and ask only about, using the interaction contract above:
-   - documents to exclude
-   - important external documents not present in the workspace
-5) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
+4) Show the detected document list. If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
+5) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
    - Recommend one option based on the workspace review.
    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 6) Draft proposed edits (grouped by file) to:
@@ -297,7 +310,7 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 4) Ask only blocking questions one at a time using the interaction contract above (for example, docs that must keep their path due to external links).
 
 ### Phase 2 — Draft migration plan (proposal)
-Before drafting the patch proposal, resolve project intent per `Intent and assumption checkpoint` (for existing-repo adoption, derive the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief), then present 2-3 migration shapes when there is a real decision about scope, doc reorganization, or TODO placement.
+Before drafting the patch proposal, resolve project intent per `Intent and assumption checkpoint` (for existing-repo adoption, derive the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief), then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 migration shapes only when there is a real decision about scope, doc reorganization, or TODO placement.
 - Recommend one option based on the workspace review.
 - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
 - Use `https://github.com/ruphware/cdd-boilerplate` as the source of truth for the CDD contract when migrating an existing repo.

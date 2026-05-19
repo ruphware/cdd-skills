@@ -79,6 +79,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Required README CDD footnote footer",
         "## Contract-surface taxonomy and drift rules",
         "## Intent and assumption checkpoint",
+        "## Open decisions queue",
         "## Interactive planning contract",
         "## State detection",
     ),
