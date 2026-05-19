@@ -1,5 +1,6 @@
 .DS_Store
 .cdd-runtime/
+.claude/
 
 # Python bytecode
 **/__pycache__/

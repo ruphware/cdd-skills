@@ -87,6 +87,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Audit-input normalization",
         "## Edge-case review",
         "## Intent and assumption checkpoint",
+        "## Open decisions queue",
         "## Interactive planning contract",
         "## Question economy",
         "## Planning anti-patterns",

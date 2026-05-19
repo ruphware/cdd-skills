@@ -60,7 +60,22 @@ Resolve intent and material assumptions before detailed implementation planning.
 - Intent frame fields: `Requested change`, `Suspected intent`, `Deliverable`, `Hardest constraint`, `Success signal`, `Non-goals`, `Material assumptions`, `Recommended direction`, `Unstable points`.
 - Challenge a material assumption when it could change the actual problem being solved, the user-visible outcome, product/architecture boundaries, what is in scope or out of scope, the sequencing of work, whether the work should be implemented/deferred/audited/converted into a spec or TODO delta, validation or UAT requirements, or risk/rollback/migration/privacy/security/permission behavior.
 - If intent is unclear, ask one intent-level clarification first. Do not use implementation-detail questions to substitute for intent resolution.
-- If intent is stable but assumptions remain, classify each material assumption as `confirmed`, `repo-inferred`, `recommended default`, `risky`, or `excluded`. Only `risky` blocks planning; carry `recommended default` into TODO constraints, implementation notes, automated checks, or UAT.
+- If intent is stable but assumptions remain, classify each material assumption as `confirmed`, `repo-inferred`, `recommended default`, `risky`, or `excluded`. Only `risky` assumptions block planning by themselves. A `recommended default` may be written straight into the TODO step only when choosing differently would not create a live `Open decisions` item; otherwise keep the choice visible and present the repo-backed default as the recommended option.
+
+## Open decisions queue
+
+Make remaining plan-shaping choices visible before final TODO drafting.
+
+- After the intent frame and repo-grounded review stabilize the request, surface unresolved plan-shaping choices in a visible `Open decisions` section before emitting a finished runnable TODO step.
+- Use this queue only for unresolved choices where a different answer would materially change product or architecture boundaries, storage or contract shape, permission posture, rollout or compatibility posture, validation strategy, or the exact stop point of the step.
+- A repo-backed recommendation is not closure. `repo-inferred` and `recommended default` justify the recommended option, but they do not close a live plan-shaping decision by themselves.
+- Close a decision only by explicit user instruction, a hard repo constraint, or because the remaining difference is a true minor default that does not change plan shape.
+- For each open decision, record: short label, affected boundary, why it matters, current recommended option, and status.
+- Status values:
+  - `asking now` = the single highest-leverage open decision for this message
+  - `queued` = still unresolved, visible to the user, but not asked yet
+- Keep the queue compact. Collapse duplicates into the smallest root decision and exclude reversible implementation details, naming, copy, or file-placement questions implied by repo conventions.
+- If no plan-shaping open decisions remain, say so briefly and continue.
 
 ## Interactive planning contract
 
@@ -70,6 +85,7 @@ Resolve intent and material assumptions before detailed implementation planning.
 - For behavior-changing or audit-derived requests, run the repo-grounded edge-case review before detailed TODO drafting.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
 - **One question per message, in a loop.** Ask at most one substantive clarification per message. After each user answer, re-rank remaining unresolved decisions and ask the next single highest-leverage question, then wait again. Never list multiple open questions in one message as a checklist for the user to answer at once.
+- Visibility is broader than questioning. When multiple plan-shaping decisions remain, show them in `Open decisions`, mark one `asking now`, and leave the rest `queued`; do not ask them all at once.
 - Prefer the fewest clarifications that resolve the most plan-shaping uncertainty.
 - Keep refining as new evidence appears. After each answer or new finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
 - Treat a request as `intent-qualifying` when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to need more than one TODO step. For these, add a compact visible `Intent and assumptions` section covering requested change, suspected intent, success signal, recommended direction, material assumptions by status, non-goals, and any blocking intent question.
@@ -106,9 +122,10 @@ For every clarification or apply message, put choices under a final `**Options**
   7. implementation details
 - Do not ask a lower-level question while a higher-level unresolved decision could still invalidate it.
 - A clarification is allowed only when the answer would materially change product/architecture boundaries, data/state, contracts/APIs, file/write location, sequencing, approval safety, migration/rollback/rollout, security/privacy/permission behavior, validation strategy, or an unresolved `major` edge case.
+- `repo-inferred` and `recommended default` close low-risk assumptions only when they do not leave a live `Open decisions` item. If choosing differently would still materially reshape the plan, keep the choice visible and queue it one at a time.
 - Do not ask about reversible implementation details, naming/copy polish, file placement implied by repo conventions, defaults that can be safely documented in the TODO step, preferences that do not change plan shape, or questions already answered by the user, repo evidence, or an accepted default.
 - Default clarification budget: small/local change 0-1 questions; multi-surface change 1-2 questions; audit, migration, security, external contract, or destructive change up to 3 questions.
-- If more than 3 clarifications appear necessary, stop expanding. Present the best bounded plan so far, mark unresolved major decisions, recommend the next single decision, and proceed only through selector-based options.
+- If more than 3 clarifications appear necessary, stop expanding. Present the best bounded plan so far, keep the remaining `Open decisions` visible, mark unresolved major decisions, recommend the next single decision, and proceed only through selector-based options.
 
 ## Planning anti-patterns
 
@@ -117,6 +134,7 @@ For every clarification or apply message, put choices under a final `**Options**
 - Converting an audit bullet directly into implementation work before identifying symptom, root cause, proof needed, and intended outcome.
 - Asking about file placement, naming, UI copy, endpoint shape, schema fields, or test mechanics before resolving whether the work is a feature, bugfix, refactor, audit fix, spec delta, investigation, or defer.
 - Producing a detailed TODO step that encodes an unchallenged assumption as fact.
+- Emitting a finished TODO step while plan-shaping `Open decisions` remain hidden or unresolved.
 - Expanding scope because an implementation path is obvious before confirming the expansion serves the intent.
 - Using many small detail questions to avoid asking one hard direction question.
 - Listing multiple open clarification questions in a single message as a checklist for the user to answer all at once, instead of asking the single highest-leverage question, waiting for the answer, and then re-ranking before the next question.
@@ -139,6 +157,7 @@ For every clarification or apply message, put choices under a final `**Options**
 3) Bisect uncertainty before detailed drafting.
    - List unresolved plan-shaping decisions privately, tagging each as `intent`, `assumption`, `direction`, `boundary`, `implementation`, or `validation`.
    - Resolve `intent`, `assumption`, and `direction` uncertainty before `boundary`, `implementation`, or detailed `validation` questions unless a safety constraint forces otherwise.
+   - Turn remaining plan-shaping decisions into a visible `Open decisions` queue before final TODO drafting. Mark exactly one item `asking now`, keep the rest `queued`, and ask only the `asking now` item in the current message.
    - Apply the loop rule from `Interactive planning contract` and the ladder/budget from `Question economy`: ask the highest-leverage unresolved decision first; one question at a time; collapse related questions into the fewest root decisions.
    - Safety override: if a remaining material assumption would invalidate the plan, enable unsafe or destructive work, or materially change boundaries/sequencing/contracts/data-state/rollout/validation, ask one highest-leverage clarification before moving on, regardless of the question budget.
    - If only minor defaults or `minor` edge cases remain, disclose them briefly and carry them into assumptions, constraints, implementation notes, automated checks, or UAT.
@@ -146,13 +165,14 @@ For every clarification or apply message, put choices under a final `**Options**
 
 4) Produce the coarse plan.
    - For ambiguous, multi-surface, audit-driven, or multi-step requests, produce a coarse dependency-ordered decomposition. Keep it lightweight but concrete enough to validate boundaries, dependency order, coverage, reviewed artifacts, unresolved major decisions, and validation surfaces.
-   - Include visible sections when applicable: `Frame`, `Recommended shape`, `Intent and assumptions`, `Confirmed requirements coverage`, `Reviewed contract artifacts`, `Audit normalization`, `Edge-case review`, `Coarse dependency-ordered steps`, `Material assumptions`. Show `Confirmed requirements coverage` and `Reviewed contract artifacts` before approval when present.
+   - Include visible sections when applicable: `Frame`, `Recommended shape`, `Intent and assumptions`, `Confirmed requirements coverage`, `Reviewed contract artifacts`, `Audit normalization`, `Edge-case review`, `Open decisions`, `Coarse dependency-ordered steps`, `Material assumptions`. Show `Confirmed requirements coverage` and `Reviewed contract artifacts` before approval when present.
    - Present 2-3 plan shapes only when there is a real grouping, sequencing, scope, or write-location decision.
    - For audit-driven requests, include the write-location choice in the same option set when practical: default — update an existing TODO file; alternative — create `TODO-audit-<tag>.md` (ask for the tag only if the new-file option is chosen).
 
 5) Refine one coarse step.
    - After the coarse plan is accepted or the next step is clear, refine only the next coarse step into one or more runnable TODO steps. Do not jump straight to a full mixed-surface detailed plan when the work is multi-step.
    - When the work is already a single clearly bounded next step, refine that step directly without forcing a coarse decomposition pass.
+   - Do not emit a finished runnable TODO step while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the plan keeps that unresolved item visible instead of pretending the step is decision-complete.
    - For each new or revised execution step, produce an implementation-ready TODO contract per `Runnable TODO step contract`. Each runnable step must include enough product, architecture, sequencing, and validation detail that the implementer does not need to reopen PRD/Blueprint or surrounding chat to fill gaps.
    - Keep exact implementation-driving detail in `TODO.md` or the selected TODO file.
 

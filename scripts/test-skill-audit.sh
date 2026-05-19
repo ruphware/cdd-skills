@@ -241,6 +241,7 @@ run_local_smoke_test() {
   "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$claude_skills_dir"
   "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$openclaw_skills_dir"
   bash "$ROOT_DIR/scripts/test_master_chef_artifacts.sh"
+  bash "$ROOT_DIR/scripts/test_plan_artifacts.sh"
 
   local skill
   for skill in "${skills[@]}"; do
