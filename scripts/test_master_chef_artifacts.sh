@@ -126,7 +126,8 @@ for phrase in \
   "missing_requirements" \
   "solvable_blocker" \
   "route_drift" \
-  "unrecoverable"; do
+  "unrecoverable" \
+  "pending"; do
   assert_contains "$SHARED_ROOT/CONTRACT.md" "$phrase"
 done
 # Silence- and probe-count-based replacement triggers must not return: forbid

@@ -344,6 +344,8 @@ Classify the stop as exactly one of:
 - `route_drift` — Builder was doing the wrong thing for the step. Push concrete findings back to the same Builder.
 - `unrecoverable` — closure with no usable evidence, deadlock, or repeated failed recoveries. Replace or escalate to `STEP_BLOCKED` via the existing recovery path.
 
+`builder_stop_classification` is `pending` while investigation is in progress and resolves to one of the four classifications above before `BUILDER_INVESTIGATION_RESOLVED` or `BUILDER_INVESTIGATION_ESCALATED` is emitted. `BUILDER_STOPPED` may be appended with `pending` when classification has not yet finalized.
+
 Durable writes: update `builder_stop_reason`, `builder_stop_classification`, and `builder_stop_evidence_summary` in `run.json`; append `BUILDER_STOPPED` to `master-chef.jsonl` with classification, evidence summary, and routing; then `BUILDER_INVESTIGATION_RESOLVED` on non-escalating routing or `BUILDER_INVESTIGATION_ESCALATED` on escalation.
 
 Accepted trade-offs:

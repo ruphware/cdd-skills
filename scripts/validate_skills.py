@@ -275,6 +275,7 @@ MASTER_CHEF_STOP_CLASSIFICATIONS = (
     "solvable_blocker",
     "route_drift",
     "unrecoverable",
+    "pending",
 )
 MASTER_CHEF_STOP_EVENTS = (
     "BUILDER_STOPPED",
