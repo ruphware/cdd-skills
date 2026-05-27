@@ -179,6 +179,99 @@ def validate_skill(skill_dir: Path) -> None:
         require_section(skill_text, heading, skill_md)
 
 
+MASTER_CHEF_CONSOLIDATION_SATELLITES = (
+    "SKILL.md",
+    "RUNBOOK.md",
+    "RUNTIME-CAPABILITIES.md",
+    "CLAUDE-ADAPTER.md",
+    "CLAUDE-RUNBOOK.md",
+    "CODEX-ADAPTER.md",
+    "CODEX-RUNBOOK.md",
+    "openclaw/README.md",
+    "openclaw/MASTER-CHEF-RUNBOOK.md",
+)
+
+MASTER_CHEF_CANONICAL_ANCHOR = (
+    "<!-- canonical: Builder lifecycle policy "
+    "(cadence, boot timeout, suspect classification, replacement) -->"
+)
+
+# Step 59 anchors. `CONTRACT.md §7` may appear with or without backticks around
+# the filename; both forms are accepted as a pointer to the canonical surface.
+MASTER_CHEF_POINTER_RE = re.compile(r"`?CONTRACT\.md`?\s*§7")
+
+# Threshold-restatement detector: a sentence pairing one of the monitoring
+# numbers with policy vocabulary. Run on sentence-segmented prose after
+# stripping fenced code blocks, so JSON examples and shell snippets in
+# satellite docs do not produce false positives.
+MASTER_CHEF_THRESHOLD_SENTENCE_RE = re.compile(
+    r"\b(5|10|20|30)\s*minutes?\b[^.\n]*"
+    r"\b(cadence|boot|suspect|silence|replace|replacement|probe)\b",
+    re.IGNORECASE,
+)
+MASTER_CHEF_LEGACY_LADDER_RE = re.compile(
+    r"5\s*/\s*10\s*/\s*20[\w-]*\s*/\s*30[\w-]*\s*(?:monitoring\s+)?ladder",
+    re.IGNORECASE,
+)
+MASTER_CHEF_PROBES_PHRASE_RE = re.compile(
+    r"2\s+consecutive\s+unanswered\s+explicit\s+(?:status\s+)?probes",
+    re.IGNORECASE,
+)
+MASTER_CHEF_TIMING_SUMMARY_RE = re.compile(
+    r"(?mi)^\s*(?:#+\s*)?Builder timing summary\b"
+)
+
+MASTER_CHEF_FENCED_CODE_RE = re.compile(r"```.*?```", re.S)
+
+
+def _check_master_chef_consolidation(package_root: Path) -> None:
+    """Step 59: enforce single-canonical-surface Builder lifecycle policy.
+
+    Asserts:
+      - CONTRACT.md §7 carries the canonical-surface anchor comment.
+      - Each of the nine satellite docs contains a `CONTRACT.md §7` pointer.
+      - No satellite restates the 5/10/20/30-minute thresholds as policy.
+      - No satellite restates the `5/10/20-soft/30-hard` legacy ladder shape.
+      - No satellite restates `2 consecutive unanswered explicit probes`.
+      - The OpenClaw runbook no longer carries a `Builder timing summary`
+        heading or bullet group.
+    """
+    contract_path = package_root / "CONTRACT.md"
+    contract_text = contract_path.read_text(encoding="utf-8")
+    assert MASTER_CHEF_CANONICAL_ANCHOR in contract_text, (
+        f"missing canonical Builder lifecycle anchor in {contract_path}"
+    )
+
+    for rel in MASTER_CHEF_CONSOLIDATION_SATELLITES:
+        doc_path = package_root / rel
+        text = doc_path.read_text(encoding="utf-8")
+        assert MASTER_CHEF_POINTER_RE.search(text), (
+            f"{doc_path} missing `CONTRACT.md §7` pointer for Builder lifecycle"
+        )
+
+        scan = MASTER_CHEF_FENCED_CODE_RE.sub("", text)
+        threshold_hit = MASTER_CHEF_THRESHOLD_SENTENCE_RE.search(scan)
+        assert threshold_hit is None, (
+            f"{doc_path} restates Builder threshold "
+            f"({threshold_hit.group(0)!r}); this lives in CONTRACT.md §7 only"
+        )
+        ladder_hit = MASTER_CHEF_LEGACY_LADDER_RE.search(scan)
+        assert ladder_hit is None, (
+            f"{doc_path} restates the 5/10/20-soft/30-hard monitoring ladder"
+        )
+        probes_hit = MASTER_CHEF_PROBES_PHRASE_RE.search(scan)
+        assert probes_hit is None, (
+            f"{doc_path} restates `2 consecutive unanswered explicit probes`"
+        )
+
+    openclaw_runbook = package_root / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
+    openclaw_text = openclaw_runbook.read_text(encoding="utf-8")
+    timing_summary_hit = MASTER_CHEF_TIMING_SUMMARY_RE.search(openclaw_text)
+    assert timing_summary_hit is None, (
+        f"{openclaw_runbook} retains a `Builder timing summary` heading"
+    )
+
+
 def validate_master_chef(repo_root: Path) -> None:
     package_root = repo_root / "cdd-master-chef"
     assert package_root.exists(), f"missing {package_root}"
@@ -200,6 +293,7 @@ def validate_master_chef(repo_root: Path) -> None:
         assert skill_name in skill_text, (
             f"master-chef SKILL.md missing reference to {skill_name}"
         )
+    _check_master_chef_consolidation(package_root)
 
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:

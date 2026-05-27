@@ -148,20 +148,7 @@ Operating contract:
    - report blockers or completion
 20. Direct Builder checks must not create a second control loop. Recovery stays in the main session, and fresh Builder replacement is recovery-only rather than the normal step-transition path.
 21. Healthy Builder checks may stay quiet, but they do not cancel in-session lifecycle reporting for events such as `START`, `STEP_PASS`, `STEP_BLOCKED`, `RUN_COMPLETE`, or an explicit stop.
-22. Distinguish Builder boot/readiness from running silence.
-   - Record `builder_phase: booting` as soon as the spawn request succeeds. A returned Builder session key or spawned-agent line is not enough to prove that the Builder has started operating.
-   - Keep `builder_phase: booting` until a runtime-reported child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record arrives in `builder.jsonl`.
-   - Preferred boot prompt: `Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.`
-   - The preferred readiness ACK confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
-   - While Builder is booting, perform active checks at least every 5 minutes while Master Chef is waiting. An adapter may probe earlier when that is cheap and coherent.
-   - If no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`, send one final explicit boot-status probe before classifying the current Builder attempt as failed to start, blocked, or replaceable.
-23. If the runtime does not expose live Builder thinking or streaming partial output, report Builder state as `running` or `unknown` during quiet periods rather than guessing.
-   - Do not treat a returned session key, a missing diff, an empty `builder.jsonl`, or one short wait window as proof that Builder is fully started or has died.
-   - While Builder is running, perform active checks at least every 5 minutes while Master Chef is waiting. Earlier probes are fine, but not fewer.
-   - If 20 minutes pass without direct Builder proof of life after `builder_phase` reaches `running`, set `builder_suspect_since_utc`, send an explicit status probe, and classify the Builder as suspect rather than dead.
-   - Reset `builder_suspect_since_utc` and `builder_missed_probe_count` on any coherent direct Builder reply.
-   - Replace Builder only after direct failure or closure, an explicit Builder blocker, deadlock, unusable drift, inability to continue safely after compaction or status checks, 30 minutes of total running silence, or 2 consecutive unanswered explicit status probes after suspect classification.
-   - Any coherent Builder reply, including discovery-only status, is proof of life rather than proof of death.
+22. Distinguish Builder boot/readiness from running silence. Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle.
 24. If repeated Builder replacements fail without progress, stop quickly and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` rather than limping on.
 25. If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized for one Builder run, or repeated failed Builder replacements:
    - pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
@@ -184,63 +171,7 @@ Operating contract:
    - do not compact while QA, commit, push, blocker strategy, or next-action decisions exist only in the live transcript
    - after compaction, resume from runtime files, `context-summary.md`, active TODO, and git state before continuing
 
-Canonical `run.json` fields:
-
-- `run_id`
-- `repo`
-- `source_repo`
-- `master_model`
-- `master_thinking`
-- `builder_model`
-- `builder_thinking`
-- `builder_settings_source`
-- `builder_runtime`
-- `master_session_key`
-- `builder_session_key`
-- `builder_phase`
-- `builder_spawn_requested_at_utc`
-- `builder_ready_at_utc`
-- `last_builder_direct_signal_at_utc`
-- `builder_last_probe_at_utc`
-- `builder_last_probe_result`
-- `builder_suspect_since_utc`
-- `builder_missed_probe_count`
-- `builder_last_compaction_attempted_at_utc`
-- `builder_last_compaction_result`
-- `builder_last_compaction_summary`
-- `builder_replacement_lineage`
-- `run_step_budget`
-- `steps_completed_this_run`
-- `active_todo_path`
-- `active_step`
-- `phase`
-- `source_branch`
-- `source_head_sha`
-- `source_branch_decision`
-- `active_worktree_path`
-- `worktree_branch`
-- `worktree_continue_mode`
-- `worktree_env_status`
-- `worktree_env_prepared_at_utc`
-- `worktree_env_bootstrap_summary`
-- `branch`
-- `upstream`
-- `pre_step_head_sha`
-- `last_pass_head_sha`
-- `last_progress_at_utc`
-- `last_master_log_at_utc`
-- `last_builder_log_at_utc`
-- `builder_restart_count`
-- `dispute_loop_count`
-- `current_blocker`
-
-Runtime-state expectations for persistent Builder continuity:
-
-- `builder_session_key` is the active Builder identity and normally remains stable across delegated steps in the same run.
-- `builder_last_probe_at_utc`, `builder_last_probe_result`, `builder_suspect_since_utc`, and `builder_missed_probe_count` capture the latest active-check evidence plus soft-stale escalation state, and any coherent direct Builder signal should clear suspect state and reset the missed-probe count.
-- `builder_last_compaction_attempted_at_utc`, `builder_last_compaction_result`, and `builder_last_compaction_summary` capture the latest step-boundary compaction attempt or truthful fallback result such as `unsupported`, `auto`, or `native_context_management`.
-- `builder_replacement_lineage` records prior Builder identities, replacement reasons, and any parent-child handoff needed when recovery forces Builder replacement.
-- If an older Builder is no longer needed, preserve lineage and durable evidence, then close it or mark it inactive so one active Builder remains.
+Canonical `run.json` fields and runtime-state expectations for persistent Builder continuity live in `CONTRACT.md` §3 — Durable runtime state.
 
 Report events:
 

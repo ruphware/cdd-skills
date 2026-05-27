@@ -527,3 +527,135 @@ Define a judgement-based, evidence-backed, approval-gated archive contract for a
 - Confirm existing journal archive rules and TODO archive rules subsections are unchanged.
 - Confirm `python3 scripts/validate_skills.py` and `--include-legacy-prose` both pass.
 - Confirm the validator fails if any of the following are removed: the new subsection heading, the never-silent rule, the primary `stale-candidate`-based trigger, the secondary frontmatter-marker trigger, the mirrored destination layout (including the subsystem-local case), the same-day-append rule, the per-file-or-batched approval rule, the "journal and TODO archive rules unchanged" acknowledgment, or the new `Safe write behavior` bullet.
+
+## Step 59 — Consolidate Builder-monitoring policy into `CONTRACT.md` §7 only
+
+### Goal
+
+Make `cdd-master-chef/CONTRACT.md` §7 the canonical and sole surface for Builder active-check cadence, boot timeout, suspect classification, and replacement policy. Replace policy restatements across nine satellite docs with explicit `CONTRACT.md §7` pointers plus only runtime-specific or operator-facing content the canonical contract cannot express. Remove duplicate timing-summary blocks. No behavioral change — Step 60 reverses policy on the consolidated surface.
+
+### Constraints
+
+- Touch only: `cdd-master-chef/{CONTRACT.md, SKILL.md, RUNBOOK.md, RUNTIME-CAPABILITIES.md, CLAUDE-ADAPTER.md, CLAUDE-RUNBOOK.md, CODEX-ADAPTER.md, CODEX-RUNBOOK.md, openclaw/README.md, openclaw/MASTER-CHEF-RUNBOOK.md}`, `scripts/validate_skills.py`, `scripts/test_master_chef_artifacts.sh`. Other files only if a failing check forces it.
+- Behavioral preservation: keep current thresholds verbatim in `CONTRACT.md` §7 (5-min cadence, 10-min boot timeout, 20-min suspect threshold, 30-min / 2-probe replacement boundary). De-duplication only.
+- Consolidation-compliance per satellite: exactly one explicit `CONTRACT.md §7` pointer for the policy surface, plus only content the canonical contract cannot express generically (probe form, direct-status surface, session-close mechanics, lease detail, compaction limits, operator-checklist guidance). Generic shared docs (`SKILL.md`, `RUNTIME-CAPABILITIES.md`) keep pointer + at most a one-sentence operator-facing summary.
+- Remove the `Builder timing summary` bullet list at `openclaw/MASTER-CHEF-RUNBOOK.md:552-556` and the three-bullet ladder at `openclaw/README.md:201-203`.
+- Validator coverage runs in default `validate_skills.py` path. Anchor regexes on stable phrasing (`CONTRACT.md §7`, `Kickoff and Builder lifecycle`, `Builder timing summary`).
+- Do not edit Step 54's checked-task body (`TODO.md:233-299`). Step 59's body is the only place that records the consolidation rationale.
+
+### Tasks
+
+- [x] Add canonical-surface anchor comment `<!-- canonical: Builder lifecycle policy (cadence, boot timeout, suspect classification, replacement) -->` near the top of `cdd-master-chef/CONTRACT.md` §7. Do not change any threshold or trigger wording in this step.
+- [x] Consolidate each satellite per the table below. Open each at the cited line range, prepend an explicit pointer line — `Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in CONTRACT.md §7 — Kickoff and Builder lifecycle.` — then retain only the listed permitted content. Delete every sentence that restates a numeric threshold as policy.
+
+  | Satellite | Section / lines | Permitted residual content |
+  | --- | --- | --- |
+  | `SKILL.md` | 151-163 (Builder boot/silence rules), 200-210 + 240 (runtime-state schema) | Pointer to §7 for monitoring policy; pointer to §3 for runtime-state schema; at most one operator-facing sentence reminding of the two-phase boot/running framing |
+  | `RUNBOOK.md` | 230-251 | Pointer + operator-facing checklist guidance not already in §7 |
+  | `RUNTIME-CAPABILITIES.md` | 24 (one-line ladder) | Pointer only |
+  | `CLAUDE-ADAPTER.md` | 78-79 (`Quiet periods` / `Replacement`) | Pointer + Claude probe form (fg/bg, agent surface), direct-status surfaces (final agent message, ACK, error event), session-close mechanics |
+  | `CLAUDE-RUNBOOK.md` | 114-126 | Pointer + Claude-specific operator probe steps |
+  | `CODEX-ADAPTER.md` | 66-67 | Pointer + Codex probe mechanics, direct-status surfaces, session-close mechanics |
+  | `CODEX-RUNBOOK.md` | 107-119 | Pointer + Codex-specific operator probe steps |
+  | `openclaw/README.md` | 201-203 (three-bullet ladder) | Pointer + OpenClaw framing prose if any; delete the three-bullet list itself |
+  | `openclaw/MASTER-CHEF-RUNBOOK.md` | 488-555 (monitoring), 552-556 (timing summary) | Pointer + OpenClaw mechanics (lease, single-step subagent boot, probe form, session-close, compaction/lease detail); delete `Builder timing summary` list entirely |
+
+- [x] Add `_check_master_chef_consolidation()` to `scripts/validate_skills.py`, called from `validate_master_chef()`. Assertions:
+  - Positive: `CONTRACT.md` §7 contains the canonical-surface anchor comment; each of the nine satellites contains a `CONTRACT.md §7` pointer line.
+  - Negative: no satellite contains a sentence pairing `(5|10|20|30)\s*minutes?` with `cadence|boot|suspect|silence|replace|probe` (sentence-segmented `re.search` after stripping fenced code blocks); no satellite contains `2 consecutive unanswered explicit probes`; `openclaw/MASTER-CHEF-RUNBOOK.md` contains neither a `Builder timing summary` heading nor its bullet group; `openclaw/README.md` no longer contains the three-bullet ladder pattern.
+- [x] Extend `scripts/test_master_chef_artifacts.sh` (near line 68) with `assert_contains "$path" "CONTRACT.md §7"` for each of the nine satellites and `assert_not_contains` for `Builder timing summary` in `openclaw/MASTER-CHEF-RUNBOOK.md` and the three-bullet ladder pattern in `openclaw/README.md`. Use existing helpers (lines 30-46).
+
+### Implementation notes
+
+- File order: `CONTRACT.md` (anchor only) → satellites smallest-first to stabilize the pointer-rewrite pattern (`RUNTIME-CAPABILITIES.md`, `openclaw/README.md`, the two `*-ADAPTER.md`, the two `*-RUNBOOK.md`, `RUNBOOK.md`, `SKILL.md`, `openclaw/MASTER-CHEF-RUNBOOK.md` last) → validator + artifact test.
+- `SKILL.md` is the orchestrator entrypoint, not runtime-specific; its permitted residual is narrower than the adapters'. The two-phase boot/running reminder is the one operator-facing fact that survives in-line, because the orchestrator must recognize the phase distinction even before reading §7.
+- Validator negative regex: after stripping fenced code blocks, `re.search(r'(5|10|20|30)\s*minutes?[^.]*\b(cadence|boot|suspect|silence|replace|probe)\b', sentence)` on sentence-segmented text. False positives in non-policy mentions are acceptable because the policy ladder is the only legitimate context for these numbers in satellites.
+- Claude/Codex adapter scope statements at line 11 of each already claim adapters document only runtime mechanics — Step 59 finally makes that true.
+- Preserve every non-policy section verbatim. Step 60 edits the recovery-flow narrative in `openclaw/MASTER-CHEF-RUNBOOK.md` next; Step 59 only removes numeric restatements.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- `CONTRACT.md` §7 carries the canonical-surface anchor; thresholds unchanged.
+- Each of the nine satellites has exactly one `CONTRACT.md §7` pointer and no numeric-threshold policy sentence; permitted residual content matches the table.
+- `openclaw/MASTER-CHEF-RUNBOOK.md` no longer has a `Builder timing summary` block; `openclaw/README.md` no longer has the three-bullet ladder at 201-203.
+- `_check_master_chef_consolidation()` exists in `validate_skills.py` and is called from `validate_master_chef()`.
+- `validate_skills.py` (default + `--include-legacy-prose`) and `test_master_chef_artifacts.sh` all pass.
+- Validator fails if any satellite drops its pointer, re-introduces a numeric-threshold policy sentence, or restores a removed timing-summary block.
+- `TODO.md:233-299` (Step 54 body) unchanged.
+
+## Step 60 — Replace silence-based Builder replacement with a clear-stop-signal policy and add the Builder-stop investigation stage
+
+### Goal
+
+Rewrite `cdd-master-chef/CONTRACT.md` §7 so Builder replacement requires a clear stop signal (not wall-clock silence or probe count); insert a `Builder-stop investigation` subsection that classifies stops and routes to the cheapest recovery before authorizing replacement; add supporting JSONL events to §9 and runtime-state fields to §3; propagate to test harnesses; lock with validator + artifact-test assertions. Supersedes Step 54's replacement-policy clauses without editing Step 54's body.
+
+### Constraints
+
+- Touch only: `cdd-master-chef/CONTRACT.md`, `cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md` (recovery-flow narrative only — Step 59's pointer line stays), `cdd-master-chef/{CLAUDE-TEST-HARNESS.md, CODEX-TEST-HARNESS.md, openclaw/MASTER-CHEF-TEST-HARNESS.md}`, `scripts/validate_skills.py`, `scripts/test_master_chef_artifacts.sh`. Other files only if a failing check forces it.
+- Depends on Step 59. Do not start until Step 59's automated checks pass.
+- Clear-stop-signal set (fixed per Open Decision 1 = Option A): runtime-reported session closure or process exit; Builder-emitted `BLOCKED` or failure JSONL in `.cdd-runtime/master-chef/builder.jsonl`; QA-detected unusable drift after Master Chef inspection. Probe non-response is observation-only and never escalates. Transport errors → `builder_last_probe_result: unknown`, no escalation.
+- Preserve verbatim: 5-min active-check cadence, 10-min boot timeout, 20-min suspect-classification soft threshold. The "indefinite wait" semantic applies to the `running` phase only — boot keeps the 10-min final-probe-then-replaceable timeout (no usable Builder state yet to preserve).
+- Re-scope `builder_missed_probe_count` and `builder_suspect_since_utc` to observation/evidence semantics. Their durable updates continue; their previous role as replacement triggers ends.
+- Acknowledge two accepted trade-offs in §7: (a) runtime-alive-deadlock case → Master Chef waits until human intervenes per §1; (b) probe transport errors never count as stop signals.
+- Do not edit Step 54's body (`TODO.md:233-299`). Reference superseded clauses by line number here only.
+- Contract + test-harness + validator surfaces only. No runtime-side implementation in OpenClaw or any adapter.
+
+### Tasks
+
+- [ ] **`CONTRACT.md` §3 — runtime state.** Add three fields to the `run.json` field list: `builder_stop_reason` (enum `session_closed | process_exit | builder_blocked | builder_failure | unusable_drift`); `builder_stop_classification` (enum `missing_requirements | solvable_blocker | route_drift | unrecoverable | pending`); `builder_stop_evidence_summary` (concise text). Update the paragraph documenting `builder_suspect_since_utc` and `builder_missed_probe_count` to state explicitly they are observation/evidence semantics, not replacement triggers.
+- [ ] **`CONTRACT.md` §7 — replacement clause.** Replace line 316 (`Replace Builder only after direct failure or closure, ... 2 consecutive unanswered explicit status probes after suspect classification.`) with:
+
+  > Replace Builder only after a clear stop signal lands. The clear-stop-signal set is: runtime-reported session closure or process exit (or equivalent terminal status); a Builder-emitted `BLOCKED` or failure JSONL record in `.cdd-runtime/master-chef/builder.jsonl`; QA-detected unusable drift after Master Chef inspection. Probe non-response is observation-only — it updates `builder_last_probe_result`, `builder_missed_probe_count`, and `builder_suspect_since_utc` for evidence but never escalates to replacement on its own. Transport errors during probe attempts set `builder_last_probe_result: unknown` and do not count as a stop signal. While no clear stop signal is present, Master Chef waits — wall-clock running silence, however long, is not a stop signal.
+
+- [ ] **`CONTRACT.md` §7 — `### Builder-stop investigation` subsection.** Insert immediately after the rewritten replacement clause, inside §7, before §8. Body must cover:
+  - **Trigger**: runs only after a clear stop signal; never on suspect classification alone.
+  - **Required evidence reads before routing**: tail of `.cdd-runtime/master-chef/builder.jsonl`; last touched files in the active worktree; last error trace or runtime failure event; active TODO step contract.
+  - **Classification routing** (exactly one of):
+    - `missing_requirements` → revise the step in place via main-session `cdd-plan`-equivalent fix, then resume.
+    - `solvable_blocker` → fix directly in Master Chef; resume same Builder if usable; one recovery replacement if not.
+    - `route_drift` → push concrete findings back to the same Builder.
+    - `unrecoverable` → replace or escalate to `STEP_BLOCKED` via existing recovery.
+  - **Durable evidence writes**: `BUILDER_STOPPED` (with classification, evidence summary, routing) to `master-chef.jsonl`; then `BUILDER_INVESTIGATION_RESOLVED` on non-escalating routing or `BUILDER_INVESTIGATION_ESCALATED` on escalation.
+  - **Accepted trade-offs (final paragraph)**: (a) runtime-alive-deadlock + no `BLOCKED`/failure JSONL → wait until human intervenes per §1; (b) probe transport errors → `builder_last_probe_result: unknown`, never a stop signal. Frame both as accepted costs of evidence-based replacement on large projects.
+- [ ] **`CONTRACT.md` §9 — reporting events.** Extend the report-events list (currently `START` through `RUN_COMPLETE`) with `BUILDER_STOPPED`, `BUILDER_INVESTIGATION_RESOLVED`, `BUILDER_INVESTIGATION_ESCALATED`, each with a one-line description. Update the recovery-routing paragraph to state the §7 Builder-stop investigation stage runs before any `BUILDER_RESTARTED` or `STEP_BLOCKED` is emitted in response to a stop.
+- [ ] **`openclaw/MASTER-CHEF-RUNBOOK.md` recovery-flow narrative** (post-Step-59 sections around lines 519-546 and 651-707). Reference the new §7 subsection and the four classification names — do not restate semantics. Add only OpenClaw-specific mechanics: how the subagent's `builder.jsonl` tail is read in OpenClaw; how runtime closure surfaces as an OpenClaw signal; how Master Chef resumes a same-Builder run after a `solvable_blocker` fix (reuse the existing QA-reject narrative pattern at line 651).
+- [ ] **Three test-harness docs** (`CLAUDE-TEST-HARNESS.md`, `CODEX-TEST-HARNESS.md`, `openclaw/MASTER-CHEF-TEST-HARNESS.md`). Each gains:
+  - **Preflight** assertion: `CONTRACT.md` contains the `### Builder-stop investigation` heading and all four classification names.
+  - **Prompt scenario** (next available letter, e.g. `Prompt F`): the assistant must demonstrate (i) waiting through arbitrary running silence absent a clear stop signal; (ii) running investigation on a simulated runtime closure; (iii) NOT replacing Builder on simulated 45-min silence with no closure.
+  - **UAT block**: the three runtime-state fields and three JSONL events are documented and exercised.
+- [ ] **`scripts/validate_skills.py` — `_check_master_chef_clear_stop_policy()`** (called from `validate_master_chef()` alongside the Step 59 check). Positive: `CONTRACT.md` contains `clear stop signal` in §7, the `### Builder-stop investigation` heading in §7, all four classification names in §7, all three JSONL event names in §9, all three runtime-state field names in §3. Negative: neither `30 minutes of total running silence` nor `2 consecutive unanswered explicit status probes` appears in a sentence that also contains `replace` or `replacement` (sentence-segmented `re.search`).
+- [ ] **`scripts/test_master_chef_artifacts.sh`** — add to the master-chef block, adjacent to Step 59 pointer assertions: `assert_contains` in `CONTRACT.md` for each of `clear stop signal`, `Builder-stop investigation`, `BUILDER_STOPPED`, `BUILDER_INVESTIGATION_RESOLVED`, `BUILDER_INVESTIGATION_ESCALATED`, `builder_stop_reason`, `builder_stop_classification`, `builder_stop_evidence_summary`; `assert_not_contains` for `30 minutes of total running silence` and `2 consecutive unanswered explicit status probes`.
+
+### Implementation notes
+
+- File order: `CONTRACT.md` (§3, §7, §9 in one diff) → `openclaw/MASTER-CHEF-RUNBOOK.md` recovery narrative → three test harnesses → validator + artifact test (both fail before doc edits, pass after).
+- **Step 54 supersession map** (recorded here, not in Step 54): rewritten §7 replacement clause supersedes the Step 54 Constraint at `TODO.md:247-249` ("harder replacement boundary"), the Implementation note at `TODO.md:281-282` ("Keep 30 minutes or 2 missed probes as the harder replacement boundary"), and the UAT items at `TODO.md:296-298` ("Confirm 30 minutes total running silence..."). Step 54's cadence, boot timeout, and suspect-classification soft threshold are preserved verbatim.
+- **Open Decision recap**: #1 = A is the only sanctioned clear-stop-signal set — do not silently expand (new candidate signals = follow-up TODO step); #2 = F1+F2 stay combined here (F1 alone is incoherent); #3 = investigation lives inside §7 (not §7.5).
+- Validator negative regex: match each forbidden phrase only when it appears in a sentence that also contains `replace` or `replacement`; same numbers may legitimately appear in non-replacement narrative. Sentence-segment before `re.search` to avoid false positives.
+- §3 keeps the existing `builder_missed_probe_count` and `builder_suspect_since_utc` field lines (runtime-state durability still uses them); only the surrounding semantic paragraph changes.
+- OpenClaw runbook edit: do not delete the existing same-step recovery narrative around `solvable_blocker`-equivalent fixes; reuse the QA-reject narrative pattern at line 651.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- `CONTRACT.md` §7 replacement clause names the three clear-stop signals explicitly, marks probe non-response as observation-only, marks transport errors as `unknown` (never stop signals), and says wall-clock running silence is not a stop signal.
+- `CONTRACT.md` §7 contains the `### Builder-stop investigation` subsection with: trigger (only after clear stop signal); evidence-reading requirement (four sources); four classifications with routing; durable-write requirement (`BUILDER_STOPPED` plus one of `BUILDER_INVESTIGATION_RESOLVED` / `BUILDER_INVESTIGATION_ESCALATED`); two accepted-trade-off paragraphs at the end.
+- `CONTRACT.md` §3 lists `builder_stop_reason`, `builder_stop_classification`, `builder_stop_evidence_summary` with enumerated values; semantic paragraph re-scopes `builder_suspect_since_utc` and `builder_missed_probe_count` as observation/evidence.
+- `CONTRACT.md` §9 event list includes the three new events; recovery-routing paragraph references the §7 investigation stage.
+- 5-min cadence, 10-min boot timeout, 20-min suspect threshold unchanged in §7.
+- `openclaw/MASTER-CHEF-RUNBOOK.md` recovery narrative references the new §7 subsection + four classification names with OpenClaw-only mechanics (`builder.jsonl` tail, runtime closure surfacing, same-Builder resume).
+- Three test-harness docs each carry the new preflight, prompt scenario, and UAT block.
+- `validate_skills.py` (default + `--include-legacy-prose`) and `test_master_chef_artifacts.sh` all pass.
+- Validator fails on regression of: `clear stop signal` phrasing; investigation subsection heading; any classification name; any JSONL event name; any runtime-state field name; or on reappearance of `30 minutes of total running silence` / `2 consecutive unanswered explicit status probes` in a sentence containing `replace` / `replacement`.
+- `TODO.md:233-299` (Step 54 body) unchanged.

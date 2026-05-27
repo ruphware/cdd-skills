@@ -247,6 +247,8 @@ Runtime adapters may use a different location only if they document that choice 
 
 ## 7) Kickoff and Builder lifecycle
 
+<!-- canonical: Builder lifecycle policy (cadence, boot timeout, suspect classification, replacement) -->
+
 Before implementation starts, present one kickoff approval that covers:
 
 - proposed next action

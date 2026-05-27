@@ -223,31 +223,11 @@ Use the same split-decision rule before Builder handoff and again after any non-
 
 ### Builder monitoring evidence
 
-Use runtime-native Builder status surfaces before indirect repo heuristics.
+Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. This RUNBOOK section documents the operator-facing checklist that implements that policy.
 
+- Use runtime-native Builder status surfaces before indirect repo heuristics.
 - If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does.
 - In Codex- or Claude-style adapters, direct status usually means final completion/failure notifications, explicit progress replies, or runtime-reported closure/errors, not live thinking traces.
-- Treat Builder monitoring as two phases: boot/readiness first, running-silence monitoring second.
-- Immediately after spawn, record `builder_phase: booting`. A returned Builder handle or session key is not enough to prove that the child has loaded its usable repo and tool context.
-- In Codex- or Claude-style adapters, the preferred readiness signal is one early Builder ACK that confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or blocked.
-- Use this shared boot prompt:
-
-  ```text
-  Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.
-  ```
-
-- A runtime-reported child-started signal or a Builder-authored `BUILDER_READY` record in `builder.jsonl` is also acceptable readiness evidence when the adapter can expose it coherently.
-- Minimal `BUILDER_READY` evidence should include `builder_session_key`, `active_worktree_path`, `active_step`, `tool_access`, and `mcp_access`.
-- During quiet periods, report `running` or `unknown` rather than `stale` unless direct failure evidence exists.
-- A timed-out wait, a "no agent completed yet" result, or one unanswered status request is still inconclusive unless the runtime also reports closure or failure.
-- A returned session key, a missing diff, an empty `builder.jsonl`, or a short wait with no completion is not enough to justify Builder replacement.
-- While Builder is booting, perform active checks at least every 5 minutes while Master Chef is waiting. An adapter may probe earlier when that is cheap and coherent.
-- If no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`, send one final explicit boot-status probe before classifying the current Builder attempt as failed to start, blocked, or replaceable.
-- While Builder is running, perform active checks at least every 5 minutes while Master Chef is waiting. Earlier probes are fine, but not fewer.
-- If 20 minutes pass without direct Builder proof of life after `builder_phase` reaches `running`, set `builder_suspect_since_utc`, write `builder_last_probe_at_utc` plus `builder_last_probe_result`, increment `builder_missed_probe_count` if the probe is unanswered, and send an explicit status probe instead of replacing immediately.
-- Reset `builder_suspect_since_utc` and `builder_missed_probe_count` on any coherent direct Builder reply.
-- Replace Builder only after 30 minutes of total running silence or 2 consecutive unanswered explicit probes after suspect classification, unless direct failure, closure, blocker, deadlock, or another explicit recovery condition arrives sooner.
-- If Builder replies with a coherent discovery note, partial status, or other non-final report, treat that as proof of life and decide whether the issue is route drift or normal progress rather than declaring the Builder dead.
 - Treat a failed or unsupported step-boundary compaction attempt as replacement evidence only when the runtime also shows explicit failure, closure, deadlock, unusable drift, or inability to continue safely.
 
 Exact relaunch instructions must include:

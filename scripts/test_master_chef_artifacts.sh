@@ -86,6 +86,31 @@ done
 assert_contains "$SHARED_ROOT/RUNBOOK.md" "$runbook_worktree_root"
 assert_not_contains "$SHARED_ROOT/RUNBOOK.md" "$legacy_worktree_root"
 assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
+
+# Step 59: Builder lifecycle policy lives in CONTRACT.md §7 only. Every
+# satellite must point there, and the previously-duplicated `Builder timing
+# summary` bullet group plus the openclaw README three-bullet ladder must be
+# gone.
+echo "[MasterChefArtifacts] INFO BuilderLifecycleConsolidation file={CONTRACT.md §7}"
+assert_contains "$SHARED_ROOT/CONTRACT.md" "<!-- canonical: Builder lifecycle policy"
+for rel in \
+  SKILL.md \
+  RUNBOOK.md \
+  RUNTIME-CAPABILITIES.md \
+  CLAUDE-ADAPTER.md \
+  CLAUDE-RUNBOOK.md \
+  CODEX-ADAPTER.md \
+  CODEX-RUNBOOK.md \
+  openclaw/README.md \
+  openclaw/MASTER-CHEF-RUNBOOK.md; do
+  if ! grep -E "CONTRACT\.md\`?[[:space:]]*§7" "$SHARED_ROOT/$rel" >/dev/null; then
+    echo "Expected 'CONTRACT.md §7' pointer in $SHARED_ROOT/$rel" >&2
+    exit 1
+  fi
+done
+assert_not_contains "$SHARED_ROOT/openclaw/MASTER-CHEF-RUNBOOK.md" "Builder timing summary"
+assert_not_contains "$SHARED_ROOT/openclaw/README.md" "30 minutes of total running silence"
+
 echo "[MasterChefArtifacts] INFO OpenclawAdapterFiles root={$ROOT_DIR}"
 for rel in \
   "cdd-master-chef/openclaw/README.md" \

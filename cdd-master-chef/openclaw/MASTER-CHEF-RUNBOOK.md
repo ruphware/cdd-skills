@@ -457,6 +457,8 @@ Only stop autonomy when:
 
 ## 7) Direct Builder check policy
 
+Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. This section documents the OpenClaw-specific operator surfaces, lease behavior, and recovery mechanics that implement that policy.
+
 There is no watchdog cron.
 
 Master Chef checks Builder health directly in the main session when one of these is true:
@@ -485,7 +487,6 @@ Then inspect:
 
 While Master Chef is actively waiting on Builder:
 
-- perform Builder checks at least every 5 minutes
 - keep `builder_last_probe_at_utc` and `builder_last_probe_result` current when a probe is attempted
 - use direct Builder status, progress, or closure evidence before indirect repo heuristics
 - do not invent timer-based heartbeat chatter or a second control loop
@@ -497,20 +498,9 @@ If healthy:
 - update runtime/log evidence only when that check adds meaningful operational value
 - do not claim a parent-visible Builder fullness meter or a manual Builder compaction command unless the active OpenClaw surface actually exposes one
 
-If Builder is still booting and no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`:
+When the canonical policy in `CONTRACT.md` §7 authorizes Builder replacement, execute the OpenClaw recovery sequence:
 
-- send one final explicit boot-status probe
-- if that still yields no readiness evidence, treat the current Builder attempt as failed to start, blocked, or replaceable
-
-If Builder is running and 20 minutes pass without direct proof of life:
-
-- set `builder_suspect_since_utc`
-- send an explicit status probe instead of replacing immediately
-- increment `builder_missed_probe_count` only when that probe is unanswered
-
-If Builder is running and either 30 minutes of total running silence or 2 consecutive unanswered explicit probes have accumulated since suspect classification:
-
-- replace it quickly with a fresh Builder run for the same step
+- replace the Builder quickly with a fresh subagent run for the same step
 - increment `builder_restart_count`
 - renew the lease
 - update runtime files and logs
@@ -547,13 +537,7 @@ Blocked-step recovery procedure:
 11. Re-inspect TODO state and continue the same run from the same repaired parent step or the first runnable child step, as chosen by the continuation review.
 12. If the outcome is `hard_stop`, keep the run stopped and report the exact limit plus the decisions Master Chef made before stopping.
 
-Default thresholds:
-
-- Builder active-check cadence: at least every 5 minutes while Master Chef is actively waiting
-- Builder boot timeout: 10 minutes without readiness evidence, after one final explicit boot-status probe
-- Builder running soft-stale threshold: 20 minutes without direct proof of life, which triggers suspect classification plus an explicit probe
-- Builder running hard-stale threshold: 30 minutes of total running silence or 2 consecutive unanswered explicit probes after suspect classification
-- Builder replacement budget before deadlock: 2 failed replacements without progress
+Default thresholds for cadence, boot timeout, suspect classification, and replacement live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. The Builder replacement budget before deadlock is 2 failed replacements without forward progress.
 
 ---
 

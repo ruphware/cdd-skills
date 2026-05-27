@@ -107,23 +107,12 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 
 ## 8) Builder monitoring
 
+- Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. This section documents the Claude-specific operator surfaces that implement that policy.
 - The current Claude adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
 - Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Claude exposes them.
 - Claude has separate subagent contexts, but this runbook should not claim any trustworthy parent-visible exact subagent fullness percentage or precise token-left meter.
 - Treat step-start compaction and context visibility separately: Master Chef may ask Builder to run `/compact` when that surface is available, and otherwise should rely on Claude auto-compaction or native context management without inventing a numeric threshold.
-- Treat Builder monitoring as two phases: boot/readiness first, running-silence monitoring second.
-- A returned spawn handle or `builder_session_key` is spawn evidence only. It is not enough to prove that Builder has started operating.
-- Keep `builder_phase: booting` until Claude surfaces a runtime child-started signal, a coherent Builder readiness ACK, or a Builder-authored `BUILDER_READY` record in `builder.jsonl`.
-- Use the shared boot prompt: `Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.`
-- The preferred readiness ACK confirms the active worktree path, active TODO step, and whether required tool or MCP surfaces are available or already blocked.
-- A quiet wait with no completion means `running` or `unknown`, not `dead`.
-- One unanswered direct status request is still inconclusive unless Claude also reports closure or failure.
-- Do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
-- Keep active Builder checks on at least a 5-minute cadence while Master Chef is waiting. An earlier probe is allowed when that is cheap and coherent in the active Claude surface.
-- If no readiness signal arrives within 10 minutes of `builder_spawn_requested_at_utc`, send one final explicit boot-status probe before classifying the current Builder attempt as failed to start, blocked, or replaceable.
-- If 20 minutes pass without direct Builder proof of life after `builder_phase` reaches `running`, set `builder_suspect_since_utc`, write `builder_last_probe_at_utc` plus `builder_last_probe_result`, and send an explicit status request instead of replacing immediately.
-- Reset `builder_suspect_since_utc` and `builder_missed_probe_count` on any coherent direct Builder reply.
-- Replace Builder only after 30 minutes of total running silence, 2 consecutive unanswered explicit probes after suspect classification, or earlier direct failure, closure, blocker, deadlock, or worktree-safety evidence.
+- Address the active Builder subagent through the same agent surface that spawned it (`--agent` / `@`-mention / configured agent); a quiet wait with no completion means `running` or `unknown`, not `dead`; do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
 - If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
 - If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 

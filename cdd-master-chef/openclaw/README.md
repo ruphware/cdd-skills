@@ -196,11 +196,8 @@ Reporting is OpenClaw-native and session-native:
 
 Builder-check policy:
 
+- Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in CONTRACT.md §7 — Kickoff and Builder lifecycle.
 - no watchdog cron or timer-based heartbeat loop
-- Master Chef checks runtime files, Builder health, and current progress directly in the main session on at least a 5-minute cadence while it is actively waiting
-- 10 minutes without readiness is the boot-timeout boundary for the current Builder attempt, after one final explicit boot-status probe
-- 20 minutes without direct proof of life while Builder is running is a soft stale threshold that triggers suspect classification plus an explicit status probe rather than immediate replacement
-- 30 minutes of total running silence or 2 consecutive unanswered explicit probes is the hard stale boundary that enters replacement or blocked recovery
 - do not use Builder session resurrection as the normal continuation or recovery path
 - if 2 replacement attempts fail without forward progress, stop the run instead of limping on
 - lifecycle reporting still happens in-session even without a watchdog
