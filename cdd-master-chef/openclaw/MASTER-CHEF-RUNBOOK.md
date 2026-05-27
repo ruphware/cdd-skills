@@ -498,7 +498,16 @@ If healthy:
 - update runtime/log evidence only when that check adds meaningful operational value
 - do not claim a parent-visible Builder fullness meter or a manual Builder compaction command unless the active OpenClaw surface actually exposes one
 
-When the canonical policy in `CONTRACT.md` §7 authorizes Builder replacement, execute the OpenClaw recovery sequence:
+When a clear stop signal lands per `CONTRACT.md` §7, Master Chef runs the §7 Builder-stop investigation first; only the `unrecoverable` classification enters the OpenClaw replacement sequence below.
+
+OpenClaw-specific investigation mechanics:
+
+- read the `builder.jsonl` tail in the active worktree's `.cdd-runtime/master-chef/`; it records Builder-emitted `BLOCKED` / failure events plus final-status payloads from the OpenClaw subagent surface
+- treat OpenClaw runtime closure as the absence of an active subagent session for `builder_session_key`; confirm via the native session-status surface before declaring the session closed
+- on `solvable_blocker`, fix the proximate cause in Master Chef and resume the same OpenClaw subagent using the QA-reject narrative pattern at the bottom of §9; spawn one recovery replacement only when the subagent is no longer usable
+- update `builder_stop_reason`, `builder_stop_classification`, and `builder_stop_evidence_summary` in `run.json` **before** appending the §9 `BUILDER_INVESTIGATION_*` event
+
+When investigation classifies as `unrecoverable`, or when QA otherwise authorizes Builder replacement, execute the OpenClaw recovery sequence:
 
 - replace the Builder quickly with a fresh subagent run for the same step
 - increment `builder_restart_count`

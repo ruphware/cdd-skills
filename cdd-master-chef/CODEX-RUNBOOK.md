@@ -101,12 +101,9 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 ## 7) Builder monitoring
 
 - Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. This section documents the Codex-specific operator surfaces that implement that policy.
-- The current Codex adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
-- Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Codex exposes them.
-- The current Codex adapter should not claim a clean official parent-visible subagent context meter, exact token-left budget, or other precise fullness percentage for Master Chef decisions.
-- Treat step-start compaction and context visibility separately: Master Chef may try a supported compaction surface if one ever exists in the active Codex path, but the current repo docs do not document one today.
-- Address the active Builder agent through the same named agent (built-in `worker` / `explorer` / project-scoped custom) that spawned it; a `wait` result that says no agent has completed yet means `running` or `unknown`, not `dead`; do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
-- If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
+- The Codex adapter does not expose live Builder thinking or streaming partial output; direct surfaces are limited to final completion / failure notifications, explicit status replies, and runtime-reported closure or error events.
+- Do not claim a parent-visible subagent context meter, exact token-left budget, or precise fullness percentage. For step-start compaction, try any supported compaction surface the active Codex path exposes; current repo docs do not document one today.
+- Address the active Builder agent through the same named agent (built-in `worker` / `explorer` / project-scoped custom) that spawned it; a `wait` result that says no agent has completed yet means `running` or `unknown`, not `dead`; do not mark Builder stale on a missing diff, an empty `builder.jsonl`, or one short quiet window.
 - If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 
 ## 8) Blocked paths

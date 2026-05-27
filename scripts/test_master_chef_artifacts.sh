@@ -111,6 +111,38 @@ done
 assert_not_contains "$SHARED_ROOT/openclaw/MASTER-CHEF-RUNBOOK.md" "Builder timing summary"
 assert_not_contains "$SHARED_ROOT/openclaw/README.md" "30 minutes of total running silence"
 
+# Step 60: Builder replacement requires a clear stop signal; investigation
+# stage, JSONL events, and runtime-state fields are documented in CONTRACT.md.
+echo "[MasterChefArtifacts] INFO ClearStopPolicy file={CONTRACT.md}"
+for phrase in \
+  "clear stop signal" \
+  "Builder-stop investigation" \
+  "BUILDER_STOPPED" \
+  "BUILDER_INVESTIGATION_RESOLVED" \
+  "BUILDER_INVESTIGATION_ESCALATED" \
+  "builder_stop_reason" \
+  "builder_stop_classification" \
+  "builder_stop_evidence_summary" \
+  "missing_requirements" \
+  "solvable_blocker" \
+  "route_drift" \
+  "unrecoverable"; do
+  assert_contains "$SHARED_ROOT/CONTRACT.md" "$phrase"
+done
+# Silence- and probe-count-based replacement triggers must not return: forbid
+# the phrases when they co-occur with `Replace` / `replacement` on the same
+# grep line, so legitimate non-replacement narrative is not false-flagged.
+for forbidden in \
+  "30 minutes of total running silence" \
+  "2 consecutive unanswered explicit status probes" \
+  "2 consecutive unanswered explicit probes"; do
+  if grep -E "(Replace|replacement)" "$SHARED_ROOT/CONTRACT.md" \
+      | grep -F -- "$forbidden" >/dev/null; then
+    echo "CONTRACT.md reintroduces silence-based replacement trigger '$forbidden'" >&2
+    exit 1
+  fi
+done
+
 echo "[MasterChefArtifacts] INFO OpenclawAdapterFiles root={$ROOT_DIR}"
 for rel in \
   "cdd-master-chef/openclaw/README.md" \

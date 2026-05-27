@@ -225,9 +225,8 @@ Use the same split-decision rule before Builder handoff and again after any non-
 
 Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. This RUNBOOK section documents the operator-facing checklist that implements that policy.
 
-- Use runtime-native Builder status surfaces before indirect repo heuristics.
-- If the runtime does not expose live Builder reasoning or guaranteed streaming partial output, do not pretend it does.
-- In Codex- or Claude-style adapters, direct status usually means final completion/failure notifications, explicit progress replies, or runtime-reported closure/errors, not live thinking traces.
+- Use runtime-native Builder status surfaces before indirect repo heuristics; do not claim live Builder reasoning or streaming partial output when the runtime does not expose them.
+- In Codex- or Claude-style adapters, direct status usually means final completion / failure notifications, explicit progress replies, or runtime-reported closure / error events, not live thinking traces.
 - Treat a failed or unsupported step-boundary compaction attempt as replacement evidence only when the runtime also shows explicit failure, closure, deadlock, unusable drift, or inability to continue safely.
 
 Exact relaunch instructions must include:

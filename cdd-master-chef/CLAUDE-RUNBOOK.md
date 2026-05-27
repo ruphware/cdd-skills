@@ -108,12 +108,9 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 ## 8) Builder monitoring
 
 - Builder-monitoring cadence, boot timeout, suspect classification, and replacement policy live in `CONTRACT.md` §7 — Kickoff and Builder lifecycle. This section documents the Claude-specific operator surfaces that implement that policy.
-- The current Claude adapter should not claim live access to Builder thinking or guaranteed streaming partial output.
-- Direct surfaces in this adapter are limited to final completion/failure notifications, explicit status replies, and runtime-reported closure/errors when Claude exposes them.
-- Claude has separate subagent contexts, but this runbook should not claim any trustworthy parent-visible exact subagent fullness percentage or precise token-left meter.
-- Treat step-start compaction and context visibility separately: Master Chef may ask Builder to run `/compact` when that surface is available, and otherwise should rely on Claude auto-compaction or native context management without inventing a numeric threshold.
-- Address the active Builder subagent through the same agent surface that spawned it (`--agent` / `@`-mention / configured agent); a quiet wait with no completion means `running` or `unknown`, not `dead`; do not mark Builder stale only because there is no diff yet, `builder.jsonl` is still empty, or one short wait window passed quietly.
-- If Builder sends any coherent status or discovery reply, treat that as proof of life and decide whether the issue is route drift or normal progress, not Builder death.
+- The Claude adapter does not expose live Builder thinking or streaming partial output; direct surfaces are limited to final completion / failure notifications, explicit status replies, and runtime-reported closure or error events.
+- Claude has separate subagent contexts; do not claim a trustworthy parent-visible exact subagent fullness percentage or precise token-left meter. For step-start compaction, use `/compact` when the active Claude surface exposes it; otherwise rely on Claude auto-compaction or native context management rather than inventing a numeric threshold.
+- Address the active Builder subagent through the same agent surface that spawned it (`--agent` / `@`-mention / configured agent); do not mark it stale on a missing diff, an empty `builder.jsonl`, or one short quiet window.
 - If an older Builder is no longer needed, preserve lineage and durable evidence, then close or purge that child promptly so only one live Builder remains visible.
 
 ## 9) Blocked paths

@@ -44,6 +44,18 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 
 - [ ] The run step budget is prepared as either a positive integer step count or `until_blocked_or_complete`.
 
+- [ ] CONTRACT.md carries the Builder-stop investigation contract (canonical anchor, `### Builder-stop investigation` subsection, 4 classifications in §7, 3 JSONL events in §9, 3 runtime-state fields in §3):
+  ```bash
+  grep -F "canonical: Builder lifecycle policy" cdd-master-chef/CONTRACT.md
+  grep -F "### Builder-stop investigation" cdd-master-chef/CONTRACT.md
+  for token in \
+    missing_requirements solvable_blocker route_drift unrecoverable \
+    BUILDER_STOPPED BUILDER_INVESTIGATION_RESOLVED BUILDER_INVESTIGATION_ESCALATED \
+    builder_stop_reason builder_stop_classification builder_stop_evidence_summary; do
+    grep -F "$token" cdd-master-chef/CONTRACT.md
+  done
+  ```
+
 ---
 
 ## 2) Prompt sequence
@@ -178,11 +190,30 @@ Keep the same TODO step, update runtime state, and report BUILDER_RESTARTED.
 ```
 
 - [ ] Expected:
-  - stale means the hard no-signal boundary was crossed rather than just one short quiet period
+  - "stale" alone is not a replacement trigger; replacement requires a clear stop signal from CONTRACT.md §7 (runtime closure or process exit, Builder-emitted `BLOCKED` / failure JSONL, or QA-detected unusable drift)
   - Builder recovery happens in the main session
   - stale recovery prefers fresh replacement over session resurrection
   - runtime state is updated
   - no duplicate control loop is created
+
+### Prompt F1 - Builder-stop investigation
+
+```text
+/cdd-master-chef TEST ONLY: the Builder subagent has been running quietly for 45 minutes with no diff, no new entries in builder.jsonl, and no completion event. The OpenClaw runtime continues to report the Builder session as alive.
+Explain whether Master Chef should replace the Builder now and what the clear-stop-signal set is.
+
+Then assume the OpenClaw runtime closes the Builder subagent session 5 minutes later with an error.
+Explain what the Builder-stop investigation reads from the active worktree, what the four classifications are, how each routes, what JSONL events are emitted, and what runtime-state fields are updated.
+```
+
+- [ ] Expected:
+  - Master Chef does not replace Builder during the 45-minute silence; wall-clock running silence is not a stop signal
+  - clear-stop-signal set named: runtime-reported session closure or process exit; Builder-emitted `BLOCKED` / failure JSONL in `.cdd-runtime/master-chef/builder.jsonl`; QA-detected unusable drift
+  - probe non-response is observation-only; transport errors set `builder_last_probe_result: unknown` and never count as stop signals
+  - runtime-alive deadlock is acknowledged as an accepted cost; §1 human intervention is the escape hatch
+  - on runtime closure, investigation reads `builder.jsonl` tail in the active worktree's `.cdd-runtime/master-chef/`, last touched files in the active worktree, last error trace from the OpenClaw subagent surface, and active TODO step contract before routing
+  - investigation classifies as one of `missing_requirements` / `solvable_blocker` / `route_drift` / `unrecoverable` with §7 routing for each (only `unrecoverable` enters the OpenClaw replacement sequence), updates `builder_stop_reason` / `builder_stop_classification` / `builder_stop_evidence_summary` in `run.json`, and appends `BUILDER_STOPPED` then `BUILDER_INVESTIGATION_RESOLVED` (non-escalating) or `BUILDER_INVESTIGATION_ESCALATED` (escalating) to `master-chef.jsonl`
+  - on `solvable_blocker`, Master Chef fixes the proximate cause directly and resumes the same OpenClaw subagent when usable; one recovery replacement otherwise
 
 ### Prompt G - Duplicate-run prevention
 
@@ -332,7 +363,8 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] The active worktree environment was bootstrapped and evidenced there before Builder or `hard_gate` validation relied on it.
 - [ ] `context-summary.md` was created and used as the Master Chef compaction checkpoint.
 - [ ] Duplicate-run prevention worked.
-- [ ] Builder recovery stayed inside the main session.
+- [ ] Builder recovery stayed inside the main session, with replacement gated on the CONTRACT.md §7 clear-stop-signal set and wall-clock running silence rejected as a stop signal.
+- [ ] Builder-stop investigation ran on clear stop signals, classified each stop as `missing_requirements` / `solvable_blocker` / `route_drift` / `unrecoverable`, emitted `BUILDER_STOPPED` plus the appropriate `BUILDER_INVESTIGATION_*` event, and updated `builder_stop_reason` / `builder_stop_classification` / `builder_stop_evidence_summary` in `run.json`.
 - [ ] Master Chef chose the correct routing path for the repo state.
 - [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
 - [ ] Normal next-step continuation reused the same Builder first, used native-context fallback when manual Builder compaction was unsupported, and replaced Builder only under defined recovery conditions.

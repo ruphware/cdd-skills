@@ -27,6 +27,18 @@ Goal: validate **explicit Builder delegation -> current-session settings plus Bu
 
 - [ ] If the repo uses custom Codex agents, they live under `.codex/agents/`.
 
+- [ ] CONTRACT.md carries the Builder-stop investigation contract (canonical anchor, `### Builder-stop investigation` subsection, 4 classifications in §7, 3 JSONL events in §9, 3 runtime-state fields in §3):
+  ```bash
+  grep -F "canonical: Builder lifecycle policy" cdd-master-chef/CONTRACT.md
+  grep -F "### Builder-stop investigation" cdd-master-chef/CONTRACT.md
+  for token in \
+    missing_requirements solvable_blocker route_drift unrecoverable \
+    BUILDER_STOPPED BUILDER_INVESTIGATION_RESOLVED BUILDER_INVESTIGATION_ESCALATED \
+    builder_stop_reason builder_stop_classification builder_stop_evidence_summary; do
+    grep -F "$token" cdd-master-chef/CONTRACT.md
+  done
+  ```
+
 ## 2) Prompt sequence
 
 ### Prompt A - Inspection and explicit Builder selection
@@ -143,9 +155,9 @@ Explain what direct Builder status the Codex adapter can actually observe, what 
   - Master Chef keeps active checks on at least a 5-minute cadence while waiting
   - a `wait` timeout or one unanswered status request is still treated as inconclusive unless Codex also reports closure or failure
   - 20 minutes without direct Builder proof of life is treated as a soft stale threshold that triggers an explicit probe rather than immediate replacement
-  - 30 minutes of total running silence or 2 consecutive unanswered explicit probes is the hard replacement boundary unless direct failure evidence arrives sooner
+  - wall-clock running silence is not a stop signal; Master Chef keeps waiting absent a clear stop signal per CONTRACT.md §7
   - a coherent status or discovery reply counts as proof of life even if the step is not finished yet
-  - replacement requires direct failure, closure, explicit blocker, or crossing the hard no-signal boundary
+  - replacement requires a clear stop signal from CONTRACT.md §7: runtime-reported session closure or process exit, a Builder-emitted BLOCKED or failure JSONL record, or QA-detected unusable drift
 
 ### Prompt I - Builder boot readiness
 
@@ -197,6 +209,24 @@ Explain how Codex Master Chef should report STEP_BLOCKED, review what completed 
   - continuation reuses the same Builder first for the same repaired parent step or the next smaller actionable child step, replacing only when defined recovery conditions require it
   - stopping is reserved for hard technical or physical limits
 
+### Prompt L - Builder-stop investigation
+
+```text
+The Builder has been running quietly for 45 minutes with no diff, no new entries in builder.jsonl, and no completion event. The Codex runtime continues to report the Builder agent as alive.
+Explain whether Master Chef should replace the Builder now and what the clear-stop-signal set is.
+
+Then assume the Codex runtime closes the agent session 5 minutes later with an error.
+Explain what the Builder-stop investigation reads, what the four classifications are, how each routes, what JSONL events are emitted, and what runtime-state fields are updated.
+```
+
+- [ ] Expected:
+  - Master Chef does not replace Builder during the 45-minute silence; wall-clock running silence is not a stop signal
+  - clear-stop-signal set named: runtime-reported session closure or process exit; Builder-emitted `BLOCKED` / failure JSONL in `.cdd-runtime/master-chef/builder.jsonl`; QA-detected unusable drift
+  - probe non-response is observation-only; transport errors set `builder_last_probe_result: unknown` and never count as stop signals
+  - runtime-alive deadlock is acknowledged as an accepted cost; §1 human intervention is the escape hatch
+  - on runtime closure, investigation reads `builder.jsonl` tail, last touched files in the active worktree, last error trace, and active TODO step contract before routing
+  - investigation classifies as one of `missing_requirements` / `solvable_blocker` / `route_drift` / `unrecoverable` with §7 routing for each, updates `builder_stop_reason` / `builder_stop_classification` / `builder_stop_evidence_summary` in `run.json`, and appends `BUILDER_STOPPED` then `BUILDER_INVESTIGATION_RESOLVED` (non-escalating) or `BUILDER_INVESTIGATION_ESCALATED` (escalating) to `master-chef.jsonl`
+
 ### Prompt K - Final mission report
 
 ```text
@@ -228,7 +258,8 @@ Describe the final mission report Master Chef should emit so the human can see c
 - [ ] Recursive default fan-out was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
 - [ ] The active worktree was treated as branch-backed but not usable for Builder or `hard_gate` validation until repo-native bootstrap evidence marked it `env_ready`.
-- [ ] Long-thinking Builder monitoring used direct evidence instead of guessing.
+- [ ] Long-thinking Builder monitoring used direct evidence instead of guessing, with wall-clock running silence rejected as a stop signal and replacement gated on the CONTRACT.md §7 clear-stop-signal set.
+- [ ] Builder-stop investigation ran on clear stop signals, classified each stop as `missing_requirements` / `solvable_blocker` / `route_drift` / `unrecoverable`, emitted `BUILDER_STOPPED` plus the appropriate `BUILDER_INVESTIGATION_*` event, and updated `builder_stop_reason` / `builder_stop_classification` / `builder_stop_evidence_summary` in `run.json`.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
 - [ ] Normal next-step continuation reused the same Builder first, attempted step-start compaction only when supported, and used native-context or auto-compaction fallback when manual compaction was unavailable.
 - [ ] Replacement or direct completion left only one live Builder visible after older child sessions were closed or purged with lineage and logs preserved.

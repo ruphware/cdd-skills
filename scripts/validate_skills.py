@@ -200,41 +200,48 @@ MASTER_CHEF_CANONICAL_ANCHOR = (
 # the filename; both forms are accepted as a pointer to the canonical surface.
 MASTER_CHEF_POINTER_RE = re.compile(r"`?CONTRACT\.md`?\s*§7")
 
-# Threshold-restatement detector: a sentence pairing one of the monitoring
-# numbers with policy vocabulary. Run on sentence-segmented prose after
-# stripping fenced code blocks, so JSON examples and shell snippets in
-# satellite docs do not produce false positives.
-MASTER_CHEF_THRESHOLD_SENTENCE_RE = re.compile(
-    r"\b(5|10|20|30)\s*minutes?\b[^.\n]*"
-    r"\b(cadence|boot|suspect|silence|replace|replacement|probe)\b",
-    re.IGNORECASE,
-)
-MASTER_CHEF_LEGACY_LADDER_RE = re.compile(
-    r"5\s*/\s*10\s*/\s*20[\w-]*\s*/\s*30[\w-]*\s*(?:monitoring\s+)?ladder",
-    re.IGNORECASE,
-)
-MASTER_CHEF_PROBES_PHRASE_RE = re.compile(
-    r"2\s+consecutive\s+unanswered\s+explicit\s+(?:status\s+)?probes",
-    re.IGNORECASE,
+# Each forbidden pattern is detected after stripping fenced code blocks so JSON
+# examples and shell snippets in satellite docs do not produce false positives.
+# The threshold detector pairs `(5|10|20|30) minutes?` with policy vocabulary
+# inside one sentence (no period crossed).
+MASTER_CHEF_FENCED_CODE_RE = re.compile(r"```.*?```", re.S)
+MASTER_CHEF_FORBIDDEN_PATTERNS = (
+    (
+        re.compile(
+            r"\b(5|10|20|30)\s*minutes?\b[^.\n]*"
+            r"\b(cadence|boot|suspect|silence|replace|replacement|probe)\b",
+            re.IGNORECASE,
+        ),
+        "restates Builder threshold (this lives in CONTRACT.md §7 only)",
+    ),
+    (
+        re.compile(
+            r"5\s*/\s*10\s*/\s*20[\w-]*\s*/\s*30[\w-]*\s*(?:monitoring\s+)?ladder",
+            re.IGNORECASE,
+        ),
+        "restates the 5/10/20-soft/30-hard monitoring ladder",
+    ),
+    (
+        re.compile(
+            r"2\s+consecutive\s+unanswered\s+explicit\s+(?:status\s+)?probes",
+            re.IGNORECASE,
+        ),
+        "restates `2 consecutive unanswered explicit probes`",
+    ),
 )
 MASTER_CHEF_TIMING_SUMMARY_RE = re.compile(
     r"(?mi)^\s*(?:#+\s*)?Builder timing summary\b"
 )
 
-MASTER_CHEF_FENCED_CODE_RE = re.compile(r"```.*?```", re.S)
-
 
 def _check_master_chef_consolidation(package_root: Path) -> None:
     """Step 59: enforce single-canonical-surface Builder lifecycle policy.
 
-    Asserts:
-      - CONTRACT.md §7 carries the canonical-surface anchor comment.
-      - Each of the nine satellite docs contains a `CONTRACT.md §7` pointer.
-      - No satellite restates the 5/10/20/30-minute thresholds as policy.
-      - No satellite restates the `5/10/20-soft/30-hard` legacy ladder shape.
-      - No satellite restates `2 consecutive unanswered explicit probes`.
-      - The OpenClaw runbook no longer carries a `Builder timing summary`
-        heading or bullet group.
+    Asserts: CONTRACT.md §7 carries the canonical-surface anchor; each
+    satellite contains a `CONTRACT.md §7` pointer; no satellite restates the
+    5/10/20/30-minute thresholds, the `5/10/20-soft/30-hard` legacy ladder, or
+    `2 consecutive unanswered explicit probes`; the OpenClaw runbook no
+    longer carries a `Builder timing summary` heading or bullet group.
     """
     contract_path = package_root / "CONTRACT.md"
     contract_text = contract_path.read_text(encoding="utf-8")
@@ -250,26 +257,119 @@ def _check_master_chef_consolidation(package_root: Path) -> None:
         )
 
         scan = MASTER_CHEF_FENCED_CODE_RE.sub("", text)
-        threshold_hit = MASTER_CHEF_THRESHOLD_SENTENCE_RE.search(scan)
-        assert threshold_hit is None, (
-            f"{doc_path} restates Builder threshold "
-            f"({threshold_hit.group(0)!r}); this lives in CONTRACT.md §7 only"
-        )
-        ladder_hit = MASTER_CHEF_LEGACY_LADDER_RE.search(scan)
-        assert ladder_hit is None, (
-            f"{doc_path} restates the 5/10/20-soft/30-hard monitoring ladder"
-        )
-        probes_hit = MASTER_CHEF_PROBES_PHRASE_RE.search(scan)
-        assert probes_hit is None, (
-            f"{doc_path} restates `2 consecutive unanswered explicit probes`"
-        )
+        for pattern, label in MASTER_CHEF_FORBIDDEN_PATTERNS:
+            hit = pattern.search(scan)
+            assert hit is None, f"{doc_path} {label}: {hit.group(0)!r}"
 
     openclaw_runbook = package_root / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
     openclaw_text = openclaw_runbook.read_text(encoding="utf-8")
-    timing_summary_hit = MASTER_CHEF_TIMING_SUMMARY_RE.search(openclaw_text)
-    assert timing_summary_hit is None, (
+    assert MASTER_CHEF_TIMING_SUMMARY_RE.search(openclaw_text) is None, (
         f"{openclaw_runbook} retains a `Builder timing summary` heading"
     )
+
+
+MASTER_CHEF_INVESTIGATION_SUBSECTION = "### Builder-stop investigation"
+MASTER_CHEF_CLEAR_STOP_PHRASE = "clear stop signal"
+MASTER_CHEF_STOP_CLASSIFICATIONS = (
+    "missing_requirements",
+    "solvable_blocker",
+    "route_drift",
+    "unrecoverable",
+)
+MASTER_CHEF_STOP_EVENTS = (
+    "BUILDER_STOPPED",
+    "BUILDER_INVESTIGATION_RESOLVED",
+    "BUILDER_INVESTIGATION_ESCALATED",
+)
+MASTER_CHEF_STOP_FIELDS = (
+    "builder_stop_reason",
+    "builder_stop_classification",
+    "builder_stop_evidence_summary",
+)
+
+# Step 60 negative anchors. The 30-minute total-silence and 2-probe replacement
+# triggers must not return as replacement rules. Match each forbidden phrase
+# only when it co-occurs with `replace` / `replacement` in the same sentence so
+# legitimate non-replacement narrative (boot timeouts, observation cadence) is
+# not false-flagged.
+MASTER_CHEF_FORBIDDEN_REPLACEMENT_PHRASES = (
+    "30 minutes of total running silence",
+    "2 consecutive unanswered explicit status probes",
+    "2 consecutive unanswered explicit probes",
+)
+
+# Locate the body of `## N) Title` sections so we can require the
+# investigation-stage anchors land in the right place rather than just
+# somewhere in CONTRACT.md.
+_CONTRACT_SECTION_RE = re.compile(r"^##\s+(\d+)\)\s.*?$", re.MULTILINE)
+
+
+def _extract_contract_section(text: str, section_number: int) -> str:
+    matches = list(_CONTRACT_SECTION_RE.finditer(text))
+    for idx, match in enumerate(matches):
+        if int(match.group(1)) != section_number:
+            continue
+        start = match.end()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        return text[start:end]
+    raise AssertionError(
+        f"CONTRACT.md missing `## {section_number})` section heading"
+    )
+
+
+def _check_master_chef_clear_stop_policy(package_root: Path) -> None:
+    """Step 60: enforce clear-stop-signal replacement policy and the
+    Builder-stop investigation stage.
+
+    Asserts:
+      - CONTRACT.md §7 contains the literal phrase `clear stop signal`, the
+        `### Builder-stop investigation` subsection heading, and all four
+        classification names.
+      - CONTRACT.md §9 lists all three Builder-stop JSONL event names.
+      - CONTRACT.md §3 lists all three Builder-stop runtime-state field names.
+      - Neither `30 minutes of total running silence` nor
+        `2 consecutive unanswered explicit (status )?probes` appears in a
+        sentence that also contains `replace` or `replacement`.
+    """
+    contract_path = package_root / "CONTRACT.md"
+    contract_text = contract_path.read_text(encoding="utf-8")
+
+    section_3 = _extract_contract_section(contract_text, 3)
+    section_7 = _extract_contract_section(contract_text, 7)
+    section_9 = _extract_contract_section(contract_text, 9)
+
+    assert MASTER_CHEF_CLEAR_STOP_PHRASE in section_7, (
+        f"CONTRACT.md §7 missing literal phrase '{MASTER_CHEF_CLEAR_STOP_PHRASE}'"
+    )
+    assert MASTER_CHEF_INVESTIGATION_SUBSECTION in section_7, (
+        f"CONTRACT.md §7 missing '{MASTER_CHEF_INVESTIGATION_SUBSECTION}' subsection heading"
+    )
+    for name in MASTER_CHEF_STOP_CLASSIFICATIONS:
+        assert name in section_7, (
+            f"CONTRACT.md §7 missing Builder-stop classification `{name}`"
+        )
+    for event in MASTER_CHEF_STOP_EVENTS:
+        assert event in section_9, (
+            f"CONTRACT.md §9 missing Builder-stop JSONL event `{event}`"
+        )
+    for field in MASTER_CHEF_STOP_FIELDS:
+        assert field in section_3, (
+            f"CONTRACT.md §3 missing Builder-stop runtime-state field `{field}`"
+        )
+
+    # Sentence-segment the contract (strip fenced code blocks first) so the
+    # forbidden replacement-trigger phrases only fail when they co-occur with
+    # `replace` / `replacement` in the same sentence.
+    scan = MASTER_CHEF_FENCED_CODE_RE.sub("", contract_text)
+    for sentence in re.split(r"(?<=[.\n])\s+", scan):
+        lowered = sentence.lower()
+        if "replace" not in lowered and "replacement" not in lowered:
+            continue
+        for forbidden in MASTER_CHEF_FORBIDDEN_REPLACEMENT_PHRASES:
+            assert forbidden.lower() not in lowered, (
+                f"CONTRACT.md reintroduces silence-based replacement trigger "
+                f"({forbidden!r}); replacement requires a clear stop signal"
+            )
 
 
 def validate_master_chef(repo_root: Path) -> None:
@@ -294,6 +394,7 @@ def validate_master_chef(repo_root: Path) -> None:
             f"master-chef SKILL.md missing reference to {skill_name}"
         )
     _check_master_chef_consolidation(package_root)
+    _check_master_chef_clear_stop_policy(package_root)
 
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:

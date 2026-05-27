@@ -147,11 +147,15 @@ Canonical `run.json` fields:
 - `builder_restart_count`
 - `dispute_loop_count`
 - `current_blocker`
+- `builder_stop_reason`
+- `builder_stop_classification`
+- `builder_stop_evidence_summary`
 
 Runtime-state expectations for persistent Builder continuity:
 
 - `builder_session_key` is the active Builder identity and normally remains stable across delegated steps in the same run.
-- `builder_last_probe_at_utc`, `builder_last_probe_result`, `builder_suspect_since_utc`, and `builder_missed_probe_count` capture the latest active-check evidence plus soft-stale escalation state, and any coherent direct Builder signal should clear suspect state and reset the missed-probe count.
+- `builder_last_probe_at_utc`, `builder_last_probe_result`, `builder_suspect_since_utc`, and `builder_missed_probe_count` are observation/evidence only — they record active-check state and reset on any coherent direct Builder reply. They never trigger replacement; that is governed by §7's clear-stop-signal rule.
+- `builder_stop_reason` (enum `session_closed | process_exit | builder_blocked | builder_failure | unusable_drift`) names the clear-stop signal that authorized the §7 Builder-stop investigation. `builder_stop_classification` (enum `missing_requirements | solvable_blocker | route_drift | unrecoverable | pending`) names the investigation outcome. `builder_stop_evidence_summary` carries the concise summary of durable evidence read during investigation.
 - `builder_last_compaction_attempted_at_utc`, `builder_last_compaction_result`, and `builder_last_compaction_summary` capture the latest step-boundary compaction attempt or truthful fallback result such as `unsupported`, `auto`, or `native_context_management`.
 - `builder_replacement_lineage` records prior Builder identities, replacement reasons, and any parent-child handoff needed when recovery forces Builder replacement.
 - If an older Builder is no longer needed, preserve lineage and durable evidence, then close it or mark it inactive so one active Builder remains.
@@ -315,7 +319,37 @@ Builder monitoring must use direct runtime evidence before heuristics:
 - If 20 minutes pass without direct Builder proof of life after `builder_phase` reaches `running`, set `builder_suspect_since_utc`, write probe evidence, and send an explicit status probe instead of replacing immediately.
 - Reset `builder_suspect_since_utc` and `builder_missed_probe_count` on any coherent direct Builder reply.
 - Any coherent Builder reply, including a discovery-only or partial status report, is proof of life. Classify it as progress, route drift, or an explicit blocker, not as a dead Builder.
-- Replace Builder only after direct failure or closure, an explicit Builder blocker, deadlock, unusable drift, inability to continue safely after compaction or status checks, 30 minutes of total running silence, or 2 consecutive unanswered explicit status probes after suspect classification.
+- Replace Builder only after a clear stop signal lands. The clear-stop-signal set is:
+  - runtime-reported session closure, process exit, or equivalent terminal status
+  - Builder-emitted `BLOCKED` or failure JSONL record in `.cdd-runtime/master-chef/builder.jsonl`
+  - QA-detected unusable drift after Master Chef inspection
+
+  Probe non-response and probe transport errors are observation-only. Non-response updates `builder_last_probe_result`, `builder_missed_probe_count`, and `builder_suspect_since_utc` for evidence; transport errors set `builder_last_probe_result: unknown`. Neither escalates to replacement on its own. Wall-clock running silence — however long — is not a stop signal: Master Chef waits.
+
+### Builder-stop investigation
+
+When a clear stop signal lands, Master Chef runs a Builder-stop investigation before any replacement or `STEP_BLOCKED` routing. It never fires on suspect classification or silence alone.
+
+Required evidence reads before routing:
+
+- tail of `.cdd-runtime/master-chef/builder.jsonl`
+- last touched files in the active worktree
+- last error trace or runtime failure event
+- active TODO step contract
+
+Classify the stop as exactly one of:
+
+- `missing_requirements` — TODO step lacks context the Builder cannot infer. Revise the step via a main-session `cdd-plan`-equivalent fix, then resume.
+- `solvable_blocker` — env, network, missing tool, transient runtime, or other proximate cause Master Chef can fix directly. Apply the fix; resume the same Builder if usable, one recovery replacement otherwise.
+- `route_drift` — Builder was doing the wrong thing for the step. Push concrete findings back to the same Builder.
+- `unrecoverable` — closure with no usable evidence, deadlock, or repeated failed recoveries. Replace or escalate to `STEP_BLOCKED` via the existing recovery path.
+
+Durable writes: update `builder_stop_reason`, `builder_stop_classification`, and `builder_stop_evidence_summary` in `run.json`; append `BUILDER_STOPPED` to `master-chef.jsonl` with classification, evidence summary, and routing; then `BUILDER_INVESTIGATION_RESOLVED` on non-escalating routing or `BUILDER_INVESTIGATION_ESCALATED` on escalation.
+
+Accepted trade-offs:
+
+- Runtime-alive deadlock — when the runtime continues to report Builder alive and no `BLOCKED`/failure JSONL ever lands, Master Chef waits until the human intervenes per §1. This is the explicit cost of preferring evidence-based replacement over silence-based replacement.
+- Probe transport errors during network partitions, runtime outages, or similar conditions map to `builder_last_probe_result: unknown` and Master Chef keeps waiting.
 
 ## 8) Validation, QA, and UAT
 
@@ -353,6 +387,9 @@ Report events:
 - `START`
 - `BUILDER_SPAWNED`
 - `BUILDER_READY`
+- `BUILDER_STOPPED` — clear stop signal landed (§7); carries stop reason, classification (or `pending`), and evidence summary
+- `BUILDER_INVESTIGATION_RESOLVED` — investigation routed to in-place repair, direct Master Chef fix, or same-Builder route-drift correction (no escalation)
+- `BUILDER_INVESTIGATION_ESCALATED` — investigation routed to replacement or `STEP_BLOCKED`
 - `BUILDER_RESTARTED`
 - `STEP_PASS`
 - `STEP_BLOCKED`
@@ -360,6 +397,8 @@ Report events:
 - `RUN_STOPPED`
 - `DEADLOCK_STOPPED`
 - `RUN_COMPLETE`
+
+The §7 Builder-stop investigation stage runs before any `BUILDER_RESTARTED` or `STEP_BLOCKED` is emitted in response to a Builder stop; replacement and blocked-step recovery are downstream of investigation, not parallel to it.
 
 When `BLOCKER_CLEARED` is emitted after a successful repair, record the original blocked step, the replacement step ids, the preserved remaining budget, and the next delegated action.
 
