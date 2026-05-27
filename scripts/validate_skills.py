@@ -32,6 +32,14 @@ FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
 MULTILINE_VALUE_RE = re.compile(r"^[a-zA-Z0-9_-]+:\s*[|>]\s*$", re.M)
 
 
+# The cdd-master-chef package lives under skills/ alongside the other cdd-*
+# skills but is the user-facing orchestrator, not a Builder skill. The loops
+# that produce or check Builder skills exclude this name. Bash scripts that
+# need the same exclusion keep an inline literal cross-referenced to this
+# constant.
+ORCHESTRATOR_SKILL_NAME = "cdd-master-chef"
+
+
 CDD_DISPLAY_NAMES = {
     "cdd-boot": "[CDD-0] Boot",
     "cdd-init-project": "[CDD-1] Init Project",
@@ -374,7 +382,7 @@ def _check_master_chef_clear_stop_policy(package_root: Path) -> None:
 
 
 def validate_master_chef(repo_root: Path) -> None:
-    package_root = repo_root / "cdd-master-chef"
+    package_root = repo_root / "skills" / "cdd-master-chef"
     assert package_root.exists(), f"missing {package_root}"
     for rel in MASTER_CHEF_FILES:
         assert (package_root / rel).exists(), f"missing {package_root / rel}"
@@ -410,7 +418,9 @@ def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
 
     skills_root = repo_root / "skills"
     canonical_names = sorted(
-        path.name for path in skills_root.iterdir() if path.is_dir()
+        path.name
+        for path in skills_root.iterdir()
+        if path.is_dir() and path.name != ORCHESTRATOR_SKILL_NAME
     )
     assert canonical_names, f"no canonical Builder skills found in {skills_root}"
 
@@ -461,7 +471,11 @@ def main(argv: list[str] | None = None) -> int:
     repo_root = Path(__file__).resolve().parent.parent
     skills_root = repo_root / "skills"
     assert skills_root.exists(), f"missing {skills_root}"
-    skill_dirs = sorted(path for path in skills_root.iterdir() if path.is_dir())
+    skill_dirs = sorted(
+        path
+        for path in skills_root.iterdir()
+        if path.is_dir() and path.name != ORCHESTRATOR_SKILL_NAME
+    )
     assert skill_dirs, f"no Builder skill directories found in {skills_root}"
 
     for skill_dir in skill_dirs:

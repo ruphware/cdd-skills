@@ -48,7 +48,7 @@ All adapters in this package must satisfy the same startup gate:
 
 ### OpenClaw
 
-- The repo currently ships the OpenClaw adapter docs in `cdd-master-chef/openclaw/`.
+- The repo currently ships the OpenClaw adapter docs in `skills/cdd-master-chef/openclaw/`.
 - The OpenClaw adapter is the current packaged runtime adapter, but it is not the only current adapter in this package.
 - Session settings: when OpenClaw cannot expose an exact model or thinking value, record that field as `unknown`, report the limitation honestly, and continue kickoff.
 - Worktree: provision the managed worktree, write branch and worktree metadata, stop with exact relaunch instructions, then bootstrap the repo-native environment after relaunch before autonomous implementation starts.

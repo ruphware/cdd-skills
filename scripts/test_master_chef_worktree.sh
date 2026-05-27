@@ -99,16 +99,16 @@ fi
 
 echo "[MasterChefWorktree] INFO DirtyPreflightRejected repo={$dirty_repo}"
 
-assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "source checkout must be clean|Before kickoff.*clean"
-assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "active_worktree_path"
-assert_contains "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "$expected_worktree_root"
-assert_matches "$ROOT_DIR/cdd-master-chef/CONTRACT.md" "keep the source checkout on its original branch|Do not switch the source checkout onto the active worktree branch"
-assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
-assert_contains "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" "$expected_runbook_worktree_root"
-assert_matches "$ROOT_DIR/cdd-master-chef/RUNBOOK.md" 'descriptive worktree branch|Do not `git switch` the source checkout onto <branch>'
-assert_matches "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
-assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/README.md" "$expected_worktree_root"
-assert_contains "$ROOT_DIR/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
+assert_matches "$ROOT_DIR/skills/cdd-master-chef/CONTRACT.md" "source checkout must be clean|Before kickoff.*clean"
+assert_contains "$ROOT_DIR/skills/cdd-master-chef/CONTRACT.md" "active_worktree_path"
+assert_contains "$ROOT_DIR/skills/cdd-master-chef/CONTRACT.md" "$expected_worktree_root"
+assert_matches "$ROOT_DIR/skills/cdd-master-chef/CONTRACT.md" "keep the source checkout on its original branch|Do not switch the source checkout onto the active worktree branch"
+assert_matches "$ROOT_DIR/skills/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
+assert_contains "$ROOT_DIR/skills/cdd-master-chef/RUNBOOK.md" "$expected_runbook_worktree_root"
+assert_matches "$ROOT_DIR/skills/cdd-master-chef/RUNBOOK.md" 'descriptive worktree branch|Do not `git switch` the source checkout onto <branch>'
+assert_matches "$ROOT_DIR/skills/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
+assert_contains "$ROOT_DIR/skills/cdd-master-chef/openclaw/README.md" "$expected_worktree_root"
+assert_contains "$ROOT_DIR/skills/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
 assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 
 echo "[MasterChefWorktree] INFO ContractDocsVerified root={$ROOT_DIR}"

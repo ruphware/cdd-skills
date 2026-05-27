@@ -182,10 +182,6 @@ collect_skill_names_csv() {
     names+=("$name")
   done
 
-  if [[ -f "$ROOT_DIR/cdd-master-chef/SKILL.md" ]]; then
-    names+=("cdd-master-chef")
-  fi
-
   if [[ ${#names[@]} -eq 0 ]]; then
     echo "No skills found under: $ROOT_DIR/skills" >&2
     exit 1
@@ -488,9 +484,6 @@ def print_explainer():
     skill_map = {}
     for skill_md in sorted((root / "skills").glob("*/SKILL.md")):
         skill_map[read_skill_name(skill_md)] = skill_md
-    master_chef_skill_md = root / "cdd-master-chef" / "SKILL.md"
-    if master_chef_skill_md.exists():
-        skill_map[read_skill_name(master_chef_skill_md)] = master_chef_skill_md
 
     flagged_names = [name for name in sorted(payload) if is_flagged(payload.get(name))]
     if only_flagged:

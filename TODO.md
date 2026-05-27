@@ -659,3 +659,58 @@ Rewrite `cdd-master-chef/CONTRACT.md` §7 so Builder replacement requires a clea
 - `validate_skills.py` (default + `--include-legacy-prose`) and `test_master_chef_artifacts.sh` all pass.
 - Validator fails on regression of: `clear stop signal` phrasing; investigation subsection heading; any classification name; any JSONL event name; any runtime-state field name; or on reappearance of `30 minutes of total running silence` / `2 consecutive unanswered explicit status probes` in a sentence containing `replace` / `replacement`.
 - `TODO.md:233-299` (Step 54 body) unchanged.
+
+## Step 61 — Move `cdd-master-chef` under `skills/` and remove residual special-casing
+
+### Goal
+
+Move the `cdd-master-chef` package to `skills/cdd-master-chef/` so it sits alongside the other cdd-* skills, and remove every remaining structural special-case (installer help text, four duplicated exclusion sites, missing installed-frontmatter assertions) so the install/validation contract treats `cdd-master-chef` like any other cdd-* skill at the source level. Behavior, slug, display name, and install destination layout unchanged.
+
+### Constraints
+
+- Touch only `cdd-master-chef/` → `skills/cdd-master-chef/` (via `git mv`), `scripts/install.sh`, `scripts/validate_skills.py`, `scripts/build_runtime_builder_skills.py`, `scripts/test_master_chef_artifacts.sh`, `scripts/test_master_chef_worktree.sh`, `scripts/test-skill-audit.sh`, `scripts/test_installers.sh`, `README.md`, and repo-relative paths inside `skills/cdd-master-chef/{CLAUDE,CODEX}-TEST-HARNESS.md`, `skills/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, `skills/cdd-master-chef/RUNTIME-CAPABILITIES.md`. Other files only if a failing check forces it.
+- Preserve git history via `git mv`.
+- Destination install layout (`<target>/cdd-master-chef/`), skill slug (`cdd-master-chef`), user-facing `/cdd-master-chef` slash command, and display name `[CDD-6] Master Chef` all unchanged.
+- Openclaw runtime continues to install canonical `cdd-master-chef` plus generated internal OpenClaw Builder variants of the other cdd-* skills. The orchestrator-vs-Builder distinction is functional, not structural — it stays expressed in one shared symbol, not duplicated inline across four call sites.
+- Closed historical steps (49–60) are not edited. Step 61's body is the only record of this restructure.
+- Validator (default + `--include-legacy-prose`), `test_installers.sh`, `test_master_chef_artifacts.sh`, and `test_master_chef_worktree.sh` must all pass after the change.
+
+### Tasks
+
+- [x] `git mv cdd-master-chef skills/cdd-master-chef` so the package sits under `skills/` like every other cdd-* skill. Preserve history; no behavioral change.
+- [x] Update source-tree path references in `scripts/install.sh` (`MASTER_CHEF_SRC_ROOT` now `$SKILLS_SRC_ROOT/cdd-master-chef`; drop redundant `SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")` from the core-runtime branch since the `skills/*` loop now covers it; simplify `should_link_source` to one condition), `scripts/validate_skills.py` (`validate_master_chef` resolves `repo_root / "skills" / "cdd-master-chef"`), `scripts/test_master_chef_artifacts.sh` (`PACKAGE_ROOT` and the openclaw asset rel-path list), `scripts/test_master_chef_worktree.sh` (10 `$ROOT_DIR/...` lines), `scripts/test-skill-audit.sh` (drop the now-redundant master-chef special-case in both `collect_skill_names_csv` and `print_explainer`), `README.md` (Runtime details links repointed under `skills/`), and repo-relative shell snippets inside `skills/cdd-master-chef/{CLAUDE,CODEX}-TEST-HARNESS.md`, `skills/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md`, and `skills/cdd-master-chef/RUNTIME-CAPABILITIES.md`.
+- [x] Introduce module-level constant `ORCHESTRATOR_SKILL_NAME = "cdd-master-chef"` in `scripts/validate_skills.py`. Reference it from both `validate_generated_openclaw_builder_skills` and `main` so the existing exclusion logic stops duplicating the literal. Import it from `scripts/build_runtime_builder_skills.py` (sibling-module import) and use it in `canonical_skill_dirs`. In `scripts/test_master_chef_artifacts.sh`, keep the inline `[[ "$skill_name" == "cdd-master-chef" ]] && continue` literal but add a comment immediately above pointing at `ORCHESTRATOR_SKILL_NAME` in `scripts/validate_skills.py` so future readers know the literals must stay in sync. End-state: one Python constant, one bash literal cross-referenced to it — 4 inline literals → 1 constant + 1 commented literal.
+- [x] Tighten `scripts/install.sh --help` so no runtime blurb singles out `cdd-master-chef` as a separate package: `generic` reads `Canonical cdd-* skill pack`; `claude` reads `Canonical cdd-* skill pack, default target ~/.claude/skills`; `openclaw` reads `Canonical cdd-* skill pack (cdd-master-chef canonical; rest as internal OpenClaw Builder variants), default target ~/.openclaw/skills`; the `codex` alias line is unchanged.
+- [x] In `scripts/test_installers.sh`, add `assert_command_output_contains "user-invocable: true" sed -n '1,8p' <SKILL.md>` immediately after each existing master-chef `assert_exists` block, in four places: the codex/generic fresh-install block (`$BUILDER_INSTALL`), the claude fresh-install block (`$CLAUDE_INSTALL`), the openclaw fresh-install block (`$OPENCLAW_INSTALL`), and the `--all` block (one assertion per home: `.agents`, `.claude`, `.openclaw`). The assertions guarantee the installed `cdd-master-chef` is the canonical orchestrator and not a generated Builder variant (`user-invocable: false`).
+- [x] Remove the stray untracked `skills/cdd-master-chef/cdd-master-chef/` directory that was carried into the new layout by `git mv` (leftover from a prior generator run that wrote into the source tree). Confirm it was never tracked and is not produced by the current generator after the F4 consolidation.
+
+### Implementation notes
+
+- File order during the move: `git mv` first; then source-tree path edits in dependency order (validators and installer before doc cross-refs); then `ORCHESTRATOR_SKILL_NAME` consolidation; then help-text tightening; then `test_installers.sh` assertions; then validator + harness sweep.
+- `MASTER_CHEF_SRC_ROOT` in `install.sh` is kept as a derived var (`$SKILLS_SRC_ROOT/cdd-master-chef`) rather than inlined, because `OPENCLAW_SRC_ROOT` and the preflight check both reference it. Inlining would not improve clarity.
+- The core-runtime branch of `build_source_packages` previously appended `MASTER_CHEF_SRC_ROOT` explicitly after the `skills/*` loop. After the move, the loop covers master-chef, so the explicit append is removed. The openclaw branch keeps its explicit `SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")` because openclaw deliberately installs ONLY master-chef plus generated Builder variants — not all `cdd-*` skills via the loop.
+- `should_link_source` collapsed from `( $SKILLS_SRC_ROOT/* || $MASTER_CHEF_SRC_ROOT )` to `$SKILLS_SRC_ROOT/*` because master-chef now naturally matches the glob.
+- Closed historical TODO steps (49–60) contain repo-relative paths like `cdd-master-chef/CONTRACT.md`. These are not rewritten — Step 56 set the precedent that closed step bodies are immutable. Use `git log --follow` to resolve historical paths.
+- `build_runtime_builder_skills.py` imports `ORCHESTRATOR_SKILL_NAME` from `validate_skills` via `from validate_skills import ORCHESTRATOR_SKILL_NAME`. Both files live under `scripts/`; the import resolves when `scripts/` is on `sys.path`, which is already the case for direct script invocation and for the subprocess invocation in `validate_generated_openclaw_builder_skills`.
+- Bash cannot import Python constants. The pragmatic floor on duplication is one bash literal in `test_master_chef_artifacts.sh` with a comment cross-referencing the Python constant. Introducing a YAML/JSON shared-constants file or sourcing through `install-common.sh` would trade one duplication for more machinery.
+- The new `assert_command_output_contains "user-invocable: true"` block uses the existing helper signature; it reads the first 8 lines of the installed `SKILL.md` (enough to capture frontmatter for every cdd-* skill in this repo today).
+- The stray `skills/cdd-master-chef/cdd-master-chef/SKILL.md` removed in this step was an untracked generator artifact from before the F4 consolidation; after the `canonical_skill_dirs` exclusion, the openclaw build no longer writes a master-chef Builder variant.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_master_chef_worktree.sh`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- `skills/cdd-master-chef/` exists with the full package (`SKILL.md`, `CONTRACT.md`, `RUNBOOK.md`, `RUNTIME-CAPABILITIES.md`, `{CLAUDE,CODEX}-{ADAPTER,RUNBOOK,TEST-HARNESS}.md`, `agents/openai.yaml`, `openclaw/{README,MASTER-CHEF-RUNBOOK,MASTER-CHEF-TEST-HARNESS}.md`). The top-level `cdd-master-chef/` directory no longer exists.
+- `git log --follow skills/cdd-master-chef/CONTRACT.md` traverses the rename and shows pre-move history.
+- `scripts/install.sh --runtime generic` installs the 7 canonical skills (including `cdd-master-chef`) under `<target>/`. `--runtime claude` does the same under `~/.claude/skills`. `--runtime openclaw` installs canonical `cdd-master-chef` (with `user-invocable: true` in the installed `SKILL.md`) plus 6 generated Builder variants of the other cdd-* skills (each with `user-invocable: false`). No `cdd-master-chef` Builder variant is generated.
+- `scripts/install.sh --help` does not single out `cdd-master-chef` as a separate package in any runtime blurb.
+- `grep -n 'cdd-master-chef' scripts/validate_skills.py scripts/build_runtime_builder_skills.py scripts/test_master_chef_artifacts.sh` shows: one `ORCHESTRATOR_SKILL_NAME = "cdd-master-chef"` Python constant, references to that constant (no inline literals besides the constant definition), and one bash literal with a comment pointing at the Python constant.
+- `scripts/test_installers.sh` newly asserts `user-invocable: true` on installed `cdd-master-chef` for all four install paths (codex/generic, claude, openclaw, and the `--all` triple). Removing any one of those four assertions makes the test fail.
+- All five automated checks pass.
+- Closed historical steps (49–60) in `TODO.md` are byte-for-byte unchanged.

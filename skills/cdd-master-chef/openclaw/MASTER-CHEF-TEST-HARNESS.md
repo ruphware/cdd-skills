@@ -46,13 +46,13 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
 
 - [ ] CONTRACT.md carries the Builder-stop investigation contract (canonical anchor, `### Builder-stop investigation` subsection, 4 classifications in §7, 3 JSONL events in §9, 3 runtime-state fields in §3):
   ```bash
-  grep -F "canonical: Builder lifecycle policy" cdd-master-chef/CONTRACT.md
-  grep -F "### Builder-stop investigation" cdd-master-chef/CONTRACT.md
+  grep -F "canonical: Builder lifecycle policy" skills/cdd-master-chef/CONTRACT.md
+  grep -F "### Builder-stop investigation" skills/cdd-master-chef/CONTRACT.md
   for token in \
     missing_requirements solvable_blocker route_drift unrecoverable \
     BUILDER_STOPPED BUILDER_INVESTIGATION_RESOLVED BUILDER_INVESTIGATION_ESCALATED \
     builder_stop_reason builder_stop_classification builder_stop_evidence_summary; do
-    grep -F "$token" cdd-master-chef/CONTRACT.md
+    grep -F "$token" skills/cdd-master-chef/CONTRACT.md
   done
   ```
 

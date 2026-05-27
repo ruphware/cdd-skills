@@ -45,7 +45,7 @@ assert_not_contains() {
   fi
 }
 
-PACKAGE_ROOT="$ROOT_DIR/cdd-master-chef"
+PACKAGE_ROOT="$ROOT_DIR/skills/cdd-master-chef"
 SHARED_ROOT="$PACKAGE_ROOT"
 new_worktree_root=".cdd-runtime/worktrees/<run-id>/"
 runbook_worktree_root="<source-repo>/.cdd-runtime/worktrees/<run-id>/"
@@ -146,9 +146,9 @@ done
 
 echo "[MasterChefArtifacts] INFO OpenclawAdapterFiles root={$ROOT_DIR}"
 for rel in \
-  "cdd-master-chef/openclaw/README.md" \
-  "cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" \
-  "cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
+  "skills/cdd-master-chef/openclaw/README.md" \
+  "skills/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" \
+  "skills/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
   assert_exists "$ROOT_DIR/$rel"
 done
 # Previous versions asserted that scripts/validate_skills.py contained specific
@@ -166,6 +166,10 @@ for skill_dir in "$ROOT_DIR"/skills/*; do
   [[ -d "$skill_dir" ]] || continue
   [[ -f "$skill_dir/SKILL.md" ]] || continue
   skill_name="$(basename "$skill_dir")"
+  # Mirrors ORCHESTRATOR_SKILL_NAME in scripts/validate_skills.py: cdd-master-chef
+  # is the orchestrator, not a Builder skill, and is not in the generated pack.
+  # Keep this literal in sync with the Python constant.
+  [[ "$skill_name" == "cdd-master-chef" ]] && continue
   generated_skill="$TMP_ROOT/generated/$skill_name/SKILL.md"
   assert_exists "$generated_skill"
   assert_contains "$generated_skill" "user-invocable: false"

@@ -12,6 +12,8 @@ import re
 import shutil
 import sys
 
+from validate_skills import ORCHESTRATOR_SKILL_NAME
+
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
 EXPLICIT_ONLY_RE = re.compile(r"\s*\(explicit-only\)")
@@ -46,11 +48,18 @@ def repo_root() -> Path:
 
 
 def canonical_skill_dirs(skills_root: Path) -> list[Path]:
-    """Return the canonical cdd-* skill directories in stable order."""
+    """Return the canonical cdd-* skill directories in stable order.
+
+    Excludes the orchestrator (ORCHESTRATOR_SKILL_NAME): it lives under skills/
+    alongside the others but is not a Builder skill and is installed via its
+    own canonical path in scripts/install.sh.
+    """
     return sorted(
         path
         for path in skills_root.iterdir()
-        if path.is_dir() and (path / "SKILL.md").is_file()
+        if path.is_dir()
+        and path.name != ORCHESTRATOR_SKILL_NAME
+        and (path / "SKILL.md").is_file()
     )
 
 

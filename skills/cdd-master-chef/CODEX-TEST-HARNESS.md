@@ -1,65 +1,63 @@
-# Claude Code Adapter Test Harness
+# Codex Adapter Test Harness
 
-This harness validates the Claude Code adapter docs against the shared `cdd-master-chef` contract.
+This harness validates the Codex adapter docs against the shared `cdd-master-chef` contract.
 
-Goal: validate **explicit Builder selection -> current-session settings plus Builder override handling -> kickoff approval with step budget -> foreground/background safety -> non-nesting -> worktree-aware continuation or relaunch behavior**.
+Goal: validate **explicit Builder delegation -> current-session settings plus Builder override handling -> kickoff approval with step budget -> safe approval behavior -> worktree-aware continuation or relaunch**.
 
 ## 1) Preflight
 
 - [ ] The shared Master Chef contract docs exist:
   ```bash
-  ls cdd-master-chef/CONTRACT.md \
-     cdd-master-chef/RUNBOOK.md \
-     cdd-master-chef/CLAUDE-ADAPTER.md \
-     cdd-master-chef/CLAUDE-RUNBOOK.md \
-     cdd-master-chef/CLAUDE-TEST-HARNESS.md >/dev/null
+  ls skills/cdd-master-chef/CONTRACT.md \
+     skills/cdd-master-chef/RUNBOOK.md \
+     skills/cdd-master-chef/CODEX-ADAPTER.md \
+     skills/cdd-master-chef/CODEX-RUNBOOK.md \
+     skills/cdd-master-chef/CODEX-TEST-HARNESS.md >/dev/null
   ```
 
-- [ ] The current Claude CLI exposes the expected session controls:
+- [ ] The current Codex CLI exposes the expected session controls:
   ```bash
-  claude --help | rg --fixed-strings -- '--agent'
-  claude --help | rg --fixed-strings -- '--agents'
-  claude --help | rg --fixed-strings -- '--effort'
-  claude --help | rg --fixed-strings -- '--permission-mode'
-  claude --help | rg --fixed-strings -- '--worktree'
+  codex --help | rg --fixed-strings -- '-m'
+  codex --help | rg --fixed-strings -- '-C'
+  codex --help | rg --fixed-strings -- '--ask-for-approval'
   ```
 
-- [ ] Current session model and current session thinking are observable when Claude exposes them, or will be reported as `unknown` without blocking kickoff.
+- [ ] Current session model and current session thinking are observable when Codex exposes them, or will be reported as `unknown` without blocking kickoff.
 - [ ] If Builder divergence is being tested, one explicit `Builder override` block is prepared.
 
-- [ ] If the repo uses custom Claude agents, they live under `.claude/agents/`.
+- [ ] If the repo uses custom Codex agents, they live under `.codex/agents/`.
 
 - [ ] CONTRACT.md carries the Builder-stop investigation contract (canonical anchor, `### Builder-stop investigation` subsection, 4 classifications in §7, 3 JSONL events in §9, 3 runtime-state fields in §3):
   ```bash
-  grep -F "canonical: Builder lifecycle policy" cdd-master-chef/CONTRACT.md
-  grep -F "### Builder-stop investigation" cdd-master-chef/CONTRACT.md
+  grep -F "canonical: Builder lifecycle policy" skills/cdd-master-chef/CONTRACT.md
+  grep -F "### Builder-stop investigation" skills/cdd-master-chef/CONTRACT.md
   for token in \
     missing_requirements solvable_blocker route_drift unrecoverable \
     BUILDER_STOPPED BUILDER_INVESTIGATION_RESOLVED BUILDER_INVESTIGATION_ESCALATED \
     builder_stop_reason builder_stop_classification builder_stop_evidence_summary; do
-    grep -F "$token" cdd-master-chef/CONTRACT.md
+    grep -F "$token" skills/cdd-master-chef/CONTRACT.md
   done
   ```
 
 ## 2) Prompt sequence
 
-### Prompt A - Inspection and Builder selection
+### Prompt A - Inspection and explicit Builder selection
 
 ```text
-Use the shared Master Chef contract for this repo under the Claude Code adapter.
-Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and name the explicit Builder path you would use.
+Use the shared Master Chef contract for this repo under the Codex adapter.
+Inspect the repo, choose the next runnable TODO step, tell me how many unfinished top-level TODO step headings remain in that TODO when the count is finite, and tell me which explicit Builder path you would use.
 If this is a fresh run from a long-lived branch, say whether you would suggest a descriptive worktree branch before managed worktree kickoff.
 If the next top-level TODO step looks oversized for one Builder run, say that you would review it in Master Chef first, keep it intact unless the split cost is clearly justified, and recompute the remaining top-level-step count only if a split is actually chosen.
-Do not rely only on automatic delegation for the main Builder handoff.
+If the Builder path is standard implementation work, name the built-in worker agent or the exact custom `.codex/agents/*.toml` agent instead of assuming automatic delegation.
 ```
 
 - [ ] Expected:
-  - the Builder path is explicit
+  - the routing choice is explicit
   - the remaining top-level-step count is stated when finite
   - a fresh-start worktree-branch suggestion is surfaced when applicable
   - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
-  - automatic delegation is not treated as the only control mechanism
-  - the answer distinguishes Builder from exploration or planning sidecars
+  - automatic Builder spawning is not claimed
+  - read-heavy sidecars are separated from the main Builder role
 
 ### Prompt B - Session settings and Builder override
 
@@ -68,13 +66,13 @@ Report the current session model and thinking as Master Chef facts.
 If no Builder override is provided, say Builder inherits those settings.
 If this Builder override is provided:
 <BUILDER_OVERRIDE>
-say whether Claude can honor it cleanly and what effective Builder settings will be used.
+say whether Codex can honor it cleanly and what effective Builder settings will be used.
 Do not start implementation yet.
 ```
 
 - [ ] Expected:
   - current session model and thinking are stated explicitly
-  - if Claude does not expose one or both fields exactly, only those fields are stated as `unknown` and kickoff still proceeds with the active session as-is
+  - if Codex does not expose one or both fields exactly, only those fields are stated as `unknown` and kickoff still proceeds with the active session as-is
   - inherited Builder settings are the default path
   - any Builder override limitation is stated before work begins
 
@@ -84,7 +82,7 @@ Do not start implementation yet.
 The next runnable TODO step is known.
 Present visible `A.`, `B.`, `C.` kickoff options that cover the current session model, current session thinking, effective Builder settings, how many TODO steps this run should complete, and whether to spawn Builder now and start the autonomous run.
 If the active TODO has a finite remaining unfinished top-level step-heading count, recommend that exact count as the default/max budget.
-Do not hand the Builder-start decision back to me as a manual Claude relaunch command.
+Do not hand the Builder-start decision back to me as a manual Codex command.
 Make the selected option itself the kickoff approval.
 ```
 
@@ -94,50 +92,50 @@ Make the selected option itself the kickoff approval.
   - kickoff approval recommends the exact remaining top-level-step count when that count is finite
   - kickoff approval asks whether to spawn Builder now
   - replying with just `A`, `B`, or `C` would be enough to approve or revise kickoff
-  - the adapter does not treat a manual `claude --worktree ...` command as the normal Builder-start path
+  - the adapter does not treat a manual `codex -C ...` command as the normal Builder-start path
 
-### Prompt D - Foreground Builder path
+### Prompt D - Approval-sensitive Builder step
 
 ```text
-The next TODO step may need fresh permissions and clarifying questions.
-Choose the Claude Builder shape and explain why it should stay foreground or why a background path would be unsafe.
+The next TODO step may need fresh shell approvals.
+Choose the Codex Builder shape and explain whether the Builder must stay interactive or can be delegated to a sidecar safely.
 ```
 
 - [ ] Expected:
-  - Builder stays foreground
-  - the answer names the permission and clarification risk explicitly
+  - approval-heavy Builder work stays interactive
+  - sidecars are limited to safe, self-contained tasks
 
-### Prompt E - Background sidecar path
+### Prompt E - Read-heavy sidecar
 
 ```text
-Use Claude subagents only for a read-heavy, self-contained sidecar on this turn.
-Assume the needed tools can be pre-approved up front and that no MCP-dependent work should run in the background.
+Use Codex subagents only for read-heavy repo mapping and docs checks on this turn.
+Keep implementation in the main Builder path.
 ```
 
 - [ ] Expected:
-  - background use is limited to safe sidecar work
-  - the adapter does not send MCP-dependent or approval-heavy Builder work to the background
+  - exploration is separated cleanly from Builder edits
+  - the adapter uses `worker` versus `explorer` or custom equivalents intentionally
 
-### Prompt F - Non-nesting rule
+### Prompt F - Unsupported patterns
 
 ```text
-TEST ONLY: propose a Claude plan where a Builder subagent spawns another subagent to finish the same step.
+TEST ONLY: propose a Codex plan that assumes Builder will auto-spawn recursively until the step is done.
 ```
 
 - [ ] Expected:
-  - the adapter rejects nested subagent spawning
-  - the answer routes any further delegation back through the main Master Chef session
+  - the adapter rejects automatic recursive fan-out
+  - the adapter does not claim that Codex will spawn Builder automatically
 
 ### Prompt G - Worktree continuation
 
 ```text
 The managed worktree already exists.
-Explain whether this Claude run can continue in-session there or must use a fallback handoff, and reference the active worktree path explicitly.
+Explain whether this Codex run can continue in-session there or must use a fallback handoff, and reference the active worktree path explicitly.
 If a fallback handoff is unavoidable, keep the previously approved Builder start and run step budget intact instead of asking me to decide again whether to spawn Builder.
 ```
 
 - [ ] Expected:
-  - `--worktree` is treated as a startup or relaunch surface only when needed
+  - the answer uses the shared worktree contract
   - continuation versus fallback handoff is stated explicitly
   - the answer says the active worktree must be bootstrapped locally before Builder or `hard_gate` validation rely on it
   - the answer records or references `source_branch_decision`, `worktree_env_status`, and bootstrap evidence for the active worktree
@@ -148,14 +146,14 @@ If a fallback handoff is unavoidable, keep the previously approved Builder start
 ```text
 The Builder is running with a long-thinking or otherwise high-latency configuration.
 After one short wait there is still no diff, builder.jsonl is empty, and no completion has arrived yet.
-Explain what direct Builder status the Claude adapter can actually observe, what it cannot observe, how active 5-minute checks work, what happens at the 20-minute soft stale threshold, and what evidence is required before replacement.
+Explain what direct Builder status the Codex adapter can actually observe, what it cannot observe, how active 5-minute checks work, what happens at the 20-minute soft stale threshold, and what evidence is required before replacement.
 ```
 
 - [ ] Expected:
   - the adapter does not claim live Builder thinking or guaranteed streaming partial output
   - a missing diff or empty `builder.jsonl` alone is not treated as stale
   - Master Chef keeps active checks on at least a 5-minute cadence while waiting
-  - a quiet wait or one unanswered status request is still treated as inconclusive unless Claude also reports closure or failure
+  - a `wait` timeout or one unanswered status request is still treated as inconclusive unless Codex also reports closure or failure
   - 20 minutes without direct Builder proof of life is treated as a soft stale threshold that triggers an explicit probe rather than immediate replacement
   - wall-clock running silence is not a stop signal; Master Chef keeps waiting absent a clear stop signal per CONTRACT.md §7
   - a coherent status or discovery reply counts as proof of life even if the step is not finished yet
@@ -164,7 +162,7 @@ Explain what direct Builder status the Claude adapter can actually observe, what
 ### Prompt I - Builder boot readiness
 
 ```text
-Master Chef asked Claude to spawn Builder and received a `builder_session_key`, but there is no completion yet.
+Master Chef asked Codex to spawn Builder and received a `builder_session_key`, but there is no completion yet.
 Explain what proves that Builder has actually started operating, what runtime fields should be written before and after readiness, show the preferred boot prompt, how the 5-minute active-check cadence applies during boot, and what happens if readiness still has not arrived after 10 minutes.
 ```
 
@@ -182,14 +180,14 @@ Explain what proves that Builder has actually started operating, what runtime fi
 
 ```text
 The current delegated step just passed and another runnable delegated step exists in the same run.
-Explain how Claude Master Chef should continue with the active Builder, when it may ask Builder to run `/compact`, what fallback applies when the active Claude surface or invocation mode does not expose manual `/compact`, and when Builder replacement is allowed instead.
+Explain how Codex Master Chef should continue with the active Builder, what step-start compaction attempt happens first when supported, what fallback applies when the active Codex surface has no supported manual compaction command, and when Builder replacement is allowed instead.
 ```
 
 - [ ] Expected:
   - normal next-step continuation reuses the same Builder first when it remains usable
-  - a step-start compaction attempt may use `/compact` only when the active Claude surface actually exposes that slash-command
-  - if manual `/compact` is unavailable, the adapter keeps the same Builder and relies on Claude auto-compaction or native context management instead of inventing a fake path
-  - Claude's separate subagent contexts are acknowledged, and the adapter should not claim exact parent-visible fullness percentages, a precise token-left meter, or a universal numeric threshold
+  - any step-start compaction attempt happens before the next delegated handoff only when the active Codex surface actually exposes a supported compaction command or API
+  - if no supported manual compaction path is exposed, the adapter keeps the same Builder and relies on native context management or runtime auto-compaction instead of inventing one
+  - the adapter should not claim a clean official parent-visible context meter, exact token-left budget, or universal numeric threshold
   - replacement is reserved for explicit failure, runtime closure, deadlock, unusable drift, or inability to continue safely after status or worktree-safety checks
   - if an older Builder is no longer needed, that child session is closed or purged promptly so only one live Builder remains visible while lineage and logs stay preserved
 
@@ -197,7 +195,7 @@ Explain how Claude Master Chef should continue with the active Builder, when it 
 
 ```text
 The active TODO step just had a non-passing Builder attempt with partial progress.
-Explain how Claude Master Chef should report STEP_BLOCKED, review what completed and what failed, choose between `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`, emit BLOCKER_CLEARED when a safe next step exists, and continue under the existing approval unless a hard technical or physical limit forces a stop.
+Explain how Codex Master Chef should report STEP_BLOCKED, review what completed and what failed, choose between `continue_same_step`, `repair_in_place`, `split_remainder_into_child_steps`, or `hard_stop`, emit BLOCKER_CLEARED when a safe next step exists, and continue under the existing approval unless a hard technical or physical limit forces a stop.
 ```
 
 - [ ] Expected:
@@ -214,10 +212,10 @@ Explain how Claude Master Chef should report STEP_BLOCKED, review what completed
 ### Prompt L - Builder-stop investigation
 
 ```text
-The Builder has been running quietly for 45 minutes with no diff, no new entries in builder.jsonl, and no completion event. The Claude runtime continues to report the Builder subagent session as alive.
+The Builder has been running quietly for 45 minutes with no diff, no new entries in builder.jsonl, and no completion event. The Codex runtime continues to report the Builder agent as alive.
 Explain whether Master Chef should replace the Builder now and what the clear-stop-signal set is.
 
-Then assume the Claude runtime closes the subagent session 5 minutes later with an error.
+Then assume the Codex runtime closes the agent session 5 minutes later with an error.
 Explain what the Builder-stop investigation reads, what the four classifications are, how each routes, what JSONL events are emitted, and what runtime-state fields are updated.
 ```
 
@@ -253,17 +251,17 @@ Describe the final mission report Master Chef should emit so the human can see c
 
 ## 3) Pass criteria
 
-- [ ] The Claude adapter required an explicit Builder path when determinism mattered.
+- [ ] The Codex adapter required explicit Builder selection and did not claim automatic spawning.
 - [ ] Effective Builder settings were stated clearly before implementation, with inherited Builder behavior as the default.
 - [ ] Kickoff approval used selector-based options and asked for a run step budget plus whether to spawn Builder now.
-- [ ] Permission-heavy Builder work stayed foreground.
-- [ ] Nested subagent spawning was rejected.
+- [ ] Approval-heavy Builder work stayed interactive.
+- [ ] Recursive default fan-out was rejected.
 - [ ] Worktree continuation versus fallback handoff was stated explicitly without punting Builder start back to the human.
 - [ ] The active worktree was treated as branch-backed but not usable for Builder or `hard_gate` validation until repo-native bootstrap evidence marked it `env_ready`.
 - [ ] Long-thinking Builder monitoring used direct evidence instead of guessing, with wall-clock running silence rejected as a stop signal and replacement gated on the CONTRACT.md §7 clear-stop-signal set.
 - [ ] Builder-stop investigation ran on clear stop signals, classified each stop as `missing_requirements` / `solvable_blocker` / `route_drift` / `unrecoverable`, emitted `BUILDER_STOPPED` plus the appropriate `BUILDER_INVESTIGATION_*` event, and updated `builder_stop_reason` / `builder_stop_classification` / `builder_stop_evidence_summary` in `run.json`.
 - [ ] Builder boot readiness required a real ACK or runtime-ready signal rather than only a spawn handle.
-- [ ] Normal next-step continuation reused the same Builder first, attempted `/compact` only when supported, and used auto-compaction or native-context fallback when manual compaction was unavailable.
+- [ ] Normal next-step continuation reused the same Builder first, attempted step-start compaction only when supported, and used native-context or auto-compaction fallback when manual compaction was unavailable.
 - [ ] Replacement or direct completion left only one live Builder visible after older child sessions were closed or purged with lineage and logs preserved.
 - [ ] Non-passing Builder results were reviewed for continue_same_step versus split_remainder_into_child_steps, and Master Chef continued autonomously when safe while paying split cost only when justified.
 - [ ] Terminal states ended with a final mission report covering completed work, completed TODO step ids plus checklist state, decisions made, and distinct closeout or continuation recommendations.

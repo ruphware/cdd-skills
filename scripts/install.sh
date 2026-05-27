@@ -20,7 +20,7 @@ source "$ROOT_DIR/scripts/install-common.sh"
 #   ./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 
 SKILLS_SRC_ROOT="$ROOT_DIR/skills"
-MASTER_CHEF_SRC_ROOT="$ROOT_DIR/cdd-master-chef"
+MASTER_CHEF_SRC_ROOT="$SKILLS_SRC_ROOT/cdd-master-chef"
 OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"
 RUNTIME_BUILDER_GENERATOR="$ROOT_DIR/scripts/build_runtime_builder_skills.py"
 
@@ -50,10 +50,10 @@ Usage: ./scripts/install.sh [--runtime NAME] [--target DIR ...] [--link] [--upda
 Install CDD skills into runtime skill directories.
 
 Runtimes:
-  generic     Canonical cdd-* skills plus the canonical cdd-master-chef package
+  generic     Canonical cdd-* skill pack
   codex       Alias for generic with ~/.agents/skills as the default target
-  claude      Canonical cdd-* skills plus the canonical cdd-master-chef package, default target ~/.claude/skills
-  openclaw    Canonical cdd-master-chef package plus generated internal OpenClaw Builder skills
+  claude      Canonical cdd-* skill pack, default target ~/.claude/skills
+  openclaw    Canonical cdd-* skill pack (cdd-master-chef canonical; rest as internal OpenClaw Builder variants), default target ~/.openclaw/skills
 
 Options:
   --runtime NAME  Select package/runtime mode; default: generic
@@ -115,7 +115,6 @@ build_source_packages() {
       [[ -f "$skill_dir/SKILL.md" ]] || continue
       SOURCE_PACKAGES+=("$skill_dir")
     done
-    SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")
     return 0
   fi
 
@@ -378,7 +377,7 @@ uninstall_from_target() {
 
 should_link_source() {
   local source_dir="$1"
-  [[ $LINK -eq 1 && ( "$source_dir" == "$SKILLS_SRC_ROOT"/* || "$source_dir" == "$MASTER_CHEF_SRC_ROOT" ) ]]
+  [[ $LINK -eq 1 && "$source_dir" == "$SKILLS_SRC_ROOT"/* ]]
 }
 
 install_one() {

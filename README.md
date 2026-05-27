@@ -100,16 +100,16 @@ Use the local installer when you want a specific runtime, target directory, or d
 Current concrete Master Chef adapters:
 
 * **OpenClaw** — packaged adapter installed with `./scripts/install.sh --runtime openclaw`
-* **Codex** — subagent-backed adapter docs in `cdd-master-chef/CODEX-ADAPTER.md` and `cdd-master-chef/CODEX-RUNBOOK.md`
-* **Claude Code** — subagent-backed adapter docs in `cdd-master-chef/CLAUDE-ADAPTER.md` and `cdd-master-chef/CLAUDE-RUNBOOK.md`
+* **Codex** — subagent-backed adapter docs in `skills/cdd-master-chef/CODEX-ADAPTER.md` and `skills/cdd-master-chef/CODEX-RUNBOOK.md`
+* **Claude Code** — subagent-backed adapter docs in `skills/cdd-master-chef/CLAUDE-ADAPTER.md` and `skills/cdd-master-chef/CLAUDE-RUNBOOK.md`
 
 Runtime details live in:
 
-* [`cdd-master-chef/RUNBOOK.md`](cdd-master-chef/RUNBOOK.md)
-* [`cdd-master-chef/CODEX-ADAPTER.md`](cdd-master-chef/CODEX-ADAPTER.md)
-* [`cdd-master-chef/CLAUDE-ADAPTER.md`](cdd-master-chef/CLAUDE-ADAPTER.md)
-* [`cdd-master-chef/RUNTIME-CAPABILITIES.md`](cdd-master-chef/RUNTIME-CAPABILITIES.md)
-* [`cdd-master-chef/openclaw/README.md`](cdd-master-chef/openclaw/README.md)
+* [`skills/cdd-master-chef/RUNBOOK.md`](skills/cdd-master-chef/RUNBOOK.md)
+* [`skills/cdd-master-chef/CODEX-ADAPTER.md`](skills/cdd-master-chef/CODEX-ADAPTER.md)
+* [`skills/cdd-master-chef/CLAUDE-ADAPTER.md`](skills/cdd-master-chef/CLAUDE-ADAPTER.md)
+* [`skills/cdd-master-chef/RUNTIME-CAPABILITIES.md`](skills/cdd-master-chef/RUNTIME-CAPABILITIES.md)
+* [`skills/cdd-master-chef/openclaw/README.md`](skills/cdd-master-chef/openclaw/README.md)
 
 No Hermes adapter ships in this repo today.
 
