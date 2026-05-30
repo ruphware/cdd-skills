@@ -1,10 +1,9 @@
 ---
 name: cdd-implement-todo
-description: "Implement exactly one TODO step, run its checks, mark that step's tasks done in TODO on success, and return a UAT checklist (explicit-only)."
-disable-model-invocation: true
+description: "Implement exactly one TODO step, run its checks, mark that step's tasks done in TODO on success, and return a UAT checklist (interactive)."
 ---
 
-# CDD Implement TODO (explicit-only)
+# CDD Implement TODO (interactive)
 
 Implement exactly one TODO step in the target repo, run that step's `Automated checks`, update the active TODO file to mark that step's tasks done on success, and return a UAT checklist.
 

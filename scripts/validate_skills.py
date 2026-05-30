@@ -3,8 +3,9 @@
 This validator is intentionally narrow. It asserts:
   - file presence (skill SKILL.md and openai.yaml per skill; full master-chef
     contract file set; generated openclaw builder skills)
-  - frontmatter shape (name regex, description present, disable-model-invocation
-    flag for user-facing skills, user-invocable flag for generated variants)
+  - frontmatter shape (name regex, description present, leaf skills are
+    model-invocable i.e. carry no disable-model-invocation flag, user-invocable
+    flag for generated variants)
   - openai.yaml display names and implicit-invocation flags
   - required H2 section headings by name only (not by body content)
   - master-chef SKILL.md references each installed skill by name
@@ -164,11 +165,12 @@ def validate_skill(skill_dir: Path) -> None:
     meta = frontmatter(skill_md)
     require_field(meta, rf"^name:\s*{re.escape(skill_dir.name)}\s*$", skill_md, "name")
     require_field(meta, r"^description:\s*.+", skill_md, "description")
-    require_field(
-        meta,
-        r"^disable-model-invocation:\s*true\b",
-        skill_md,
-        "disable-model-invocation: true",
+    # Leaf skills are model-invocable so audit->plan->implement handoffs work on
+    # Claude (where disable-model-invocation is a hard tool-level block, unlike
+    # Codex). Asserting absence locks the ungated state in. The Codex surface
+    # (openai.yaml allow_implicit_invocation: false, checked below) is unchanged.
+    assert "disable-model-invocation:" not in meta, (
+        f"leaf skill should be model-invocable (no disable-model-invocation) in {skill_md}"
     )
 
     openai_yaml = skill_dir / "agents" / "openai.yaml"

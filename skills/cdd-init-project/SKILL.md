@@ -1,10 +1,9 @@
 ---
 name: cdd-init-project
-description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (approval-gated, explicit-only; separate confirmation required for bootstrap copy/download and clone/remote/init/push actions)."
-disable-model-invocation: true
+description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (interactive, approval-gated; separate confirmation required for bootstrap copy/download and clone/remote/init/push actions)."
 ---
 
-# CDD Init Project (explicit-only)
+# CDD Init Project (interactive, approval-gated)
 
 This skill is designed for:
 - a brand-new project directory

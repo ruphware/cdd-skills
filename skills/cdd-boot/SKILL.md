@@ -1,10 +1,9 @@
 ---
 name: cdd-boot
-description: "Boot a repo into vanilla AGENTS-driven mode by ingesting AGENTS.md plus project and development docs, gracefully when non-core files differ or are missing (explicit-only)."
-disable-model-invocation: true
+description: "Boot a repo into vanilla AGENTS-driven mode by ingesting AGENTS.md plus project and development docs, gracefully when non-core files differ or are missing (interactive, read-only)."
 ---
 
-# CDD Boot (explicit-only)
+# CDD Boot (interactive, read-only)
 
 Use this skill when the user wants a one-time vanilla CDD context boot and does not intend to use another `cdd-*` skill for the task.
 

@@ -1,10 +1,9 @@
 ---
 name: cdd-audit
-description: "Audit implementation scope for spec drift, code quality, test quality, accidental complexity, and documentation drift; triage major findings; then route approved follow-up into cdd-plan, direct implementation, or backlog (explicit-only)."
-disable-model-invocation: true
+description: "Audit implementation scope for spec drift, code quality, test quality, accidental complexity, and documentation drift; triage major findings; then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
 ---
 
-# CDD Audit (explicit-only)
+# CDD Audit (interactive, read-only)
 
 Use this skill for explicit implementation or codebase audits. Output findings plus approved follow-up, not code changes.
 
@@ -107,16 +106,12 @@ This skill is interactive, read-only, and decision-driven.
 - Stay read-only during the audit.
 - Do not patch code, docs, or TODO files in this skill.
 - Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended follow-up route.
-- Collapse duplicate or closely related audit ambiguities into the smallest root decision that can be discussed cleanly.
-- Ask at most one substantive clarification or decision question per message, and use ambiguity clarifications only when the answer could materially change the audit conclusion.
-- Treat clarification as a loop, not a batch: after each user answer, re-rank the remaining unresolved ambiguities and ask the next single highest-leverage question, then wait again. Never list multiple open clarification questions in one message as a checklist for the user to answer all at once.
-- Prefer the fewest questions that resolve the most audit uncertainty.
-- Separate ambiguity resolution from finding approval: resolving an ambiguity does not approve a major finding for planning.
-- Once a major finding is sufficiently proven and recommends follow-up, surface it to the user one at a time unless multiple findings clearly collapse into one root-cause decision. After each approval decision (approve/defer/accept/reject), refresh the remaining major-finding list and surface the next one. Do not present multiple major findings as a batch approval checklist for the user to triage at once.
-- When several unresolved major ambiguities remain, ask the highest-leverage one first: prefer the question whose answer resolves the most uncertainty about finding validity, severity, grouping, affected boundary, or recommended next path.
-- When multiple major ambiguities share one underlying decision, ask one combined clarification instead of separate repetitive questions.
-- Each major clarification should state the current recommended finding direction and what audit conclusion would change if the answer differs.
-- Do not re-ask a question already answered by the user, already resolved by repo evidence, or already covered by an accepted audit assumption.
+- Ask clarifications only when the answer could materially change the audit conclusion — finding validity, severity, root-cause grouping, affected boundary, or recommended next path.
+- Treat clarification as a loop, not a batch: ask the single highest-leverage question per message, combining ambiguities that share one root decision, then re-rank and ask the next after the user answers. Never list multiple open questions as a checklist.
+- Each clarification states the current recommended finding direction and what audit conclusion would change if the answer differs.
+- Do not re-ask what the user already answered, repo evidence already resolves, or an accepted assumption already covers.
+- Keep ambiguity resolution separate from finding approval: resolving an ambiguity does not approve a finding.
+- Surface proven follow-up findings one at a time (collapse only when several share one root cause). After each decision (approve/defer/accept/reject), refresh the remaining list and surface the next — never batch findings into one approval checklist.
 - Put decision choices at the bottom under a final `**Options**` section.
 - Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key.
 - default to letters: `A.`, `B.`, `C.`.
@@ -137,12 +132,8 @@ This skill is interactive, read-only, and decision-driven.
 5) Audit code, tests, docs, configs, manifests, entrypoints, and validation surfaces together; do not audit code in isolation when the contract or tests are part of the issue.
 6) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion.
 7) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
-8) Collapse related unresolved ambiguities into root decisions. Ask only when an unresolved major ambiguity could materially change the audit conclusion; otherwise report the finding directly.
-   - Ask the highest-leverage unresolved major question first, applying the loop rule from `Interaction contract`: one question per message, then refresh remaining ambiguities and ask the next after the user answers.
-   - Use one combined clarification when several related ambiguities share one underlying decision.
-9) Once a major finding is sufficiently proven and recommends follow-up, surface each planning-relevant major finding or collapsed root-cause finding one at a time with `**Options**` so it is either approved for follow-up now, deferred, accepted as-is, or rejected. After each approval decision, refresh the remaining major-finding list and surface the next one; do not batch approvals into one checklist.
-   - Resolving ambiguity does not approve the finding for follow-up.
-   - Use one approval decision when several symptoms clearly collapse into one root-cause finding.
+8) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
+9) Once a major finding is proven and recommends follow-up, surface it with `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause.
 10) Keep a running list of:
    - findings approved for follow-up
    - findings deferred
@@ -163,12 +154,12 @@ This skill is interactive, read-only, and decision-driven.
 12) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
-     - `A. run cdd-plan on the approved findings` — recommended default; normalizes findings into runnable TODO steps before any implementation begins
-     - `B. implement approved findings directly` — fast path for trivial findings (single-file fixes, doc drift, test cleanup); use `$cdd-implement-todo` when findings map to existing TODO steps, otherwise direct edits in a follow-up session; the user explicitly accepts skipping the cdd-plan gate
+     - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` directly with the approved findings (it is model-invocable, so no manual re-type is needed) to normalize them into runnable TODO steps before any implementation begins
+     - `B. implement approved findings directly` — fast path for trivial findings (single-file fixes, doc drift, test cleanup); invoke `$cdd-implement-todo` directly when findings map to existing TODO steps, otherwise make direct edits; the user explicitly accepts skipping the cdd-plan gate
      - `C. backlog the approved findings or stop without further action this session` — defer to a later audit/plan cycle or close out
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act on approved findings, surface the step 12 routing options so they can choose `cdd-plan`, direct implementation in a separate session, or backlog/stop.
+- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act on approved findings, surface the step 12 routing options so they can choose `cdd-plan` (invoked directly on approval), direct implementation via `$cdd-implement-todo`, or backlog/stop.
 - If the audited scope is too large to review sanely in one pass, propose a smaller first audit slice before continuing.
 - If docs or specs are intentionally future-state, say that explicitly and audit for clarity rather than forcing current-state wording onto planned behavior.

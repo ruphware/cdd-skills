@@ -1,10 +1,9 @@
 ---
 name: cdd-plan
-description: "Plan change requests or external audit findings into implementation-ready TODO steps (approval-gated, explicit-only)."
-disable-model-invocation: true
+description: "Plan change requests or external audit findings into implementation-ready TODO steps (interactive, approval-gated)."
 ---
 
-# CDD Plan (explicit-only)
+# CDD Plan (interactive, approval-gated)
 
 Use this skill for change requests and externally supplied audit findings that should become implementation-ready TODO steps before implementation begins.
 
@@ -179,5 +178,5 @@ For every clarification or apply message, put choices under a final `**Options**
 6) Apply, hand off, and audit.
    - Present final selector-based apply options per the `Options block` subsection of `Interactive planning contract` instead of asking a second approval question; the selected option itself is the approval.
    - When a clear next execution step exists, prefer the three apply/revise selectors from the Options block. If no immediate follow-on step is clear, still use 2-4 selector-based apply/revise/stop options.
-   - After applying, suggest implementing the next approved TODO step via `$cdd-implement-todo`.
+   - After applying, hand off to `$cdd-implement-todo` (model-invocable) to implement the next approved TODO step.
    - Return to this planning flow only for newly discovered plan-shaping deltas after implementation, validation, or audit.

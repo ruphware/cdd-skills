@@ -1,10 +1,9 @@
 ---
 name: cdd-maintain
-description: "Maintain a CDD repo through doc drift and upkeep, approval-gated source cleanup, docs/INDEX refresh, and refactor architecture audit (explicit-only)."
-disable-model-invocation: true
+description: "Maintain a CDD repo through doc drift and upkeep, approval-gated source cleanup, docs/INDEX refresh, and refactor architecture audit (interactive)."
 ---
 
-# CDD Maintain (explicit-only)
+# CDD Maintain (interactive)
 
 Use this skill for explicit repo maintenance: doc drift and repo upkeep, approval-gated source cleanup, `docs/INDEX.md` refresh, and refactor architecture audit.
 
