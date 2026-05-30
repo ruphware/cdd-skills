@@ -23,7 +23,7 @@ Master Chef runs autonomously after a single kickoff approval — set a step bud
 
 ### Autonomous Development Prompting
 
-> [!NOTE]
+> [!TIP]
 > 1. `$cdd-plan docs/specs/blueprint.md into TODO.md`  
 result... TODO.md created or extended
 > 2. (optional) `$cdd-audit TODO.md and confirm it's cdd-master-chef ready`  
