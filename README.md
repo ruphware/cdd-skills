@@ -24,11 +24,11 @@ Master Chef runs autonomously after a single kickoff approval — set a step bud
 ### Autonomous Development Prompting
 
 > [!NOTE]
-> 1. `$cdd-plan docs/specs/blueprint.md into TODO.md`
+> 1. `$cdd-plan docs/specs/blueprint.md into TODO.md`  
 result... TODO.md created or extended
-> 2. (optional) `$cdd-audit TODO.md and confirm it's cdd-master-chef ready`
+> 2. (optional) `$cdd-audit TODO.md and confirm it's cdd-master-chef ready`  
 result... Steps adjusted 
-> 3. `$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123`
+> 3. `$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123`  
 result... Master Chef proposes scope, model profile, and workspace in one kickoff approval — the single human confirmation — then runs autonomously.
 
 The session model can't be changed; it's reported only so the run goes smoothly.
