@@ -12,28 +12,26 @@ Powered by [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate).
 
 ## 📖 Typical Workflows
 
-> [!TIP]
-> * **Human-guided feature work:** `[CDD-0] Boot` → `[CDD-2] Plan` → `[CDD-3] Implement TODO`.
-> * **Post-implementation review:** `[CDD-4] Audit` → `[CDD-2] Plan` for approved follow-up.
-> * **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactor review.
-> * **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution after kickoff approval.
+* **Human-guided feature work:** `[CDD-0] Boot` → `[CDD-2] Plan` → `[CDD-3] Implement TODO`.
+* **Post-implementation review:** `[CDD-4] Audit` → `[CDD-2] Plan` for approved follow-up.
+* **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactor review.
+* **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution after kickoff approval.
 
 ## 🧑‍🍳 Master Chef: Autonomous Development
 
-> [!IMPORTANT]
-> Master Chef runs autonomously after a single kickoff approval — set a step budget to bound how far one run can go.
+Master Chef runs autonomously after a single kickoff approval — set a step budget to bound how far one run can go.
 
 ### Autonomous Development Prompting
 
-1. `$cdd-plan docs/specs/blueprint.md into TODO.md`
+> [!NOTE]
+> 1. `$cdd-plan docs/specs/blueprint.md into TODO.md`
 result... TODO.md created or extended
-2. (optional) `$cdd-audit TODO.md and confirm it's cdd-master-chef ready`
+> 2. (optional) `$cdd-audit TODO.md and confirm it's cdd-master-chef ready`
 result... Steps adjusted 
-3. `$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123`
+> 3. `$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123`
 result... Master Chef proposes scope, model profile, and workspace in one kickoff approval — the single human confirmation — then runs autonomously.
 
-> [!NOTE]
-> The session model can't be changed; it's reported only so the run goes smoothly.
+The session model can't be changed; it's reported only so the run goes smoothly.
 
 ### Why use it?
 
