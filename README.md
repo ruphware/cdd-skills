@@ -1,4 +1,4 @@
-# 🚀 Autonomous Agent Development in Chat-Driven Development Guardrails
+# 🚀 Autonomous Agent Development in Chat Driven Development Guardrails
 
 **Gen AI for code generation. CDD for control.**
 
