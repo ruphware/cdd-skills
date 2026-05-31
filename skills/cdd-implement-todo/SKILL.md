@@ -34,6 +34,7 @@ Do not invent missing product, architecture, sequencing, or validation decisions
    - Preserve the repo's step template when possible, but add `Constraints`, `Implementation notes`, or equivalent detail when that is the smallest change that makes the step decision-complete.
 4) Implement the step with minimal diffs.
 5) Run the step’s listed `Automated checks` (or the repo’s stricter standard checks if they exist).
+   - Follow the repo’s `AGENTS.md` DoD before marking the step done.
 6) If implementation and checks pass, update only the selected step in the active `TODO*.md` file to show its Tasks are done:
    - If the step's `Tasks` section already uses markdown checkboxes, change unchecked task items from `[ ]` to `[x]`.
    - If the step's `Tasks` section uses plain bullets, rewrite only those task bullets into checked markdown checkboxes while preserving the task text and order.

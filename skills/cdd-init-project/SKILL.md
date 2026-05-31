@@ -79,7 +79,7 @@ ___
 - `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ in root `TODO.md` or split `TODO-<area>.md` files; do not replace Step 00 with a repo-specific adoption format.
 - `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, compact header guidance, and transition-to-split mechanics. In unsplit repos it remains the live journal; once active implementation work branches into `TODO-<area>.md`, keep `docs/JOURNAL.md` as the stable journal entrypoint/index, rewrite it as a short current-state index after split activation, and keep it compact and high-signal. Repo-specific content belongs in entries and summaries only.
 - `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and keep split-journal mode once it starts.
-- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, analysis and generation workflow, quality bar, and template structure. Do not replace it with a repo-specific docs-index prompt.
+- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, quality bar, and output structure. Repo-local INDEX workflow and checks may specialize it.
 - `.agents/skills/*/SKILL.md`: preserve repo-local project skills when present. Treat them as project-level workflow surfaces tied to the repo's documented process. Preserve them during bootstrap or adoption; do not require them when absent and do not pull user-home skills into the repo.
 - `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored in fresh/bootstrap and adoption outputs.
 - `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
@@ -221,7 +221,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
+   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
 9) Present final selector-based apply options for the proposed edits.
 10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -267,7 +267,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
+   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
 12) Present final selector-based apply options for the proposed edits.
 13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -289,7 +289,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
    - fill `docs/specs/blueprint.md`
    - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
    - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with its boilerplate methodology scaffold, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
+   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
 7) Present final selector-based apply options for the proposed edits.
 8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
@@ -329,7 +329,7 @@ Draft a patch proposal grouped by file, including:
    - move/normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links
 3) Add repo-specific planning to `TODO.md`:
    - preserve the boilerplate header, Step 00, and Step template
-   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via `docs/prompts/PROMPT-INDEX.md` (or `$cdd-maintain` in `index` mode)
+   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via the repo-local INDEX workflow (or `$cdd-maintain` in `index` mode)
 
 ### Phase 3 — Apply
 1) Present final selector-based apply options for the migration plan.
