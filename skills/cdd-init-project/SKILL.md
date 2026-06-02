@@ -51,7 +51,7 @@ ___
 [![CDD Skills](https://img.shields.io/badge/CDD-Skills-ecc569?style=flat-square&labelColor=0d1a26)](https://github.com/ruphware/cdd-skills)
 
 <sup>This repo follows the [`CDD Project`](https://github.com/ruphware/cdd-boilerplate) + [`CDD Skills`](https://github.com/ruphware/cdd-skills) workflow with the local [`AGENTS.md`](./AGENTS.md) contract.</sup>
-<sup>Start with `$cdd-boot`. Use `$cdd-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement-todo` for feature work, and `$cdd-maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, and upkeep.</sup>
+<sup>Start with `$cdd-boot`. Use `$cdd-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement` for feature work, and `$cdd-maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, and upkeep.</sup>
 ```
 
 - For existing-repo adoption, ask the user for explicit confirmation before proposing or applying that README.md edit; only then consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`.
@@ -226,7 +226,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory 
 10) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
-   - suggest the next step to implement via `$cdd-implement-todo`
+   - suggest the next step to implement via `$cdd-implement`
 
 ## Flow B — Docs-seeded init (approval-gated)
 Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discovered source material, and build Step 00 from it inside this repo.
@@ -272,7 +272,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 13) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
-   - suggest the next step to implement via `$cdd-implement-todo`
+   - suggest the next step to implement via `$cdd-implement`
 
 ## Flow C — Fresh boilerplate repo (approval-gated)
 1) Read the canonical contract files above.
@@ -294,7 +294,7 @@ Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discover
 8) After applying:
    - list the exact Step 00 `Automated checks` commands to run
    - provide a Step 00 UAT checklist
-   - suggest the next step to implement via `$cdd-implement-todo`
+   - suggest the next step to implement via `$cdd-implement`
 
 If Step 00 is already complete and the repo is actively developed:
 - STOP and recommend using `$cdd-plan` instead.

@@ -10,6 +10,7 @@ When a shared approval or decision point is surfaced to the human through an ada
 
 - Session settings: record unresolved current-session fields as `unknown` and continue with the active session as-is.
 - Startup: recommend a descriptive worktree branch on fresh runs from long-lived branches, keep the source checkout on its original branch, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
+- Routing: default to TODO-backed `cdd-implement` for the next runnable step; route approved audit or external-review findings through `cdd-plan` first.
 - Builder lifecycle: keep one persistent Builder per active run, attempt step-start compaction when supported, and replace Builder only for recovery conditions.
 - Step shaping: review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified.
 
@@ -26,14 +27,14 @@ When a shared approval or decision point is surfaced to the human through an ada
 - Terminal mission reports must also name the completed TODO step ids and state whether their task checklists are fully checked.
 - For `RUN_COMPLETE`, append a compact closeout recommendation bundle:
   - optionally run `cdd-audit` on the completed run scope to surface spec, code-quality, test-quality, accidental-complexity, or documentation findings
-  - if `cdd-audit` produces approved findings, normalize them through `cdd-plan` before any further delegated implementation cycle; otherwise `cdd-plan` is optional and only needed when follow-on work needs decomposition into runnable TODO steps
+  - if `cdd-audit` produces approved findings, route them through `cdd-plan` before further delegated implementation; otherwise use `cdd-plan` only when follow-on work still needs decomposition into runnable TODO steps
   - push only when the branch is ahead of origin or still unpublished
   - open a PR only once the branch is published and PR creation is still pending
   - clean up the managed worktree only when it still exists and no immediate continuation is planned there
   - return to the source checkout or parent folder after cleanup or once that worktree is no longer the active development root
 - For budget-stop `RUN_STOPPED`, append a compact continuation-aware recommendation bundle:
   - optionally run `cdd-audit` on the work completed so far
-  - optionally run `cdd-plan` to normalize approved audit findings, or to re-decompose the remaining runnable work before the next continuation; approved audit findings must flow through `cdd-plan` before any further delegated implementation
+  - optionally run `cdd-plan` to normalize approved audit findings or re-decompose the remaining runnable work before the next continuation; approved audit findings still must pass through `cdd-plan` before further delegated implementation
   - name the remaining runnable work or next continuation target
   - recommend push or open-PR actions only when warranted
   - mention managed-worktree cleanup or return to the source checkout only when no immediate continuation is planned there

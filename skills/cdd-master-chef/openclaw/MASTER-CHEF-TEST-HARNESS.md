@@ -13,7 +13,7 @@ Goal: validate the flow **kickoff -> Master-Chef skill routing -> repo-local run
   ls ~/.openclaw/skills/cdd-maintain/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-init-project/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-plan/SKILL.md >/dev/null
-  ls ~/.openclaw/skills/cdd-implement-todo/SKILL.md >/dev/null
+  ls ~/.openclaw/skills/cdd-implement/SKILL.md >/dev/null
   ls ~/.openclaw/skills/cdd-audit/SKILL.md >/dev/null
   ```
 
@@ -93,7 +93,7 @@ Inspect the repo, tell me which TODO step is next, and prepare selector-driven k
   - remaining unfinished top-level TODO step-heading count is stated when finite
   - a fresh-start worktree-branch suggestion is surfaced when the source checkout is still on a long-lived branch
   - an oversized-looking top-level step is reviewed in Master Chef before Builder handoff, and any split is justified as cheaper than preserving the parent step
-  - explicit routing choice: usually Builder via `cdd-implement-todo`, otherwise Master Chef direct for setup/planning/audit/maintain work
+  - explicit routing choice: usually Builder via `cdd-implement`, otherwise Master Chef direct for setup/planning/audit/maintain work
   - explicit selector-driven kickoff approval request
 
 ### Prompt A1 - Oversized-step review before delegation
@@ -230,17 +230,19 @@ Refuse to start a duplicate run and report the active lease owner.
 
 ```text
 /cdd-master-chef TEST ONLY: explain the routing choice for the current repo state.
-Use Builder via [CDD-3] Implement TODO (`cdd-implement-todo`) for a normal runnable TODO step.
+Use Builder via [CDD-3] Implement (`cdd-implement`) for a normal runnable TODO step.
 Explain why [CDD-0] Boot (`cdd-boot`) is a manual helper rather than part of the normal flow.
 Explain why [CDD-5] Maintain (`cdd-maintain`) is used directly when the repo specifically needs doc drift review, codebase cleanup, docs/INDEX.md refresh, or refactor architecture audit.
 Use [CDD-1] Init Project (`cdd-init-project`), [CDD-2] Plan (`cdd-plan`), [CDD-4] Audit (`cdd-audit`), or [CDD-5] Maintain (`cdd-maintain`) directly in Master Chef when setup, planning, audit, or maintenance work is needed.
 Explain how approved findings from [CDD-4] Audit or external review should go through [CDD-2] Plan (`cdd-plan`) before delegated implementation.
+Explain why direct non-TODO use of [CDD-3] Implement is explicit opt-in only and not the default autonomous Builder route.
 ```
 
 - [ ] Expected:
   - `[CDD-0] Boot` is called out as a manual / non-routed helper
   - `[CDD-5] Maintain` is called out as a direct maintenance helper
-  - `[CDD-3] Implement TODO` is the default Builder path
+  - `[CDD-3] Implement` is the default Builder path
+  - direct non-TODO use of `[CDD-3] Implement` is called out as explicit opt-in only; the normal autonomous route stays TODO-backed
   - `[CDD-1] Init Project`, `[CDD-2] Plan`, `[CDD-4] Audit`, and `[CDD-5] Maintain` are treated as Master-Chef-direct skills
   - audit findings are routed through `[CDD-2] Plan` before delegated implementation
 
@@ -366,7 +368,7 @@ Write run.json, run.lock.json, JSONL evidence, and context-summary.md first; com
 - [ ] Builder recovery stayed inside the main session, with replacement gated on the CONTRACT.md §7 clear-stop-signal set and wall-clock running silence rejected as a stop signal.
 - [ ] Builder-stop investigation ran on clear stop signals, classified each stop as `missing_requirements` / `solvable_blocker` / `route_drift` / `unrecoverable`, emitted `BUILDER_STOPPED` plus the appropriate `BUILDER_INVESTIGATION_*` event, and updated `builder_stop_reason` / `builder_stop_classification` / `builder_stop_evidence_summary` in `run.json`.
 - [ ] Master Chef chose the correct routing path for the repo state.
-- [ ] `cdd-implement-todo` remained the default delegated path for normal step execution.
+- [ ] `cdd-implement` remained the default delegated path for normal step execution.
 - [ ] Normal next-step continuation reused the same Builder first, used native-context fallback when manual Builder compaction was unsupported, and replaced Builder only under defined recovery conditions.
 - [ ] Replacement or direct completion left one active Builder identity in runtime state and control flow after older Builder sessions were closed or marked inactive with lineage and logs preserved.
 - [ ] Builder session resurrection was not used as the normal continuation or recovery path.

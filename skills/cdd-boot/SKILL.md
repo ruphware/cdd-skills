@@ -56,7 +56,7 @@ Development:
 - Prefix every follow-up option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters: `A.`, `B.`, `C.`. Use numbers only when the surrounding context is already numeric and that would be clearer.
 - When no repo-local `NEXT` contract exists, use a final `**Options**` section with 2-4 concrete next-step choices, put the recommended option first, and when practical tell the user they can reply with just the selector.
 - Keep boot follow-up read-only navigation only; do not ask for approval and do not offer to start implementation directly from boot.
-- If a clear next runnable TODO step exists, recommend continuing via `$cdd-implement-todo <step>` rather than offering direct implementation.
+- If a clear next runnable TODO step exists, recommend continuing via `$cdd-implement <step>` rather than offering direct implementation.
 
 ## Worktree check
 - If the repo is Git-backed, inspect whether the current checkout is the main worktree or a linked worktree before finishing the boot report.
@@ -76,8 +76,8 @@ Return a concise boot report that includes:
 - `Sources used` — list the files actually read
 - `Missing expected files` — list only the missing canonical docs
 - `Next action` — recommend the best follow-up using selector-labeled choices through the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise through a final `**Options**` section
-- When worktree migration is recommended, `Next action` must include a selector choice that creates or moves into `.cdd-runtime/worktrees/<branch-or-tag>/` and, if a clear next runnable TODO step exists, chains that path with `$cdd-implement-todo <step>`.
-- When staying in the current checkout is acceptable and a clear next runnable TODO step exists, recommend `$cdd-implement-todo <step>` rather than offering to start implementation directly.
+- When worktree migration is recommended, `Next action` must include a selector choice that creates or moves into `.cdd-runtime/worktrees/<branch-or-tag>/` and, if a clear next runnable TODO step exists, chains that path with `$cdd-implement <step>`.
+- When staying in the current checkout is acceptable and a clear next runnable TODO step exists, recommend `$cdd-implement <step>` rather than offering to start implementation directly.
 
 On success, recommend continuing in vanilla AGENTS-driven mode.
 

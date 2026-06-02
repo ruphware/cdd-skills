@@ -31,7 +31,7 @@ Treat missing docs, specs, or tests as findings. Do not invent missing contract 
   - whole codebase
 - Resolve the scope before asking anything.
 - Ask only when the scope is missing or ambiguous, and keep the question scoped to the smallest missing decision.
-- If the scope references TODO steps, resolve them the same way `cdd-implement-todo` would: normalize numeric step identifiers and ask only if multiple matches remain.
+- If the scope references TODO steps, resolve them the same way `cdd-implement` would: normalize numeric step identifiers and ask only if multiple matches remain.
 - If the scope resolves to one or more TODO steps, record the selected step ids explicitly and audit each selected step against its own step contract rather than only the broader TODO topic.
 
 ## Step-scoped TODO contract audit
@@ -154,12 +154,12 @@ This skill is interactive, read-only, and decision-driven.
 12) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
-     - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` directly with the approved findings (it is model-invocable, so no manual re-type is needed) to normalize them into runnable TODO steps before any implementation begins
-     - `B. implement approved findings directly` — fast path for trivial findings (single-file fixes, doc drift, test cleanup); invoke `$cdd-implement-todo` directly when findings map to existing TODO steps, otherwise make direct edits; the user explicitly accepts skipping the cdd-plan gate
+     - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` directly with the approved findings to normalize them into runnable TODO steps before implementation begins
+     - `B. implement one approved finding directly` — fast path for one trivial bounded finding or one collapsed root-cause package (single-file fixes, doc drift, test cleanup); invoke `$cdd-implement` directly, prefer TODO-backed execution when it already maps to an existing step, and otherwise use the bounded direct path; if multiple approved findings remain, require the user to pick exactly one or return to `cdd-plan`
      - `C. backlog the approved findings or stop without further action this session` — defer to a later audit/plan cycle or close out
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act on approved findings, surface the step 12 routing options so they can choose `cdd-plan` (invoked directly on approval), direct implementation via `$cdd-implement-todo`, or backlog/stop.
+- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act, surface the step 12 routing options so they can choose `cdd-plan`, direct implementation for exactly one approved bounded finding package, or backlog or stop.
 - If the audited scope is too large to review sanely in one pass, propose a smaller first audit slice before continuing.
 - If docs or specs are intentionally future-state, say that explicitly and audit for clarity rather than forcing current-state wording onto planned behavior.

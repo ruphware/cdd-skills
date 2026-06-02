@@ -45,7 +45,7 @@ CDD_DISPLAY_NAMES = {
     "cdd-boot": "[CDD-0] Boot",
     "cdd-init-project": "[CDD-1] Init Project",
     "cdd-plan": "[CDD-2] Plan",
-    "cdd-implement-todo": "[CDD-3] Implement TODO",
+    "cdd-implement": "[CDD-3] Implement",
     "cdd-audit": "[CDD-4] Audit",
     "cdd-maintain": "[CDD-5] Maintain",
 }
@@ -103,7 +103,13 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Planning anti-patterns",
         "## Flow",
     ),
-    "cdd-implement-todo": (),
+    "cdd-implement": (
+        "## Supported task sources",
+        "## Task normalization and escalation",
+        "## Interaction contract",
+        "## Completion semantics",
+        "## Flow",
+    ),
     "cdd-audit": (
         "## Sources of truth",
         "## Scope resolution",

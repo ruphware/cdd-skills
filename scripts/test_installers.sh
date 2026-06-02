@@ -126,7 +126,7 @@ echo "[CI] INFO BuilderInstallFresh root={$BUILDER_INSTALL}"
 assert_exists "$BUILDER_INSTALL/cdd-boot/SKILL.md"
 assert_exists "$BUILDER_INSTALL/cdd-maintain/SKILL.md"
 assert_exists "$BUILDER_INSTALL/cdd-plan/SKILL.md"
-assert_exists "$BUILDER_INSTALL/cdd-implement-todo/SKILL.md"
+assert_exists "$BUILDER_INSTALL/cdd-implement/SKILL.md"
 assert_exists "$BUILDER_INSTALL/cdd-audit/SKILL.md"
 assert_not_exists "$BUILDER_INSTALL/cdd-audit-and-implement"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/SKILL.md"
@@ -188,19 +188,31 @@ description: retired skill
 disable-model-invocation: true
 ---
 EOF
+mkdir -p "$BUILDER_RETIRED/cdd-implement-todo"
+cat >"$BUILDER_RETIRED/cdd-implement-todo/SKILL.md" <<'EOF'
+---
+name: cdd-implement-todo
+description: retired skill
+disable-model-invocation: true
+---
+EOF
 mkdir -p "$BUILDER_RETIRED/cdd-index.pruned.legacy"
 touch "$BUILDER_RETIRED/cdd-index.pruned.legacy/SKILL.md"
 mkdir -p "$BUILDER_RETIRED/cdd-refactor.pruned.legacy"
 touch "$BUILDER_RETIRED/cdd-refactor.pruned.legacy/SKILL.md"
 mkdir -p "$BUILDER_RETIRED/cdd-implementation-audit.pruned.legacy"
 touch "$BUILDER_RETIRED/cdd-implementation-audit.pruned.legacy/SKILL.md"
+mkdir -p "$BUILDER_RETIRED/cdd-implement-todo.pruned.legacy"
+touch "$BUILDER_RETIRED/cdd-implement-todo.pruned.legacy/SKILL.md"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_RETIRED" --update
 assert_not_exists "$BUILDER_RETIRED/cdd-index"
 assert_not_exists "$BUILDER_RETIRED/cdd-refactor"
 assert_not_exists "$BUILDER_RETIRED/cdd-implementation-audit"
+assert_not_exists "$BUILDER_RETIRED/cdd-implement-todo"
 assert_not_exists "$BUILDER_RETIRED/cdd-index.pruned.legacy"
 assert_not_exists "$BUILDER_RETIRED/cdd-refactor.pruned.legacy"
 assert_not_exists "$BUILDER_RETIRED/cdd-implementation-audit.pruned.legacy"
+assert_not_exists "$BUILDER_RETIRED/cdd-implement-todo.pruned.legacy"
 
 echo "[CI] INFO BuilderInstallPrune root={$BUILDER_PRUNE}"
 "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_PRUNE"
@@ -277,6 +289,7 @@ printf 'y\n' | "$ROOT_DIR/scripts/install.sh" --target "$BUILDER_UNINSTALL" --un
 assert_not_exists "$BUILDER_UNINSTALL/cdd-boot"
 assert_not_exists "$BUILDER_UNINSTALL/cdd-maintain"
 assert_not_exists "$BUILDER_UNINSTALL/cdd-plan"
+assert_not_exists "$BUILDER_UNINSTALL/cdd-implement"
 assert_not_exists "$BUILDER_UNINSTALL/cdd-audit"
 assert_not_exists "$BUILDER_UNINSTALL/cdd-master-chef"
 assert_not_exists "$BUILDER_UNINSTALL/cdd-obsolete"
@@ -288,6 +301,7 @@ assert_exists "$BUILDER_UNINSTALL/cdd-foreign/SKILL.md"
 echo "[CI] INFO ClaudeInstallFresh root={$CLAUDE_INSTALL}"
 "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$CLAUDE_INSTALL"
 assert_exists "$CLAUDE_INSTALL/cdd-plan/SKILL.md"
+assert_exists "$CLAUDE_INSTALL/cdd-implement/SKILL.md"
 assert_exists "$CLAUDE_INSTALL/cdd-audit/SKILL.md"
 assert_not_exists "$CLAUDE_INSTALL/cdd-audit-and-implement"
 assert_exists "$CLAUDE_INSTALL/cdd-master-chef/SKILL.md"
@@ -310,7 +324,7 @@ assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$OPENCLAW_I
 assert_exists "$OPENCLAW_INSTALL/cdd-boot/SKILL.md"
 assert_exists "$OPENCLAW_INSTALL/cdd-maintain/SKILL.md"
 assert_exists "$OPENCLAW_INSTALL/cdd-plan/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-implement-todo/SKILL.md"
+assert_exists "$OPENCLAW_INSTALL/cdd-implement/SKILL.md"
 assert_exists "$OPENCLAW_INSTALL/cdd-audit/SKILL.md"
 assert_not_exists "$OPENCLAW_INSTALL/cdd-audit-and-implement"
 assert_command_output_contains "user-invocable: false" sed -n '1,40p' "$OPENCLAW_INSTALL/cdd-plan/SKILL.md"
@@ -339,7 +353,7 @@ assert_exists "$OPENCLAW_LINK/cdd-plan/SKILL.md"
 assert_exists "$OPENCLAW_LINK/cdd-audit/SKILL.md"
 "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_LINK" --link --update
 assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
-assert_exists "$OPENCLAW_LINK/cdd-implement-todo/SKILL.md"
+assert_exists "$OPENCLAW_LINK/cdd-implement/SKILL.md"
 
 echo "[CI] INFO OpenClawUninstall root={$OPENCLAW_UNINSTALL}"
 "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UNINSTALL"
@@ -364,7 +378,7 @@ assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-boot"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-maintain"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-implement-todo"
+assert_not_exists "$OPENCLAW_UNINSTALL/cdd-implement"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-audit"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
 assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
@@ -376,6 +390,9 @@ HOME="$ALL_HOME" "$ROOT_DIR/scripts/install.sh" --all
 assert_exists "$ALL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
 assert_exists "$ALL_HOME/.claude/skills/cdd-master-chef/SKILL.md"
 assert_exists "$ALL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
+assert_exists "$ALL_HOME/.agents/skills/cdd-implement/SKILL.md"
+assert_exists "$ALL_HOME/.claude/skills/cdd-implement/SKILL.md"
+assert_exists "$ALL_HOME/.openclaw/skills/cdd-implement/SKILL.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$ALL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$ALL_HOME/.claude/skills/cdd-master-chef/SKILL.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$ALL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"

@@ -62,7 +62,7 @@ Do not start implementation until the effective Builder settings for the run are
 
 Before autonomous implementation starts, Master Chef should present one selector-driven kickoff approval that covers:
 
-- the next runnable TODO step or other chosen routing action
+- the proposed next action and routing path
 - any cost-justified pre-delegation split review of an oversized next top-level TODO step, plus the recomputed remaining top-level-step count when a split is actually chosen
 - current session model
 - current session thinking

@@ -214,12 +214,12 @@ Runtime adapters must ask for that step budget explicitly and record it in runti
 Master Chef chooses the internal `cdd-*` routing model.
 
 - For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
-- Builder default: `cdd-implement-todo` for the next runnable TODO step.
+- Builder default: `cdd-implement` for the next runnable TODO step. Direct non-TODO use is explicit opt-in only.
 - If the next runnable top-level TODO step looks oversized for one Builder run, apply the compact review-first split policy rather than splitting by default. Delegate the parent step unchanged while one Builder delegation can still finish it safely, repair it in place when a minimal TODO fix restores that viability without changing scope, and split only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
 - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-maintain` stay in the main session rather than being delegated to Builder.
 - Use `cdd-maintain` directly when the repo specifically needs doc drift review, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review before the normal TODO loop continues.
-- `cdd-audit` is an installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `cdd-plan` in the main session before any delegated implementation begins.
-- External audit findings and review-derived work packages must be normalized through `cdd-plan` in the main session before any delegated implementation begins.
+- `cdd-audit` is an installed direct audit helper for explicit implementation or codebase audits.
+- Approved findings from `cdd-audit` or external review must be normalized through `cdd-plan` in the main session before any delegated implementation begins.
 
 Runtime adapters must define the install roots, invocation surface, and delegation mechanism for those internal workflows.
 

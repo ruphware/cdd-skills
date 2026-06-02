@@ -72,11 +72,11 @@ Operating contract:
    - which repo-native install, dependency, build, test, or validation entrypoints will have to be prepared in the active worktree before Builder or `hard_gate` validation can rely on it
 8. Master Chef chooses the internal `cdd-*` routing model for the core `[CDD-0]` through `[CDD-5]` skills.
    - `[CDD-1] Init Project` (`cdd-init-project`): for a new or not-yet-CDD project, propose and normally start here in the main session before any autonomous TODO execution.
-   - `[CDD-3] Implement TODO` (`cdd-implement-todo`): Builder default for the next runnable TODO step.
+   - `[CDD-3] Implement` (`cdd-implement`): Builder default for the next runnable TODO step; direct non-TODO use is explicit opt-in only.
    - If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting by default. Prefer delegating the step unchanged while one Builder delegation can still finish it safely in one run; if a minimal TODO fix restores that viability without changing scope, repair it in place; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then treat the first new runnable step as the proposed delegated action.
    - `[CDD-2] Plan` (`cdd-plan`): Master Chef direct path that stays in the main session rather than being delegated to Builder.
-   - `[CDD-4] Audit` (`cdd-audit`): installed direct audit helper for explicit implementation or codebase audits; approved findings still flow through `[CDD-2] Plan` before any delegated implementation begins.
-   - External audit findings and review-derived work packages: normalize them through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
+   - `[CDD-4] Audit` (`cdd-audit`): installed direct audit helper for explicit implementation or codebase audits.
+   - Route approved findings from `[CDD-4] Audit` or external review through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
    - `[CDD-0] Boot` (`cdd-boot`): installed helper, but not part of the normal Master Chef routing flow.
    - `[CDD-5] Maintain` (`cdd-maintain`): installed direct maintenance helper for doc drift, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review when one of those tasks is the actual next action.
    - Treat the installed `cdd-*` skills as internal Master Chef workflows, not standalone user commands during an active Master Chef run.

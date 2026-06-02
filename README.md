@@ -12,14 +12,14 @@ Powered by [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate).
 
 ## 📖 Typical Workflows
 
-* **Human-guided feature work:** `[CDD-0] Boot` → `[CDD-2] Plan` → `[CDD-3] Implement TODO`.
+* **Human-guided feature work:** `[CDD-0] Boot` → `[CDD-2] Plan` → `[CDD-3] Implement`.
 * **Post-implementation review:** `[CDD-4] Audit` → `[CDD-2] Plan` for approved follow-up.
 * **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactor review.
 * **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution after kickoff approval.
 
 ## 🧑‍🍳 Master Chef: Autonomous Development
 
-Master Chef runs autonomously after a single kickoff approval — set a step budget to bound how far one run can go.
+Master Chef runs autonomously after one kickoff approval. Set a step budget to cap how far a run can go.
 
 ### Autonomous Development Prompting
 
@@ -35,7 +35,7 @@ The session model can't be changed; it's reported only so the run goes smoothly.
 
 ### Why use it?
 
-Set it and go: Master Chef works through TODO steps in a worktree/branch, with persistent Builder context, recovery rules, commits, pushes, and a final mission report.
+Set it and go: Master Chef works through runnable TODO steps in a branch-backed worktree, with persistent Builder context, recovery rules, commits, pushes, and a final mission report.
 
 * One kickoff approval controls how far the run can go.
 * Branch-backed worktrees keep autonomous changes isolated and reviewable.
@@ -63,9 +63,9 @@ The core loop is intentionally simple: boot context, plan work, implement one st
  *cdd-plan*
  Convert change requests or audit findings into implementation-ready TODO steps.
 
-- **[CDD-3] Implement TODO**
- *cdd-implement-todo*
- Implement exactly one approved TODO step and mark it done.
+- **[CDD-3] Implement**
+ *cdd-implement*
+ Implement exactly one bounded task; prefer TODO-backed steps and use direct mode only when the task is already decision-complete.
 
 - **[CDD-4] Audit**
  *cdd-audit*
@@ -148,7 +148,7 @@ Common variants:
 Quick first install for Codex, Claude Code, and Gemini CLI only:
 
 ```bash
-npx skills add https://github.com/ruphware/cdd-skills/ --skill cdd-boot --skill cdd-init-project --skill cdd-plan --skill cdd-implement-todo --skill cdd-audit --skill cdd-maintain --skill cdd-master-chef -a codex -a claude-code -a gemini-cli -g
+npx skills add https://github.com/ruphware/cdd-skills/ --skill cdd-boot --skill cdd-init-project --skill cdd-plan --skill cdd-implement --skill cdd-audit --skill cdd-maintain --skill cdd-master-chef -a codex -a claude-code -a gemini-cli -g
 ```
 
 This path does not provide the repo-managed update or uninstall flow and does not preserve managed prune semantics.

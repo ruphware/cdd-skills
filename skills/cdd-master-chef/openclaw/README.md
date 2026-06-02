@@ -33,7 +33,7 @@ The internal Builder routing map stays aligned with the core skill pack:
 - `[CDD-0] Boot` -> `cdd-boot`
 - `[CDD-1] Init Project` -> `cdd-init-project`
 - `[CDD-2] Plan` -> `cdd-plan`
-- `[CDD-3] Implement TODO` -> `cdd-implement-todo`
+- `[CDD-3] Implement` -> `cdd-implement`
 - `[CDD-4] Audit` -> `cdd-audit`
 - `[CDD-5] Maintain` -> `cdd-maintain`
 
@@ -119,7 +119,7 @@ Uninstall:
 - `[CDD-5] Maintain` -> `cdd-maintain`
 - `[CDD-1] Init Project` -> `cdd-init-project`
 - `[CDD-2] Plan` -> `cdd-plan`
-- `[CDD-3] Implement TODO` -> `cdd-implement-todo`
+- `[CDD-3] Implement` -> `cdd-implement`
 - `[CDD-4] Audit` -> `cdd-audit`
 
 The internal Builder variants are model-visible to OpenClaw agent runs and hidden from the user slash-command surface.
@@ -157,7 +157,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    - if the next runnable top-level TODO step looks oversized for one Builder run, review it first and keep it intact unless the parent step is not safely delegable as one coherent Builder action and the split cost is clearly justified
    - inspect the remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - if this is a fresh run from a long-lived branch, suggest a descriptive worktree branch before managed worktree kickoff
-   - choose the routing path: usually Builder via `[CDD-3] Implement TODO`, otherwise Master-Chef-direct setup, planning, audit, or maintain work
+   - choose the routing path: usually Builder via `[CDD-3] Implement` for the next runnable TODO step; direct non-TODO use is explicit opt-in, otherwise use Master-Chef-direct setup, planning, audit, or maintain work
    - route approved findings from `[CDD-4] Audit` or external review through `[CDD-2] Plan` before any delegated implementation
    - when that top-level step count is finite, recommend that exact count as the default/max step budget, meaning all remaining steps, after any step split
    - ask how many TODO steps this run should cover: a positive integer count or `until_blocked_or_complete`
@@ -180,7 +180,7 @@ After the managed worktree becomes active, Master Chef must inspect repo-native 
 
 After kickoff approval, Master Chef drives the Builder automatically until the run completes, hits a hard technical or physical stop, or deadlocks.
 
-After each passed, blocked, or stale delegated step, Master Chef re-inspects repo state and keeps the same Builder as the normal continuation path when it remains usable. Before the next delegated step, Master Chef attempts Builder compaction only when the active OpenClaw surface exposes a supported operation; this repo does not currently document one, so the truthful default is to keep the same Builder and rely on native context management. If recovery conditions force replacement, Master Chef starts a fresh Builder run, normally via `cdd-implement-todo`. If an older Builder is no longer needed, preserve lineage and durable evidence, then close it when the runtime exposes an explicit shutdown surface or mark it inactive so one active Builder identity remains in runtime state and control flow.
+After each passed, blocked, or stale delegated step, Master Chef re-inspects repo state and keeps the same Builder as the normal continuation path when it remains usable. Before the next delegated step, Master Chef attempts Builder compaction only when the active OpenClaw surface exposes a supported operation; this repo does not currently document one, so the truthful default is to keep the same Builder and rely on native context management. If recovery conditions force replacement, Master Chef starts a fresh Builder run, normally via `cdd-implement`. If an older Builder is no longer needed, preserve lineage and durable evidence, then close it when the runtime exposes an explicit shutdown surface or mark it inactive so one active Builder identity remains in runtime state and control flow.
 
 Every non-passing Builder attempt becomes a continuation-review boundary. Master Chef reviews completed work, failed proof, whether the remainder is still one bounded implementation action, whether a fresh Builder would spend most of its effort on recovery rather than completion, and whether the unfinished remainder now has cleaner sub-step boundaries than the original parent step.
 
@@ -228,7 +228,7 @@ Default delegated path:
 
 - Master Chef chooses the next runnable TODO step
 - if that top-level TODO step looks oversized for one Builder run, Master Chef first prefers delegating it unchanged or repairing it in place; it splits only when the parent step is not safely delegable and the split cost is clearly justified, then delegates the first new runnable step
-- Builder uses the internal `[CDD-3] Implement TODO` skill (`cdd-implement-todo`) for that step, reusing the active Builder as the normal path across delegated steps in the same run
+- Builder uses the internal `[CDD-3] Implement` skill (`cdd-implement`) for that step, reusing the active Builder as the normal path across delegated steps in the same run
 - Builder updates only the selected TODO step on success
 - Master Chef does not pass the step until that selected TODO step's task checklist reflects the completed work
 - Master Chef reviews the evidence, approves UAT, commits, pushes, and reports
@@ -260,7 +260,7 @@ Master-Chef-direct path:
 
 Audit findings:
 
-- approved findings from `[CDD-4] Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then hand the selected runnable step to Builder through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+- approved findings from `[CDD-4] Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then hand the selected runnable step to Builder through `[CDD-3] Implement` (`cdd-implement`)
 
 ## Validation
 

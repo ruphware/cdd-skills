@@ -714,3 +714,56 @@ Move the `cdd-master-chef` package to `skills/cdd-master-chef/` so it sits along
 - `scripts/test_installers.sh` newly asserts `user-invocable: true` on installed `cdd-master-chef` for all four install paths (codex/generic, claude, openclaw, and the `--all` triple). Removing any one of those four assertions makes the test fail.
 - All five automated checks pass.
 - Closed historical steps (49–60) in `TODO.md` are byte-for-byte unchanged.
+
+## Step 62 — Rename `cdd-implement-todo` to `cdd-implement` and broaden `[CDD-3]` beyond TODO-only execution
+
+### Goal
+
+Rename the `[CDD-3]` skill to `cdd-implement`, keep TODO-backed execution as the preferred path, and allow one bounded non-TODO implementation task from approved audit findings, issue/ticket text, or pasted task text, with normalization, direct-implement, TODO-add-and-implement, or `cdd-plan` escalation behavior.
+
+### Constraints
+
+- Slug rename: `cdd-implement-todo` → `cdd-implement`. Label rename: `[CDD-3] Implement TODO` → `[CDD-3] Implement`.
+- `[CDD-3]` still implements exactly one bounded task at a time.
+- TODO-backed execution remains the preferred durable path and the default autonomous Builder path in Master Chef.
+- If the selected task is too large, multi-surface, or still not decision-complete after minimal normalization, `[CDD-3]` must offer `cdd-plan` instead of coding.
+- When a non-TODO task is already bounded and decision-complete, `[CDD-3]` must offer both `implement directly` and `add to TODO and implement`.
+- Direct mode may normalize the selected task in-chat, but it must not fabricate a TODO artifact on success; final closeout is the normal final report plus existing journal rules.
+- TODO-backed mode must preserve current TODO-step resolution and mark only the selected TODO step done on success.
+- No live task-manager integration in this step; support issue/ticket/task-list content only when the task text is already in the prompt or repo.
+- Do not edit closed historical steps in `TODO.md`.
+
+### Tasks
+
+- [x] Rename `skills/cdd-implement-todo/` to `skills/cdd-implement/` with `git mv`, update `SKILL.md` frontmatter, heading, examples, and `agents/openai.yaml`, and rewrite the skill contract around one selected implementation task rather than exactly one TODO step.
+- [x] Add explicit `[CDD-3]` source-resolution and normalization rules in `skills/cdd-implement/SKILL.md`: support one TODO step, one approved audit finding package, one pasted task list item, or one issue/ticket text; normalize small gaps in place; if the task is still too large or plan-shaped, offer `cdd-plan`; if it is decision-complete and non-TODO, offer selector-based `implement directly` and `add to TODO and implement` options.
+- [x] Split completion behavior by source in `skills/cdd-implement/SKILL.md`: TODO-backed runs keep current step resolution and TODO checklist writeback semantics; direct runs skip synthetic TODO writeback and instead require the final report to name the source task, files changed, checks run, and UAT, while journal updates still follow repo rules.
+- [x] Update adjacent skill and package docs — `README.md`, `skills/cdd-boot/SKILL.md`, `skills/cdd-boot/agents/openai.yaml`, `skills/cdd-init-project/SKILL.md`, `skills/cdd-plan/SKILL.md`, `skills/cdd-audit/SKILL.md`, `skills/cdd-master-chef/{SKILL.md,CONTRACT.md,openclaw/README.md,openclaw/MASTER-CHEF-RUNBOOK.md,openclaw/MASTER-CHEF-TEST-HARNESS.md}` — so they reference `[CDD-3] Implement` / `cdd-implement`, keep TODO as the preferred autonomous path, and describe direct implementation as an explicit opt-in route for bounded non-TODO work.
+- [x] Update installer and proof surfaces — `scripts/install.sh`, `scripts/validate_skills.py`, and `scripts/test_installers.sh` — so the new skill name is canonical, the old `cdd-implement-todo` install artifact is retired on update, `validate_skills.py` requires any new `[CDD-3]` structural headings added for source resolution / normalization / closeout semantics, and installer tests plus a repo-wide grep fail if the old slug or label remains outside live surfaces other than the explicit retirement fixtures.
+
+### Implementation notes
+
+- File plan: `skills/cdd-implement/SKILL.md` | rename + broaden `[CDD-3]` contract | ~160 LOC
+- File plan: `skills/cdd-implement/agents/openai.yaml` | display name and short description update | ~4 LOC
+- File plan: `README.md`, `skills/cdd-{boot,init-project,plan,audit}/*`, `skills/cdd-master-chef/**/*` | rename references and routing semantics | targeted doc edits
+- File plan: `scripts/{install.sh,validate_skills.py,test_installers.sh}` | slug retirement plus validation and test coverage | targeted proof-surface edits
+- Follow the `cdd-audit` rename pattern: hard rename the canonical slug, retire the old install artifact on upgrade, and sweep remaining repo references without editing closed TODO history.
+- Add named `[CDD-3]` sections such as `## Supported task sources`, `## Task normalization and escalation`, and `## Completion semantics` so validator coverage can stay structural rather than prose-fragile.
+- Keep Master Chef routing conservative: Builder default stays the next runnable TODO step through `cdd-implement`; approved audit findings and larger non-TODO requests still go through `cdd-plan` before autonomous delegation.
+- After the sweep, `rg -n 'cdd-implement-todo|\\[CDD-3\\] Implement TODO' . --glob '!TODO.md' --glob '!.git/**' --glob '!scripts/install.sh' --glob '!scripts/test_installers.sh'` should be empty. The excluded installer surfaces are the intentional retirement proof for upgrade cleanup.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_installers.sh`
+- `rg -n 'cdd-implement-todo|\\[CDD-3\\] Implement TODO' . --glob '!TODO.md' --glob '!.git/**' --glob '!scripts/install.sh' --glob '!scripts/test_installers.sh'`
+
+### UAT
+
+- `skills/cdd-implement/SKILL.md` exists with `name: cdd-implement` and `[CDD-3] Implement` user-facing copy.
+- The skill accepts one TODO step, one approved audit finding package, one pasted task item, or one issue/ticket text already available in-session or in-repo.
+- When a non-TODO task is small and decision-complete, the skill offers both `implement directly` and `add to TODO and implement`; when it is too large or still plan-shaped, it offers `cdd-plan`.
+- Direct mode completes without fabricating TODO state and reports source task, changed files, checks, and UAT; TODO-backed mode still updates only the selected TODO step on success.
+- Boot/init/plan/audit/Master Chef docs all reference `cdd-implement`, and Master Chef still treats TODO-backed execution as the default delegated path.
+- Installer update removes a pre-existing `cdd-implement-todo/` install, and the repo-wide grep finds no live old-slug or old-label references outside `TODO.md` history and the explicit installer retirement fixtures.

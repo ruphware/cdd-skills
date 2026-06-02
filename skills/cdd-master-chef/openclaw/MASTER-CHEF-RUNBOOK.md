@@ -91,7 +91,7 @@ Before `/cdd-master-chef` is used:
    - `~/.openclaw/skills/cdd-maintain`
    - `~/.openclaw/skills/cdd-init-project`
    - `~/.openclaw/skills/cdd-plan`
-   - `~/.openclaw/skills/cdd-implement-todo`
+   - `~/.openclaw/skills/cdd-implement`
    - `~/.openclaw/skills/cdd-audit`
 6. If Builder should diverge from the active session, prepare an optional `Builder override` that contains `builder_model`, `builder_thinking`, or both.
 
@@ -146,10 +146,10 @@ On the first `/cdd-master-chef` turn:
    - whether the repo first needs `cdd-init-project`
 3. Choose the next action and route it through the right internal skill:
    - bootstrap path: `[CDD-1] Init Project` (`cdd-init-project`) in the main session when the user wants a new project or when the repo must adopt CDD before the normal loop can begin
-   - default delegated path: next runnable TODO step handled through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+   - default delegated path: next runnable TODO step handled through `[CDD-3] Implement` (`cdd-implement`); direct non-TODO use is explicit opt-in only
    - if the next runnable top-level TODO step looks oversized for one Builder run, review it in Master Chef first and keep it intact unless the parent step is not safely delegable as one coherent Builder action and the split cost is clearly justified; only then split into smaller decision-complete TODO steps and recompute the remaining top-level-step count
    - Master Chef direct: `[CDD-1] Init Project` (`cdd-init-project`), `[CDD-2] Plan` (`cdd-plan`), `[CDD-4] Audit` (`cdd-audit`), or `[CDD-5] Maintain` (`cdd-maintain`) when the repo needs setup, planning, audit, doc drift review, codebase cleanup, `docs/INDEX.md` refresh, or refactor architecture audit before Builder work
-   - approved findings from `[CDD-4] Audit` or external review: normalize them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
+   - approved findings from `[CDD-4] Audit` or external review: route them through `[CDD-2] Plan` (`cdd-plan`) before any delegated Builder work
 4. Report session-derived Master Chef settings and effective Builder settings:
    - current session model as `master_model`, or `unknown` when OpenClaw does not expose it exactly
    - current session thinking as `master_thinking`, or `unknown` when OpenClaw does not expose it exactly
@@ -369,7 +369,7 @@ Master Chef chooses the routing path.
 
 **Builder delegated by default:**
 
-- `[CDD-3] Implement TODO` (`cdd-implement-todo`) — normal path for one approved runnable TODO step
+- `[CDD-3] Implement` (`cdd-implement`) — normal path for one approved runnable TODO step
 
 **Manual / non-routed helper:**
 
@@ -385,7 +385,7 @@ Master Chef chooses the routing path.
 
 **Audit findings:**
 
-- approved findings from `[CDD-4] Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement TODO` (`cdd-implement-todo`)
+- approved findings from `[CDD-4] Audit` or external review are normalized through `[CDD-2] Plan` (`cdd-plan`) in the main session, then delegate the selected runnable step through `[CDD-3] Implement` (`cdd-implement`)
 
 Default spawn shape:
 
@@ -409,7 +409,7 @@ Persistent Builder continuation is the normal path after the managed-worktree re
 The Builder must:
 
 - use the exact internal `cdd-*` skill chosen by Master Chef
-- default to `cdd-implement-todo` for a normal approved runnable TODO step
+- default to `cdd-implement` for a normal approved runnable TODO step
 - not switch itself into planning or maintain mode; if the delegated path no longer fits, return a blocker instead
 - implement exactly one approved action
 - stop after that one approved action and wait for the next explicit Master Chef handoff instead of self-selecting the next TODO step
@@ -443,7 +443,7 @@ After kickoff approval:
    - update runtime state
    - advertise `STEP_PASS` with full detail in the current Master Chef session
 11. Re-inspect TODO state.
-12. If another runnable step exists, re-inspect repo and TODO state, attempt Builder compaction only when the active OpenClaw surface exposes a supported operation, and continue automatically with the same Builder when it remains usable; otherwise spawn a fresh Builder run for that next delegated action, normally via `cdd-implement-todo`. If an older Builder is no longer needed, preserve lineage and durable evidence, then close it when the runtime exposes an explicit shutdown surface or mark it inactive so one active Builder identity remains in runtime state and control flow.
+12. If another runnable step exists, re-inspect repo and TODO state, attempt Builder compaction only when the active OpenClaw surface exposes a supported operation, and continue automatically with the same Builder when it remains usable; otherwise spawn a fresh Builder run for that next delegated action, normally via `cdd-implement`. If an older Builder is no longer needed, preserve lineage and durable evidence, then close it when the runtime exposes an explicit shutdown surface or mark it inactive so one active Builder identity remains in runtime state and control flow.
 13. If no runnable step remains, report `RUN_COMPLETE` with the final mission report.
 14. If Master Chef context is getting large, update `context-summary.md` at the boundary reached above, then compact before continuing.
 
@@ -555,7 +555,7 @@ Default thresholds for cadence, boot timeout, suspect classification, and replac
 
 ## 8) Master Chef context compaction
 
-Builder continuation and Master Chef compaction are separate concerns. The normal path is one persistent Builder across delegated steps in the same run, normally through `cdd-implement-todo`, with each delegated action still handled one at a time. This repo does not currently document a manual OpenClaw Builder compaction command, so step-boundary compaction falls back to native context management unless the active surface exposes more later. Master Chef is long-lived, so it must make its own memory durable before compaction.
+Builder continuation and Master Chef compaction are separate concerns. The normal path is one persistent Builder across delegated steps in the same run, normally through `cdd-implement`, with each delegated action still handled one at a time. This repo does not currently document a manual OpenClaw Builder compaction command, so step-boundary compaction falls back to native context management unless the active surface exposes more later. Master Chef is long-lived, so it must make its own memory durable before compaction.
 
 ### Safe compaction points
 

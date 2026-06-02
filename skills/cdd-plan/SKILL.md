@@ -178,5 +178,5 @@ For every clarification or apply message, put choices under a final `**Options**
 6) Apply, hand off, and audit.
    - Present final selector-based apply options per the `Options block` subsection of `Interactive planning contract` instead of asking a second approval question; the selected option itself is the approval.
    - When a clear next execution step exists, prefer the three apply/revise selectors from the Options block. If no immediate follow-on step is clear, still use 2-4 selector-based apply/revise/stop options.
-   - After applying, hand off to `$cdd-implement-todo` (model-invocable) to implement the next approved TODO step.
+   - After applying, hand off to `$cdd-implement` (model-invocable) to implement the next approved TODO step.
    - Return to this planning flow only for newly discovered plan-shaping deltas after implementation, validation, or audit.
