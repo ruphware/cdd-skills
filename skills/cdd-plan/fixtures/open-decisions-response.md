@@ -1,6 +1,6 @@
 # Fixture — Open Decisions Gate
 
-Use this fixture to prove the plan contract asks one queued decision before it drafts a finished TODO step.
+Use this fixture to prove the plan contract asks one queued decision before it drafts a finished TODO step, and that audit-shaped planning surfaces remediation options instead of silently accepting the first plausible fix.
 
 ## Prompt shape
 
@@ -15,6 +15,13 @@ Use this fixture to prove the plan contract asks one queued decision before it d
 - Requested change: add a new persisted context surface
 - Hardest constraint: heartbeat path must not regress
 - Recommended direction: extend the existing authored-context pattern
+
+### Architecture / implementation options
+
+- Option A: full parity with the existing authored-context kinds. Recommended.
+- Option B: content-only persistence now; defer activation parity.
+- Option C: no new persistence surface yet; capture the audit issue as a narrower compatibility fix.
+- Explain what boundaries and validation strategy change under each option.
 
 ### Open decisions (queued for one-at-a-time loop)
 

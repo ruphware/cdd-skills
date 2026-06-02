@@ -31,7 +31,10 @@ assert_contains() {
 
 echo "[PlanArtifacts] INFO Contract path={$SKILL_MD}"
 assert_exists "$SKILL_MD"
+assert_contains "$SKILL_MD" "## Clarification floor and architecture options"
 assert_contains "$SKILL_MD" "## Open decisions queue"
+assert_contains "$SKILL_MD" 'must ask one substantive clarification or decision question'
+assert_contains "$SKILL_MD" 'For audit-derived planning, default the first question to remediation shape'
 assert_contains "$SKILL_MD" 'visible `Open decisions` section'
 assert_contains "$SKILL_MD" 'A repo-backed recommendation is not closure'
 assert_contains "$SKILL_MD" '`asking now`'
@@ -42,10 +45,12 @@ echo "[PlanArtifacts] INFO Validator path={$VALIDATOR_PY}"
 assert_exists "$VALIDATOR_PY"
 assert_contains "$VALIDATOR_PY" 'REQUIRED_SECTIONS: dict[str, tuple[str, ...]]'
 assert_contains "$VALIDATOR_PY" '"cdd-plan": ('
+assert_contains "$VALIDATOR_PY" '"## Clarification floor and architecture options"'
 assert_contains "$VALIDATOR_PY" '"## Open decisions queue"'
 
 echo "[PlanArtifacts] INFO Fixture path={$FIXTURE_MD}"
 assert_exists "$FIXTURE_MD"
+assert_contains "$FIXTURE_MD" "### Architecture / implementation options"
 assert_contains "$FIXTURE_MD" "### Open decisions (queued for one-at-a-time loop)"
 assert_contains "$FIXTURE_MD" "Status: asking now"
 assert_contains "$FIXTURE_MD" "Status: queued"

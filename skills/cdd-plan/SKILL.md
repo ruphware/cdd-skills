@@ -1,6 +1,6 @@
 ---
 name: cdd-plan
-description: "Plan change requests or external audit findings into implementation-ready TODO steps (interactive, approval-gated)."
+description: "Plan change requests or external audit findings into implementation-ready TODO steps by asking one key clarification first and reviewing audit remediation options (interactive, approval-gated)."
 ---
 
 # CDD Plan (interactive, approval-gated)
@@ -36,6 +36,17 @@ Do not convert raw audit bullets directly into TODO tasks.
 - Preserve dependency order: prerequisite contract or plumbing changes appear before downstream UI, storage, export, or cleanup work.
 - Inspect the relevant docs (`README.md`, `docs/specs/*`) and corresponding tests or validation surfaces; do not audit code in isolation when doc or test drift is part of the finding.
 - Keep audit-derived steps at the same implementation-ready standard as any other `cdd-plan` output.
+
+## Clarification floor and architecture options
+
+Do not let `cdd-plan` go straight from repo review to TODO drafting.
+
+- Every `cdd-plan` run must ask one substantive clarification or decision question before emitting a finished runnable TODO step or applying plan edits.
+- That first question must target the highest-leverage unresolved direction, boundary, architecture, sequencing, or validation choice, not wording polish, repo-implied file placement, or another reversible detail.
+- For audit-derived planning, default the first question to remediation shape after repo review and audit normalization: compare 2-3 concrete implementation options, recommend one, and explain what changes if the user picks differently.
+- When audit findings touch architecture or cross multiple boundaries, review the likely affected boundaries, main trade-offs, and where each option would stop before proposing TODO edits.
+- If repo constraints leave only one viable architecture, still surface it as a real user choice: accept the recommended path, narrow scope, or defer. Repo evidence alone is not user approval.
+- The clarification floor is satisfied only by a question that could materially change the plan. A rhetorical summary, pure apply approval, or yes/no restatement of settled facts does not count.
 
 ## Edge-case review
 
@@ -83,11 +94,13 @@ Make remaining plan-shaping choices visible before final TODO drafting.
 - Follow the intent and assumption checkpoint before detailed implementation questions, TODO drafting, or plan-shape selection.
 - For behavior-changing or audit-derived requests, run the repo-grounded edge-case review before detailed TODO drafting.
 - Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
+- Ask the required substantive clarification before drafting a finished runnable TODO step or applying plan edits. Use it to challenge the highest-leverage unresolved choice rather than to confirm settled facts.
 - **One question per message, in a loop.** Ask at most one substantive clarification per message. After each user answer, re-rank remaining unresolved decisions and ask the next single highest-leverage question, then wait again. Never list multiple open questions in one message as a checklist for the user to answer at once.
 - Visibility is broader than questioning. When multiple plan-shaping decisions remain, show them in `Open decisions`, mark one `asking now`, and leave the rest `queued`; do not ask them all at once.
 - Prefer the fewest clarifications that resolve the most plan-shaping uncertainty.
 - Keep refining as new evidence appears. After each answer or new finding, update boundaries, sequencing, assumptions, and validation requirements before continuing.
 - Treat a request as `intent-qualifying` when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to need more than one TODO step. For these, add a compact visible `Intent and assumptions` section covering requested change, suspected intent, success signal, recommended direction, material assumptions by status, non-goals, and any blocking intent question.
+- For audit-derived requests, include a visible `Architecture / implementation options` section before final TODO drafting whenever multiple viable remediation shapes exist or the choice changes boundaries, sequencing, or validation.
 - For ambiguous, multi-surface, audit-driven, or multi-step requests, start with a coarse dependency-ordered decomposition, then refine one coarse step at a time. Do not jump straight to a full mixed-surface detailed plan.
 - During coarse planning, review user-provided contract/content/implementation-driving artifacts and expand them into the plan. Keep exact implementation-driving detail in `TODO.md`, not in surrounding chat. If a reviewed artifact mixes product and implementation detail, keep implementation detail in `TODO.md` and add explicit `TODO.md` follow-up for the spec/doc update unless a durable spec delta is intentionally being drafted now.
 - Add visible `Confirmed requirements coverage` (which requirements were confirmed, which were excluded, where each lives in the plan) and `Reviewed contract artifacts` (each artifact marked `copied as-is`, `corrected`, `expanded`, `removed`, or `left intentionally unspecified`, short reason for material change, write location) sections when applicable.
@@ -123,7 +136,7 @@ For every clarification or apply message, put choices under a final `**Options**
 - A clarification is allowed only when the answer would materially change product/architecture boundaries, data/state, contracts/APIs, file/write location, sequencing, approval safety, migration/rollback/rollout, security/privacy/permission behavior, validation strategy, or an unresolved `major` edge case.
 - `repo-inferred` and `recommended default` close low-risk assumptions only when they do not leave a live `Open decisions` item. If choosing differently would still materially reshape the plan, keep the choice visible and queue it one at a time.
 - Do not ask about reversible implementation details, naming/copy polish, file placement implied by repo conventions, defaults that can be safely documented in the TODO step, preferences that do not change plan shape, or questions already answered by the user, repo evidence, or an accepted default.
-- Default clarification budget: small/local change 0-1 questions; multi-surface change 1-2 questions; audit, migration, security, external contract, or destructive change up to 3 questions.
+- Default clarification budget: every `cdd-plan` run asks 1 substantive question minimum; small/local change 1 question; multi-surface change 1-2 questions; audit, migration, security, external contract, or destructive change 1-3 questions.
 - If more than 3 clarifications appear necessary, stop expanding. Present the best bounded plan so far, keep the remaining `Open decisions` visible, mark unresolved major decisions, recommend the next single decision, and proceed only through selector-based options.
 
 ## Planning anti-patterns
@@ -131,6 +144,7 @@ For every clarification or apply message, put choices under a final `**Options**
 - Asking implementation-detail questions before the intent is clear.
 - Treating the user's first wording as the confirmed intent when repo evidence suggests another interpretation.
 - Converting an audit bullet directly into implementation work before identifying symptom, root cause, proof needed, and intended outcome.
+- Letting audit-derived planning skip architecture review or the first substantive decision question because a repo-backed default looks plausible.
 - Asking about file placement, naming, UI copy, endpoint shape, schema fields, or test mechanics before resolving whether the work is a feature, bugfix, refactor, audit fix, spec delta, investigation, or defer.
 - Producing a detailed TODO step that encodes an unchallenged assumption as fact.
 - Emitting a finished TODO step while plan-shaping `Open decisions` remain hidden or unresolved.
@@ -152,19 +166,21 @@ For every clarification or apply message, put choices under a final `**Options**
    - Choose the primary planning direction: `feature`, `bugfix`, `audit_fix`, `spec_delta`, `refactor`, `maintenance`, `investigation`, or `defer`. If ambiguous and the choice would change boundaries, sequencing, or validation, ask one direction-level clarification.
    - Identify affected boundaries, risks, dependency order, validation surfaces, and likely write locations.
    - Run the edge-case review (behavior-changing or audit-derived requests) and audit normalization (audit-driven requests) before detailed TODO drafting.
+   - Before moving on, prepare the first required clarification. For audit-derived requests, prefer an architecture or remediation-shape question with concrete options and a recommended path.
 
 3) Bisect uncertainty before detailed drafting.
    - List unresolved plan-shaping decisions privately, tagging each as `intent`, `assumption`, `direction`, `boundary`, `implementation`, or `validation`.
    - Resolve `intent`, `assumption`, and `direction` uncertainty before `boundary`, `implementation`, or detailed `validation` questions unless a safety constraint forces otherwise.
    - Turn remaining plan-shaping decisions into a visible `Open decisions` queue before final TODO drafting. Mark exactly one item `asking now`, keep the rest `queued`, and ask only the `asking now` item in the current message.
    - Apply the loop rule from `Interactive planning contract` and the ladder/budget from `Question economy`: ask the highest-leverage unresolved decision first; one question at a time; collapse related questions into the fewest root decisions.
+   - The first asked decision must satisfy the clarification floor. For audit-derived requests with more than one viable remediation shape, that first asked decision should usually be the architecture or implementation-shape choice, with 2-3 concrete options and a recommended default.
    - Safety override: if a remaining material assumption would invalidate the plan, enable unsafe or destructive work, or materially change boundaries/sequencing/contracts/data-state/rollout/validation, ask one highest-leverage clarification before moving on, regardless of the question budget.
    - If only minor defaults or `minor` edge cases remain, disclose them briefly and carry them into assumptions, constraints, implementation notes, automated checks, or UAT.
    - When clarifications complete (no blocking decisions left or budget exhausted), move to step 4 and disclose any remaining unresolved items in the plan.
 
 4) Produce the coarse plan.
    - For ambiguous, multi-surface, audit-driven, or multi-step requests, produce a coarse dependency-ordered decomposition. Keep it lightweight but concrete enough to validate boundaries, dependency order, coverage, reviewed artifacts, unresolved major decisions, and validation surfaces.
-   - Include visible sections when applicable: `Frame`, `Recommended shape`, `Intent and assumptions`, `Confirmed requirements coverage`, `Reviewed contract artifacts`, `Audit normalization`, `Edge-case review`, `Open decisions`, `Coarse dependency-ordered steps`, `Material assumptions`. Show `Confirmed requirements coverage` and `Reviewed contract artifacts` before approval when present.
+   - Include visible sections when applicable: `Frame`, `Recommended shape`, `Intent and assumptions`, `Confirmed requirements coverage`, `Reviewed contract artifacts`, `Audit normalization`, `Architecture / implementation options`, `Edge-case review`, `Open decisions`, `Coarse dependency-ordered steps`, `Material assumptions`. Show `Confirmed requirements coverage` and `Reviewed contract artifacts` before approval when present.
    - Present 2-3 plan shapes only when there is a real grouping, sequencing, scope, or write-location decision.
    - For audit-driven requests, include the write-location choice in the same option set when practical: default — update an existing TODO file; alternative — create `TODO-audit-<tag>.md` (ask for the tag only if the new-file option is chosen).
 

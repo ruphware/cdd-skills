@@ -95,6 +95,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     "cdd-plan": (
         "## Runnable TODO step contract",
         "## Audit-input normalization",
+        "## Clarification floor and architecture options",
         "## Edge-case review",
         "## Intent and assumption checkpoint",
         "## Open decisions queue",
