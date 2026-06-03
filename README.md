@@ -46,7 +46,7 @@ Multiple ways to run autonomous development steps using CDD boilerplate:
 ```sh
 $cdd-plan docs/specs/blueprint.md into TODO.md
 # Optional audit step:
-$cdd-audit TODO.md and confirm it's cdd-master-chef ready
+$cdd-audit TODO.md and confirm cdd-master-chef readiness
 $cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123
 ```
 
