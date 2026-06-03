@@ -17,25 +17,48 @@ Powered by [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate).
 * **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactor review.
 * **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution after kickoff approval.
 
-## 🧑‍🍳 Master Chef: Autonomous Development
+Here's a refined version for your `cdd-skills` repo README section:
 
-Master Chef runs autonomously after one kickoff approval. Set a step budget to cap how far a run can go.
+---
 
-### Autonomous Development Prompting
+## Autonomous Development
+
+Multiple ways to run autonomous development steps using CDD boilerplate:
+
+### 1. Codex `/goal $cdd-implement TODO.md all undone steps`
+
+* **Reliability:** ⚠️ Can be unreliable on `gpt-5.4 xhigh`.
+
+### 2. Claude `/workflows $cdd-implement TODO.md all undone steps`
+
+* **Reliability:** ✅ Works well and fast on `Opus 4.8 xhigh`.
+* **Token use:** Can be token-hungry, watch your budget.
+
+### 3. 🧑‍🍳 Master Chef `$cdd-master-chef TODO.md all steps`
+
+* **Process:** Executes each step methodically in a highly controlled manner.
+* **Reliability:** ✅ Highly dependable; ideal for unattended runs (e.g., overnight).
+* **Budget:** Predictable token usage due to careful pacing; avoids excessive costs.
+* **Performance:** Might be slower compared to Claude.
+
+#### Quickstart for Master Chef
+
+```sh
+$cdd-plan docs/specs/blueprint.md into TODO.md
+# Optional audit step:
+$cdd-audit TODO.md and confirm it's cdd-master-chef ready
+$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123
+```
+
+> [!NOTE]
+> The session model is fixed to ensure smooth operation and consistency. In the authors’ opinion, gpt-5.5 xhigh is better for longer-running tasks, while gpt-5.4 xhigh is better for detailed work, albeit slower.
 
 > [!TIP]
-> 1. `$cdd-plan docs/specs/blueprint.md into TODO.md`  
-result... TODO.md created or extended
-> 2. (optional) `$cdd-audit TODO.md and confirm it's cdd-master-chef ready`  
-result... Steps adjusted 
-> 3. `$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123`  
-result... Master Chef proposes scope, model profile, and workspace in one kickoff approval — the single human confirmation — then runs autonomously.
+> Autonomous runs work best with well-defined, properly chunked steps. Run `$cdd-audit TODO.md and confirm it's cdd-master-chef ready` first to review and adjust step size.
 
-The session model can't be changed; it's reported only so the run goes smoothly.
+### How does it work?
 
-### Why use it?
-
-Set it and go: Master Chef works through runnable TODO steps in a branch-backed worktree, with persistent Builder context, recovery rules, commits, pushes, and a final mission report.
+Master Chef works through runnable TODO steps in a branch-backed worktree, with persistent Builder context, recovery rules, commits, pushes, and a final mission report.
 
 * One kickoff approval controls how far the run can go.
 * Branch-backed worktrees keep autonomous changes isolated and reviewable.
