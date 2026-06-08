@@ -92,7 +92,7 @@ The core loop is intentionally simple: boot context, plan work, implement one st
 
 - **[CDD-4] Audit**
  *cdd-audit*
- Audit spec, code, tests, complexity, and docs, then route approved follow-up into planning.
+ Audit intent and goal match first, using the right audit shape, depth, and proof surfaces, then route approved follow-up into planning.
 
 - **[CDD-5] Maintain**
  *cdd-maintain*

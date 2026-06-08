@@ -1,6 +1,6 @@
 ---
 name: cdd-audit
-description: "Audit implementation scope for spec drift, code quality, test quality, accidental complexity, and documentation drift; triage major findings; then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
+description: "Audit intent and goal match first: frame the audit question, use the right audit shape, depth, and proof surfaces, triage major findings, then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
 ---
 
 # CDD Audit (interactive, read-only)
@@ -19,7 +19,30 @@ Read:
 - the current-state header of `docs/JOURNAL.md` (and split-journal index when active) for recent activity context
 - relevant code, tests, configs, manifests, entrypoints, and validation surfaces for the chosen scope
 
-Treat missing docs, specs, or tests as findings. Do not invent missing contract surfaces during the audit.
+Treat missing docs, specs, tests, or other proof surfaces that the chosen audit shape depends on as findings. Do not invent missing contract surfaces during the audit.
+
+## Audit framing
+
+Before detailed review, classify what question this audit is actually trying to settle.
+
+- Supported audit types:
+  - `bug_report`
+  - `functionality`
+  - `small_change`
+  - `big_branch`
+  - `master_chef_multi_step`
+- Choose one primary audit type. Use `Optional lenses` for cross-cutting concerns instead of mixing multiple primary audit types.
+- For every audit, classify:
+  - `Audit type`
+  - `Requested audit question`
+  - `Expected behavior or intended goal`
+  - `Primary proof surface`
+  - `Affected boundaries`
+  - `Hardest constraint`
+  - `Recommended review depth`
+  - `Out of scope`
+- If the audit type, intended goal, or primary review question is ambiguous enough to materially change the audit conclusion, ask one framing clarification first.
+- Produce a compact visible `Audit framing` summary for behavior-changing, branch-sized, step-scoped, or multi-step audits. For narrow local audits, keep the framing compact but still classify it before findings.
 
 ## Scope resolution
 - Supported audit scopes:
@@ -29,10 +52,44 @@ Treat missing docs, specs, or tests as findings. Do not invent missing contract 
   - multiple TODO steps
   - one TODO file
   - whole codebase
-- Resolve the scope before asking anything.
+- Resolve scope after the audit framing stabilizes.
 - Ask only when the scope is missing or ambiguous, and keep the question scoped to the smallest missing decision.
 - If the scope references TODO steps, resolve them the same way `cdd-implement` would: normalize numeric step identifiers and ask only if multiple matches remain.
 - If the scope resolves to one or more TODO steps, record the selected step ids explicitly and audit each selected step against its own step contract rather than only the broader TODO topic.
+- Let audit type and scope work together. Do not widen a bounded `small_change` audit into a whole-codebase drift sweep unless the evidence or requested audit question requires it.
+- Scope answers where to audit. Audit shape answers how to audit and what matters most.
+
+## Audit shapes
+
+Choose one audit shape before reviewing dimensions. The shape determines which proof surfaces deserve deep review, which findings should stay suppressed or report-only, and what a successful audit must be able to answer.
+
+- `bug_report`
+  - Primary question: is the reported bug real, is the root cause understood, and does the implementation actually close it?
+  - Preferred proof surfaces: repro steps, failing behavior, error traces, boundary validation, regression tests, and nearby state transitions.
+  - Prioritize expected-versus-actual behavior, failure handling, regression risk, and whether the change closes the reported path instead of merely changing nearby code.
+  - Suppress broad architecture critique unless the bug clearly comes from a systemic design flaw that changes the audit conclusion or recommended next path.
+- `functionality`
+  - Primary question: does the implementation satisfy the intended capability and contract?
+  - Preferred proof surfaces: specs, README, selected TODO contract, observable behavior, tests, and user-facing docs.
+  - Prioritize goal match, user-visible behavior, edge cases, declared non-goals, and drift between code, tests, and documentation.
+  - Suppress generic cleanup findings that do not change the capability verdict.
+- `small_change`
+  - Covers small bug fixes, new functions, config changes, and doc updates.
+  - Primary question: did this bounded change do the intended thing without creating adjacent regressions or proof gaps?
+  - Preferred proof surfaces: changed files plus adjacent tests, docs, configs, manifests, or entrypoints.
+  - Prioritize local correctness, proof quality, and nearby contract drift that weakens confidence in the change.
+  - Suppress unrelated repo drift, speculative refactor advice, and branch-scale architecture fishing unless they directly change the audit conclusion.
+- `big_branch`
+  - Primary question: which boundaries changed, where are the highest risks, and does the branch still cohere as one implementation shape?
+  - Preferred proof surfaces: diff inventory, affected-boundary map, contract artifacts, representative validation evidence, and any declared rollout or migration surfaces.
+  - Before deep findings, inventory changed boundaries, highest-risk areas, recommended review order, and declared review depth.
+  - Prioritize boundary interactions, migration and compatibility risk, validation blind spots, and places where specialist review or optional lenses are required.
+  - Suppress line-level nits unless they imply real behavior risk or materially weaken the proof surface.
+- `master_chef_multi_step`
+  - Primary question: were the steps correctly decomposed, executed, evidenced, and closed out?
+  - Preferred proof surfaces: selected TODO step contracts, implementation deltas, automated checks, UAT evidence, run summaries, continuation artifacts, and final mission or stop-state evidence when present.
+  - Prioritize step sizing, dependency order, completion evidence, proof quality, and whether the run stopped at the right boundary for the evidence available.
+  - Suppress planning-style replanning inside the audit itself; route approved findings outward instead.
 
 ## Step-scoped TODO contract audit
 
@@ -50,38 +107,78 @@ When the chosen scope resolves to one or more TODO steps, explicitly audit each 
 - Treat unchecked TODO tasks, missing completion evidence, weak automated-check or UAT proof, or implementation that misses the step goal as first-class findings.
 - If a selected TODO step lacks one of the preferred sections, treat that as a contract weakness or missing proof surface rather than silently skipping it.
 - Keep this step-scoped audit additive to the broader README, spec, code, test, config, manifest, and entrypoint review; do not narrow the audit into TODO-only review.
+- For `master_chef_multi_step`, audit both the per-step contract and the run-level execution evidence: step sizing, dependency order, completion evidence, continuation quality, and whether checks plus UAT actually prove completion.
 
-## Audit dimensions
-Audit the chosen scope against all of the following:
+## Review depth and proportionality
 
-- `spec compliance`
-  - Compare implementation against `README.md`, `docs/specs/*`, the selected `TODO*.md` scope, and observable current behavior.
+Choose a review depth before detailed findings:
+
+- Start with the lightest depth that can answer the audit question confidently. Deepen only when risk, weak proof, or boundary count justifies it.
+- `quick`
+  - Default for bounded `small_change` audits.
+  - Review changed files plus the smallest adjacent proof surface needed to answer the audit question confidently.
+- `standard`
+  - Default for most `bug_report`, `functionality`, and step-scoped audits.
+  - Review the changed surface plus the adjacent contracts, tests, docs, configs, and entrypoints that materially affect the verdict.
+- `deep`
+  - Default for `big_branch`, `master_chef_multi_step`, security-sensitive, migration-heavy, or otherwise multi-boundary audits.
+  - Review by boundary cluster and risk order, not just by raw diff order.
+- Apply deep review only where the audit type, risk, or evidence warrants it. Do not impose branch-scale expectations on a `quick` audit.
+- Unrelated repo drift stays report-only unless it materially changes the goal-match verdict, finding severity, root-cause grouping, affected boundary, or recommended next path.
+
+## Core audit dimensions
+
+Every audit uses these core dimensions. Treat them as five questions the audit must answer, phrased relative to the chosen audit type and intended goal.
+
+- `goal / contract match`
+  - Compare implementation against the requested audit question, intended goal, `README.md`, `docs/specs/*`, the selected `TODO*.md` scope, and observable current behavior.
   - For one-step or multi-step TODO audits, compare each selected step's `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT` against the concrete implementation delta reviewed for that scope, not only the final filesystem state.
   - Treat drift between code, tests, and docs as a real finding.
-- `code quality`
-  - Default to KISS: prefer simpler, clearer solutions over clever indirection.
-  - Apply YAGNI: flag speculative flexibility, premature abstraction, and extension points with no real caller need.
-  - Apply SOLID pragmatically, with SRP first: use "one reason to change" as the first pressure test before broader rewrites.
-  - Check defensive code at boundaries: validate untrusted input early, separate syntactic from semantic validation when both matter, and keep invariants explicit where they protect real behavior.
-- `test quality`
+  - Before listing normalized findings, emit a compact `Goal match` or equivalent summary stating whether the intended goal is understood, whether the implementation matches, partially matches, or misses it, and whether the proof surface is strong enough to justify that verdict.
+- `correctness / failure handling`
+  - Check happy paths, edge cases, failure paths, boundary validation, and state or data invariants.
+  - Validate untrusted input early, separate syntactic from semantic validation when both matter, and keep invariants explicit where they protect real behavior.
+  - For `bug_report`, treat missing repro closure or new adjacent regression risk as first-class findings.
+- `verification quality`
   - Prioritize confidence over coverage theater.
   - Prefer a layered suite with mostly integration where it buys meaningful confidence, plus narrower unit tests and fewer high-level tests.
   - Flag brittle tests that assert implementation details, broad unrelated object equality, mock choreography, fragile snapshots, or other harmless-refactor breakpoints.
   - Flag useless tests that duplicate lower-level coverage without adding confidence, or that mainly check framework behavior instead of product behavior.
-  - Check whether tests cover the real contract, edge cases, and failure paths instead of only the happy path.
-- `accidental complexity`
+  - Check whether tests, automated checks, and UAT cover the real contract, edge cases, and failure paths instead of only the happy path.
+- `complexity / maintainability`
+  - Default to KISS: prefer simpler, clearer solutions over clever indirection.
+  - Apply YAGNI: flag speculative flexibility, premature abstraction, and extension points with no real caller need.
+  - Apply SOLID pragmatically, with SRP first: use "one reason to change" as the first pressure test before broader rewrites.
   - Expose speculative abstraction, wrapper indirection, generic APIs with one concrete use, parameterization without real consumers, and ceremony that does not protect a real boundary.
-- `documentation`
-  - Audit `README.md`, `docs/specs/*` (PRD, blueprint, and connected `*-definition.md` leaf specs), `docs/INDEX.md` (with `docs/index/**` siblings when INDEX split is active), `docs/runbooks/*.md`, repo-root `RUNBOOK.md`, and the current-state header of `docs/JOURNAL.md` when present.
+- `documentation / operability`
+  - Audit `README.md`, `docs/specs/*` (PRD, blueprint, and connected `*-definition.md` leaf specs), `docs/INDEX.md` (with `docs/index/**` siblings when INDEX split is active), `docs/runbooks/*.md`, repo-root `RUNBOOK.md`, and the current-state header of `docs/JOURNAL.md` when present when they materially affect the audit verdict.
   - Documentation should stay compact and optimized for reading.
-  - Specs should match the current codebase or clearly intended future implementation. Specs for removed features are `drifted` findings; major implementation areas without spec coverage are `missing` findings (treat as findings, do not invent specs during the audit).
-  - For `docs/INDEX.md`: verify the entrypoint layout matches the actual mode per the boilerplate INDEX-split scaling rules — single-file mode should not carry a Layout pointer block; split mode should carry Layout pointers and keep diagram/inventory bodies in `docs/index/**` siblings rather than inline. A single-file INDEX exceeding ~300 lines or with unbounded-growth sections is a structural drift finding — recommend INDEX split via `cdd-maintain` index mode. Stale INDEX (clearly older than current TODO or journal activity) is also a `documentation` finding.
+  - Specs should match the current codebase or clearly intended future implementation. Specs for removed features are `drifted` findings; major implementation areas without spec coverage are `missing` findings.
+  - For `docs/INDEX.md`: verify the entrypoint layout matches the actual mode per the boilerplate INDEX-split scaling rules — single-file mode should not carry a Layout pointer block; split mode should carry Layout pointers and keep diagram or inventory bodies in `docs/index/**` siblings rather than inline. A single-file INDEX exceeding ~300 lines or with unbounded-growth sections is a structural drift finding — recommend INDEX split via `cdd-maintain` index mode. Stale INDEX (clearly older than current TODO or journal activity) is also a `documentation` finding.
   - For mermaid diagrams (inline in `docs/INDEX.md` for single-file mode, or in `docs/index/DIAGRAMS.md` for split mode): verify each diagram still matches the current supervision tree, flow shape, module boundaries, or component layout it claims to represent. Diagrams referencing removed components, missing newly-added ones, or showing structurally outdated edges are `drifted` findings — cite the specific node or edge.
   - For `docs/runbooks/*.md` and repo-root `RUNBOOK.md`: verify each documented procedure or command still resolves to a live entrypoint, service, or script. Procedures for decommissioned, renamed, or removed surfaces are `drifted` findings.
+
+## Optional lenses
+
+Activate optional lenses only when the scope, audit type, or evidence warrants them. A lens may deepen the audit, raise the review depth, or indicate specialist review is needed, but it should never become mandatory noise in every audit.
+
+- `security / privacy`
+  - Review trust boundaries, sensitive data handling, authorization, secrets, logging, privacy-sensitive flows, and places where failure-path behavior could expose data or privilege.
+- `dependency / provenance / supply chain`
+  - Review new or upgraded third-party components in the context of their expected use.
+  - Check secure configuration, dependency diffs, provenance or SBOM signals when available, and unresolved trust or vulnerability gaps that materially affect the audit.
+- `reliability / availability / performance / scalability`
+  - Review concurrency, retries, recovery, load-sensitive code paths, data volume assumptions, and operational behavior under failure or growth.
+- `migration / compatibility / rollout / rollback`
+  - Review schema, config, manifest, or API changes for deployment order, backward compatibility, state transitions, rollout safety, and rollback posture.
+- `ux / accessibility / i18n / concurrency`
+  - Activate the relevant subset when the change affects user interaction, accessibility guarantees, localization behavior, or concurrency-sensitive flows that need specialist review or deeper proof.
+- If you are not qualified to judge a triggered lens confidently, say so and record that specialist review or stronger proof is required instead of pretending the audit is complete.
 
 ## Finding normalization
 Do not emit raw audit bullets as the final output.
 
+- The compact `Goal match` verdict answers the audit question. Normalized findings explain why that verdict is justified or weak.
 - Normalize each finding into a root-cause item with:
   - audit dimension
   - severity: `high`, `medium`, or `low`
@@ -90,6 +187,7 @@ Do not emit raw audit bullets as the final output.
   - affected boundary
   - evidence or proof surface
   - recommended next path
+- Anchor each finding to the chosen audit type and the goal-match verdict. Avoid side findings that do not change the audit question being answered.
 - Collapse duplicate symptoms into the smallest root-cause finding that can be discussed and planned cleanly.
 - Fold material edge-case and failure-path gaps into normalized findings; do not add a separate planning-style section for them.
 - When follow-up should go to `cdd-plan`, map approved findings into one or more of:
@@ -97,18 +195,21 @@ Do not emit raw audit bullets as the final output.
   - `implementation_delta`
   - `verification_delta`
   - `defer`
-- For non-trivial `code quality` and `test quality` findings, cite the file, symbol, diff, failing or missing test, or equivalent proof surface, and keep the finding concrete, evidence-backed, and behavior-relevant.
+- For non-trivial `complexity / maintainability` and `verification quality` findings, cite the file, symbol, diff, failing or missing test, or equivalent proof surface, and keep the finding concrete, evidence-backed, and behavior-relevant.
 - Prioritize correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost. Avoid style-only notes or vague refactor advice unless you can state a real behavior risk, confidence gap, or maintenance payoff.
+- For `small_change`, collapse unrelated low-value drift aggressively; leave it report-only unless it materially changes the audit conclusion.
 
 ## Interaction contract
 This skill is interactive, read-only, and decision-driven.
 
 - Stay read-only during the audit.
 - Do not patch code, docs, or TODO files in this skill.
+- Prefer framing or proof-surface clarifications before lower-level implementation-detail questions when ambiguity would materially change the audit conclusion.
 - Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended follow-up route.
 - Ask clarifications only when the answer could materially change the audit conclusion — finding validity, severity, root-cause grouping, affected boundary, or recommended next path.
 - Treat clarification as a loop, not a batch: ask the single highest-leverage question per message, combining ambiguities that share one root decision, then re-rank and ask the next after the user answers. Never list multiple open questions as a checklist.
 - Each clarification states the current recommended finding direction and what audit conclusion would change if the answer differs.
+- Prefer questions that resolve the audit question or proof sufficiency before questions about local implementation detail.
 - Do not re-ask what the user already answered, repo evidence already resolves, or an accepted assumption already covers.
 - Keep ambiguity resolution separate from finding approval: resolving an ambiguity does not approve a finding.
 - Surface proven follow-up findings one at a time (collapse only when several share one root cause). After each decision (approve/defer/accept/reject), refresh the remaining list and surface the next — never batch findings into one approval checklist.
@@ -117,7 +218,7 @@ This skill is interactive, read-only, and decision-driven.
 - default to letters: `A.`, `B.`, `C.`.
 - use numbers only when the surrounding context is already numeric and that would be clearer.
 - When practical, tell the user they can reply with just the selector.
-- Default major-finding options (per-finding triage; route choice happens at step 12):
+- Default major-finding options (per-finding triage; route choice happens in the final closeout stage):
   - `A. Approve for follow-up`
   - `B. Postpone or backlog`
   - `C. Accept current state`
@@ -125,22 +226,30 @@ This skill is interactive, read-only, and decision-driven.
 - Minor findings and minor ambiguities can stay report-only unless they materially change the recommended follow-up.
 
 ## Flow
-1) Read the contract docs and the relevant implementation surfaces for the chosen scope.
-2) Resolve the audit scope before starting the audit proper.
-3) If the scope resolves to one or more TODO steps, record the selected step ids first and inspect each selected step's section contract before judging implementation quality.
-4) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
-5) Audit code, tests, docs, configs, manifests, entrypoints, and validation surfaces together; do not audit code in isolation when the contract or tests are part of the issue.
-6) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion.
-7) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
-8) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
-9) Once a major finding is proven and recommends follow-up, surface it with `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause.
-10) Keep a running list of:
+1) Read the contract docs and the likely proof surfaces for the requested audit, only far enough to stabilize framing, scope, and risk.
+2) Frame the audit: classify audit type, intended goal, primary proof surface, affected boundaries, review depth, and out-of-scope surfaces before detailed review.
+3) Resolve the audit scope after framing stabilizes.
+4) Choose the audit shape and review depth. Inventory affected boundaries or review order first for `big_branch` and `master_chef_multi_step` audits.
+5) If the scope resolves to one or more TODO steps, record the selected step ids first and inspect each selected step's section contract before judging implementation quality.
+6) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
+7) Review the core audit dimensions together. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
+8) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
+9) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary.
+10) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
+11) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
+12) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
+13) Once a major finding is proven and recommends follow-up, surface it with `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause.
+14) Keep a running list of:
    - findings approved for follow-up
    - findings deferred
    - findings accepted as-is
    - findings rejected or needing more evidence
-11) When the audit is complete, return a final audit summary that includes:
+15) When the audit is complete, return a final audit summary that includes:
+   - audit type
    - audited scope
+   - review depth
+   - compact audit-framing summary
+   - goal-match verdict
    - selected TODO step ids when the scope is step-scoped
    - which implementation delta or changed-file or commit surface was reviewed when the scope is step-scoped
    - findings by audit dimension
@@ -151,7 +260,7 @@ This skill is interactive, read-only, and decision-driven.
    - deferred or accepted findings
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
-12) End with selector-labeled next actions.
+16) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
      - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` on the approved set to weigh remediation options, ask one substantive clarification, and normalize them into runnable TODO steps before any implementation
@@ -160,6 +269,9 @@ This skill is interactive, read-only, and decision-driven.
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act, surface the step 12 routing options so they can choose a `cdd-plan` handoff, an inline plan-and-implement over all approved findings, or backlog or stop.
+- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act, surface the final routing options so they can choose a `cdd-plan` handoff, an inline plan-and-implement over all approved findings, or backlog or stop.
+- Do not let optional lenses become mandatory noise. Activate them only when the audit type, risk, or evidence justifies them.
+- Do not force branch-scale review onto a bounded `small_change` audit.
+- Do not let a large scope erase the audit question. If the requested scope is broad, keep the audit ordered around the chosen shape and primary proof surfaces.
 - If the audited scope is too large to review sanely in one pass, propose a smaller first audit slice before continuing.
 - If docs or specs are intentionally future-state, say that explicitly and audit for clarity rather than forcing current-state wording onto planned behavior.

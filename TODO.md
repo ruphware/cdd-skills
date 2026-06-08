@@ -767,3 +767,105 @@ Rename the `[CDD-3]` skill to `cdd-implement`, keep TODO-backed execution as the
 - Direct mode completes without fabricating TODO state and reports source task, changed files, checks, and UAT; TODO-backed mode still updates only the selected TODO step on success.
 - Boot/init/plan/audit/Master Chef docs all reference `cdd-implement`, and Master Chef still treats TODO-backed execution as the default delegated path.
 - Installer update removes a pre-existing `cdd-implement-todo/` install, and the repo-wide grep finds no live old-slug or old-label references outside `TODO.md` history and the explicit installer retirement fixtures.
+
+## Step 63 — Reframe `cdd-audit` around audit type, goal match, and proportional review
+
+### Goal
+
+Make `cdd-audit` frame the audit question and intended goal before detailed review, apply mode-specific audit behavior for bug, functionality, small-change, big-branch, and multi-step Master Chef audits, and replace the current flat dimension list with a compact core-plus-optional-lenses model that stays audit-native while producing higher-signal findings.
+
+### Constraints
+
+- Keep `cdd-audit` read-only and audit-native; do not turn it into `cdd-plan`, `cdd-maintain`, or direct implementation guidance.
+- Preserve the current root-cause finding normalization, one-question-at-a-time clarification loop, per-finding approval flow, and final routing options.
+- Keep the existing supported audit scopes, but require audit framing before detailed scope-specific review.
+- Add proportionality: small implementation audits must default to changed files plus adjacent proof surfaces; unrelated repo drift stays report-only unless it directly weakens the audited change.
+- Preserve the current step-scoped TODO contract audit and implementation-delta-first rule; extend rather than replace them.
+- Add Master-Chef-specific run-level audit behavior without requiring a planning-style standalone `Edge-case review` section.
+- Touch only `skills/cdd-audit/SKILL.md` and `scripts/validate_skills.py` unless a failing proof shows another surface is required.
+
+### Tasks
+
+- [x] Update `skills/cdd-audit/SKILL.md` to add an `## Audit framing` section before detailed review. Require classification of:
+  - `Audit type`
+  - `Requested audit question`
+  - `Expected behavior or intended goal`
+  - `Primary proof surface`
+  - `Affected boundaries`
+  - `Hardest constraint`
+  - `Recommended review depth`
+  - `Out of scope`
+- [x] Require `skills/cdd-audit/SKILL.md` to ask one framing clarification first only when the audit type, intended goal, or primary review question is ambiguous enough to materially change the audit conclusion.
+- [x] Add an `## Audit shapes` section to `skills/cdd-audit/SKILL.md` with explicit mode rules for:
+  - `bug_report`
+  - `functionality`
+  - `small_change`
+  - `big_branch`
+  - `master_chef_multi_step`
+  Each shape must state its primary audit question, preferred proof surfaces, and what it should prioritize versus suppress.
+- [x] Add an `## Review depth and proportionality` section that defines `quick`, `standard`, and `deep` review depth, ties those depths to audit shape and risk, and explicitly prevents branch-scale drift hunting during bounded small-change audits.
+- [x] Replace the current flat audit-dimensions model in `skills/cdd-audit/SKILL.md` with:
+  - `## Core audit dimensions`
+  - `## Optional lenses`
+  The core set must center on:
+  - `goal / contract match`
+  - `correctness / failure handling`
+  - `verification quality`
+  - `complexity / maintainability`
+  - `documentation / operability`
+  Optional lenses must activate only when relevant and include at least:
+  - `security / privacy`
+  - `dependency / provenance / supply chain`
+  - `reliability / availability / performance / scalability`
+  - `migration / compatibility / rollout / rollback`
+  - `ux / accessibility / i18n / concurrency`
+- [x] Require `skills/cdd-audit/SKILL.md` to produce a compact pre-findings `Goal match` or equivalent summary that states whether the intended goal is understood, whether the implementation matches / partially matches / misses it, and whether the proof surface is strong enough to justify that conclusion.
+- [x] Extend the existing step-scoped and Master-Chef behavior in `skills/cdd-audit/SKILL.md` so `master_chef_multi_step` audits review both:
+  - per-step TODO contract satisfaction
+  - run-level execution quality such as step sizing, dependency order, completion evidence, and whether checks/UAT actually prove completion
+- [x] Update the `## Flow` section in `skills/cdd-audit/SKILL.md` so the audit order becomes:
+  1. read likely proof surfaces
+  2. frame the audit
+  3. resolve scope
+  4. choose audit shape and review depth
+  5. review core dimensions
+  6. activate optional lenses only when triggered
+  7. normalize findings
+  8. resolve only material ambiguities
+  9. surface major findings one at a time
+- [x] Extend `scripts/validate_skills.py` so validation requires the new structural sections:
+  - `## Audit framing`
+  - `## Audit shapes`
+  - `## Review depth and proportionality`
+  - `## Core audit dimensions`
+  - `## Optional lenses`
+  and still requires the existing audit sections that remain canonical.
+
+### Implementation notes
+
+- Keep the current `Sources of truth`, `Scope resolution`, `Step-scoped TODO contract audit`, `Finding normalization`, `Interaction contract`, `Flow`, and `Guardrails` sections, but reshape their contents around the new framing-first audit model.
+- The redesign should change the audit gist from `scope -> flat dimensions -> findings` to `frame the audit -> choose the audit shape -> review the right dimensions -> normalize findings -> route follow-up`.
+- `Audit framing` is an audit concern, not a planning concern. It should answer what question this audit is trying to settle and what proof surface matters most, without widening into TODO authoring or architecture-option drafting.
+- `small_change` should be intentionally strict about proportionality:
+  - changed files plus adjacent tests/docs/configs by default
+  - unrelated repo drift is report-only unless it directly changes the audit conclusion
+- `big_branch` should require a visible diff inventory or affected-boundary inventory before detailed findings so the audit is ordered and reviewable rather than a flat file-by-file dump.
+- `master_chef_multi_step` should remain audit-native: it judges step decomposition, completion evidence, and follow-through quality, but does not itself rewrite TODO steps or plan replacements.
+- Preserve the current root-cause finding structure and per-finding approval loop; the redesign is about improving audit framing and dimensional fit, not replacing the findings model.
+- Keep validator coverage structural and durable. Do not reintroduce brittle phrase-matching as the main enforcement mechanism in this step.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-audit/SKILL.md` and confirm the audit now starts by classifying the audit question, intended goal, primary proof surface, and review depth before detailed review begins.
+- Confirm the updated skill has explicit audit-shape behavior for `bug_report`, `functionality`, `small_change`, `big_branch`, and `master_chef_multi_step`.
+- Confirm `small_change` audits default to proportional review of changed surfaces plus adjacent proof, and do not automatically widen into broad repo drift review.
+- Confirm the old flat audit-dimensions model is replaced by a compact core-plus-optional-lenses structure, with optional lenses activated only when the audited scope warrants them.
+- Confirm the skill now requires a compact pre-findings `Goal match` or equivalent verdict summary before the normalized findings list.
+- Confirm `master_chef_multi_step` audits explicitly review both per-step contract satisfaction and run-level execution evidence.
+- Confirm the `Flow` section now frames the audit before scope resolution and review-depth selection before detailed dimensions.
+- Confirm the validator fails if any of the new required audit sections are removed.
