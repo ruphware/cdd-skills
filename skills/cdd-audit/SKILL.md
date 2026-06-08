@@ -190,7 +190,7 @@ Do not emit raw audit bullets as the final output.
   - approval recommendation
 - The `approval recommendation` tells the user, in plain practical terms, what approving this finding would authorize next. Translate planner labels such as `implementation_delta plus verification_delta` into a bounded action summary the user can recognize quickly.
 - Write the recommendation as `do X in Y so Z`: name the likely change, where it lands, and why it matters. Prefer `Show checkpoint lineage in local --chat from the existing session-context read, then add focused proof for that output` over raw taxonomy labels alone.
-- When there are several materially different ways forward, include `approval variants` under the recommendation. Keep them to the smallest useful set, usually `2` to `4`, and make each one a distinct user-facing action rather than an abstract planning bucket.
+- When there are several materially different ways forward, include `approval variants` under the recommendation. Keep them to the smallest useful set, usually `2` to `4`, and make each one a distinct user-facing action rather than an abstract planning bucket. In variant mode, the recommendation names the approval family and each variant carries the concrete path text.
 - Anchor each finding to the chosen audit type and the goal-match verdict. Avoid side findings that do not change the audit question being answered.
 - Collapse duplicate symptoms into the smallest root-cause finding that can be discussed and planned cleanly.
 - Fold material edge-case and failure-path gaps into normalized findings; do not add a separate planning-style section for them.
@@ -223,18 +223,23 @@ This skill is interactive, read-only, and decision-driven.
 - use numbers only when the surrounding context is already numeric and that would be clearer.
 - When practical, tell the user they can reply with just the selector.
 - Do not make `A.` a bare approval verb. Put the approval recommendation directly in the option text so the user can see what approval means without rereading the whole finding.
-- Default major-finding options (per-finding triage; route choice happens in the final closeout stage):
+- Default major-finding options when there is one recommended follow-up path (per-finding triage; route choice happens in the final closeout stage):
   - `A. Approve recommended follow-up — <approval recommendation>`
   - `B. Postpone or backlog — <short practical summary>`
   - `C. Accept current state — <short practical summary of what stays unchanged>`
   - `D. Reject finding or ask for more evidence — <short practical summary>`
-- When one finding has multiple credible approval paths, `A.` means approve the recommended variant. Add numbered alternatives directly under it:
-  - `A1. Approve recommended variant — <recommended approval path>`
-  - `A2. Approve alternative path — <second approval path>`
-  - `A3. Approve alternative path — <third approval path>`
+- When one finding has multiple credible approval paths, switch to variant mode:
+  - `A. Approve one of the follow-up paths below — defaults to A1 if the user replies with just A`
+  - `A1. Recommended path — <recommended approval path>`
+  - `A2. Alternative path — <second approval path>`
+  - `A3. Alternative path — <third approval path>`
+  - `B. Postpone or backlog — <short practical summary>`
+  - `C. Accept current state — <short practical summary of what stays unchanged>`
+  - `D. Reject finding or ask for more evidence — <short practical summary>`
 - Keep the recommended variant first. Mark it explicitly as recommended only when the ordering alone may be ambiguous.
 - Each approval variant must be a real alternative in implementation, spec, verification, or sequencing terms, not cosmetic rewording. If the variants are not meaningfully different, collapse back to one `A.` recommendation.
-- Accept compact selector replies such as `A`, `A1`, `A 1`, `B`, `C`, or `D`.
+- Accept compact selector replies such as `A`, `A1`, `A 1`, `A3`, `A 3`, `B`, `C`, or `D`.
+- In variant mode, treat plain `A` as approval of the recommended path `A1` unless the user explicitly selects another numbered variant.
 - Minor findings and minor ambiguities can stay report-only unless they materially change the recommended follow-up.
 
 ## Flow
@@ -250,7 +255,7 @@ This skill is interactive, read-only, and decision-driven.
 10) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
 11) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
 12) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
-13) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, keep `A.` for the recommended variant and show explicit alternatives as `A1`, `A2`, `A3`, etc.
+13) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
 14) Keep a running list of:
    - findings approved for follow-up
    - findings deferred
