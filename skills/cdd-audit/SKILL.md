@@ -154,12 +154,12 @@ This skill is interactive, read-only, and decision-driven.
 12) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
-     - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` directly with the approved findings so it can review remediation options, ask one substantive clarification, and normalize the result into runnable TODO steps before implementation begins
-     - `B. implement one approved finding directly` — fast path for one trivial bounded finding or one collapsed root-cause package (single-file fixes, doc drift, test cleanup); invoke `$cdd-implement` directly, prefer TODO-backed execution when it already maps to an existing step, and otherwise use the bounded direct path; if multiple approved findings remain, require the user to pick exactly one or return to `cdd-plan`
+     - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` on the approved set to weigh remediation options, ask one substantive clarification, and normalize them into runnable TODO steps before any implementation
+     - `B. plan all approved findings inline, then implement directly` — skip the `cdd-plan` handoff: sequence every approved finding (and each collapsed root-cause package) into one compact in-session plan — order, affected boundaries, validation — then invoke `$cdd-implement` to execute it, TODO-backed where a finding maps to an existing step and bounded-direct otherwise
      - `C. backlog the approved findings or stop without further action this session` — defer to a later audit/plan cycle or close out
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act, surface the step 12 routing options so they can choose `cdd-plan`, direct implementation for exactly one approved bounded finding package, or backlog or stop.
+- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act, surface the step 12 routing options so they can choose a `cdd-plan` handoff, an inline plan-and-implement over all approved findings, or backlog or stop.
 - If the audited scope is too large to review sanely in one pass, propose a smaller first audit slice before continuing.
 - If docs or specs are intentionally future-state, say that explicitly and audit for clarity rather than forcing current-state wording onto planned behavior.
