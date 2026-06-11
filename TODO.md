@@ -918,3 +918,45 @@ Make `cdd-audit` handle audits of proposed-but-unbuilt enhancements (issues, RFC
 - [x] Confirm the suppression rule holds: a proposal audit of an enhancement issue yields no missing-artifact, missing-test, or missing-TODO findings.
 - [x] Confirm unimplemented-TODO-step readiness audits still route to the existing step-scoped shapes.
 - [x] Confirm `python3 scripts/validate_skills.py` fails when the `## Enhancement-proposal audit` heading is removed.
+
+## Step 65 — Add intent-driven warm-up and suitability-ordered checkout options to `cdd-boot`
+
+### Goal
+
+Make `cdd-boot` warm up intent-relevant context when the boot invocation names a task, recommend the right cdd-* continuation, and always close main-worktree Git boots with both `create/move into worktree+branch` and `continue in main checkout` among up to four suitability-ordered options.
+
+### Constraints
+
+- Boot stays read-only and approval-free; it never creates worktrees — the selected follow-up option authorizes worktree creation as the first continuation action after the boot report.
+- Options are free-form, ordered by suitability with the recommended choice first; no fixed selector slots. Up to four selectors (`A.`-`D.`) in both the repo-local `NEXT` path and the `**Options**` fallback.
+- The both-checkout-choices rule applies only when booting from the main worktree of a Git repo; linked-worktree boots keep the stay-in-this-worktree recommendation, non-Git boots carry no checkout options.
+- Intent routing must not override the existing precedence: a matching runnable TODO step routes to `$cdd-implement <step>` before any other skill.
+- Intent warm-up stays bounded: intent-relevant TODO steps, docs, and code entrypoints only — no full-history ingestion.
+- Validator stays structural-only: new H2 plus `REQUIRED_SECTIONS` entry.
+
+### Tasks
+
+- [x] Add a new H2 `## Boot intent routing` section to `skills/cdd-boot/SKILL.md` after `## Graceful fallback rules`: classify a task intent named in the boot invocation, extend boot reading to bounded intent-relevant surfaces, and recommend the continuation — runnable-TODO-step match → `$cdd-implement <step>` (precedence), new change request → `cdd-plan`, review or verification of implemented work or proposals → `cdd-audit`, doc drift or upkeep or index work → `cdd-maintain`, multi-step autonomous execution → `cdd-master-chef`, missing `AGENTS.md` → `cdd-init-project`; without an intent, infer the best continuation from repo state.
+- [x] Update `skills/cdd-boot/SKILL.md` `## Follow-up contract` to allow up to four selectors `A.`-`D.`, require suitability ordering with the recommended option first in both the `NEXT` path and the `**Options**` fallback, and require main-worktree Git boots to include both checkout choices as distinct options that each name the continuation they chain to.
+- [x] Update `skills/cdd-boot/SKILL.md` `## Worktree check` to keep the no-worktree-creation guardrail and state that the selected follow-up choice authorizes worktree creation as the first continuation action after the boot report.
+- [x] Update `skills/cdd-boot/SKILL.md` `## Output` with an `Intent` report line (classified intent, warmed surfaces, recommended continuation) for intent-carrying boots and a `Next action` bullet that reflects suitability ordering, the `A.`-`D.` allowance, and the checkout-pair rule.
+- [x] Update the `skills/cdd-boot/SKILL.md` frontmatter `description` and the `skills/cdd-boot/agents/openai.yaml` `short_description` and `default_prompt` to mention intent-driven warm-up and cdd-* continuation routing.
+- [x] Extend `scripts/validate_skills.py` by inserting `## Boot intent routing` into `REQUIRED_SECTIONS["cdd-boot"]` in document order.
+
+### Implementation notes
+
+- Keep the routing map compact: one bullet per skill, mirroring the README skill map; reuse the existing `$cdd-implement <step>` precedence line instead of duplicating it.
+- Add one intent-carrying example to `## Example prompt` (for example `$cdd-boot I want to fix the flaky CI test`).
+- Keep the addition roughly 25-40 lines across all touched sections.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [x] Intent-carrying boots produce an `Intent` line and a matching cdd-* recommendation; plain boots keep current behavior.
+- [x] Main-worktree Git boots always offer both checkout choices, suitability-ordered with the recommended option first, with at most four selectors.
+- [x] Linked-worktree and non-Git boots are exempt from the checkout-pair rule.
+- [x] Boot still never creates worktrees; the selected option authorizes creation afterward.
+- [x] `python3 scripts/validate_skills.py` fails when the `## Boot intent routing` heading is removed.

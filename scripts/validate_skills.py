@@ -77,6 +77,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Required contract",
         "## Preferred inputs",
         "## Graceful fallback rules",
+        "## Boot intent routing",
         "## Follow-up contract",
         "## Worktree check",
         "## Output",

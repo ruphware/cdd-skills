@@ -1,6 +1,6 @@
 ---
 name: cdd-boot
-description: "Boot a repo into vanilla AGENTS-driven mode by ingesting AGENTS.md plus project and development docs, gracefully when non-core files differ or are missing (interactive, read-only)."
+description: "Boot a repo into vanilla AGENTS-driven mode by ingesting AGENTS.md plus project and development docs, tolerating missing non-core files, warming up intent-relevant context when the invocation names a task, and routing to the right cdd-* continuation (interactive, read-only)."
 ---
 
 # CDD Boot (interactive, read-only)
@@ -50,11 +50,24 @@ Development:
 - Do not ask for approval.
 - Ask a question only when the repo layout is genuinely ambiguous and the ambiguity would materially change the boot summary.
 
+## Boot intent routing
+- When the boot invocation names a task or goal, classify the intent and extend boot reading to the intent-relevant surfaces — matching TODO steps, relevant docs, and code entrypoints — without ingesting full history.
+- Route the intent to its continuation:
+  - a matching runnable TODO step → `$cdd-implement <step>` (takes precedence over all other routes)
+  - a new change request or feature idea → `cdd-plan`
+  - review or verification of implemented work or a proposed enhancement → `cdd-audit`
+  - doc drift, repo upkeep, or index refresh → `cdd-maintain`
+  - multi-step autonomous execution over prepared TODO steps → `cdd-master-chef`
+  - missing `AGENTS.md` → `cdd-init-project` (per `## Required contract`)
+- With no intent, infer the continuation from repo state: a clear next runnable TODO step first, otherwise the skill that fits the current development context.
+- Carry the intent into the recommended option text so selection chains directly (for example `$cdd-plan <intent>`).
+
 ## Follow-up contract
 - Treat repo-local `AGENTS.md` response-format guidance as authoritative for follow-up presentation, including any repo-local `NEXT` section or selector-style follow-up contract.
 - When `AGENTS.md` defines a repo-local `NEXT` section or selector-style follow-up contract, use that `NEXT` section with visible selector-labeled choices.
-- Prefix every follow-up option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters: `A.`, `B.`, `C.`. Use numbers only when the surrounding context is already numeric and that would be clearer.
-- When no repo-local `NEXT` contract exists, use a final `**Options**` section with 2-4 concrete next-step choices, put the recommended option first, and when practical tell the user they can reply with just the selector.
+- Prefix every follow-up option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters `A.` through `D.`; use numbers only when the surrounding context is already numeric and that would be clearer.
+- Offer 2-4 concrete next-step choices in both paths, ordered by suitability with the recommended option first; when practical tell the user they can reply with just the selector. When no repo-local `NEXT` contract exists, use a final `**Options**` section.
+- When booting from the main worktree of a Git repo, include both `create or move into a worktree+branch first` and `continue in the main checkout` as distinct choices, each naming the continuation it chains to (for example `create worktree ... then $cdd-plan <intent>`). Place them by suitability, not fixed slots.
 - Keep boot follow-up read-only navigation only; do not ask for approval and do not offer to start implementation directly from boot.
 - If a clear next runnable TODO step exists, recommend continuing via `$cdd-implement <step>` rather than offering direct implementation.
 
@@ -63,9 +76,9 @@ Development:
 - If the current checkout is already a linked worktree, recommend staying in that worktree for development.
 - If the current checkout is the main worktree and linked worktrees or repo-local managed worktree paths already exist, recommend moving feature development into a worktree rather than the main folder.
 - When the boot report recommends creating or moving into a worktree first, recommend a repo-local path under `.cdd-runtime/worktrees/<branch-or-tag>/`, where `<branch-or-tag>` defaults to the recommended branch name or approved workstream tag.
-- Worktree follow-up choices must explicitly distinguish `create or move into a worktree first` from `continue in the current worktree`.
+- Follow-up choices carry the checkout pair per `## Follow-up contract`.
 - Otherwise, say that staying in the main folder is acceptable unless the user wants parallel or isolated development.
-- Do not create, switch, remove, or clean worktrees during boot.
+- Do not create, switch, remove, or clean worktrees during boot; a selected follow-up choice authorizes creation as the continuation's first action after the boot report.
 
 ## Output
 Return a concise boot report that includes:
@@ -73,9 +86,10 @@ Return a concise boot report that includes:
 - `Project` — summarize the project using canonical files or fallbacks
 - `Development` — summarize current implementation context from the journal top or fallbacks
 - `Worktree` — summarize whether development should stay in the main folder or move into a worktree
+- `Intent` — when the boot invocation named a task, state the classified intent, the intent-relevant surfaces warmed up, and the recommended cdd-* continuation
 - `Sources used` — list the files actually read
 - `Missing expected files` — list only the missing canonical docs
-- `Next action` — recommend the best follow-up using selector-labeled choices through the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise through a final `**Options**` section
+- `Next action` — up to four suitability-ordered selector choices, recommended first, including both checkout choices per `## Follow-up contract`, through the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise a final `**Options**` section
 - When worktree migration is recommended, `Next action` must include a selector choice that creates or moves into `.cdd-runtime/worktrees/<branch-or-tag>/` and, if a clear next runnable TODO step exists, chains that path with `$cdd-implement <step>`.
 - When staying in the current checkout is acceptable and a clear next runnable TODO step exists, recommend `$cdd-implement <step>` rather than offering to start implementation directly.
 
@@ -83,3 +97,6 @@ On success, recommend continuing in vanilla AGENTS-driven mode.
 
 ## Example prompt
 `$cdd-boot Ingest AGENTS.md and assume the role. Read README.md docs/INDEX.md docs/specs/blueprint.md to understand the project, and continue with matching docs/index/** siblings when docs/INDEX.md points to them. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them.`
+
+With an intent:
+`$cdd-boot I want to fix the flaky CI test — warm up the relevant context and recommend the continuation.`
