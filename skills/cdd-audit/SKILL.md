@@ -18,6 +18,9 @@ Read:
 - `docs/runbooks/*.md` and repo-root `RUNBOOK.md` when present
 - the current-state header of `docs/JOURNAL.md` (and split-journal index when active) for recent activity context
 - relevant code, tests, configs, manifests, entrypoints, and validation surfaces for the chosen scope
+- the full thread of any external issue or ticket the scope references: body plus all comments, plus directly referenced artifacts when material to the verdict — no recursive crawling
+
+In an external thread, the latest authoritative decision supersedes the body — note superseded requirements instead of silently merging them. If comments cannot be fetched, declare the assessment partial and record the unread thread as a proof-surface gap.
 
 Treat missing docs, specs, tests, or other proof surfaces that the chosen audit shape depends on as findings. Do not invent missing contract surfaces during the audit.
 
@@ -95,7 +98,7 @@ Choose one audit shape before reviewing dimensions. The shape determines which p
   - Suppress planning-style replanning inside the audit itself; route approved findings outward instead.
 - `enhancement_proposal`
   - Primary question: is the proposal sound, non-duplicative, and ready to plan — what already exists, how does it fit, and which integration shape is best?
-  - Preferred proof surfaces: the proposal artifact itself, an existing-capability inventory across code, specs, docs, skills, tools, and tests, in-repo prior art, and the proposal's declared acceptance criteria.
+  - Preferred proof surfaces: the full proposal thread (per `## Sources of truth`), an existing-capability inventory across code, specs, docs, skills, tools, and tests, in-repo prior art, and the proposal's declared acceptance criteria.
   - Prioritize duplication with shipped surfaces, architectural conflicts, unstated decisions and gaps in the proposal itself, acceptance-criteria quality, and integration seams.
   - Suppress absence-of-the-artifact findings — missing implementation, tests, or TODO normalization is the premise, not a finding (see `## Enhancement-proposal audit`).
 
