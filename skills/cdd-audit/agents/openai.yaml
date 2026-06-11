@@ -1,5 +1,5 @@
 interface:
   display_name: "[CDD-4] Audit"
-  short_description: "Audit intent and goal match first: use the right audit shape, depth, and proof surfaces, triage major findings, then route approved follow-up into cdd-plan"
+  short_description: "Audit intent and goal match first: use the right audit shape, depth, and proof surfaces for implemented work or proposed-but-unbuilt enhancements, triage major findings, then route approved follow-up into cdd-plan"
 policy:
   allow_implicit_invocation: false

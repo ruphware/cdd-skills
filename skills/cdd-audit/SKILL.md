@@ -1,6 +1,6 @@
 ---
 name: cdd-audit
-description: "Audit intent and goal match first: frame the audit question, use the right audit shape, depth, and proof surfaces, triage major findings, then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
+description: "Audit intent and goal match first: frame the audit question, use the right audit shape, depth, and proof surfaces for implemented work or proposed-but-unbuilt enhancements, triage major findings, then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
 ---
 
 # CDD Audit (interactive, read-only)
@@ -31,6 +31,7 @@ Before detailed review, classify what question this audit is actually trying to 
   - `small_change`
   - `big_branch`
   - `master_chef_multi_step`
+  - `enhancement_proposal`
 - Choose one primary audit type. Use `Optional lenses` for cross-cutting concerns instead of mixing multiple primary audit types.
 - For every audit, classify:
   - `Audit type`
@@ -41,6 +42,7 @@ Before detailed review, classify what question this audit is actually trying to 
   - `Hardest constraint`
   - `Recommended review depth`
   - `Out of scope`
+- Audit a proposal for unbuilt capability (issue, RFC, or spec draft) as `enhancement_proposal`; never force a retrospective shape onto unbuilt work. Readiness review of unimplemented TODO steps (including Master Chef readiness) stays with the step-scoped and `master_chef_multi_step` shapes.
 - If the audit type, intended goal, or primary review question is ambiguous enough to materially change the audit conclusion, ask one framing clarification first.
 - Produce a compact visible `Audit framing` summary for behavior-changing, branch-sized, step-scoped, or multi-step audits. For narrow local audits, keep the framing compact but still classify it before findings.
 
@@ -51,6 +53,7 @@ Before detailed review, classify what question this audit is actually trying to 
   - one TODO step
   - multiple TODO steps
   - one TODO file
+  - one proposal artifact (issue, RFC, or spec draft)
   - whole codebase
 - Resolve scope after the audit framing stabilizes.
 - Ask only when the scope is missing or ambiguous, and keep the question scoped to the smallest missing decision.
@@ -90,6 +93,11 @@ Choose one audit shape before reviewing dimensions. The shape determines which p
   - Preferred proof surfaces: selected TODO step contracts, implementation deltas, automated checks, UAT evidence, run summaries, continuation artifacts, and final mission or stop-state evidence when present.
   - Prioritize step sizing, dependency order, completion evidence, proof quality, and whether the run stopped at the right boundary for the evidence available.
   - Suppress planning-style replanning inside the audit itself; route approved findings outward instead.
+- `enhancement_proposal`
+  - Primary question: is the proposal sound, non-duplicative, and ready to plan — what already exists, how does it fit, and which integration shape is best?
+  - Preferred proof surfaces: the proposal artifact itself, an existing-capability inventory across code, specs, docs, skills, tools, and tests, in-repo prior art, and the proposal's declared acceptance criteria.
+  - Prioritize duplication with shipped surfaces, architectural conflicts, unstated decisions and gaps in the proposal itself, acceptance-criteria quality, and integration seams.
+  - Suppress absence-of-the-artifact findings — missing implementation, tests, or TODO normalization is the premise, not a finding (see `## Enhancement-proposal audit`).
 
 ## Step-scoped TODO contract audit
 
@@ -109,6 +117,17 @@ When the chosen scope resolves to one or more TODO steps, explicitly audit each 
 - Keep this step-scoped audit additive to the broader README, spec, code, test, config, manifest, and entrypoint review; do not narrow the audit into TODO-only review.
 - For `master_chef_multi_step`, audit both the per-step contract and the run-level execution evidence: step sizing, dependency order, completion evidence, continuation quality, and whether checks plus UAT actually prove completion.
 
+## Enhancement-proposal audit
+
+When the chosen audit type is `enhancement_proposal`, audit the proposal against the current codebase instead of judging an implementation delta.
+
+- Before findings, produce a visible `Existing-capability inventory`: each entry names an existing surface, tags it `overlaps`, `duplicates`, `depends on`, or `conflicts`, and cites a file or symbol.
+- Emit a `Proposal fit` verdict as this shape's `Goal match` equivalent: `fits as proposed`, `fits with adjustments`, `needs reshaping`, `mostly already exists`, or `conflicts with current architecture`.
+- Produce a visible `Integration options` block with 2-4 materially different integration shapes — approach, affected boundaries, reuse versus new surface, trade-offs — recommended option first, surfaced through the existing approval-variant mode (`A1`, `A2`, `A3`). Collapse to one justified option when alternatives would be cosmetic.
+- Keep findings about the proposal itself: duplication, conflicts, unstated decisions, gaps, and acceptance-criteria weaknesses — never the absence of the proposed artifact, its tests, or its TODO normalization.
+- In per-finding triage, `C. Accept current state` means keeping the proposal as written, with no repo change.
+- At closeout, hand the chosen integration option to `cdd-plan` as the pre-selected architecture option, mapped to `spec_delta` and/or `implementation_delta`; that handoff is where TODO normalization happens.
+
 ## Review depth and proportionality
 
 Choose a review depth before detailed findings:
@@ -118,7 +137,7 @@ Choose a review depth before detailed findings:
   - Default for bounded `small_change` audits.
   - Review changed files plus the smallest adjacent proof surface needed to answer the audit question confidently.
 - `standard`
-  - Default for most `bug_report`, `functionality`, and step-scoped audits.
+  - Default for most `bug_report`, `functionality`, `enhancement_proposal`, and step-scoped audits.
   - Review the changed surface plus the adjacent contracts, tests, docs, configs, and entrypoints that materially affect the verdict.
 - `deep`
   - Default for `big_branch`, `master_chef_multi_step`, security-sensitive, migration-heavy, or otherwise multi-boundary audits.
@@ -246,7 +265,7 @@ This skill is interactive, read-only, and decision-driven.
 1) Read the contract docs and the likely proof surfaces for the requested audit, only far enough to stabilize framing, scope, and risk.
 2) Frame the audit: classify audit type, intended goal, primary proof surface, affected boundaries, review depth, and out-of-scope surfaces before detailed review.
 3) Resolve the audit scope after framing stabilizes.
-4) Choose the audit shape and review depth. Inventory affected boundaries or review order first for `big_branch` and `master_chef_multi_step` audits.
+4) Choose the audit shape and review depth. Inventory affected boundaries or review order first for `big_branch` and `master_chef_multi_step` audits, and the `Existing-capability inventory` first for `enhancement_proposal` audits.
 5) If the scope resolves to one or more TODO steps, record the selected step ids first and inspect each selected step's section contract before judging implementation quality.
 6) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
 7) Review the core audit dimensions together. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
@@ -283,6 +302,7 @@ This skill is interactive, read-only, and decision-driven.
      - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` on the approved set to weigh remediation options, ask one substantive clarification, and normalize them into runnable TODO steps before any implementation
      - `B. plan all approved findings inline, then implement directly` — skip the `cdd-plan` handoff: sequence every approved finding (and each collapsed root-cause package) into one compact in-session plan — order, affected boundaries, validation — then invoke `$cdd-implement` to execute it, TODO-backed where a finding maps to an existing step and bounded-direct otherwise
      - `C. backlog the approved findings or stop without further action this session` — defer to a later audit/plan cycle or close out
+   - For `enhancement_proposal` audits, include the chosen integration option in the `cdd-plan` handoff as the pre-selected architecture option.
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails

@@ -117,6 +117,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Scope resolution",
         "## Audit shapes",
         "## Step-scoped TODO contract audit",
+        "## Enhancement-proposal audit",
         "## Review depth and proportionality",
         "## Core audit dimensions",
         "## Optional lenses",

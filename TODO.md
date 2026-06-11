@@ -869,3 +869,52 @@ Make `cdd-audit` frame the audit question and intended goal before detailed revi
 - Confirm `master_chef_multi_step` audits explicitly review both per-step contract satisfaction and run-level execution evidence.
 - Confirm the `Flow` section now frames the audit before scope resolution and review-depth selection before detailed dimensions.
 - Confirm the validator fails if any of the new required audit sections are removed.
+
+## Step 64 — Add `enhancement_proposal` audit shape to `cdd-audit` for proposed-but-unbuilt enhancements
+
+### Goal
+
+Make `cdd-audit` handle audits of proposed-but-unbuilt enhancements (issues, RFCs, spec drafts) through a dedicated prospective `enhancement_proposal` audit shape that produces an existing-capability inventory, a `Proposal fit` verdict, and integration options routed into `cdd-plan`, instead of retrospective "feature is missing" findings.
+
+### Constraints
+
+- Keep `cdd-audit` interactive and read-only; the new shape must not draft plans or TODO steps inside the audit.
+- Leave the five retrospective shapes (`bug_report`, `functionality`, `small_change`, `big_branch`, `master_chef_multi_step`) behaviorally unchanged.
+- Readiness review of unimplemented TODO steps (including Master Chef readiness) stays with the existing step-scoped and `master_chef_multi_step` machinery; `enhancement_proposal` covers proposed capability artifacts only.
+- Absence of the proposed artifact is the premise, never a finding: suppress `not yet implemented`, `tests for the proposed feature missing`, and `TODO not normalized` as findings in this shape.
+- Reuse existing machinery — the `Goal match` or-equivalent verdict slot, approval-variant mode (`A1`/`A2`/`A3`), and the existing closeout routing options; do not add a parallel approval mechanism.
+- Keep validator coverage structural-only: enforce the new contract via an H2 heading in `REQUIRED_SECTIONS`, no prose matching.
+- Touch only `skills/cdd-audit/SKILL.md`, `skills/cdd-audit/agents/openai.yaml`, and `scripts/validate_skills.py` unless a failing check proves another surface is required.
+
+### Tasks
+
+- [x] Update `skills/cdd-audit/SKILL.md` `## Audit framing` to add `enhancement_proposal` to the supported audit types with a detection rule: when the audited artifact is a proposal for unbuilt capability (issue, RFC, or spec draft), choose `enhancement_proposal` and never force a retrospective shape onto unbuilt work; include the boundary rule that unimplemented-TODO-step readiness review stays with the existing step-scoped shapes.
+- [x] Update `skills/cdd-audit/SKILL.md` `## Scope resolution` to add the scope `one proposal artifact (issue, RFC, or spec draft)` so proposal audits have a first-class scope instead of borrowing commit or TODO scopes.
+- [x] Update `skills/cdd-audit/SKILL.md` `## Audit shapes` with an `enhancement_proposal` shape that states: primary question (is the proposal sound, non-duplicative, and ready to plan — what already exists, how it fits, and which integration shape is best), preferred proof surfaces (the proposal artifact read-only, existing-capability inventory across code/specs/docs/skills/tools/tests, in-repo prior art for similar features, the proposal's declared acceptance criteria), what to prioritize (duplication with shipped surfaces, architectural conflicts, unstated decisions and gaps in the proposal itself, acceptance-criteria quality, integration seams), and what to suppress per Constraints.
+- [x] Add a new H2 `## Enhancement-proposal audit` section to `skills/cdd-audit/SKILL.md`, mirroring the `## Step-scoped TODO contract audit` precedent, that requires: a visible `Existing-capability inventory` before findings where each entry is tagged `overlaps`, `duplicates`, `depends on`, or `conflicts` and cites a file or symbol; a `Proposal fit` verdict as the `Goal match` equivalent with values `fits as proposed`, `fits with adjustments`, `needs reshaping`, `mostly already exists`, and `conflicts with current architecture`; a visible `Integration options` block with 2-4 materially different integration shapes (approach, affected boundaries, reuse versus new surface, trade-offs) surfaced through the existing approval-variant mode with the recommended option first and collapsing to one justified option when alternatives would be cosmetic; and closeout routing that hands the chosen integration option to `cdd-plan` as the pre-selected architecture option mapped to `spec_delta` and/or `implementation_delta`, treating TODO normalization as that handoff rather than as a finding.
+- [x] Update `skills/cdd-audit/SKILL.md` `## Flow` so `enhancement_proposal` audits build the existing-capability inventory before detailed findings (alongside the existing `big_branch` inventory rule) and the closeout step routes the chosen integration option into the `cdd-plan` handoff.
+- [x] Update the `skills/cdd-audit/SKILL.md` frontmatter `description` and `skills/cdd-audit/agents/openai.yaml` `short_description` to mention enhancement-proposal audits so both routing surfaces stay in sync.
+- [x] Extend `scripts/validate_skills.py` by adding `## Enhancement-proposal audit` to `REQUIRED_SECTIONS["cdd-audit"]`, inserted in document order, so validation fails if the new contract section is removed.
+
+### Implementation notes
+
+- Place the `enhancement_proposal` shape bullet last in `## Audit shapes`; place the new H2 directly after `## Step-scoped TODO contract audit` so the scope-specific contracts stay adjacent.
+- Put the detection rule in `## Audit framing` near the existing one-framing-clarification rule.
+- Default review depth for `enhancement_proposal` is `standard`.
+- Per-finding triage keeps the existing `A`/`B`/`C`/`D` options; for this shape, `C. Accept current state` reads as "keep the proposal as written, no repo change".
+- Keep the added contract compact, roughly 40-60 lines across all touched sections.
+- Reference misfire example: an enhancement-issue audit must yield an existing-capability inventory plus integration options, not a `high` finding that the requested artifact does not exist yet.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- [x] Read the updated `skills/cdd-audit/SKILL.md` and confirm proposal artifacts (issue, RFC, spec draft) route to `enhancement_proposal` and a retrospective shape is never forced onto unbuilt work.
+- [x] Confirm the shape requires a visible `Existing-capability inventory` with tagged, evidence-cited entries before findings.
+- [x] Confirm the `Proposal fit` verdict carries the five values and substitutes for `Goal match` in this shape.
+- [x] Confirm `Integration options` ride the existing approval-variant mode and the closeout hands the chosen option to `cdd-plan` as the pre-selected architecture option.
+- [x] Confirm the suppression rule holds: a proposal audit of an enhancement issue yields no missing-artifact, missing-test, or missing-TODO findings.
+- [x] Confirm unimplemented-TODO-step readiness audits still route to the existing step-scoped shapes.
+- [x] Confirm `python3 scripts/validate_skills.py` fails when the `## Enhancement-proposal audit` heading is removed.
