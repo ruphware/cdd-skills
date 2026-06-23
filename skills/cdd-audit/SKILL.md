@@ -18,9 +18,15 @@ Read:
 - `docs/runbooks/*.md` and repo-root `RUNBOOK.md` when present
 - the current-state header of `docs/JOURNAL.md` (and split-journal index when active) for recent activity context
 - relevant code, tests, configs, manifests, entrypoints, and validation surfaces for the chosen scope
-- the full thread of any external issue or ticket the scope references: body plus all comments, plus directly referenced artifacts when material to the verdict — no recursive crawling
+- any user-named external issue, ticket, PR, RFC, doc, or tracker reference in scope, per `## External source handling`
 
-In an external thread, the latest authoritative decision supersedes the body — note superseded requirements instead of silently merging them. If comments cannot be fetched, declare the assessment partial and record the unread thread as a proof-surface gap.
+## External source handling
+- Resolve user-named external issues, tickets, PRs, RFCs, docs, or tracker references via available read-only surfaces: connectors, CLIs, local remotes, pasted URLs, and identifiers.
+- Before audit framing, scope resolution, proposal-fit verdicts, or findings, read each in-scope external artifact's complete thread: title/body/description, all comments, review comments when present, and material directly referenced artifacts. Do not recursively crawl unrelated links.
+- Treat the latest authoritative comment or decision as current intent; flag superseded body requirements.
+- If the reference or source of truth is ambiguous enough to change the audit question, scope, or conclusion, ask one framing clarification.
+- If the artifact, comments, or material references cannot be fetched after a reasonable read-only attempt, declare the assessment partial, name the unread surfaces, and record the gap as a missing proof surface.
+- Never post, update, label, assign, or otherwise mutate external systems during the audit.
 
 Treat missing docs, specs, tests, or other proof surfaces that the chosen audit shape depends on as findings. Do not invent missing contract surfaces during the audit.
 

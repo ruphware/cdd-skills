@@ -95,6 +95,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## State detection",
     ),
     "cdd-plan": (
+        "## External source handling",
         "## Runnable TODO step contract",
         "## Audit-input normalization",
         "## Clarification floor and architecture options",
@@ -115,6 +116,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     ),
     "cdd-audit": (
         "## Sources of truth",
+        "## External source handling",
         "## Audit framing",
         "## Scope resolution",
         "## Audit shapes",

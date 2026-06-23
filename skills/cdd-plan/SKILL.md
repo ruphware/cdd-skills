@@ -15,6 +15,14 @@ Treat the target repo's CDD contract files as the source of truth:
 - `docs/specs/blueprint.md`
 - `docs/INDEX.md` (if present; also `docs/index/**` siblings when INDEX split is active)
 
+## External source handling
+- Resolve user-named external issues, tickets, PRs, RFCs, docs, or tracker references via available read-only surfaces: connectors, CLIs, local remotes, pasted URLs, and identifiers.
+- Before intent framing, the first substantive clarification, audit normalization, edge-case review, or plan options, read each in-scope external artifact's complete thread: title/body/description, all comments, review comments when present, and material directly referenced artifacts. Do not recursively crawl unrelated links.
+- Treat the latest authoritative comment or decision as current intent; flag superseded body requirements.
+- If the reference or source of truth is ambiguous enough to change the plan shape, write target, or validation strategy, ask one clarifying question.
+- If the artifact, comments, or material references cannot be fetched after a reasonable read-only attempt, mark plan coverage partial, name the unread surfaces, and do not promote uncovered requirements as confirmed.
+- Never post, update, label, assign, or otherwise mutate external systems during planning; apply only repo-local plan/TODO edits after user approval.
+
 ## Runnable TODO step contract
 
 A runnable step is decision-complete: the implementer can execute it without reopening PRD/Blueprint or surrounding chat to discover missing product, architecture, sequencing, or validation decisions.
@@ -102,7 +110,7 @@ Make remaining plan-shaping choices visible before final TODO drafting.
 - Treat a request as `intent-qualifying` when it is behavior-changing, ambiguous, multi-surface, audit-driven, or likely to need more than one TODO step. For these, add a compact visible `Intent and assumptions` section covering requested change, suspected intent, success signal, recommended direction, material assumptions by status, non-goals, and any blocking intent question.
 - For audit-derived requests, include a visible `Architecture / implementation options` section before final TODO drafting whenever multiple viable remediation shapes exist or the choice changes boundaries, sequencing, or validation.
 - For ambiguous, multi-surface, audit-driven, or multi-step requests, start with a coarse dependency-ordered decomposition, then refine one coarse step at a time. Do not jump straight to a full mixed-surface detailed plan.
-- During coarse planning, review user-provided contract/content/implementation-driving artifacts and expand them into the plan. When an artifact is an external issue or ticket, read the full thread — body plus all comments, plus directly referenced artifacts when material — with no recursive crawling; the latest authoritative thread decision supersedes the body (note superseded requirements); if comments cannot be fetched, say so and mark plan coverage partial. Keep exact implementation-driving detail in `TODO.md`, not in surrounding chat. If a reviewed artifact mixes product and implementation detail, keep implementation detail in `TODO.md` and add explicit `TODO.md` follow-up for the spec/doc update unless a durable spec delta is intentionally being drafted now.
+- During coarse planning, review user-provided contract/content/implementation-driving artifacts and expand them into the plan. Apply `External source handling` to external issues, tickets, PRs, RFCs, docs, or tracker references before treating them as confirmed planning input. Keep exact implementation-driving detail in `TODO.md`, not in surrounding chat. If a reviewed artifact mixes product and implementation detail, keep implementation detail in `TODO.md` and add explicit `TODO.md` follow-up for the spec/doc update unless a durable spec delta is intentionally being drafted now.
 - Add visible `Confirmed requirements coverage` (which requirements were confirmed, which were excluded, where each lives in the plan) and `Reviewed contract artifacts` (each artifact marked `copied as-is`, `corrected`, `expanded`, `removed`, or `left intentionally unspecified`, short reason for material change, write location) sections when applicable.
 - Only carry forward confirmed requirements that fit the repo.
 - Plans may be long when scope requires it. Do not over-compress just to stay minimal. Keep messages scannable: concise, no fluff, lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
