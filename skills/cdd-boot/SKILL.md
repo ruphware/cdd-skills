@@ -1,6 +1,6 @@
 ---
 name: cdd-boot
-description: "Boot a repo into vanilla AGENTS-driven mode by ingesting AGENTS.md plus project and development docs, tolerating missing non-core files, warming up intent-relevant context when the invocation names a task, and routing to the right cdd-* continuation (interactive, read-only)."
+description: "Boot a repo into vanilla AGENTS-driven mode by reading AGENTS.md plus project/development docs, warming intent-relevant local and external issue/ticket context, preferring the main checkout for read-only research/audit intents, and routing to the right cdd-* continuation (interactive, read-only)."
 ---
 
 # CDD Boot (interactive, read-only)
@@ -28,6 +28,9 @@ Development:
 - top of `docs/JOURNAL.md` as the stable journal entrypoint
 - matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` when `docs/JOURNAL.md` indicates split-journal mode
 
+External intent surfaces:
+- user-named external issues, tickets, PRs, RFCs, docs, or tracker references
+
 ## Graceful fallback rules
 - Read `AGENTS.md` first and treat it as the source of truth for role and response format.
 - Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/index/**` siblings, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing.
@@ -50,8 +53,17 @@ Development:
 - Do not ask for approval.
 - Ask a question only when the repo layout is genuinely ambiguous and the ambiguity would materially change the boot summary.
 
+## External source handling
+- Resolve user-named external references with available read-only surfaces: connectors, CLIs, local remotes, pasted URLs, and identifiers.
+- When an external artifact is in scope, read the complete thread before routing: title/body/description, all comments, review comments when present, and material directly referenced artifacts. Do not recursively crawl unrelated links.
+- Treat the latest authoritative comment or decision as current intent; flag superseded body requirements.
+- Ask one clarifying question when the reference or source of truth is ambiguous enough to change the boot summary or continuation.
+- If the artifact, comments, or material references cannot be fetched after a reasonable read-only attempt, mark the boot partial, name the unread surfaces, and route from available local context.
+- Never post, update, label, assign, or otherwise mutate external systems during boot.
+
 ## Boot intent routing
-- When the boot invocation names a task or goal, classify the intent and extend boot reading to the intent-relevant surfaces — matching TODO steps, relevant docs, and code entrypoints — without ingesting full history.
+- When the boot invocation names a task or goal, classify the intent and extend boot reading to the intent-relevant surfaces — external threads, matching TODO steps, relevant docs, and code entrypoints — without ingesting full history.
+- Treat research, analysis, investigation, proposal review, and audit as read-only evidence intents unless the user explicitly asks for write-producing follow-up.
 - Route the intent to its continuation:
   - a matching runnable TODO step → `$cdd-implement <step>` (takes precedence over all other routes)
   - a new change request or feature idea → `cdd-plan`
@@ -68,13 +80,15 @@ Development:
 - Prefix every follow-up option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters `A.` through `D.`; use numbers only when the surrounding context is already numeric and that would be clearer.
 - Offer 2-4 concrete next-step choices in both paths, ordered by suitability with the recommended option first; when practical tell the user they can reply with just the selector. When no repo-local `NEXT` contract exists, use a final `**Options**` section.
 - When booting from the main worktree of a Git repo, include both `create or move into a worktree+branch first` and `continue in the main checkout` as distinct choices, each naming the continuation it chains to (for example `create worktree ... then $cdd-plan <intent>`). Place them by suitability, not fixed slots.
+- For read-only evidence intents, order `continue in the main checkout` ahead of worktree creation unless the user explicitly asks for isolation.
 - Keep boot follow-up read-only navigation only; do not ask for approval and do not offer to start implementation directly from boot.
 - If a clear next runnable TODO step exists, recommend continuing via `$cdd-implement <step>` rather than offering direct implementation.
 
 ## Worktree check
 - If the repo is Git-backed, inspect whether the current checkout is the main worktree or a linked worktree before finishing the boot report.
 - If the current checkout is already a linked worktree, recommend staying in that worktree for development.
-- If the current checkout is the main worktree and linked worktrees or repo-local managed worktree paths already exist, recommend moving feature development into a worktree rather than the main folder.
+- For read-only evidence intents, prefer staying in the current or main checkout; do not recommend worktree migration solely because linked worktrees or repo-local managed worktree paths already exist.
+- For feature implementation or write-producing planning from the main worktree, if linked worktrees or repo-local managed worktree paths already exist, recommend moving feature development into a worktree rather than the main folder.
 - When the boot report recommends creating or moving into a worktree first, recommend a repo-local path under `.cdd-runtime/worktrees/<branch-or-tag>/`, where `<branch-or-tag>` defaults to the recommended branch name or approved workstream tag.
 - Follow-up choices carry the checkout pair per `## Follow-up contract`.
 - Otherwise, say that staying in the main folder is acceptable unless the user wants parallel or isolated development.
@@ -86,8 +100,8 @@ Return a concise boot report that includes:
 - `Project` — summarize the project using canonical files or fallbacks
 - `Development` — summarize current implementation context from the journal top or fallbacks
 - `Worktree` — summarize whether development should stay in the main folder or move into a worktree
-- `Intent` — when the boot invocation named a task, state the classified intent, the intent-relevant surfaces warmed up, and the recommended cdd-* continuation
-- `Sources used` — list the files actually read
+- `Intent` — when the boot invocation named a task, state the classified intent, the intent-relevant surfaces warmed up, any partial external read gaps, and the recommended cdd-* continuation
+- `Sources used` — list the files and external artifacts actually read; mark partial external threads when comments or material references were unavailable
 - `Missing expected files` — list only the missing canonical docs
 - `Next action` — up to four suitability-ordered selector choices, recommended first, including both checkout choices per `## Follow-up contract`, through the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise a final `**Options**` section
 - When worktree migration is recommended, `Next action` must include a selector choice that creates or moves into `.cdd-runtime/worktrees/<branch-or-tag>/` and, if a clear next runnable TODO step exists, chains that path with `$cdd-implement <step>`.
