@@ -1,13 +1,13 @@
 ---
 name: cdd-boot
-description: "Boot a repo into vanilla AGENTS-driven mode by reading AGENTS.md plus project/development docs, warming intent-relevant local and external issue/ticket context, preferring the main checkout for read-only research/audit intents, and routing to the right cdd-* continuation (interactive, read-only)."
+description: "Boot a repo into vanilla AGENTS-driven mode from root entrypoints first, deepen only into intent-relevant scaled follow-ons, route to the right cdd-* continuation, and when appropriate own the creation of a branch-backed worktree under `.cdd-runtime/worktrees/` (interactive, read-only)."
 ---
 
 # CDD Boot (interactive, read-only)
 
 Use this skill when the user wants a one-time vanilla CDD context boot and does not intend to use another `cdd-*` skill for the task.
 
-Boot the current repo into vanilla `AGENTS.md`-driven work by reading role, project, and development context without changing repo files.
+Boot the current repo into vanilla `AGENTS.md`-driven work by reading role, project, and development context, recommending the right `cdd-*` continuation, and deciding whether to stay in place or continue via a branch-backed worktree without changing repo files during boot.
 
 ## Required contract
 - `AGENTS.md` at repo root
@@ -18,35 +18,53 @@ Boot the current repo into vanilla `AGENTS.md`-driven work by reading role, proj
 Role:
 - `AGENTS.md`
 
-Project:
+Root boot entrypoints:
 - `README.md`
-- `docs/INDEX.md`
-- matching `docs/index/**` siblings when `docs/INDEX.md` points to them (INDEX split mode)
+- `TODO.md`
 - `docs/specs/blueprint.md`
-
-Development:
+- `docs/specs/prd.md` when present
 - top of `docs/JOURNAL.md` as the stable journal entrypoint
-- matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` when `docs/JOURNAL.md` indicates split-journal mode
+- `docs/INDEX.md` when present
+
+Scaled follow-on surfaces:
+- one matching `TODO-<area>.md` when one named lane or intent clearly needs it
+- one matching `docs/journal/JOURNAL-<area>.md` or `docs/journal/SUMMARY.md` when one named lane or explicit history request clearly needs it
+- the relevant `docs/index/**` body when the user explicitly asks for diagrams, inventory, ownership, or file-level discovery and `docs/INDEX.md` routes there
 
 External intent surfaces:
 - user-named external issues, tickets, PRs, RFCs, docs, or tracker references
 
+## Default boot set
+- Treat default boot as the small-repo path: read `AGENTS.md` plus the root boot entrypoints only.
+- In scaled or big repos, those same root files still boot first. Treat them as routers into deeper material, not as a reason to read every split file.
+- Do not expand into split TODO, journal, or INDEX bodies unless the user asks for it or one named intent clearly requires one specific lane or body.
+- Do not scan lane files just to discover work. Use `TODO.md` plus the named intent; otherwise recommend the best broad `cdd-*` continuation.
+
+## Deepening triggers
+- Follow one `TODO-<area>.md` only when the user names a lane, area, issue, PR, or step, or when `TODO.md` clearly routes the named intent into that lane.
+- Follow one journal lane only when the user asks for history, prior attempts, decisions, regressions, or when the chosen lane needs recent implementation context beyond the root journal entrypoint.
+- Follow one INDEX body only when the user explicitly asks for diagrams, inventory, ownership, or file-level discovery that the root `docs/INDEX.md` does not already answer.
+- If more than one lane or body is plausible, ask one clarifying question instead of opening several.
+- Once the target lane or body is clear, read only that lane or body unless the evidence forces a second one.
+
 ## Graceful fallback rules
 - Read `AGENTS.md` first and treat it as the source of truth for role and response format.
-- Continue gracefully when `README.md`, `docs/INDEX.md`, `docs/index/**` siblings, `docs/specs/blueprint.md`, or `docs/JOURNAL.md` are missing.
-- Use `docs/INDEX.md` to detect INDEX layout. If it contains a `## Layout` pointer block referencing `docs/index/**`, treat INDEX split mode as active and continue with the matching `docs/index/DIAGRAMS.md` and `docs/index/INVENTORY-*.md` siblings as needed for the boot summary. Otherwise treat `docs/INDEX.md` as a single-file index.
-- Use `docs/JOURNAL.md` to detect journal layout first. If it indicates split-journal mode, continue with the matching `docs/journal/JOURNAL-<area>.md` files and `docs/journal/SUMMARY.md` as needed.
+- Continue gracefully when root boot entrypoints or scaled follow-on surfaces are missing.
+- Use `docs/INDEX.md` to detect INDEX layout. If it points to `docs/index/**`, treat those bodies as latent follow-ons and open only the one the current question needs.
+- Use `docs/JOURNAL.md` to detect journal layout first. If it points to split journals, treat those lane journals as latent follow-ons and open only the one the current question needs.
 - For missing project context, use the first existing curated fallback in this order:
   - `README*.md`
   - `docs/specs/prd.md`
-  - `TODO*.md`
+  - `TODO.md`
+  - matching `TODO-<area>.md` only when a deepening trigger identifies one area
   - concise root or `docs/` markdown files with names matching `index`, `overview`, `spec`, `blueprint`, or `design`
 - For missing development context, use the first existing curated fallback in this order:
-  - top of `TODO*.md`
+  - top of `TODO.md`
+  - matching `TODO-<area>.md` only when a deepening trigger identifies one area
   - top of `CHANGELOG*.md`
   - top of `docs/CHANGELOG*.md`
   - top of `docs/notes*.md`
-- If split-journal mode is active but no matching area journal is clear, prefer `docs/journal/JOURNAL.md` for cross-cutting notes and `docs/journal/SUMMARY.md` for older condensed context before falling back to non-journal docs.
+- If deeper development context is needed and no matching area journal is clear, prefer `docs/journal/JOURNAL.md` for cross-cutting notes and `docs/journal/SUMMARY.md` for older condensed context before falling back to non-journal docs.
 - Use only the top of `docs/JOURNAL.md`, matching split-journal files, or development fallback files; do not ingest full history unless the user explicitly asks.
 - If multiple plausible fallback docs exist in the same tier, prefer canonical CDD files, then root runbook docs, then the shortest current-state doc that answers the need.
 - Do not write or modify repo files.
@@ -62,16 +80,16 @@ External intent surfaces:
 - Never post, update, label, assign, or otherwise mutate external systems during boot.
 
 ## Boot intent routing
-- When the boot invocation names a task or goal, classify the intent and extend boot reading to the intent-relevant surfaces — external threads, matching TODO steps, relevant docs, and code entrypoints — without ingesting full history.
+- When the boot invocation names a task or goal, classify the intent and extend boot reading to the intent-relevant surfaces — external threads, `TODO.md`, the narrowly matching `TODO-<area>.md` or `docs/journal/JOURNAL-<area>.md` files when a deepening trigger identifies them, relevant docs, and code entrypoints — without ingesting full history.
 - Treat research, analysis, investigation, proposal review, and audit as read-only evidence intents unless the user explicitly asks for write-producing follow-up.
 - Route the intent to its continuation:
-  - a matching runnable TODO step → `$cdd-implement <step>` (takes precedence over all other routes)
+  - a matching runnable TODO step already named by the user or narrowly resolved from `TODO.md` plus one matching lane → `$cdd-implement <step>` (takes precedence over all other routes)
   - a new change request or feature idea → `cdd-plan`
   - review or verification of implemented work or a proposed enhancement → `cdd-audit`
   - doc drift, repo upkeep, or index refresh → `cdd-maintain`
   - multi-step autonomous execution over prepared TODO steps → `cdd-master-chef`
   - missing `AGENTS.md` → `cdd-init-project` (per `## Required contract`)
-- With no intent, infer the continuation from repo state: a clear next runnable TODO step first, otherwise the skill that fits the current development context.
+- With no intent, infer the continuation from the root boot entrypoints; do not open area TODO or journal files just to discover a runnable step.
 - Carry the intent into the recommended option text so selection chains directly (for example `$cdd-plan <intent>`).
 
 ## Follow-up contract
@@ -110,7 +128,7 @@ Return a concise boot report that includes:
 On success, recommend continuing in vanilla AGENTS-driven mode.
 
 ## Example prompt
-`$cdd-boot Ingest AGENTS.md and assume the role. Read README.md docs/INDEX.md docs/specs/blueprint.md to understand the project, and continue with matching docs/index/** siblings when docs/INDEX.md points to them. Use docs/JOURNAL.md as the journal entrypoint and continue with matching split-journal files when it points to them.`
+`$cdd-boot Ingest AGENTS.md and assume the role. Read the repo's root entrypoints first, and only follow one scaled lane, journal, or INDEX body if I name a lane or ask for history, diagrams, or inventory.`
 
 With an intent:
 `$cdd-boot I want to fix the flaky CI test — warm up the relevant context and recommend the continuation.`

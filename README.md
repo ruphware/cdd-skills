@@ -76,7 +76,7 @@ The core loop is intentionally simple: boot context, plan work, implement one st
 
 - **[CDD-0] Boot**
  *cdd-boot*
- Ingest AGENTS.md, project docs, and current work context; decide whether to stay in the current checkout, continue in a linked worktree, or create a branch-backed worktree under .cdd-runtime/worktrees/.
+ Read the repo's root entrypoints first; in scaled repos follow only one relevant split lane or body when needed, then recommend the right `cdd-*` continuation and, when warranted, a branch-backed worktree under `.cdd-runtime/worktrees/`.
 
 - **[CDD-1] Init Project**
  *cdd-init-project*

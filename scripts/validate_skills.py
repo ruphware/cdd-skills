@@ -76,6 +76,8 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     "cdd-boot": (
         "## Required contract",
         "## Preferred inputs",
+        "## Default boot set",
+        "## Deepening triggers",
         "## Graceful fallback rules",
         "## External source handling",
         "## Boot intent routing",
