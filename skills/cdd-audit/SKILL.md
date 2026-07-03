@@ -1,6 +1,6 @@
 ---
 name: cdd-audit
-description: "Audit intent and goal match first: frame the audit question, use the right audit shape, depth, and proof surfaces for implemented work or proposed-but-unbuilt enhancements, triage major findings, then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
+description: "Audit intent and goal match first: frame the audit question, use the right audit shape, depth, and proof surfaces for implemented work or proposed-but-unbuilt enhancements, emit a pre-verdict as-built model of the audited surface, triage major findings, then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
 ---
 
 # CDD Audit (interactive, read-only)
@@ -47,6 +47,7 @@ Before detailed review, classify what question this audit is actually trying to 
   - `Requested audit question`
   - `Expected behavior or intended goal`
   - `Primary proof surface`
+  - `Read strategy` — `implementation-only`, `plan-only`, or `plan-vs-implementation`, per `## As-built model`
   - `Affected boundaries`
   - `Hardest constraint`
   - `Recommended review depth`
@@ -154,6 +155,49 @@ Choose a review depth before detailed findings:
 - Apply deep review only where the audit type, risk, or evidence warrants it. Do not impose branch-scale expectations on a `quick` audit.
 - Unrelated repo drift stays report-only unless it materially changes the goal-match verdict, finding severity, root-cause grouping, affected boundary, or recommended next path.
 
+## As-built model
+
+For retrospective audit shapes (`bug_report`, `functionality`, `small_change`, `big_branch`, `master_chef_multi_step`) with an implemented surface, emit a visible as-built model before the `Goal match` verdict. The model commits the auditor to a reading of what the implementation actually is before any verdict compares it against what it should be.
+
+- Model parts:
+  - `Diagram` — compact ASCII: components, data/control flow, boundary crossings.
+  - `Gist` — 2-4 sentences: what the audited surface actually does as built.
+  - `Perceived intent vs stated intent` — the implementation's apparent design goal, stated independently, then marked `matches` or `diverges at <point>` against the stated contract.
+  - `Limits & assumptions` — every encoded bound in the audited surface (string lengths, collection caps, numeric ranges, timeouts, retries, concurrency caps, enum sets, truncations, defaults) as `value | location (file:symbol) | origin | verdict`:
+    - `contractual` — required by the stated contract
+    - `defensive` — justified guard, rationale evident
+    - `arbitrary` — no consumer or rationale found → useless-limit candidate
+    - `missing` — unbounded input that should be bounded → false-assumption candidate
+- Evidence: the model cites only code, tests, configs, manifests, and observable behavior — never plan or spec wording.
+- Blind window: when `Read strategy` is `plan-vs-implementation`, the stated contract is locator-only until `Gist`, `Perceived intent`, and the limits inventory are drafted. Locator use answers where the audited surface is (scope, shape, files, step ids, boundaries); semantic use answers what it should do. Deep-read the stated claims only after drafting, then emit the diff.
+- No stated contract (`implementation-only`): the diff line reads `no stated contract`, perceived intent stands as the audit baseline, and the missing contract surface stays a finding per the missing-proof-surface rule.
+- Depth scaling: `quick` = `Gist` + limits inventory, diagram optional; `standard`/`deep` = full four-part model.
+- Soft checkpoint: intent divergence or a load-bearing ambiguous limit routes through the existing one-framing-clarification rule — no second question gate. User corrections re-anchor the audit without consuming a finding approval.
+- Scope: one model per audited scope. Multi-step and branch scopes model the composed result, not per-step; bound the limits inventory to the audited delta plus directly touched surfaces.
+- Exemptions: `enhancement_proposal` — the `Existing-capability inventory` plays this role per `## Enhancement-proposal audit`; readiness audits of unbuilt TODO steps skip the model with a one-line reason.
+- Findings map into existing dimensions: intent divergence → `goal / contract match`; missing bounds → `correctness / failure handling`; arbitrary limits → `complexity / maintainability`.
+
+Example shape:
+
+```
+As-built model — import pipeline
+
+  file ──▶ parse() ──▶ validate() ──▶ apply()
+              │             │
+              ▼             ▼
+         defaults.py   limits.py (MAX_ROWS=500)
+
+Gist: streams rows from CSV, validates per-row, applies in one transaction.
+Perceived intent: bulk-import with all-or-nothing semantics.
+Stated intent (Step 42): "import user CSVs" -> diverges: contract is silent
+on atomicity; implementation chose all-or-nothing.
+
+Limits & assumptions:
+| limit        | value     | where        | origin    | verdict                 |
+| max rows     | 500       | limits.py:12 | arbitrary | useless-limit candidate |
+| email length | unbounded | parse.py:33  | —         | missing bound           |
+```
+
 ## Core audit dimensions
 
 Every audit uses these core dimensions. Treat them as five questions the audit must answer, phrased relative to the chosen audit type and intended goal.
@@ -162,7 +206,7 @@ Every audit uses these core dimensions. Treat them as five questions the audit m
   - Compare implementation against the requested audit question, intended goal, `README.md`, `docs/specs/*`, the selected `TODO*.md` scope, and observable current behavior.
   - For one-step or multi-step TODO audits, compare each selected step's `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT` against the concrete implementation delta reviewed for that scope, not only the final filesystem state.
   - Treat drift between code, tests, and docs as a real finding.
-  - Before listing normalized findings, emit a compact `Goal match` or equivalent summary stating whether the intended goal is understood, whether the implementation matches, partially matches, or misses it, and whether the proof surface is strong enough to justify that verdict.
+  - Before listing normalized findings, emit a compact `Goal match` or equivalent summary stating whether the intended goal is understood, whether the implementation matches, partially matches, or misses it, and whether the proof surface is strong enough to justify that verdict. When an as-built model was emitted, build this verdict on the model's `Perceived intent vs stated intent` diff.
 - `correctness / failure handling`
   - Check happy paths, edge cases, failure paths, boundary validation, and state or data invariants.
   - Validate untrusted input early, separate syntactic from semantic validation when both matter, and keep invariants explicit where they protect real behavior.
@@ -272,24 +316,25 @@ This skill is interactive, read-only, and decision-driven.
 
 ## Flow
 1) Read the contract docs and the likely proof surfaces for the requested audit, only far enough to stabilize framing, scope, and risk.
-2) Frame the audit: classify audit type, intended goal, primary proof surface, affected boundaries, review depth, and out-of-scope surfaces before detailed review.
+2) Frame the audit: classify audit type, intended goal, primary proof surface, read strategy, affected boundaries, review depth, and out-of-scope surfaces before detailed review.
 3) Resolve the audit scope after framing stabilizes.
 4) Choose the audit shape and review depth. Inventory affected boundaries or review order first for `big_branch` and `master_chef_multi_step` audits, and the `Existing-capability inventory` first for `enhancement_proposal` audits.
 5) If the scope resolves to one or more TODO steps, record the selected step ids first and inspect each selected step's section contract before judging implementation quality.
 6) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
-7) Review the core audit dimensions together. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
-8) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
-9) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary.
-10) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
-11) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
-12) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
-13) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
-14) Keep a running list of:
+7) For retrospective shapes with an implemented surface, build and emit the visible as-built model per `## As-built model` before core-dimension review, honoring its blind-window ordering for `plan-vs-implementation` audits.
+8) Review the core audit dimensions together. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
+9) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
+10) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary, built on the as-built model's intent diff when a model was emitted.
+11) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
+12) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
+13) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
+14) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
+15) Keep a running list of:
    - findings approved for follow-up
    - findings deferred
    - findings accepted as-is
    - findings rejected or needing more evidence
-15) When the audit is complete, return a final audit summary that includes:
+16) When the audit is complete, return a final audit summary that includes:
    - audit type
    - audited scope
    - review depth
@@ -305,7 +350,7 @@ This skill is interactive, read-only, and decision-driven.
    - deferred or accepted findings
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
-16) End with selector-labeled next actions.
+17) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
      - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` on the approved set to weigh remediation options, ask one substantive clarification, and normalize them into runnable TODO steps before any implementation

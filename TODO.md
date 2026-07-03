@@ -960,3 +960,60 @@ Make `cdd-boot` warm up intent-relevant context when the boot invocation names a
 - [x] Linked-worktree and non-Git boots are exempt from the checkout-pair rule.
 - [x] Boot still never creates worktrees; the selected option authorizes creation afterward.
 - [x] `python3 scripts/validate_skills.py` fails when the `## Boot intent routing` heading is removed.
+
+## Step 66 — Add `## As-built model` pre-verdict contract with read-strategy-aware bias control to `cdd-audit`
+
+### Goal
+
+Make `cdd-audit` emit a visible as-built model of the audited surface — ASCII diagram, gist, perceived-vs-stated intent diff, and a limits & assumptions inventory — before the `Goal match` verdict for retrospective audit shapes, built from artifact evidence only, with a framing-level `Read strategy` classification and a bounded blind window that keeps the auditor's reading independent of plan wording when both plan and implementation surfaces exist.
+
+### Constraints
+
+- Keep `cdd-audit` read-only and audit-native; the model is a reading artifact, not a new finding taxonomy or approval mechanism.
+- Additive to the framing-first architecture (Steps 63–64): no global `## Flow` reorder; framing still reads contract docs first, and `## External source handling` read-complete-thread rules stay unchanged.
+- The bounded blind window applies only when `Read strategy` is `plan-vs-implementation`: the stated contract may be used as a locator (resolve scope, shape, files, step ids) but its semantic claims are deep-read only after the model's `Gist`, `Perceived intent`, and limits inventory are drafted.
+- Model content may cite only code, tests, configs, manifests, and observable behavior as evidence; plan/spec wording must not appear as support inside the model.
+- Soft checkpoint only: intent divergence or a load-bearing limit ambiguity routes through the existing one-framing-clarification mechanism; do not add a second question gate.
+- Depth-scaled output: `quick` requires gist + limits inventory with the diagram optional; `standard` and `deep` require the full four-part model.
+- Shape exemptions: `enhancement_proposal` is exempt (the `Existing-capability inventory` plays this role); readiness-style audits of unbuilt TODO steps skip the model with a one-line stated reason.
+- One model per audited scope: multi-step or branch scopes model the composed result, and the limits inventory is bounded to the audited delta plus directly touched surfaces.
+- Findings mapping stays additive to existing dimensions: intent divergence → `goal / contract match`; missing bounds → `correctness / failure handling`; arbitrary limits → `complexity / maintainability`.
+- Validator coverage stays structural-only: new H2 in `REQUIRED_SECTIONS`, no prose matching.
+- Touch only `skills/cdd-audit/SKILL.md`, `skills/cdd-audit/agents/openai.yaml`, and `scripts/validate_skills.py` unless a failing check proves another surface is required.
+- Do not edit closed historical steps in `TODO.md`.
+
+### Tasks
+
+- [x] Add a new H2 `## As-built model` section to `skills/cdd-audit/SKILL.md` between `## Review depth and proportionality` and `## Core audit dimensions` requiring retrospective-shape audits with an implemented surface to emit, before the `Goal match` verdict, a visible model with four parts: a compact ASCII `Diagram` (components, data/control flow, boundary crossings); a 2–4 sentence `Gist` of what the audited surface actually does as built; a `Perceived intent vs stated intent` diff that states the implementation's apparent design goal independently, then marks `matches` or `diverges at <point>` against the stated contract; and a `Limits & assumptions` inventory listing every encoded bound in the audited surface (string lengths, collection caps, numeric ranges, timeouts, retries, concurrency caps, enum sets, truncations, defaults) as `value | location (file:symbol) | origin | verdict`, where origin/verdict use `contractual`, `defensive`, `arbitrary` (useless-limit candidate), and `missing` (false-assumption candidate for unbounded inputs that should be bounded).
+- [x] Encode the evidence and ordering rules in the same section: model content cites only code, tests, configs, manifests, and observable behavior; when `Read strategy` is `plan-vs-implementation`, the stated contract serves as locator only until `Gist`, `Perceived intent`, and the limits inventory are drafted, after which the stated side is deep-read and the diff emitted; when no stated-intent surface exists, the diff line reads `no stated contract`, perceived intent stands as the audit baseline, and the missing contract surface remains a finding per the existing missing-proof-surface rule.
+- [x] Encode the scaling, checkpoint, and exemption rules in the same section: depth scaling (`quick` = gist + limits inventory, diagram optional; `standard`/`deep` = full model), the soft checkpoint routing intent divergence or load-bearing limit ambiguity through the existing one-framing-clarification rule, one model per audited scope with the composed-result rule for multi-step and branch scopes, the `enhancement_proposal` exemption pointing at `## Enhancement-proposal audit`, the skip-with-stated-reason rule for readiness audits of unbuilt steps, and the additive findings mapping into `goal / contract match`, `correctness / failure handling`, and `complexity / maintainability`.
+- [x] Update `## Audit framing` in `skills/cdd-audit/SKILL.md` to add `Read strategy` (`implementation-only`, `plan-only`, `plan-vs-implementation`) to the per-audit classification list.
+- [x] Update `## Flow` in `skills/cdd-audit/SKILL.md` so the model is built and emitted after the implementation delta is inspected and before core-dimension review and the `Goal match` verdict, with the blind-window ordering applied for `plan-vs-implementation` audits; renumber flow steps accordingly.
+- [x] Update the `skills/cdd-audit/SKILL.md` frontmatter `description` and `skills/cdd-audit/agents/openai.yaml` `short_description` to mention the pre-verdict as-built model so both routing surfaces stay in sync.
+- [x] Extend `scripts/validate_skills.py` by inserting `## As-built model` into `REQUIRED_SECTIONS["cdd-audit"]` in document order (between `## Review depth and proportionality` and `## Core audit dimensions`).
+
+### Implementation notes
+
+- Place the H2 after `## Review depth and proportionality` so the depth-scaling references sit directly above; keep the section roughly 35–55 lines.
+- Include one compact worked example block in the section (import-pipeline style: diagram, gist, intent diff, 2-row limits table) so audit runs have a concrete output shape to imitate; keep it short.
+- Write the locator-vs-semantic distinction crisply — locator use answers *where is the audited surface* (files, step ids, boundaries); semantic use answers *what should it do* — otherwise the blind window degenerates into an honor-system discipline rule.
+- `## Audit framing` classify list (`skills/cdd-audit/SKILL.md:45-53`) gains one bullet; insert `Read strategy` after `Primary proof surface`.
+- Flow insertion point: current steps 5–7 (`skills/cdd-audit/SKILL.md:278-280`) inspect step contracts and deltas; insert the model step after delta inspection and before the current step 7 dimension review, and update the current step 9 Goal-match line to reference the model's intent diff.
+- The `Goal match` rule in `## Core audit dimensions` (`skills/cdd-audit/SKILL.md:165`) stays; add a cross-reference that the verdict builds on the model's perceived-vs-stated diff when a model was emitted.
+- `require_section` in `scripts/validate_skills.py` matches H2 prefixes anchored at line start; `## As-built model` needs no validator mechanics beyond the tuple insertion.
+- Frontmatter `description` must stay single-line (validator `MULTILINE_VALUE_RE`).
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+
+### UAT
+
+- Read the updated `skills/cdd-audit/SKILL.md` and confirm retrospective audits with an implemented surface must emit the four-part as-built model before the `Goal match` verdict.
+- Confirm the model's evidence rule excludes plan/spec wording, and the blind window makes the stated contract locator-only until gist, perceived intent, and limits are drafted in `plan-vs-implementation` audits.
+- Confirm `Read strategy` appears in the audit-framing classification with the three values.
+- Confirm depth scaling: `quick` audits need gist + limits only; `standard`/`deep` need the full model including the ASCII diagram.
+- Confirm exemptions: `enhancement_proposal` and readiness audits of unbuilt steps skip the model (the latter with a stated reason); audits with no stated contract mark the diff `no stated contract` and keep the missing surface as a finding.
+- Confirm intent divergence routes through the existing single framing clarification rather than a new gate, and limits verdicts map into the existing three dimensions.
+- Confirm `python3 scripts/validate_skills.py` fails when the `## As-built model` heading is removed.
