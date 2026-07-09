@@ -198,6 +198,33 @@ Limits & assumptions:
 | email length | unbounded | parse.py:33  | —         | missing bound           |
 ```
 
+## Core direction checkpoint
+
+For qualifying retrospective audits with an implemented delta, stop after the as-built model and confirm the audit baseline with the user before moving into gap analysis.
+
+- Trigger for:
+  - `functionality`
+  - `big_branch`
+  - `master_chef_multi_step`
+  - step-scoped retrospective audits
+  - `small_change` only when the delta changes behavior, contract, or user-visible scope
+- Emit one visible `Core direction checkpoint` block with:
+  - `Recent delta reviewed` — the concrete commit, diff, changed-file, or step-scoped implementation surface inspected, plus the affected boundaries
+  - `Intent provenance` — the intent sources used to judge direction, in priority order, such as selected TODO step, spec, issue or PR thread, README, commit message, or journal note; mark weak or missing sources explicitly
+  - `As-built model` — reuse the model emitted per `## As-built model`; do not restate it in full unless compact reuse would be unclear
+  - `Requirements coverage` — the smallest useful set of in-scope required behaviors or capabilities, grouped when practical; mark each `implemented`, `partial`, `missing`, `unclear`, `deferred by contract`, or `out of scope`, with one concrete evidence cite
+  - `Direction verdict` — `aligned`, `aligned with gaps`, `misaligned`, or `unclear`
+  - `Open assumptions / proof gaps` — remaining inference, missing proof surface, or unresolved contract weakness that still limits confidence
+- Treat a capability as `missing` only when it is required by the reviewed in-scope intent surfaces and absent or materially incomplete in the implementation reviewed.
+- If the intent sources conflict materially, mark the affected requirement or the overall direction `unclear` and use the checkpoint to re-anchor the audit instead of guessing.
+- Do not continue into missing-item analysis, normalized findings, or planning-oriented recommendations until the user confirms or corrects this baseline.
+- Default checkpoint options:
+  - `A. Baseline is correct — continue into missing items and findings`
+  - `B. Correct the intended direction or requirement set — re-anchor the audit to this correction`
+  - `C. Narrow or change the audited scope before findings`
+  - `D. Stop after the baseline review`
+- Baseline confirmation validates the auditor's reading of product direction, requirements understanding, implementation shape, and audit scope. It neither approves findings nor authorizes follow-up work. Major-finding approval still happens later per `## Interaction contract`.
+
 ## Core audit dimensions
 
 Every audit uses these core dimensions. Treat them as five questions the audit must answer, phrased relative to the chosen audit type and intended goal.
@@ -206,7 +233,7 @@ Every audit uses these core dimensions. Treat them as five questions the audit m
   - Compare implementation against the requested audit question, intended goal, `README.md`, `docs/specs/*`, the selected `TODO*.md` scope, and observable current behavior.
   - For one-step or multi-step TODO audits, compare each selected step's `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT` against the concrete implementation delta reviewed for that scope, not only the final filesystem state.
   - Treat drift between code, tests, and docs as a real finding.
-  - Before listing normalized findings, emit a compact `Goal match` or equivalent summary stating whether the intended goal is understood, whether the implementation matches, partially matches, or misses it, and whether the proof surface is strong enough to justify that verdict. When an as-built model was emitted, build this verdict on the model's `Perceived intent vs stated intent` diff.
+  - Before listing normalized findings, emit a compact `Goal match` or equivalent summary stating whether the intended goal is understood, whether the implementation matches, partially matches, or misses it, and whether the proof surface is strong enough to justify that verdict. When an as-built model was emitted, build this verdict on the model's `Perceived intent vs stated intent` diff. When a `Core direction checkpoint` was emitted, build the verdict on the confirmed baseline, not the pre-confirmation draft.
 - `correctness / failure handling`
   - Check happy paths, edge cases, failure paths, boundary validation, and state or data invariants.
   - Validate untrusted input early, separate syntactic from semantic validation when both matter, and keep invariants explicit where they protect real behavior.
@@ -287,6 +314,10 @@ This skill is interactive, read-only, and decision-driven.
 - Each clarification states the current recommended finding direction and what audit conclusion would change if the answer differs.
 - Prefer questions that resolve the audit question or proof sufficiency before questions about local implementation detail.
 - Do not re-ask what the user already answered, repo evidence already resolves, or an accepted assumption already covers.
+- Keep baseline confirmation separate from both ambiguity clarification and finding approval; do not combine them in one message.
+- For qualifying retrospective audits, require exactly one baseline-confirmation pause after the `Core direction checkpoint` and before normalized findings.
+- Use that pause to validate product direction, requirements understanding, implementation scope, and any claim that an in-scope requirement is missing.
+- If the user corrects the baseline, re-anchor the audit and refresh the checkpoint if needed before proceeding; that correction does not consume a finding approval.
 - Keep ambiguity resolution separate from finding approval: resolving an ambiguity does not approve a finding.
 - Surface proven follow-up findings one at a time (collapse only when several share one root cause). After each decision (approve/defer/accept/reject), refresh the remaining list and surface the next — never batch findings into one approval checklist.
 - Put decision choices at the bottom under a final `**Options**` section.
@@ -320,28 +351,30 @@ This skill is interactive, read-only, and decision-driven.
 3) Resolve the audit scope after framing stabilizes.
 4) Choose the audit shape and review depth. Inventory affected boundaries or review order first for `big_branch` and `master_chef_multi_step` audits, and the `Existing-capability inventory` first for `enhancement_proposal` audits.
 5) If the scope resolves to one or more TODO steps, record the selected step ids first and inspect each selected step's section contract before judging implementation quality.
-6) For step-scoped audits, inspect the corresponding implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
+6) For retrospective audits with an implemented surface, inspect one concrete implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
 7) For retrospective shapes with an implemented surface, build and emit the visible as-built model per `## As-built model` before core-dimension review, honoring its blind-window ordering for `plan-vs-implementation` audits.
-8) Review the core audit dimensions together. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
-9) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
-10) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary, built on the as-built model's intent diff when a model was emitted.
-11) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
-12) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
-13) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
-14) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
-15) Keep a running list of:
+8) For qualifying retrospective audits, derive the smallest useful in-scope requirements set, map it to implementation evidence, emit the visible `Core direction checkpoint`, and pause for baseline confirmation or correction before normalized findings.
+9) After the baseline is confirmed or corrected, review the core audit dimensions together. If the correction materially changes the checkpoint, refresh it before continuing. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
+10) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
+11) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary, built on the confirmed baseline and the as-built model's intent diff when a model was emitted.
+12) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
+13) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
+14) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
+15) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
+16) Keep a running list of:
    - findings approved for follow-up
    - findings deferred
    - findings accepted as-is
    - findings rejected or needing more evidence
-16) When the audit is complete, return a final audit summary that includes:
+17) When the audit is complete, return a final audit summary that includes:
    - audit type
    - audited scope
    - review depth
    - compact audit-framing summary
+   - core direction checkpoint summary — recent delta reviewed, intent provenance, requirements coverage summary, direction verdict, open assumptions / proof gaps
    - goal-match verdict
    - selected TODO step ids when the scope is step-scoped
-   - which implementation delta or changed-file or commit surface was reviewed when the scope is step-scoped
+   - which implementation delta or changed-file or commit surface was reviewed
    - findings by audit dimension
    - whether the selected steps' checked tasks appear fully done
    - whether the observed implementation matches the selected step goals
@@ -350,7 +383,7 @@ This skill is interactive, read-only, and decision-driven.
    - deferred or accepted findings
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
-17) End with selector-labeled next actions.
+18) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
      - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` on the approved set to weigh remediation options, ask one substantive clarification, and normalize them into runnable TODO steps before any implementation
