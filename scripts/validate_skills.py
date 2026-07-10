@@ -81,6 +81,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Graceful fallback rules",
         "## External source handling",
         "## Boot intent routing",
+        "## Continuation fit",
         "## Follow-up contract",
         "## Worktree check",
         "## Output",
