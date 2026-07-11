@@ -1,6 +1,6 @@
 ---
 name: cdd-audit
-description: "Audit intent and goal match first: frame the audit question, use the right audit shape, depth, and proof surfaces for implemented work or proposed-but-unbuilt enhancements, emit a pre-verdict as-built model of the audited surface, triage major findings, then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
+description: "Audit implemented work or proposed enhancements against stated intent using proportional proof; model as-built behavior before retrospective verdicts; explain every finding's problem and solution in simple English; then route approved follow-up into cdd-plan, direct implementation, or backlog (interactive, read-only)."
 ---
 
 # CDD Audit (interactive, read-only)
@@ -278,15 +278,12 @@ Activate optional lenses only when the scope, audit type, or evidence warrants t
 Do not emit raw audit bullets as the final output.
 
 - The compact `Goal match` verdict answers the audit question. Normalized findings explain why that verdict is justified or weak.
-- Normalize each finding into a root-cause item with:
-  - audit dimension
-  - severity: `high`, `medium`, or `low`
-  - user-visible symptom
-  - likely root cause
-  - affected boundary
-  - evidence or proof surface
-  - recommended next path
-  - approval recommendation
+- Normalize each finding into three blocks:
+  - `Problem` — in simple English, state what happens now, why, who or what it affects, and why it matters.
+  - `Solution` — in simple English, state the smallest safe change, where it belongs, and how to prove it worked. If the evidence is insufficient, state what must be learned first instead of guessing.
+  - `Details` — audit dimension; severity (`high`, `medium`, or `low`); affected boundary; exact evidence; recommended next path; and approval recommendation.
+- A reader must understand `Problem` and `Solution` without knowing internal vocabulary. Use short sentences and familiar words; keep necessary file, symbol, command, acronym, taxonomy, and routing labels in `Details`.
+- Do not use labels such as `contract drift`, `proof gap`, `boundary`, or `implementation_delta` in place of explaining the problem, impact, or fix.
 - The `approval recommendation` tells the user, in plain practical terms, what approving this finding would authorize next. Translate planner labels such as `implementation_delta plus verification_delta` into a bounded action summary the user can recognize quickly.
 - Write the recommendation as `do X in Y so Z`: name the likely change, where it lands, and why it matters. Prefer `Show checkpoint lineage in local --chat from the existing session-context read, then add focused proof for that output` over raw taxonomy labels alone.
 - When there are several materially different ways forward, include `approval variants` under the recommendation. Keep them to the smallest useful set, usually `2` to `4`, and make each one a distinct user-facing action rather than an abstract planning bucket. In variant mode, the recommendation names the approval family and each variant carries the concrete path text.
@@ -358,7 +355,7 @@ This skill is interactive, read-only, and decision-driven.
 10) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
 11) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary, built on the confirmed baseline and the as-built model's intent diff when a model was emitted.
 12) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
-13) Normalize findings into root-cause items with explicit evidence, including material edge-case and failure-path gaps.
+13) Normalize findings into root-cause items that lead with a simple-English `Problem` and `Solution`, followed by explicit evidence and any material edge-case or failure-path gaps.
 14) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
 15) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
 16) Keep a running list of:
