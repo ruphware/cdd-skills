@@ -219,10 +219,10 @@ For qualifying retrospective audits with an implemented delta, stop after the as
 - If the intent sources conflict materially, mark the affected requirement or the overall direction `unclear` and use the checkpoint to re-anchor the audit instead of guessing.
 - Do not continue into missing-item analysis, normalized findings, or planning-oriented recommendations until the user confirms or corrects this baseline.
 - Default checkpoint options:
-  - `A. Baseline is correct — continue into missing items and findings`
-  - `B. Correct the intended direction or requirement set — re-anchor the audit to this correction`
-  - `C. Narrow or change the audited scope before findings`
-  - `D. Stop after the baseline review`
+  - `A. Continue — the baseline is correct; review gaps and findings`
+  - `B. Correct the baseline — update the intended behavior or requirements before findings`
+  - `C. Change scope — review a smaller or different surface`
+  - `D. Stop — end after the baseline review; do not produce findings`
 - Baseline confirmation validates the auditor's reading of product direction, requirements understanding, implementation shape, and audit scope. It neither approves findings nor authorizes follow-up work. Major-finding approval still happens later per `## Interaction contract`.
 
 ## Core audit dimensions
@@ -274,19 +274,23 @@ Activate optional lenses only when the scope, audit type, or evidence warrants t
   - Activate the relevant subset when the change affects user interaction, accessibility guarantees, localization behavior, or concurrency-sensitive flows that need specialist review or deeper proof.
 - If you are not qualified to judge a triggered lens confidently, say so and record that specialist review or stronger proof is required instead of pretending the audit is complete.
 
+## Plain-English output
+Use simple English for every user-facing explanation and option. A capable reader who does not know the repo's internal terms should understand it on the first read.
+
+- Lead with the main point. Name the concrete behavior or action and its effect. Use common words and one idea per short sentence. Explain any necessary technical term once.
+- Default `Problem` and `Solution` to one sentence each; add a second only when needed. Keep exact evidence and internal labels in `Details` instead of repeating them in prose.
+- Write each option as one decision on one short line: `<selector>. <action> — <immediate result>; <main trade-off>`. Omit the trade-off when none matters. Split choices that lead to different outcomes.
+
 ## Finding normalization
 Do not emit raw audit bullets as the final output.
 
 - The compact `Goal match` verdict answers the audit question. Normalized findings explain why that verdict is justified or weak.
 - Normalize each finding into three blocks:
-  - `Problem` — in simple English, state what happens now, why, who or what it affects, and why it matters.
-  - `Solution` — in simple English, state the smallest safe change, where it belongs, and how to prove it worked. If the evidence is insufficient, state what must be learned first instead of guessing.
-  - `Details` — audit dimension; severity (`high`, `medium`, or `low`); affected boundary; exact evidence; recommended next path; and approval recommendation.
-- A reader must understand `Problem` and `Solution` without knowing internal vocabulary. Use short sentences and familiar words; keep necessary file, symbol, command, acronym, taxonomy, and routing labels in `Details`.
-- Do not use labels such as `contract drift`, `proof gap`, `boundary`, or `implementation_delta` in place of explaining the problem, impact, or fix.
-- The `approval recommendation` tells the user, in plain practical terms, what approving this finding would authorize next. Translate planner labels such as `implementation_delta plus verification_delta` into a bounded action summary the user can recognize quickly.
-- Write the recommendation as `do X in Y so Z`: name the likely change, where it lands, and why it matters. Prefer `Show checkpoint lineage in local --chat from the existing session-context read, then add focused proof for that output` over raw taxonomy labels alone.
-- When there are several materially different ways forward, include `approval variants` under the recommendation. Keep them to the smallest useful set, usually `2` to `4`, and make each one a distinct user-facing action rather than an abstract planning bucket. In variant mode, the recommendation names the approval family and each variant carries the concrete path text.
+  - `Problem` — state the current behavior, cause, affected user or system, and impact.
+  - `Solution` — state the smallest safe change, where it belongs, and how to prove it worked. If evidence is insufficient, state what must be learned first instead of guessing.
+  - `Details` — audit dimension; severity (`high`, `medium`, or `low`); affected boundary; exact evidence; recommended next path; and approval recommendation. Keep technical labels here; never use them instead of explaining the problem or fix.
+- State what approval authorizes as `<action> in <place> so <result>`, translating planner labels into concrete work. Example: `Check session expiry in the login handler and add a regression test so expired users are signed out.`
+- If several paths are materially different, use approval variants per `## Interaction contract`; otherwise show one recommendation.
 - Anchor each finding to the chosen audit type and the goal-match verdict. Avoid side findings that do not change the audit question being answered.
 - Collapse duplicate symptoms into the smallest root-cause finding that can be discussed and planned cleanly.
 - Fold material edge-case and failure-path gaps into normalized findings; do not add a separate planning-style section for them.
@@ -298,6 +302,14 @@ Do not emit raw audit bullets as the final output.
 - For non-trivial `complexity / maintainability` and `verification quality` findings, cite the file, symbol, diff, failing or missing test, or equivalent proof surface, and keep the finding concrete, evidence-backed, and behavior-relevant.
 - Prioritize correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost. Avoid style-only notes or vague refactor advice unless you can state a real behavior risk, confidence gap, or maintenance payoff.
 - For `small_change`, collapse unrelated low-value drift aggressively; leave it report-only unless it materially changes the audit conclusion.
+
+Example finding:
+
+```text
+Problem: Expired sessions remain active because the login handler does not check their expiry time.
+Solution: Check expiry in the login handler and add a test that signs out expired sessions.
+Details: high correctness risk; boundary: session validation; evidence: auth/session.ex:validate/1; next: implementation_delta + verification_delta; approval: handler and regression-test follow-up.
+```
 
 ## Interaction contract
 This skill is interactive, read-only, and decision-driven.
@@ -316,30 +328,23 @@ This skill is interactive, read-only, and decision-driven.
 - Use that pause to validate product direction, requirements understanding, implementation scope, and any claim that an in-scope requirement is missing.
 - If the user corrects the baseline, re-anchor the audit and refresh the checkpoint if needed before proceeding; that correction does not consume a finding approval.
 - Keep ambiguity resolution separate from finding approval: resolving an ambiguity does not approve a finding.
-- Surface proven follow-up findings one at a time (collapse only when several share one root cause). After each decision (approve/defer/accept/reject), refresh the remaining list and surface the next — never batch findings into one approval checklist.
-- Put decision choices at the bottom under a final `**Options**` section.
-- Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key.
-- default to letters: `A.`, `B.`, `C.`.
-- use numbers only when the surrounding context is already numeric and that would be clearer.
-- When practical, tell the user they can reply with just the selector.
-- Do not make `A.` a bare approval verb. Put the approval recommendation directly in the option text so the user can see what approval means without rereading the whole finding.
-- Default major-finding options when there is one recommended follow-up path (per-finding triage; route choice happens in the final closeout stage):
-  - `A. Approve recommended follow-up — <approval recommendation>`
-  - `B. Postpone or backlog — <short practical summary>`
-  - `C. Accept current state — <short practical summary of what stays unchanged>`
-  - `D. Reject finding or ask for more evidence — <short practical summary>`
+- Surface one proven finding at a time; collapse only symptoms with one root cause. After each decision, refresh the remaining list and show the next. Never batch findings into one approval checklist.
+- Put choices last under `**Options**`. Give every option a visible letter selector; use numbers only when clearer. Tell the user they can reply with just the selector.
+- Follow `## Plain-English output` and name each concrete action so every option stands alone.
+- For one recommended follow-up path, use this shape and adapt its concrete nouns and actions to the finding (route choice happens at final closeout):
+  - `A. Approve the session-expiry follow-up — include handler and regression-test work; no code changes yet`
+  - `B. Backlog the session-expiry fix — record it for later; expired sessions remain possible`
+  - `C. Keep current behavior — make no change; accept that expired sessions may stay active`
+  - `D. Request evidence — reproduce the expired-session case; decide after results`
+  - `E. Reject the finding — close it with no follow-up`
 - When one finding has multiple credible approval paths, switch to variant mode:
-  - `A. Approve one of the follow-up paths below — defaults to A1 if the user replies with just A`
-  - `A1. Recommended path — <recommended approval path>`
-  - `A2. Alternative path — <second approval path>`
-  - `A3. Alternative path — <third approval path>`
-  - `B. Postpone or backlog — <short practical summary>`
-  - `C. Accept current state — <short practical summary of what stays unchanged>`
-  - `D. Reject finding or ask for more evidence — <short practical summary>`
-- Keep the recommended variant first. Mark it explicitly as recommended only when the ordering alone may be ambiguous.
-- Each approval variant must be a real alternative in implementation, spec, verification, or sequencing terms, not cosmetic rewording. If the variants are not meaningfully different, collapse back to one `A.` recommendation.
-- Accept compact selector replies such as `A`, `A1`, `A 1`, `A3`, `A 3`, `B`, `C`, or `D`.
-- In variant mode, treat plain `A` as approval of the recommended path `A1` unless the user explicitly selects another numbered variant.
+  - `A. Choose the recommended path — same as A1`
+  - `A1. <Recommended concrete action> — <immediate result>; <main trade-off>`
+  - `A2. <Alternative concrete action> — <immediate result>; <main trade-off>`
+  - `A3. <Alternative concrete action> — <immediate result>; <main trade-off>`
+- Keep `B` through `E` from the single-path shape.
+- Put the recommended variant first. Variants must differ in implementation, spec, verification, or sequence; collapse cosmetic variants into one recommendation.
+- Accept compact replies such as `A`, `A1`, `A 1`, `A3`, `A 3`, `B`, `C`, `D`, or `E`. In variant mode, plain `A` selects `A1`.
 - Minor findings and minor ambiguities can stay report-only unless they materially change the recommended follow-up.
 
 ## Flow
@@ -357,12 +362,13 @@ This skill is interactive, read-only, and decision-driven.
 12) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
 13) Normalize findings into root-cause items that lead with a simple-English `Problem` and `Solution`, followed by explicit evidence and any material edge-case or failure-path gaps.
 14) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
-15) Once a major finding is proven and recommends follow-up, surface it with a short approval recommendation and `**Options**` (approve / defer / accept / reject) per the `Interaction contract`: one at a time, refresh after each decision, collapse only when symptoms share one root cause. When approval has real variants, use `A.` as the approval family, show explicit variants as `A1`, `A2`, `A3`, etc., and let plain `A` default to `A1`.
+15) Triage each proven major finding per `## Interaction contract`: approve follow-up, backlog, accept, request evidence, or reject. Use `A1`, `A2`, and so on only for materially different follow-up paths; plain `A` selects `A1`.
 16) Keep a running list of:
    - findings approved for follow-up
-   - findings deferred
+   - findings backlogged
    - findings accepted as-is
-   - findings rejected or needing more evidence
+   - findings needing more evidence
+   - findings rejected
 17) When the audit is complete, return a final audit summary that includes:
    - audit type
    - audited scope
@@ -377,15 +383,17 @@ This skill is interactive, read-only, and decision-driven.
    - whether the observed implementation matches the selected step goals
    - whether automated checks and UAT evidence support the claimed completion
    - approved findings (mapped to `cdd-plan` types — `spec_delta`, `implementation_delta`, `verification_delta`, `defer` — when the planning route is the recommended next action)
-   - deferred or accepted findings
+   - backlogged or accepted findings
+   - findings needing more evidence or rejected
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
 18) End with selector-labeled next actions.
    - Use the repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
    - When approved findings exist, present three routing options and put the recommended one first:
-     - `A. hand off to cdd-plan on the approved findings` — recommended default; on approval, invoke `cdd-plan` on the approved set to weigh remediation options, ask one substantive clarification, and normalize them into runnable TODO steps before any implementation
-     - `B. plan all approved findings inline, then implement directly` — skip the `cdd-plan` handoff: sequence every approved finding (and each collapsed root-cause package) into one compact in-session plan — order, affected boundaries, validation — then invoke `$cdd-implement` to execute it, TODO-backed where a finding maps to an existing step and bounded-direct otherwise
-     - `C. backlog the approved findings or stop without further action this session` — defer to a later audit/plan cycle or close out
+     - `A. Prepare implementation steps (recommended) — send approved findings to cdd-plan before changing code`
+     - `B. Implement approved findings now — make a short plan here, then run cdd-implement`
+     - `C. Stop here — leave approved findings for later; make no repo changes`
+   - Route behavior: `A` asks one substantive planning question, compares fixes, and writes runnable TODO steps. `B` makes a short plan ordered by dependency, boundary, and validation, then invokes `$cdd-implement`; reuse existing TODO steps when available, otherwise use bounded direct tasks.
    - For `enhancement_proposal` audits, include the chosen integration option in the `cdd-plan` handoff as the pre-selected architecture option.
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 

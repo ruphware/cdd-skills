@@ -130,6 +130,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Core direction checkpoint",
         "## Core audit dimensions",
         "## Optional lenses",
+        "## Plain-English output",
         "## Finding normalization",
         "## Interaction contract",
         "## Flow",
