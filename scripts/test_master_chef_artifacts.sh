@@ -182,6 +182,8 @@ for phrase in \
   "## 12) Wave-parallel execution (opt-in)" \
   "max_parallel" \
   "serial merge queue" \
+  "ascending step-id order" \
+  "textual merge conflict is an integration failure" \
   "wave barrier" \
   "-b<slot>" \
   "Unannotated TODO files always run serial" \

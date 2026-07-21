@@ -213,7 +213,6 @@ rung 3  exec_cross_runtime  cross-runtime CLI exec Builder
 - The effective transport is resolved before kickoff, named in the kickoff approval, and recorded as `builder_transport`. There is no silent mid-run transport switching.
 - Exec rungs require a kickoff-declared permission profile per §7, recorded as `builder_permission_profile`.
 - `builder_settings_source` records `transport_override` when the override landed through rung 1-3.
-- If no rung can express the requested override, disclose that and use inherited Builder settings.
 
 Cross-runtime preflight (rung 3 only, resolved at kickoff, never mid-run):
 
@@ -329,6 +328,7 @@ Keep one persistent Builder per active autonomous run as the normal path. Wave-p
   Hi. You are Builder <builder_session_key> for run <run_id>, step <active_step>, worktree <active_worktree_path>. Reply now with READY if you can build, or BLOCKED: <reason> if you cannot.
   ```
 
+- For exec transports, append one line to that boot prompt naming `builder_transport` and the active `builder_permission_profile` so Builder can classify permission denials in its `BLOCKED` records instead of misreading them as environment failures.
 - When the first readiness signal arrives, set `builder_phase: running`, write `builder_ready_at_utc`, and refresh `last_builder_direct_signal_at_utc`.
 - Minimal `BUILDER_READY` JSONL record:
 
@@ -432,7 +432,7 @@ For each passed step:
 - otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 - once the managed worktree becomes active, commit, push, QA, and TODO inspection happen against the active worktree path rather than the source checkout
 
-In wave mode (§12), Builders do not edit `TODO*.md`; Master Chef performs the selected-step check-off at merge time after the per-merge `hard_gate` passes.
+In wave mode, the selected-step check-off moves from Builder to merge time per §12.
 
 ## 9) Reporting and recovery
 
@@ -546,7 +546,8 @@ annotated TODO ─▶ preflight ─▶ spawn wave (≤ max_parallel, ≤ remaini
 - Each wave slot is one persistent Builder from a bounded pool; slots are reused across waves. Per-slot transport follows the §4 ladder and is recorded per slot.
 - Each slot works in its own worktree under `.cdd-runtime/worktrees/<run-id>-b<slot>/`, branched off the run-worktree `HEAD`; each slot worktree needs its own env bootstrap evidence before that slot's targeted checks count.
 - Wave barrier: Master Chef waits for every slot to reach a clear end state — completion evidence or a §7 clear stop signal — before any merge. No mid-wave QA.
-- Serial merge queue: merge one slot branch at a time into the run worktree; rerun `hard_gate` after each merge; the merge that turns the gate red names the culprit step.
+- Serial merge queue: merge one slot branch at a time into the run worktree in ascending step-id order; rerun `hard_gate` after each merge; the merge that turns the gate red names the culprit step.
+- A textual merge conflict is an integration failure: the conflicting step is the culprit, even though declared-disjoint `touches:` made it unlikely.
 - Integration-failure recovery: re-delegate the culprit step serially on current `HEAD`; do not retry it inside a wave until it passes serially.
 - In wave mode Builders do not edit `TODO*.md`; Master Chef checks off the selected step at merge time after its per-merge `hard_gate` passes (§8 exception, wave mode only).
 - Partial-wave stops: a slot that hits a clear stop signal routes through the §7 Builder-stop investigation; finished slots still merge.

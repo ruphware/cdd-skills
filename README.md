@@ -64,6 +64,8 @@ Master Chef works through runnable TODO steps in a branch-backed worktree, with 
 * Branch-backed worktrees keep autonomous changes isolated and reviewable.
 * Persistent Builder sessions carry context across steps instead of starting cold every time.
 * Oversized work is reviewed first and split only when the split cost is justified.
+* Builder transport ladder (kickoff-gated): exact-model Builders via run-scoped agent configs or CLI-exec transports, including cross-runtime — see `skills/cdd-master-chef/CONTRACT.md` §4.
+* Wave-parallel opt-in: TODO files annotated with `deps:`/`touches:` can run declared-disjoint steps as bounded waves with a serial merge queue — see `CONTRACT.md` §12.
 * Mission reports make the result auditable: completed steps, checks, pushes, decisions, and next actions.
 
 Start `cdd-master-chef` via `$cdd-master-chef` for Codex or `/cdd-master-chef` for Claude Code or OpenClaw runtime.

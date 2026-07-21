@@ -520,6 +520,8 @@ MASTER_CHEF_WAVE_PHRASES = (
     "touches:",
     "preflight",
     "serial merge queue",
+    "merge one slot branch at a time into the run worktree in ascending step-id order",
+    "textual merge conflict is an integration failure",
     "hard_gate",
     "wave barrier",
     "-b<slot>",
