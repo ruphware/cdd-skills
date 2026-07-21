@@ -76,6 +76,16 @@ Codex also supports personal agents under:
 - If built-in agents are used without narrower agent config, effective Builder settings remain inherited from the parent session.
 - Do not silently ignore a requested Builder override. State whether it landed cleanly or whether Builder is falling back to inherited settings.
 
+### Transport-ladder mechanics
+
+Shared ladder policy lives in `CONTRACT.md` §4; this section records only the Codex mechanics for each rung. Verified against the local `codex exec --help` and `codex exec resume --help` surfaces (codex-cli 0.144.5, checked 2026-07-21).
+
+- Rung 1 `agent_config`: generate a run-scoped custom agent TOML under `.codex/agents/` (or `~/.codex/agents/`) that sets `model` and/or `model_reasoning_effort`. Mid-session pickup of a newly written TOML is not documented by the local CLI surface; treat a parent-session restart as the required fallback when the new agent is not visible.
+- Rung 2 `exec_same_runtime`: spawn with `codex exec -C <active_worktree_path> -m <builder_model> -c model_reasoning_effort=<builder_thinking> <boot prompt>`; continue the same Builder with `codex exec resume <session-id> <next prompt>` (or `--last`). Capture the session id as `builder_session_key`.
+- Permission profile: map the kickoff-declared profile onto `-s/--sandbox <read-only|workspace-write|danger-full-access>` plus explicit `-c` sandbox or approval overrides. `--dangerously-bypass-approvals-and-sandbox` is acceptable only when the kickoff profile explicitly declared it.
+- Direct evidence surfaces: the `--json` event stream and `-o/--output-last-message <file>` give parent-visible output without an interactive session; probes are process-level plus output tail per `CONTRACT.md` §7.
+- Rung 3 `exec_cross_runtime`: the same spawn and resume mechanics driven from a non-Codex Master Chef, gated by the `CONTRACT.md` §4 cross-runtime preflight.
+
 ## 5) Recommended Codex adapter shapes
 
 ### Minimal path
@@ -133,3 +143,4 @@ This adapter is grounded in:
 - current official Codex subagents documentation
 - current official Codex worktrees documentation
 - the current local `codex --help` CLI surface for session flags and runtime controls
+- the local `codex exec --help` and `codex exec resume --help` surfaces for exec-transport mechanics (codex-cli 0.144.5, checked 2026-07-21)

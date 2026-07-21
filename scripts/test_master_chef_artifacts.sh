@@ -144,6 +144,37 @@ for forbidden in \
   fi
 done
 
+# Step 67: Builder transport ladder, exec permission profiles, cross-runtime
+# preflight, and targeted-tests default live in CONTRACT.md; subagent adapter
+# docs carry runtime mechanics only and must not restate the escalation rule.
+echo "[MasterChefArtifacts] INFO TransportLadder file={CONTRACT.md §4}"
+for phrase in \
+  "### Builder transport ladder" \
+  "native_subagent" \
+  "agent_config" \
+  "exec_same_runtime" \
+  "exec_cross_runtime" \
+  "builder_transport" \
+  "builder_permission_profile" \
+  "no silent mid-run transport switching" \
+  "Cross-runtime preflight" \
+  "### Exec-transport Builder mapping" \
+  "effective Builder transport" \
+  "directly affected tests"; do
+  assert_contains "$SHARED_ROOT/CONTRACT.md" "$phrase"
+done
+assert_contains "$SHARED_ROOT/CODEX-ADAPTER.md" "codex exec resume"
+assert_contains "$SHARED_ROOT/CLAUDE-ADAPTER.md" "claude -p --resume"
+for rel in \
+  CODEX-ADAPTER.md \
+  CLAUDE-ADAPTER.md; do
+  if ! grep -E "CONTRACT\.md\`?[[:space:]]*§4" "$SHARED_ROOT/$rel" >/dev/null; then
+    echo "Expected 'CONTRACT.md §4' transport-ladder pointer in $SHARED_ROOT/$rel" >&2
+    exit 1
+  fi
+  assert_not_contains "$SHARED_ROOT/$rel" "Escalate to the next rung"
+done
+
 echo "[MasterChefArtifacts] INFO OpenclawAdapterFiles root={$ROOT_DIR}"
 for rel in \
   "skills/cdd-master-chef/openclaw/README.md" \

@@ -88,6 +88,16 @@ Adapter implication:
 - If the current Claude path cannot honor a requested Builder override cleanly, Master Chef must say so and use inherited Builder settings instead.
 - Do not silently ignore `builder_model` or `builder_thinking`.
 
+### Transport-ladder mechanics
+
+Shared ladder policy lives in `CONTRACT.md` §4; this section records only the Claude mechanics for each rung. Verified against the local `claude --help` surface (claude 2.1.216, checked 2026-07-21).
+
+- Rung 1 `agent_config`: define a run-scoped Builder agent with an explicit `model` via session-scoped `--agents <json>` or a project `.claude/agents/` definition. `--agents` needs no repo file and is the preferred run-scoped override surface.
+- Rung 2 `exec_same_runtime`: spawn with `claude -p --model <builder_model> --effort <builder_thinking> --session-id <uuid> <boot prompt>` from the active worktree; continue the same Builder with `claude -p --resume <session-id> <next prompt>` (`-c/--continue` picks the most recent). Record the session id as `builder_session_key`.
+- Permission profile: map the kickoff-declared profile onto `--permission-mode <mode>` (`acceptEdits`, `auto`, `bypassPermissions`, `manual`), `--add-dir`, and `--settings`. `--dangerously-skip-permissions` or `bypassPermissions` is acceptable only when the kickoff profile explicitly declared it.
+- Direct evidence surfaces: `--print` with `--output-format stream-json` yields a parent-readable event stream; probes are process-level plus output tail per `CONTRACT.md` §7.
+- Rung 3 `exec_cross_runtime`: the same spawn and resume mechanics driven from a non-Claude Master Chef, gated by the `CONTRACT.md` §4 cross-runtime preflight.
+
 ## 6) Worktree handling
 
 - The local Claude CLI exposes `--worktree [name]` and optional `--tmux`.
@@ -116,3 +126,4 @@ This adapter is grounded in:
 
 - current Claude Code subagent documentation
 - the current local `claude --help` CLI surface for agent, worktree, and effort flags
+- the same local surface's exec-transport flags (`-p/--print`, `--resume`, `--session-id`, `--model`, `--effort`, `--permission-mode`, `--output-format`) — claude 2.1.216, checked 2026-07-21

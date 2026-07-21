@@ -53,7 +53,7 @@ Operating contract:
    - if either value is not visible enough to report exactly, record only that field as `unknown`, say the runtime does not expose it here, and continue kickoff with the active session as-is
    - if the current prompt includes a `Builder override` block, use it as the requested Builder settings for that run
    - otherwise, default Builder to inherit those settings
-   - if the runtime cannot honor a requested Builder override cleanly, say so explicitly and fall back to inherited Builder settings
+   - if the runtime cannot honor a requested Builder override cleanly through its native subagent surface, resolve the Builder transport ladder in `CONTRACT.md` §4; OpenClaw claims no agent-config or exec rung today, so unresolved overrides fall back to inherited Builder settings with explicit disclosure
    - if Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`
    - treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth; do not infer model settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
    - do not ask the human to type replacement `master_*` settings when the runtime cannot expose them
@@ -94,6 +94,7 @@ Operating contract:
    - current session model
    - current session thinking
    - effective Builder settings
+   - effective Builder transport rung and, for exec rungs, the kickoff-declared permission profile
    - any fresh-start worktree-branch suggestion when the source checkout is still on a long-lived branch
    - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
    - the approved run step budget
@@ -115,6 +116,7 @@ Operating contract:
 14. Use `hard_gate` and `soft_signal` validation classes:
    - `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
    - `soft_signal`: discovery greps, file-presence scans, or other non-blocking heuristics
+   - Builder-run validation defaults to targeted scope per `CONTRACT.md` §8: the selected step's declared `Automated checks` plus directly affected tests; full-suite runs happen only at Master Chef QA or mission boundaries, or on explicit instruction
 15. Use working-tree-aware discovery checks when unstaged files matter:
    - `rg --files`
    - `git ls-files --cached --others --exclude-standard`

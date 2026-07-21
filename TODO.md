@@ -1017,3 +1017,101 @@ Make `cdd-audit` emit a visible as-built model of the audited surface — ASCII 
 - Confirm exemptions: `enhancement_proposal` and readiness audits of unbuilt steps skip the model (the latter with a stated reason); audits with no stated contract mark the diff `no stated contract` and keep the missing surface as a finding.
 - Confirm intent divergence routes through the existing single framing clarification rather than a new gate, and limits verdicts map into the existing three dimensions.
 - Confirm `python3 scripts/validate_skills.py` fails when the `## As-built model` heading is removed.
+
+## Step 67 — Add kickoff-gated Builder transport ladder, permission profiles, and targeted-tests default
+
+deps: none
+touches: skills/cdd-master-chef/*, scripts/validate_skills.py, scripts/test_master_chef_artifacts.sh
+
+### Goal
+
+Make Builder settings resolve through a kickoff-gated three-rung transport ladder (agent-config → same-runtime CLI exec → cross-runtime CLI exec) with an explicit per-rung permission profile, and make Builder validation default to targeted tests.
+
+### Constraints
+
+- Escalate a rung only when the previous rung cannot express the requested `builder_model`/`builder_thinking`; transport is named in the kickoff approval; no silent mid-run transport switching.
+- Exec Builders keep unlimited running time: §7 stays evidence-based; process exit joins the clear-stop-signal set; wall-clock silence is never a stop signal.
+- A denied action in an exec Builder maps to a Builder `BLOCKED` JSONL record and routes through the §7 Builder-stop investigation.
+- Adapter docs describe probe/spawn/close mechanics only; do not restate the §7 ladder (validator forbidden-pattern, `validate_skills.py:254` area).
+- Ground every CLI claim in probed local `codex --help` / `claude --help` output per the adapters' existing source-notes precedent; unverifiable claims are documented as unverified fallbacks (e.g., Codex mid-session TOML pickup → restart-required fallback).
+- Keep inherit-from-session as the rung 0 default; the ladder activates only when an override cannot land natively.
+
+### Tasks
+
+- [x] Update `skills/cdd-master-chef/CONTRACT.md` §4 to define the transport ladder: rung 1 run-scoped exact-model agent config (generated `.codex/agents/*.toml` / Claude `--agents`/`.claude/agents` definition), rung 2 same-runtime CLI exec (`codex exec resume` / `claude -p --resume` as persistent Builder), rung 3 cross-runtime CLI exec; escalation rule, kickoff naming, and no-silent-switch rule.
+- [x] Update CONTRACT §4/§7 so exec-transport Builders map onto the lifecycle: `builder_session_key` carries the CLI session id, readiness = Builder-authored `BUILDER_READY` in `builder.jsonl`, proof of life = process liveness + output tail, clear stop = process exit; probes are process-level.
+- [x] Add kickoff-declared permission profiles: CONTRACT §7 kickoff bundle names the allowed surfaces per exec rung (worktree writes, named build/test commands, network policy); record `builder_transport` and `builder_permission_profile` in §3 canonical `run.json` fields; denial → `BLOCKED` → §7 investigation.
+- [x] Add cross-runtime kickoff preflight to CONTRACT §4/§11: target CLI on PATH, cdd skills installed in the target runtime home, model id valid there; preflight failure is a kickoff blocker, never a mid-run surprise.
+- [x] Update CONTRACT §8 + SKILL.md: Builder validation defaults to the step's declared `Automated checks` plus directly affected tests; full-suite runs happen only at Master Chef QA/mission boundaries or on explicit instruction.
+- [x] Update `CODEX-ADAPTER.md`, `CLAUDE-ADAPTER.md`, `RUNTIME-CAPABILITIES.md` (matrix + runtime notes), and `SKILL.md` with per-runtime rung mechanics: spawn/resume flags, model+effort pinning flags, permission flags, probe form, session close; probed-output grounding in source notes.
+- [x] Extend `scripts/validate_skills.py` and `scripts/test_master_chef_artifacts.sh`: fail if the ladder, kickoff transport naming, permission-profile fields, denial→BLOCKED routing, cross-runtime preflight, or targeted-tests default regress, or if adapters restate the shared ladder.
+
+### Implementation notes
+
+- Ladder ASCII summary belongs in CONTRACT §4 (transport decision), not in adapters.
+- `builder_transport` enum: `native_subagent | agent_config | exec_same_runtime | exec_cross_runtime`. `builder_settings_source` gains `transport_override`.
+- Probe both CLIs first; paste observed flag names into adapter source notes with the check date (precedent: `RUNTIME-CAPABILITIES.md:69`).
+- OpenClaw docs: consistency-only touch (ladder reference), no exec rung claimed.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- CONTRACT §4 shows the three-rung ladder, kickoff-gated, with the escalation rule.
+- Exec Builders: readiness via `builder.jsonl`, stop via process exit, no timeout on running work anywhere in the new text.
+- Kickoff bundle names transport + permission profile; `run.json` fields documented.
+- Targeted-tests default present in §8; full suite only at QA/mission boundaries.
+- Adapters carry mechanics only; validator fails on ladder restatement or any regression above.
+
+## Step 68 — Add cdd-plan crisp output + step annotations and the wave-parallel contract
+
+deps: none
+touches: skills/cdd-plan/SKILL.md, skills/cdd-master-chef/*, scripts/validate_skills.py, scripts/test_master_chef_artifacts.sh, scripts/test_plan_artifacts.sh
+
+### Goal
+
+Make cdd-plan emit crisp high-entropy plans with `deps:`/`touches:` step annotations, and add an opt-in wave-parallel execution contract to cdd-master-chef that consumes those annotations under the six audit-approved mitigations.
+
+### Constraints
+
+- Serial is the default forever: unannotated TODO files, steps missing `touches:`, and runs without explicit kickoff opt-in all run the existing serial contract.
+- Independence is plan-time + preflight only: waves form from declared-disjoint `touches:` with no `deps:` edges, verified by a Master Chef preflight grep; never from run-time LLM judgment.
+- Merge queue is serial with a hard_gate rerun after every merge; integration failure → serial re-delegation of the culprit step on current HEAD.
+- Builders stop editing `TODO*.md` in wave mode; Master Chef checks off the step at merge time (§8 amendment scoped to wave mode).
+- Bounded persistent pool: `max_parallel` 2–3, slots reused across waves; wave size ≤ remaining `run_step_budget`; partial-wave stops route through §7 per Builder.
+- Preserve one control loop: waves are phases of the single Master Chef session, not a second supervisor.
+- Crisp-style contract must not weaken decision-completeness: high entropy, no filler prose, ASCII diagrams where structure helps — same section contract.
+
+### Tasks
+
+- [ ] Update `skills/cdd-plan/SKILL.md`: add a plan-output style contract (crisp, factual, high-entropy instructions; no decorative prose; ASCII diagrams for dependencies/flows where structure helps) applying to both chat plans and written TODO text.
+- [ ] Update `skills/cdd-plan/SKILL.md`: parallel-eligible multi-step plans emit two grep-friendly lines under each step heading — `deps: <step-ids|none>` and `touches: <path globs/boundaries>`; define disjointness; missing `touches:` on any step = that step is a serial barrier.
+- [ ] Add CONTRACT §12 `Wave-parallel execution (opt-in)`: kickoff opt-in + `max_parallel`, wave formation from annotations + preflight verification, per-Builder worktrees branched off the run-worktree HEAD under `.cdd-runtime/worktrees/<run-id>-b<slot>/` with per-slot env bootstrap, wave barrier, serial merge queue with per-merge hard_gate, Master-Chef TODO check-off at merge, out-of-order `STEP_PASS` note, wave-structured mission report; cross-reference from §3, §7, §8.
+- [ ] Extend §3 runtime state for wave mode: `builders[]` slot records mirroring the scalar builder fields (session key, transport, phase, probe/suspect fields, worktree path, active step), plus `wave_id`, `wave_step_ids`, `wave_merge_queue`; scalar fields remain canonical for serial mode.
+- [ ] Update adapters + `RUNTIME-CAPABILITIES.md` + `SKILL.md`: wave-mode mechanics rows (pool spawn surface, per-slot probe form, slot close), each adapter claiming only what its runtime supports.
+- [ ] Extend `scripts/validate_skills.py`, `scripts/test_master_chef_artifacts.sh`, and `scripts/test_plan_artifacts.sh`: fail if the style contract, annotation contract, serial-by-default rule, §12 mitigations (worktrees, merge queue, check-off shift, wave barrier, pool bound, budget cap), or one-control-loop rule regress.
+
+### Implementation notes
+
+- Wave lifecycle ASCII (annotate → preflight → spawn wave → barrier → merge queue → check-off → next wave) belongs in §12.
+- Wave Builder slots may use any Step-67 transport; per-slot transport recorded in `builders[]`.
+- Steps 67/68 themselves demonstrate the annotation format; their overlapping `touches:` correctly forbids parallelizing them.
+- `deps:` refers to step ids in the same TODO file only; cross-file deps stay out of scope.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `python3 scripts/validate_skills.py --include-legacy-prose`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_plan_artifacts.sh`
+
+### UAT
+
+- cdd-plan contract requires crisp high-entropy output + ASCII diagrams and the two annotation lines on parallel-eligible plans.
+- §12 exists, opt-in, with all six mitigations explicit; serial default stated three ways (no opt-in / no annotations / missing touches).
+- `builders[]` + wave fields documented; scalar serial fields untouched.
+- Validators fail when any mitigation, serial default, or style/annotation contract is removed.

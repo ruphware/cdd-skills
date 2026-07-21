@@ -109,6 +109,8 @@ Canonical `run.json` fields:
 - `builder_thinking`
 - `builder_settings_source`
 - `builder_runtime`
+- `builder_transport`
+- `builder_permission_profile`
 - `master_session_key`
 - `builder_session_key`
 - `builder_phase`
@@ -153,7 +155,8 @@ Canonical `run.json` fields:
 
 Runtime-state expectations for persistent Builder continuity:
 
-- `builder_session_key` is the active Builder identity and normally remains stable across delegated steps in the same run.
+- `builder_session_key` is the active Builder identity and normally remains stable across delegated steps in the same run. On exec transports it carries the exec CLI session id used for resume-based continuation.
+- `builder_transport` records the resolved transport-ladder rung (`native_subagent | agent_config | exec_same_runtime | exec_cross_runtime`). `builder_permission_profile` records the kickoff-declared permission profile for exec rungs. `builder_settings_source` uses `transport_override` when an override landed through ladder rung 1-3.
 - `builder_last_probe_at_utc`, `builder_last_probe_result`, `builder_suspect_since_utc`, and `builder_missed_probe_count` are observation/evidence only — they record active-check state and reset on any coherent direct Builder reply. They never trigger replacement; that is governed by §7's clear-stop-signal rule.
 - `builder_stop_reason` (enum `session_closed | process_exit | builder_blocked | builder_failure | unusable_drift`) names the clear-stop signal that authorized the §7 Builder-stop investigation. `builder_stop_classification` (enum `missing_requirements | solvable_blocker | route_drift | unrecoverable | pending`) names the investigation outcome. `builder_stop_evidence_summary` carries the concise summary of durable evidence read during investigation.
 - `builder_last_compaction_attempted_at_utc`, `builder_last_compaction_result`, and `builder_last_compaction_summary` capture the latest step-boundary compaction attempt or truthful fallback result such as `unsupported`, `auto`, or `native_context_management`.
@@ -189,7 +192,34 @@ Before kickoff, Master Chef must report:
 
 If the runtime cannot observe one or both current-session fields concretely enough to report them exactly, record only those unresolved fields as `unknown`, say the runtime does not expose them here, and proceed with the active session as-is. Do not ask the human to type replacement `master_*` settings.
 
-If the runtime cannot honor a requested Builder override cleanly, say so explicitly and use inherited Builder settings rather than pretending the override landed.
+If the runtime cannot honor a requested Builder override cleanly through its native subagent surface, resolve the Builder transport ladder below before falling back. Only when no rung can express the override, say so explicitly and use inherited Builder settings rather than pretending the override landed.
+
+### Builder transport ladder
+
+Resolve the effective Builder transport through this ladder, lowest rung first:
+
+```text
+rung 0  native_subagent     inherit or native subagent override (default)
+rung 1  agent_config        run-scoped exact-model agent definition
+                            (.codex/agents/*.toml | claude --agents JSON | .claude/agents/)
+rung 2  exec_same_runtime   same-runtime CLI exec Builder
+                            (codex exec + codex exec resume | claude -p --resume)
+rung 3  exec_cross_runtime  cross-runtime CLI exec Builder
+                            (one runtime's Master Chef driving the other runtime's exec CLI)
+```
+
+- Escalate to the next rung only when the current rung cannot express the requested `builder_model` / `builder_thinking` on the active runtime surface.
+- The effective transport is resolved before kickoff, named in the kickoff approval, and recorded as `builder_transport`. There is no silent mid-run transport switching.
+- Exec rungs require a kickoff-declared permission profile per §7, recorded as `builder_permission_profile`.
+- `builder_settings_source` records `transport_override` when the override landed through rung 1-3.
+- If no rung can express the requested override, disclose that and use inherited Builder settings.
+
+Cross-runtime preflight (rung 3 only, resolved at kickoff, never mid-run):
+
+- target CLI present on `PATH`
+- internal `cdd-*` skills installed in the target runtime's home surface
+- requested `builder_model` valid on the target runtime
+- a preflight failure is a kickoff blocker: report it and fall back to the highest passing rung, or to inherited settings, with explicit disclosure
 
 Treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
 
@@ -198,6 +228,7 @@ Runtime adapters must define:
 - how they observe the current session model and thinking, and how they report `unknown` when the runtime does not expose an exact value
 - how an optional `Builder override` is supplied when Builder should diverge
 - how Builder settings are inherited by default and how explicit overrides are honored or rejected
+- how each transport-ladder rung is realized on that runtime: config-generation surface, exec spawn and resume commands, model and effort pinning flags, and permission flags
 - how Builder monitoring works, including whether live status, partial output, or direct reasoning visibility actually exist in that runtime
 
 Before kickoff, the run must also resolve an approved step budget for the current autonomous run:
@@ -259,6 +290,7 @@ Before implementation starts, present one kickoff approval that covers:
 - current session model
 - current session thinking
 - effective Builder settings
+- effective Builder transport rung and, for exec rungs, the kickoff-declared permission profile
 - any fresh-start worktree-branch suggestion when the source checkout is still on a long-lived branch
 - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
 - the approved run step budget
@@ -326,6 +358,18 @@ Builder monitoring must use direct runtime evidence before heuristics:
 
   Probe non-response and probe transport errors are observation-only. Non-response updates `builder_last_probe_result`, `builder_missed_probe_count`, and `builder_suspect_since_utc` for evidence; transport errors set `builder_last_probe_result: unknown`. Neither escalates to replacement on its own. Wall-clock running silence — however long — is not a stop signal: Master Chef waits.
 
+### Exec-transport Builder mapping
+
+When `builder_transport` is `exec_same_runtime` or `exec_cross_runtime`, the shared lifecycle maps onto the child CLI process:
+
+- `builder_session_key` carries the exec CLI session id, and persistent continuation uses the CLI's resume surface with that id for each new delegated step.
+- Spawn evidence is process start plus a captured session id. Readiness proof is the Builder-authored `BUILDER_READY` record in `.cdd-runtime/master-chef/builder.jsonl`.
+- Proof of life is process liveness plus growth of the child's output stream or JSONL evidence. Probes are process-level (process check, output tail) rather than an addressable agent turn.
+- Process exit is the runtime-reported terminal status in the clear-stop-signal set: a zero exit with a final message is completion evidence; a non-zero exit is failure evidence.
+- Exec Builders cannot surface approval prompts or clarifying questions mid-run. An action denied by the declared permission profile is a blocker: Builder emits a `BLOCKED` JSONL record naming the denied surface, which routes into the Builder-stop investigation.
+- The permission profile is declared in the kickoff approval and recorded in `builder_permission_profile`: allowed worktree write scope, named build and test command families, and network policy for that run.
+- Unlimited running time is preserved: monitoring stays evidence-based per this section, and wall-clock running silence is never a stop signal for an exec Builder either.
+
 ### Builder-stop investigation
 
 When a clear stop signal lands, Master Chef runs a Builder-stop investigation before any replacement or `STEP_BLOCKED` routing. It never fires on suspect classification or silence alone.
@@ -359,6 +403,11 @@ Use `hard_gate` and `soft_signal` validation classes:
 
 - `hard_gate`: failing tests, lint, typecheck, migrations, pushability, or repo-defined must-pass checks
 - `soft_signal`: discovery greps, file-presence scans, or other non-blocking heuristics
+
+Builder-run validation defaults to targeted scope:
+
+- Builder runs the selected step's declared `Automated checks` plus directly affected tests for the changed surfaces.
+- Full-suite or repo-wide validation runs only at Master Chef QA or mission boundaries, or when the step contract or human explicitly instructs it.
 
 `hard_gate` validation must run from the active worktree only after `worktree_env_status` reaches `env_ready` or an exact blocking limit has already been reported.
 
@@ -458,6 +507,7 @@ Runtime adapters must define:
 - nested delegation limits
 - how tools and MCP access are inherited or restricted
 - how child working directories are selected
+- how each Builder transport-ladder rung is realized, and how exec-transport children are spawned, resumed, probed, evidenced, and closed
 - how worktree creation and hand-off are realized or limited
 - how the active worktree environment is bootstrapped, evidenced, and blocked when repo-native setup cannot finish
 - whether they continue in the managed worktree in-session or stop with relaunch instructions

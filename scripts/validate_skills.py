@@ -405,6 +405,112 @@ def _check_master_chef_clear_stop_policy(package_root: Path) -> None:
             )
 
 
+MASTER_CHEF_TRANSPORT_LADDER_SUBSECTION = "### Builder transport ladder"
+MASTER_CHEF_EXEC_MAPPING_SUBSECTION = "### Exec-transport Builder mapping"
+MASTER_CHEF_TRANSPORT_RUNGS = (
+    "native_subagent",
+    "agent_config",
+    "exec_same_runtime",
+    "exec_cross_runtime",
+)
+MASTER_CHEF_TRANSPORT_FIELDS = (
+    "builder_transport",
+    "builder_permission_profile",
+)
+# Ladder policy phrase: must live in CONTRACT.md §4 and must NOT be restated in
+# adapter docs (adapters carry runtime mechanics only).
+MASTER_CHEF_TRANSPORT_ESCALATION_PHRASE = "Escalate to the next rung"
+MASTER_CHEF_TRANSPORT_NO_SWITCH_PHRASE = "no silent mid-run transport switching"
+MASTER_CHEF_TRANSPORT_PREFLIGHT_PHRASE = "Cross-runtime preflight"
+MASTER_CHEF_TARGETED_TESTS_PHRASE = "directly affected tests"
+MASTER_CHEF_TRANSPORT_ADAPTERS = ("CODEX-ADAPTER.md", "CLAUDE-ADAPTER.md")
+MASTER_CHEF_TRANSPORT_POINTER_RE = re.compile(r"`?CONTRACT\.md`?\s*§4")
+
+
+def _check_master_chef_transport_ladder(package_root: Path) -> None:
+    """Step 67: enforce the kickoff-gated Builder transport ladder, exec
+    permission profiles, cross-runtime preflight, and targeted-tests default.
+
+    Asserts:
+      - CONTRACT.md §4 carries the `### Builder transport ladder` subsection,
+        all four rung names, the escalation rule, the no-silent-switch rule,
+        the exec CLI resume surfaces, and the cross-runtime preflight.
+      - CONTRACT.md §3 lists `builder_transport` and
+        `builder_permission_profile`; §7 names the transport rung and
+        permission profile in the kickoff bundle and carries the
+        `### Exec-transport Builder mapping` subsection.
+      - CONTRACT.md §8 carries the targeted-tests default
+        (`directly affected tests`).
+      - Both subagent adapter docs point at `CONTRACT.md §4` for ladder policy
+        and do not restate the escalation rule; each documents its runtime's
+        exec resume surface.
+      - SKILL.md kickoff bundle names the effective Builder transport.
+    """
+    contract_text = (package_root / "CONTRACT.md").read_text(encoding="utf-8")
+    section_3 = _extract_contract_section(contract_text, 3)
+    section_4 = _extract_contract_section(contract_text, 4)
+    section_7 = _extract_contract_section(contract_text, 7)
+    section_8 = _extract_contract_section(contract_text, 8)
+
+    assert MASTER_CHEF_TRANSPORT_LADDER_SUBSECTION in section_4, (
+        "CONTRACT.md §4 missing `### Builder transport ladder` subsection"
+    )
+    for rung in MASTER_CHEF_TRANSPORT_RUNGS:
+        assert rung in section_4, f"CONTRACT.md §4 missing transport rung `{rung}`"
+    assert MASTER_CHEF_TRANSPORT_ESCALATION_PHRASE in section_4, (
+        "CONTRACT.md §4 missing the rung escalation rule"
+    )
+    assert MASTER_CHEF_TRANSPORT_NO_SWITCH_PHRASE in section_4, (
+        "CONTRACT.md §4 missing the no-silent-switch rule"
+    )
+    assert MASTER_CHEF_TRANSPORT_PREFLIGHT_PHRASE in section_4, (
+        "CONTRACT.md §4 missing the cross-runtime preflight"
+    )
+    for surface in ("codex exec resume", "claude -p --resume"):
+        assert surface in section_4, (
+            f"CONTRACT.md §4 missing exec resume surface `{surface}`"
+        )
+    for field in MASTER_CHEF_TRANSPORT_FIELDS:
+        assert field in section_3, (
+            f"CONTRACT.md §3 missing transport runtime-state field `{field}`"
+        )
+    assert "effective Builder transport" in section_7, (
+        "CONTRACT.md §7 kickoff bundle missing the effective Builder transport"
+    )
+    assert "permission profile" in section_7, (
+        "CONTRACT.md §7 missing the kickoff-declared permission profile"
+    )
+    assert MASTER_CHEF_EXEC_MAPPING_SUBSECTION in section_7, (
+        "CONTRACT.md §7 missing `### Exec-transport Builder mapping` subsection"
+    )
+    assert MASTER_CHEF_TARGETED_TESTS_PHRASE in section_8, (
+        "CONTRACT.md §8 missing the targeted-tests default"
+    )
+
+    for rel in MASTER_CHEF_TRANSPORT_ADAPTERS:
+        doc_path = package_root / rel
+        text = doc_path.read_text(encoding="utf-8")
+        assert MASTER_CHEF_TRANSPORT_POINTER_RE.search(text), (
+            f"{doc_path} missing `CONTRACT.md §4` pointer for transport-ladder policy"
+        )
+        assert MASTER_CHEF_TRANSPORT_ESCALATION_PHRASE not in text, (
+            f"{doc_path} restates the ladder escalation rule "
+            "(policy lives in CONTRACT.md §4 only)"
+        )
+    codex_text = (package_root / "CODEX-ADAPTER.md").read_text(encoding="utf-8")
+    assert "codex exec resume" in codex_text, (
+        "CODEX-ADAPTER.md missing `codex exec resume` transport mechanics"
+    )
+    claude_text = (package_root / "CLAUDE-ADAPTER.md").read_text(encoding="utf-8")
+    assert "claude -p --resume" in claude_text, (
+        "CLAUDE-ADAPTER.md missing `claude -p --resume` transport mechanics"
+    )
+    skill_text = (package_root / "SKILL.md").read_text(encoding="utf-8")
+    assert "effective Builder transport" in skill_text, (
+        "SKILL.md kickoff bundle missing the effective Builder transport"
+    )
+
+
 def validate_master_chef(repo_root: Path) -> None:
     package_root = repo_root / "skills" / "cdd-master-chef"
     assert package_root.exists(), f"missing {package_root}"
@@ -428,6 +534,7 @@ def validate_master_chef(repo_root: Path) -> None:
         )
     _check_master_chef_consolidation(package_root)
     _check_master_chef_clear_stop_policy(package_root)
+    _check_master_chef_transport_ladder(package_root)
 
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:

@@ -149,7 +149,7 @@ The internal Builder variants are model-visible to OpenClaw agent runs and hidde
    Inspect where development is at, propose the next runnable TODO step, and only split an oversized one when the added Builder, test, and QA cost is clearly justified, then present selector-driven kickoff options before creating runtime state or spawning the Builder.
    ```
 
-   Master Chef should read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and apply a `Builder override` only when one is supplied and the adapter can honor it cleanly. If OpenClaw cannot expose one or both values concretely enough, it should record only those fields as `unknown`, say so explicitly, and proceed with the active session as-is rather than stopping kickoff.
+   Master Chef should read the current session model and thinking directly, report them back as Master Chef facts, default Builder to inherit them, and apply a `Builder override` only when one is supplied and the adapter can honor it cleanly. If OpenClaw cannot expose one or both values concretely enough, it should record only those fields as `unknown`, say so explicitly, and proceed with the active session as-is rather than stopping kickoff. Builder transport resolution follows the ladder in CONTRACT.md §4; this adapter claims rung 0 `native_subagent` only today, so overrides that cannot land natively fall back to inherited settings with explicit disclosure.
 
 6. Master Chef should then:
    - verify whether the repo is already CDD-ready or first needs `cdd-init-project`
