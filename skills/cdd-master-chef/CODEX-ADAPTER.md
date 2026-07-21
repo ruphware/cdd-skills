@@ -85,6 +85,7 @@ Shared ladder policy lives in `CONTRACT.md` §4; this section records only the C
 - Permission profile: map the kickoff-declared profile onto `-s/--sandbox <read-only|workspace-write|danger-full-access>` plus explicit `-c` sandbox or approval overrides. `--dangerously-bypass-approvals-and-sandbox` is acceptable only when the kickoff profile explicitly declared it.
 - Direct evidence surfaces: the `--json` event stream and `-o/--output-last-message <file>` give parent-visible output without an interactive session; probes are process-level plus output tail per `CONTRACT.md` §7.
 - Rung 3 `exec_cross_runtime`: the same spawn and resume mechanics driven from a non-Codex Master Chef, gated by the `CONTRACT.md` §4 cross-runtime preflight.
+- Wave slots (`CONTRACT.md` §12): each slot is a subagent thread or exec child per the mechanics above, rooted at its slot worktree via `-C <slot_worktree_path>`; probe and close per slot, and keep `.codex/config.toml` `max_threads` at or above the approved `max_parallel`.
 
 ## 5) Recommended Codex adapter shapes
 

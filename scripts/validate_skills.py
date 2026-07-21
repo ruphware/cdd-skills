@@ -100,6 +100,8 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     "cdd-plan": (
         "## External source handling",
         "## Runnable TODO step contract",
+        "## Plan output style",
+        "## Step annotations",
         "## Audit-input normalization",
         "## Clarification floor and architecture options",
         "## Edge-case review",
@@ -511,6 +513,90 @@ def _check_master_chef_transport_ladder(package_root: Path) -> None:
     )
 
 
+MASTER_CHEF_WAVE_SECTION_HEADING = "## 12) Wave-parallel execution (opt-in)"
+MASTER_CHEF_WAVE_PHRASES = (
+    "max_parallel",
+    "deps:",
+    "touches:",
+    "preflight",
+    "serial merge queue",
+    "hard_gate",
+    "wave barrier",
+    "-b<slot>",
+    "Unannotated TODO files always run serial",
+    "One control loop",
+    "Master Chef checks off the selected step at merge time",
+)
+MASTER_CHEF_WAVE_STATE_FIELDS = (
+    "builders[]",
+    "wave_id",
+    "wave_step_ids",
+    "wave_merge_queue",
+)
+MASTER_CHEF_WAVE_POINTER_RE = re.compile(r"`?CONTRACT\.md`?\s*§12")
+PLAN_WAVE_ANNOTATION_PHRASES = (
+    "high-entropy",
+    "ASCII diagrams",
+    "`deps:",
+    "`touches:",
+    "serial barrier",
+    "Unannotated TODO files always run serial",
+)
+
+
+def _check_master_chef_wave_parallel(repo_root: Path, package_root: Path) -> None:
+    """Step 68: enforce the opt-in wave-parallel contract and its cdd-plan
+    annotation input.
+
+    Asserts:
+      - CONTRACT.md carries §12 with the six mitigations (per-slot worktrees,
+        serial merge queue with per-merge hard_gate, Master-Chef check-off at
+        merge, wave barrier, bounded pool, budget cap via `max_parallel` +
+        remaining budget), the serial-by-default rule, the one-control-loop
+        rule, and the wave runtime-state fields.
+      - CONTRACT.md §3 cross-references the wave state fields.
+      - Subagent adapter docs and RUNTIME-CAPABILITIES.md point at
+        `CONTRACT.md §12` and do not restate the merge-queue policy.
+      - cdd-plan SKILL.md carries the output-style and step-annotation
+        contracts (headings are enforced via REQUIRED_SECTIONS; phrases here).
+    """
+    contract_text = (package_root / "CONTRACT.md").read_text(encoding="utf-8")
+    assert MASTER_CHEF_WAVE_SECTION_HEADING in contract_text, (
+        "CONTRACT.md missing `## 12) Wave-parallel execution (opt-in)`"
+    )
+    section_3 = _extract_contract_section(contract_text, 3)
+    section_12 = _extract_contract_section(contract_text, 12)
+    for phrase in MASTER_CHEF_WAVE_PHRASES:
+        assert phrase in section_12, (
+            f"CONTRACT.md §12 missing wave-parallel phrase `{phrase}`"
+        )
+    for field in MASTER_CHEF_WAVE_STATE_FIELDS:
+        assert field in section_12, (
+            f"CONTRACT.md §12 missing wave runtime-state field `{field}`"
+        )
+    assert "builders[]" in section_3, (
+        "CONTRACT.md §3 missing the wave-state cross-reference (`builders[]`)"
+    )
+
+    for rel in ("CODEX-ADAPTER.md", "CLAUDE-ADAPTER.md", "RUNTIME-CAPABILITIES.md"):
+        doc_path = package_root / rel
+        text = doc_path.read_text(encoding="utf-8")
+        assert MASTER_CHEF_WAVE_POINTER_RE.search(text), (
+            f"{doc_path} missing `CONTRACT.md §12` pointer for wave-mode policy"
+        )
+        assert "serial merge queue" not in text or rel == "RUNTIME-CAPABILITIES.md", (
+            f"{doc_path} restates the merge-queue policy "
+            "(policy lives in CONTRACT.md §12 only)"
+        )
+
+    plan_skill = repo_root / "skills" / "cdd-plan" / "SKILL.md"
+    plan_text = plan_skill.read_text(encoding="utf-8")
+    for phrase in PLAN_WAVE_ANNOTATION_PHRASES:
+        assert phrase in plan_text, (
+            f"{plan_skill} missing plan output-style/annotation phrase `{phrase}`"
+        )
+
+
 def validate_master_chef(repo_root: Path) -> None:
     package_root = repo_root / "skills" / "cdd-master-chef"
     assert package_root.exists(), f"missing {package_root}"
@@ -535,6 +621,7 @@ def validate_master_chef(repo_root: Path) -> None:
     _check_master_chef_consolidation(package_root)
     _check_master_chef_clear_stop_policy(package_root)
     _check_master_chef_transport_ladder(package_root)
+    _check_master_chef_wave_parallel(repo_root, package_root)
 
 
 def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:

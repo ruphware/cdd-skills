@@ -48,6 +48,19 @@ assert_contains "$VALIDATOR_PY" '"cdd-plan": ('
 assert_contains "$VALIDATOR_PY" '"## Clarification floor and architecture options"'
 assert_contains "$VALIDATOR_PY" '"## Open decisions queue"'
 
+# Step 68: crisp output-style and step-annotation contracts.
+echo "[PlanArtifacts] INFO OutputStyleAndAnnotations path={$SKILL_MD}"
+assert_contains "$SKILL_MD" "## Plan output style"
+assert_contains "$SKILL_MD" "## Step annotations"
+assert_contains "$SKILL_MD" "high-entropy"
+assert_contains "$SKILL_MD" "ASCII diagrams"
+assert_contains "$SKILL_MD" 'deps: <comma-separated step ids | none>'
+assert_contains "$SKILL_MD" 'touches: <comma-separated path globs or boundary names>'
+assert_contains "$SKILL_MD" "serial barrier"
+assert_contains "$SKILL_MD" "Unannotated TODO files always run serial"
+assert_contains "$VALIDATOR_PY" '"## Plan output style"'
+assert_contains "$VALIDATOR_PY" '"## Step annotations"'
+
 echo "[PlanArtifacts] INFO Fixture path={$FIXTURE_MD}"
 assert_exists "$FIXTURE_MD"
 assert_contains "$FIXTURE_MD" "### Architecture / implementation options"

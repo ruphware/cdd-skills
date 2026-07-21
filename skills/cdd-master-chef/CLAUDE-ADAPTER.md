@@ -97,6 +97,7 @@ Shared ladder policy lives in `CONTRACT.md` §4; this section records only the C
 - Permission profile: map the kickoff-declared profile onto `--permission-mode <mode>` (`acceptEdits`, `auto`, `bypassPermissions`, `manual`), `--add-dir`, and `--settings`. `--dangerously-skip-permissions` or `bypassPermissions` is acceptable only when the kickoff profile explicitly declared it.
 - Direct evidence surfaces: `--print` with `--output-format stream-json` yields a parent-readable event stream; probes are process-level plus output tail per `CONTRACT.md` §7.
 - Rung 3 `exec_cross_runtime`: the same spawn and resume mechanics driven from a non-Claude Master Chef, gated by the `CONTRACT.md` §4 cross-runtime preflight.
+- Wave slots (`CONTRACT.md` §12): concurrent slots use exec-transport children (`claude -p`) rooted at their slot worktrees; interactive foreground subagents stay serial, and background subagents qualify only for pre-approved slot work. Probe and close per slot.
 
 ## 6) Worktree handling
 

@@ -33,6 +33,7 @@ Shared policy flow:
 - Startup is branch-backed and environment-backed: on fresh runs from long-lived branches, default to recommending a descriptive worktree branch, keep the source checkout on its original branch unless the human explicitly asks otherwise, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
 - Builder lifecycle is persistent: keep the same Builder across normal delegated-step transitions, attempt step-start compaction when supported, replace Builder only for recovery conditions, and retire older Builders after preserving evidence so one active Builder remains.
 - Oversized-looking work is reviewed first: keep the parent step when one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified.
+- Wave-parallel execution is opt-in per `CONTRACT.md` §12: annotated TODO files plus kickoff opt-in can run declared-disjoint steps as bounded waves; unannotated TODO files always run serial.
 
 Operating contract:
 
@@ -99,6 +100,7 @@ Operating contract:
    - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
    - the approved run step budget
    - whether to spawn Builder now and start the autonomous run
+   - wave-parallel opt-in and `max_parallel` when the active TODO file carries `deps:`/`touches:` step annotations
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations

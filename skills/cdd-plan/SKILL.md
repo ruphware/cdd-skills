@@ -34,6 +34,31 @@ A runnable step is decision-complete: the implementer can execute it without reo
 - Do not leave essential implementation detail only in the surrounding chat — put it in the TODO step.
 - Split work into separate steps when it crosses distinct hard gates, migration boundaries, rollback surfaces, or independently testable subsystems.
 
+## Plan output style
+
+Plans are high-entropy: every sentence must carry decisions, constraints, or evidence.
+
+- Lead with facts and instructions; cut decorative prose, restated context, and filler transitions.
+- Prefer compact structures over paragraphs: tables for option comparisons, short bullets for rules, fenced blocks for exact step text.
+- Use ASCII diagrams when structure helps — dependency order, data/control flow, boundary maps, ladders. Skip diagrams for linear or trivial shapes.
+- Apply this style to both chat-visible plan output and written `TODO*.md` step text.
+- Style must not weaken decision-completeness: the `Runnable TODO step contract` section set and detail requirements stay unchanged; compress wording, never decisions.
+- Scannability rules from `Interactive planning contract` still apply; plans may stay long when scope requires it.
+
+## Step annotations
+
+Parallel-eligible multi-step plans annotate each emitted TODO step for downstream wave-parallel execution.
+
+- A plan is parallel-eligible when it emits two or more runnable steps into one TODO file and at least two steps could plausibly run independently.
+- Emit two grep-friendly lines directly under each `## Step N` heading, before the first H3:
+  - `deps: <comma-separated step ids | none>`
+  - `touches: <comma-separated path globs or boundary names>`
+- `deps:` names hard ordering edges only, and only step ids in the same TODO file; cross-file dependencies are out of scope and force serial execution.
+- `touches:` names the files, globs, or boundaries the step is expected to write; overlapping `touches:` between two steps means they are not disjoint.
+- Two steps are disjoint only when neither lists the other in `deps:` and their `touches:` sets share no file, glob overlap, or named boundary.
+- A step with no `touches:` line is a serial barrier: it is treated as touching everything.
+- Unannotated TODO files always run serial; annotations are additive and never change the meaning of an existing serial run.
+
 ## Audit-input normalization
 
 Do not convert raw audit bullets directly into TODO tasks.

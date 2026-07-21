@@ -175,6 +175,38 @@ for rel in \
   assert_not_contains "$SHARED_ROOT/$rel" "Escalate to the next rung"
 done
 
+# Step 68: opt-in wave-parallel contract lives in CONTRACT.md §12; adapters and
+# the capabilities matrix point there and carry per-slot mechanics only.
+echo "[MasterChefArtifacts] INFO WaveParallel file={CONTRACT.md §12}"
+for phrase in \
+  "## 12) Wave-parallel execution (opt-in)" \
+  "max_parallel" \
+  "serial merge queue" \
+  "wave barrier" \
+  "-b<slot>" \
+  "Unannotated TODO files always run serial" \
+  "Master Chef checks off the selected step at merge time" \
+  "builders[]" \
+  "wave_id" \
+  "wave_step_ids" \
+  "wave_merge_queue"; do
+  assert_contains "$SHARED_ROOT/CONTRACT.md" "$phrase"
+done
+for rel in \
+  CODEX-ADAPTER.md \
+  CLAUDE-ADAPTER.md \
+  RUNTIME-CAPABILITIES.md; do
+  if ! grep -E "CONTRACT\.md\`?[[:space:]]*§12" "$SHARED_ROOT/$rel" >/dev/null; then
+    echo "Expected 'CONTRACT.md §12' wave-mode pointer in $SHARED_ROOT/$rel" >&2
+    exit 1
+  fi
+done
+for rel in \
+  CODEX-ADAPTER.md \
+  CLAUDE-ADAPTER.md; do
+  assert_not_contains "$SHARED_ROOT/$rel" "serial merge queue"
+done
+
 echo "[MasterChefArtifacts] INFO OpenclawAdapterFiles root={$ROOT_DIR}"
 for rel in \
   "skills/cdd-master-chef/openclaw/README.md" \

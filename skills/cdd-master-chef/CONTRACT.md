@@ -162,6 +162,7 @@ Runtime-state expectations for persistent Builder continuity:
 - `builder_last_compaction_attempted_at_utc`, `builder_last_compaction_result`, and `builder_last_compaction_summary` capture the latest step-boundary compaction attempt or truthful fallback result such as `unsupported`, `auto`, or `native_context_management`.
 - `builder_replacement_lineage` records prior Builder identities, replacement reasons, and any parent-child handoff needed when recovery forces Builder replacement.
 - If an older Builder is no longer needed, preserve lineage and durable evidence, then close it or mark it inactive so one active Builder remains.
+- Wave-parallel runs add `builders[]`, `wave_id`, `wave_step_ids`, and `wave_merge_queue` per §12; the scalar `builder_*` fields remain canonical for serial runs.
 
 ## 4) Session settings and Builder override
 
@@ -311,7 +312,7 @@ Once kickoff approval lands, Master Chef owns the mission under the approved run
 
 Before Builder or `hard_gate` validation run, Master Chef must bootstrap the active worktree environment enough for the approved Builder action and the repo's hard-gate proof path. Do not treat path creation alone as worktree readiness.
 
-Keep one persistent Builder per active autonomous run as the normal path.
+Keep one persistent Builder per active autonomous run as the normal path. Wave-parallel runs (§12) extend this lifecycle with a bounded Builder pool; the per-Builder monitoring, readiness, and stop rules below apply to each wave slot.
 
 - Each delegated Builder action still covers exactly one approved step or same-step recovery action at a time.
 - After a step passes, after QA sends the same step back for another delegated attempt, or after blocker repair yields the same or next delegated step, Master Chef must re-inspect repo state and attempt same-Builder continuation first when the active Builder remains usable.
@@ -431,6 +432,8 @@ For each passed step:
 - otherwise, re-inspect TODO state and continue automatically to the next runnable step unless no runnable step remains
 - once the managed worktree becomes active, commit, push, QA, and TODO inspection happen against the active worktree path rather than the source checkout
 
+In wave mode (§12), Builders do not edit `TODO*.md`; Master Chef performs the selected-step check-off at merge time after the per-merge `hard_gate` passes.
+
 ## 9) Reporting and recovery
 
 Report events:
@@ -513,3 +516,46 @@ Runtime adapters must define:
 - whether they continue in the managed worktree in-session or stop with relaunch instructions
 - how the reporting surface maps onto the runtime
 - any runtime-specific stop conditions or safety restrictions that are stricter than the shared contract
+- for wave-capable runtimes, how wave slots are spawned, probed, and closed per §12
+
+## 12) Wave-parallel execution (opt-in)
+
+Serial execution per §7 stays the default. Wave-parallel is active only when all three hold:
+
+- the kickoff approval explicitly opts in and sets `max_parallel` (2-3)
+- the active TODO file carries `deps:` / `touches:` step annotations
+- every step selected for a wave has a `touches:` line (a step without one is a serial barrier)
+
+Unannotated TODO files always run serial.
+
+Wave lifecycle:
+
+```text
+annotated TODO ─▶ preflight ─▶ spawn wave (≤ max_parallel, ≤ remaining budget)
+                                  │  per-Builder worktrees off run-worktree HEAD
+                                  ▼
+                            wave barrier (all slots reach a clear end state)
+                                  ▼
+                            serial merge queue ─▶ per-merge hard_gate ─▶ TODO check-off ─▶ commit/push
+                                  ▼
+                            next wave or serial fallback
+```
+
+- Wave formation is plan-time plus preflight only: candidate steps must be declared disjoint by annotations, and Master Chef must verify disjointness with a preflight grep of the declared `touches:` surfaces before spawning. Run-time LLM judgment never creates a wave.
+- Wave size is capped by `max_parallel` and by the remaining `run_step_budget`.
+- Each wave slot is one persistent Builder from a bounded pool; slots are reused across waves. Per-slot transport follows the §4 ladder and is recorded per slot.
+- Each slot works in its own worktree under `.cdd-runtime/worktrees/<run-id>-b<slot>/`, branched off the run-worktree `HEAD`; each slot worktree needs its own env bootstrap evidence before that slot's targeted checks count.
+- Wave barrier: Master Chef waits for every slot to reach a clear end state — completion evidence or a §7 clear stop signal — before any merge. No mid-wave QA.
+- Serial merge queue: merge one slot branch at a time into the run worktree; rerun `hard_gate` after each merge; the merge that turns the gate red names the culprit step.
+- Integration-failure recovery: re-delegate the culprit step serially on current `HEAD`; do not retry it inside a wave until it passes serially.
+- In wave mode Builders do not edit `TODO*.md`; Master Chef checks off the selected step at merge time after its per-merge `hard_gate` passes (§8 exception, wave mode only).
+- Partial-wave stops: a slot that hits a clear stop signal routes through the §7 Builder-stop investigation; finished slots still merge.
+- One control loop: waves are phases of the single Master Chef session. No second supervisor, no watchdog.
+- `STEP_PASS` events may land out of TODO order; the mission report groups results by wave.
+
+Wave runtime state (additive; scalar §3 fields stay canonical for serial runs):
+
+- `builders[]` — per-slot records mirroring the scalar Builder fields: `builder_session_key`, `builder_transport`, `builder_permission_profile`, `builder_phase`, probe/suspect/stop fields, `slot_worktree_path`, `active_step`
+- `wave_id`
+- `wave_step_ids`
+- `wave_merge_queue`
