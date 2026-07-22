@@ -106,9 +106,6 @@ assert_matches "$ROOT_DIR/skills/cdd-master-chef/CONTRACT.md" "keep the source c
 assert_matches "$ROOT_DIR/skills/cdd-master-chef/RUNBOOK.md" "stop with exact relaunch instructions|exact relaunch instructions"
 assert_contains "$ROOT_DIR/skills/cdd-master-chef/RUNBOOK.md" "$expected_runbook_worktree_root"
 assert_matches "$ROOT_DIR/skills/cdd-master-chef/RUNBOOK.md" 'descriptive worktree branch|Do not `git switch` the source checkout onto <branch>'
-assert_matches "$ROOT_DIR/skills/cdd-master-chef/openclaw/README.md" "After relaunch.*managed worktree.*active repo root|managed worktree.*active repo root"
-assert_contains "$ROOT_DIR/skills/cdd-master-chef/openclaw/README.md" "$expected_worktree_root"
-assert_contains "$ROOT_DIR/skills/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" "worktree_continue_mode"
 assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 
 echo "[MasterChefWorktree] INFO ContractDocsVerified root={$ROOT_DIR}"

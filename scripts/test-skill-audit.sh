@@ -107,12 +107,9 @@ assert_master_chef_package_surface() {
   assert_exists "$package_root/CODEX-RUNBOOK.md"
   assert_exists "$package_root/CLAUDE-ADAPTER.md"
   assert_exists "$package_root/CLAUDE-RUNBOOK.md"
-  assert_exists "$package_root/openclaw/README.md"
-  assert_exists "$package_root/openclaw/MASTER-CHEF-RUNBOOK.md"
-  assert_exists "$package_root/openclaw/MASTER-CHEF-TEST-HARNESS.md"
   assert_contains "$package_root/agents/openai.yaml" 'display_name: "[CDD-6] Master Chef"'
 
-  echo "[LocalInstall] INFO MasterChefPackage runtime={$runtime_label} package_root={$package_root} shared_contract={yes} adapters={codex,claude,openclaw}"
+  echo "[LocalInstall] INFO MasterChefPackage runtime={$runtime_label} package_root={$package_root} shared_contract={yes} adapters={codex,claude}"
 }
 
 infer_source_from_origin() {
@@ -209,12 +206,10 @@ run_local_smoke_test() {
 
   local home_dir="$sandbox_root/home"
   local claude_config_dir="$sandbox_root/claude-home"
-  local openclaw_home_dir="$sandbox_root/openclaw-home"
   local universal_skills_dir="$home_dir/.agents/skills"
   local claude_skills_dir="$claude_config_dir/skills"
-  local openclaw_skills_dir="$openclaw_home_dir/skills"
 
-  mkdir -p "$home_dir" "$claude_config_dir" "$openclaw_home_dir"
+  mkdir -p "$home_dir" "$claude_config_dir"
 
   local skills=()
   local skill_dir
@@ -235,7 +230,6 @@ run_local_smoke_test() {
 
   "$ROOT_DIR/scripts/install.sh" --target "$universal_skills_dir"
   "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$claude_skills_dir"
-  "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$openclaw_skills_dir"
   bash "$ROOT_DIR/scripts/test_master_chef_artifacts.sh"
   bash "$ROOT_DIR/scripts/test_init_project_artifacts.sh"
   bash "$ROOT_DIR/scripts/test_plan_artifacts.sh"
@@ -249,18 +243,12 @@ run_local_smoke_test() {
 
   assert_master_chef_package_surface "codex" "$universal_skills_dir/cdd-master-chef"
   assert_master_chef_package_surface "claude-code" "$claude_skills_dir/cdd-master-chef"
-  assert_master_chef_package_surface "openclaw" "$openclaw_skills_dir/cdd-master-chef"
-  assert_exists "$openclaw_skills_dir/cdd-plan/SKILL.md"
-  assert_contains "$openclaw_skills_dir/cdd-plan/SKILL.md" "user-invocable: false"
-  assert_contains "$openclaw_skills_dir/cdd-plan/SKILL.md" "Internal OpenClaw Builder variant generated from the canonical \`skills/\` pack."
-  echo "[LocalInstall] INFO OpenClawBuilderOverlay path={$openclaw_skills_dir/cdd-plan/SKILL.md} source={skills/}"
   echo "[LocalInstall] INFO InstalledSkill name={cdd-master-chef}"
 
   echo "[LocalInstall] INFO AgentRoot agent={codex} path={$universal_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={claude-code} path={$claude_skills_dir}"
   echo "[LocalInstall] INFO AgentRoot agent={gemini-cli} path={$universal_skills_dir}"
-  echo "[LocalInstall] INFO AgentRoot agent={openclaw} path={$openclaw_skills_dir}"
-  echo "[LocalInstall] INFO InstallVerified skills={$((${#skills[@]} + 1))} agents={4}"
+  echo "[LocalInstall] INFO InstallVerified skills={$((${#skills[@]} + 1))} agents={3}"
 }
 
 echo "[SkillAudit] INFO Repo root={$ROOT_DIR}"

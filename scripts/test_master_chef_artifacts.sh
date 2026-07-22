@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Structural smoke test for the canonical cdd-master-chef package and generated
-# runtime Builder surfaces. This test is local-only and deterministic.
+# Structural smoke test for the canonical cdd-master-chef package. This test is
+# local-only and deterministic.
 #
 # Example:
 #   bash scripts/test_master_chef_artifacts.sh
@@ -77,9 +77,7 @@ assert_not_exists "$ROOT_DIR/openclaw"
 echo "[MasterChefArtifacts] INFO SharedContractFields file={CONTRACT.md}"
 for rel in \
   SKILL.md \
-  CONTRACT.md \
-  openclaw/README.md \
-  openclaw/MASTER-CHEF-RUNBOOK.md; do
+  CONTRACT.md; do
   assert_contains "$SHARED_ROOT/$rel" "$new_worktree_root"
   assert_not_contains "$SHARED_ROOT/$rel" "$legacy_worktree_root"
 done
@@ -89,8 +87,7 @@ assert_contains "$ROOT_DIR/.gitignore" ".cdd-runtime/"
 
 # Step 59: Builder lifecycle policy lives in CONTRACT.md §7 only. Every
 # satellite must point there, and the previously-duplicated `Builder timing
-# summary` bullet group plus the openclaw README three-bullet ladder must be
-# gone.
+# summary` bullet group must be gone.
 echo "[MasterChefArtifacts] INFO BuilderLifecycleConsolidation file={CONTRACT.md §7}"
 assert_contains "$SHARED_ROOT/CONTRACT.md" "<!-- canonical: Builder lifecycle policy"
 for rel in \
@@ -100,16 +97,12 @@ for rel in \
   CLAUDE-ADAPTER.md \
   CLAUDE-RUNBOOK.md \
   CODEX-ADAPTER.md \
-  CODEX-RUNBOOK.md \
-  openclaw/README.md \
-  openclaw/MASTER-CHEF-RUNBOOK.md; do
+  CODEX-RUNBOOK.md; do
   if ! grep -E "CONTRACT\.md\`?[[:space:]]*§7" "$SHARED_ROOT/$rel" >/dev/null; then
     echo "Expected 'CONTRACT.md §7' pointer in $SHARED_ROOT/$rel" >&2
     exit 1
   fi
 done
-assert_not_contains "$SHARED_ROOT/openclaw/MASTER-CHEF-RUNBOOK.md" "Builder timing summary"
-assert_not_contains "$SHARED_ROOT/openclaw/README.md" "30 minutes of total running silence"
 
 # Step 60: Builder replacement requires a clear stop signal; investigation
 # stage, JSONL events, and runtime-state fields are documented in CONTRACT.md.
@@ -209,36 +202,10 @@ for rel in \
   assert_not_contains "$SHARED_ROOT/$rel" "serial merge queue"
 done
 
-echo "[MasterChefArtifacts] INFO OpenclawAdapterFiles root={$ROOT_DIR}"
-for rel in \
-  "skills/cdd-master-chef/openclaw/README.md" \
-  "skills/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md" \
-  "skills/cdd-master-chef/openclaw/MASTER-CHEF-TEST-HARNESS.md"; do
-  assert_exists "$ROOT_DIR/$rel"
-done
 # Previous versions asserted that scripts/validate_skills.py contained specific
 # named regex constants for master-chef prose coverage. That was brittleness on
 # top of brittleness — testing an internal variable name in another test. The
 # validator is now structural-only; semantic coverage moves to trigger evals
 # and behavioral evals, not regex-on-prose. See validate_skills.py header.
-
-echo "[MasterChefArtifacts] INFO GeneratedBuilder runtime={openclaw}"
-python3 "$ROOT_DIR/scripts/build_runtime_builder_skills.py" \
-  --runtime openclaw \
-  --output "$TMP_ROOT/generated" >/dev/null
-
-for skill_dir in "$ROOT_DIR"/skills/*; do
-  [[ -d "$skill_dir" ]] || continue
-  [[ -f "$skill_dir/SKILL.md" ]] || continue
-  skill_name="$(basename "$skill_dir")"
-  # Mirrors ORCHESTRATOR_SKILL_NAME in scripts/validate_skills.py: cdd-master-chef
-  # is the orchestrator, not a Builder skill, and is not in the generated pack.
-  # Keep this literal in sync with the Python constant.
-  [[ "$skill_name" == "cdd-master-chef" ]] && continue
-  generated_skill="$TMP_ROOT/generated/$skill_name/SKILL.md"
-  assert_exists "$generated_skill"
-  assert_contains "$generated_skill" "user-invocable: false"
-  assert_contains "$generated_skill" "Internal OpenClaw Builder variant generated from the canonical \`skills/\` pack."
-done
 
 echo "[MasterChefArtifacts] INFO ArtifactSmokePassed root={$ROOT_DIR}"

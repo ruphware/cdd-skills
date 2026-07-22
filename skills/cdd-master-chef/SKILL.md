@@ -1,9 +1,8 @@
 ---
 name: cdd-master-chef
-description: Start the cdd-master-chef autonomous workflow package. Use for non-trivial development where Master Chef ownership is wanted; current concrete adapters in this package are Codex, Claude Code, and OpenClaw, with OpenClaw carrying the current packaged runtime adapter and Codex and Claude Code provided as subagent-backed adapter docs.
+description: Start the cdd-master-chef autonomous workflow package. Use for non-trivial development where Master Chef ownership is wanted; current concrete adapters in this package are Codex and Claude Code, provided as subagent-backed adapter docs.
 user-invocable: true
 homepage: https://github.com/ruphware/cdd-skills
-metadata: {"openclaw":{"requires":{"bins":["git"],"config":[]}}}
 ---
 
 # [CDD-6] Master Chef
@@ -13,19 +12,12 @@ Use this skill as the entrypoint for the shared `[CDD-6] Master Chef` workflow.
 Adapter note:
 
 - The runtime-agnostic Master Chef contract now lives beside this skill in `CONTRACT.md`, `RUNBOOK.md`, and `RUNTIME-CAPABILITIES.md`.
-- Current concrete adapters in this package are Codex, Claude Code, and OpenClaw.
+- Current concrete adapters in this package are Codex and Claude Code.
 - Codex and Claude Code ship here as subagent-backed adapter docs.
-- OpenClaw is the packaged runtime adapter.
 - Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters, but no Hermes adapter ships here today.
 - Codex and Claude Code adapters should ask for the run step budget and whether to spawn Builder now, then own that Builder handoff rather than pushing the Builder-start decision back to the human.
 - Master Chef approval requests should use visible selector-based options, defaulting to `A.`, `B.`, `C.` when practical, and the selected option itself should count as the approval.
-- The operating contract below describes the current OpenClaw runtime path.
-- When this file repeats a shared rule, treat the shared contract as canonical and this file as the OpenClaw runtime mapping of that rule.
-
-References:
-
-- `{baseDir}/openclaw/MASTER-CHEF-RUNBOOK.md`
-- `{baseDir}/openclaw/MASTER-CHEF-TEST-HARNESS.md`
+- When this file repeats a shared rule, treat the shared contract as canonical.
 
 Shared policy flow:
 
@@ -54,7 +46,7 @@ Operating contract:
    - if either value is not visible enough to report exactly, record only that field as `unknown`, say the runtime does not expose it here, and continue kickoff with the active session as-is
    - if the current prompt includes a `Builder override` block, use it as the requested Builder settings for that run
    - otherwise, default Builder to inherit those settings
-   - if the runtime cannot honor a requested Builder override cleanly through its native subagent surface, resolve the Builder transport ladder in `CONTRACT.md` §4; OpenClaw claims no agent-config or exec rung today, so unresolved overrides fall back to inherited Builder settings with explicit disclosure
+   - if the runtime cannot honor a requested Builder override cleanly through its native subagent surface, resolve the Builder transport ladder in `CONTRACT.md` §4; when no agent-config or exec rung is available, unresolved overrides fall back to inherited Builder settings with explicit disclosure
    - if Builder inherits from an unresolved parent field and no explicit override replaces it, keep the inherited Builder field as `unknown`
    - treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth; do not infer model settings from repo docs, USER.md, memory, previous `run.json`, or earlier runs
    - do not ask the human to type replacement `master_*` settings when the runtime cannot expose them

@@ -1115,3 +1115,49 @@ Make cdd-plan emit crisp high-entropy plans with `deps:`/`touches:` step annotat
 - §12 exists, opt-in, with all six mitigations explicit; serial default stated three ways (no opt-in / no annotations / missing touches).
 - `builders[]` + wave fields documented; scalar serial fields untouched.
 - Validators fail when any mitigation, serial default, or style/annotation contract is removed.
+
+## Step 69 — Remove the OpenClaw runtime adapter from cdd-skills
+
+### Goal
+
+Remove OpenClaw as a supported Master Chef runtime/adapter across the whole repo: delete the packaged OpenClaw adapter docs and the OpenClaw-only Builder-skill generator, drop the `openclaw` runtime from the installer, validator, CI, and tests, and rewrite the Master Chef docs and top-level README so the concrete adapter set is Codex and Claude Code only.
+
+### Constraints
+
+- Leave completed OpenClaw history in `TODO.md` untouched; record the removal as this new step instead of scrubbing prior steps.
+- After removal, all runtimes are "core"; do not keep a dead non-core / generated-Builder code path just to preserve structure.
+- `./scripts/install.sh --runtime openclaw` must now fail with `Unsupported runtime: openclaw`.
+- Keep the full local validation/test suite green.
+- Codex and Claude Code remain the two concrete subagent-backed adapters; the shared `CONTRACT.md`/`RUNBOOK.md` behavior is unchanged.
+
+### Tasks
+
+- [x] Delete `scripts/install-openclaw.sh`, `scripts/build_openclaw_builder_skills.py`, `scripts/build_runtime_builder_skills.py`, and the `skills/cdd-master-chef/openclaw/` directory.
+- [x] Strip the `openclaw` runtime and its generated-Builder machinery from `scripts/install.sh` (runtime cases, `--all` loop, source-dir validation, build-root/generator plumbing); collapse `build_source_packages` to the core-only path.
+- [x] Remove OpenClaw file-set entries, the `validate_generated_openclaw_builder_skills` check, the OpenClaw runbook timing-summary assertion, and now-dead imports/constants from `scripts/validate_skills.py`.
+- [x] Remove OpenClaw install/uninstall/link test blocks and `.openclaw` `--all` assertions from `scripts/test_installers.sh`; add a positive `Unsupported runtime: openclaw` rejection assertion and fix `--all` prompt counts to two runtimes.
+- [x] Remove OpenClaw file checks, the generated-Builder block, and OpenClaw doc assertions from `scripts/test_master_chef_artifacts.sh`, `scripts/test-skill-audit.sh`, and `scripts/test_master_chef_worktree.sh`; fix adapter labels and agent counts.
+- [x] Drop the `bash -n scripts/install-openclaw.sh` step from `.github/workflows/ci.yml`.
+- [x] Rewrite `skills/cdd-master-chef/SKILL.md`, `README.md`, and `RUNTIME-CAPABILITIES.md` so the concrete adapter set is Codex and Claude Code, removing the OpenClaw description, metadata, matrix row, capability section, and file references.
+- [x] Remove OpenClaw from the top-level `README.md` adapters/runtimes list and install variants.
+
+### Implementation notes
+
+- `build_runtime_builder_skills.py` only supported `--runtime openclaw`; with OpenClaw gone it had no consumer, so both it and its wrapper were deleted rather than kept as dead code.
+- `runtime_is_core` and the `BUILD_ROOT`/generator plumbing in `install.sh` became unreachable once every runtime is core; they were removed to keep the installer minimal.
+- The legacy top-level `openclaw` stub check (`assert_not_exists "$ROOT_DIR/openclaw"`) is retained as a still-valid guard.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+- `bash scripts/test_master_chef_artifacts.sh`
+- `bash scripts/test_master_chef_worktree.sh`
+- `bash scripts/test-skill-audit.sh --skip-remote`
+
+### UAT
+
+- Confirm no `openclaw`/OpenClaw references remain outside `TODO.md` history and the two intentional test guards.
+- Confirm `./scripts/install.sh --runtime openclaw` fails with `Unsupported runtime: openclaw`, and `--all` installs only into `~/.agents` and `~/.claude`.
+- Confirm the Master Chef docs and README list only Codex and Claude Code as concrete adapters.
+- Confirm the full local validation/test suite passes.

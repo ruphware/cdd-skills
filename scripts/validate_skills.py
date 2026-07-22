@@ -2,7 +2,7 @@
 
 This validator is intentionally narrow. It asserts:
   - file presence (skill SKILL.md and openai.yaml per skill; full master-chef
-    contract file set; generated openclaw builder skills)
+    contract file set)
   - frontmatter shape (name regex, description present, leaf skills are
     model-invocable i.e. carry no disable-model-invocation flag, user-invocable
     flag for generated variants)
@@ -24,9 +24,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
-import subprocess
 import sys
-import tempfile
 
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
@@ -64,9 +62,6 @@ MASTER_CHEF_FILES = (
     "CLAUDE-ADAPTER.md",
     "CLAUDE-RUNBOOK.md",
     "CLAUDE-TEST-HARNESS.md",
-    "openclaw/README.md",
-    "openclaw/MASTER-CHEF-RUNBOOK.md",
-    "openclaw/MASTER-CHEF-TEST-HARNESS.md",
 )
 
 # Required H2 section headings per skill. Section presence is a structural
@@ -221,8 +216,6 @@ MASTER_CHEF_CONSOLIDATION_SATELLITES = (
     "CLAUDE-RUNBOOK.md",
     "CODEX-ADAPTER.md",
     "CODEX-RUNBOOK.md",
-    "openclaw/README.md",
-    "openclaw/MASTER-CHEF-RUNBOOK.md",
 )
 
 MASTER_CHEF_CANONICAL_ANCHOR = (
@@ -263,9 +256,6 @@ MASTER_CHEF_FORBIDDEN_PATTERNS = (
         "restates `2 consecutive unanswered explicit probes`",
     ),
 )
-MASTER_CHEF_TIMING_SUMMARY_RE = re.compile(
-    r"(?mi)^\s*(?:#+\s*)?Builder timing summary\b"
-)
 
 
 def _check_master_chef_consolidation(package_root: Path) -> None:
@@ -274,8 +264,7 @@ def _check_master_chef_consolidation(package_root: Path) -> None:
     Asserts: CONTRACT.md §7 carries the canonical-surface anchor; each
     satellite contains a `CONTRACT.md §7` pointer; no satellite restates the
     5/10/20/30-minute thresholds, the `5/10/20-soft/30-hard` legacy ladder, or
-    `2 consecutive unanswered explicit probes`; the OpenClaw runbook no
-    longer carries a `Builder timing summary` heading or bullet group.
+    `2 consecutive unanswered explicit probes`.
     """
     contract_path = package_root / "CONTRACT.md"
     contract_text = contract_path.read_text(encoding="utf-8")
@@ -294,12 +283,6 @@ def _check_master_chef_consolidation(package_root: Path) -> None:
         for pattern, label in MASTER_CHEF_FORBIDDEN_PATTERNS:
             hit = pattern.search(scan)
             assert hit is None, f"{doc_path} {label}: {hit.group(0)!r}"
-
-    openclaw_runbook = package_root / "openclaw" / "MASTER-CHEF-RUNBOOK.md"
-    openclaw_text = openclaw_runbook.read_text(encoding="utf-8")
-    assert MASTER_CHEF_TIMING_SUMMARY_RE.search(openclaw_text) is None, (
-        f"{openclaw_runbook} retains a `Builder timing summary` heading"
-    )
 
 
 MASTER_CHEF_INVESTIGATION_SUBSECTION = "### Builder-stop investigation"
@@ -626,68 +609,16 @@ def validate_master_chef(repo_root: Path) -> None:
     _check_master_chef_wave_parallel(repo_root, package_root)
 
 
-def validate_generated_openclaw_builder_skills(repo_root: Path) -> None:
-    """Validate the generated OpenClaw Builder variants built from skills/.
-
-    Structural-only: name, description present, user-invocable flag, no
-    disable-model-invocation flag (generated variants are model-visible), and
-    the canonical wrapper line. No prose matching on the body.
-    """
-    generator = repo_root / "scripts" / "build_runtime_builder_skills.py"
-    assert generator.exists(), f"missing {generator}"
-
-    skills_root = repo_root / "skills"
-    canonical_names = sorted(
-        path.name
-        for path in skills_root.iterdir()
-        if path.is_dir() and path.name != ORCHESTRATOR_SKILL_NAME
-    )
-    assert canonical_names, f"no canonical Builder skills found in {skills_root}"
-
-    with tempfile.TemporaryDirectory(prefix="cdd-openclaw-builder-") as tmp_dir:
-        output_root = Path(tmp_dir) / "generated"
-        subprocess.run(
-            [
-                sys.executable,
-                str(generator),
-                "--runtime",
-                "openclaw",
-                "--output",
-                str(output_root),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        for skill_name in canonical_names:
-            generated_dir = output_root / skill_name
-            skill_md = generated_dir / "SKILL.md"
-            assert skill_md.exists(), f"missing generated {skill_md}"
-            meta = frontmatter(skill_md)
-            require_field(
-                meta,
-                rf"^name:\s*{re.escape(skill_name)}\s*$",
-                skill_md,
-                "name",
-            )
-            require_field(meta, r"^description:\s*.+", skill_md, "description")
-            require_field(
-                meta,
-                r"^user-invocable:\s*false\b",
-                skill_md,
-                "user-invocable: false",
-            )
-            assert "disable-model-invocation:" not in meta, (
-                f"generated skill should be model-visible in {skill_md}"
-            )
-            skill_text = skill_md.read_text(encoding="utf-8")
-            assert "Internal OpenClaw Builder variant" in skill_text, (
-                f"canonical generated wrapper line missing in {skill_md}"
-            )
-
-
 def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if args:
+        print(
+            f"ERROR: unknown arguments: {' '.join(args)}"
+            " (this validator takes no arguments)",
+            file=sys.stderr,
+        )
+        return 2
+
     repo_root = Path(__file__).resolve().parent.parent
     skills_root = repo_root / "skills"
     assert skills_root.exists(), f"missing {skills_root}"
@@ -702,7 +633,6 @@ def main(argv: list[str] | None = None) -> int:
         validate_skill(skill_dir)
 
     validate_master_chef(repo_root)
-    validate_generated_openclaw_builder_skills(repo_root)
 
     print("skill structure checks passed (structural)")
     return 0

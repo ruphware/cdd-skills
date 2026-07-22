@@ -10,19 +10,14 @@ source "$ROOT_DIR/scripts/install-common.sh"
 # Default path:
 # - generic/codex-style targets -> ~/.agents/skills
 # - claude runtime            -> ~/.claude/skills
-# - openclaw runtime          -> ~/.openclaw/skills
 #
 # Usage:
 #   ./scripts/install.sh
 #   ./scripts/install.sh --runtime claude
-#   ./scripts/install.sh --runtime openclaw
 #   ./scripts/install.sh --target ~/.agents/skills --target ~/.claude/skills
-#   ./scripts/install.sh --runtime openclaw --target ~/.openclaw/skills
 
 SKILLS_SRC_ROOT="$ROOT_DIR/skills"
 MASTER_CHEF_SRC_ROOT="$SKILLS_SRC_ROOT/cdd-master-chef"
-OPENCLAW_SRC_ROOT="$MASTER_CHEF_SRC_ROOT/openclaw"
-RUNTIME_BUILDER_GENERATOR="$ROOT_DIR/scripts/build_runtime_builder_skills.py"
 
 UPDATE=0
 UNINSTALL=0
@@ -33,15 +28,6 @@ RUNTIME="generic"
 RUNTIME_EXPLICIT=0
 TARGETS=()
 SOURCE_PACKAGES=()
-BUILD_ROOT=""
-
-cleanup() {
-  if [[ -n "$BUILD_ROOT" && -d "$BUILD_ROOT" ]]; then
-    rm -rf "$BUILD_ROOT"
-  fi
-}
-
-trap cleanup EXIT
 
 usage() {
   cat <<'EOF'
@@ -53,7 +39,6 @@ Runtimes:
   generic     Canonical cdd-* skill pack
   codex       Alias for generic with ~/.agents/skills as the default target
   claude      Canonical cdd-* skill pack, default target ~/.claude/skills
-  openclaw    Canonical cdd-* skill pack (cdd-master-chef canonical; rest as internal OpenClaw Builder variants), default target ~/.openclaw/skills
 
 Options:
   --runtime NAME  Select package/runtime mode; default: generic
@@ -72,9 +57,6 @@ runtime_default_target() {
     claude)
       echo "$HOME/.claude/skills"
       ;;
-    openclaw)
-      echo "$HOME/.openclaw/skills"
-      ;;
     codex|generic)
       echo "$HOME/.agents/skills"
       ;;
@@ -84,17 +66,10 @@ runtime_default_target() {
   esac
 }
 
-runtime_is_core() {
-  [[ "$RUNTIME" == "generic" || "$RUNTIME" == "codex" || "$RUNTIME" == "claude" ]]
-}
-
 runtime_home_root() {
   case "$RUNTIME" in
     claude)
       echo "$HOME/.claude"
-      ;;
-    openclaw)
-      echo "$HOME/.openclaw"
       ;;
     codex|generic)
       echo "$HOME/.agents"
@@ -108,35 +83,8 @@ runtime_home_root() {
 build_source_packages() {
   SOURCE_PACKAGES=()
 
-  if runtime_is_core; then
-    local skill_dir
-    for skill_dir in "$SKILLS_SRC_ROOT"/*; do
-      [[ -d "$skill_dir" ]] || continue
-      [[ -f "$skill_dir/SKILL.md" ]] || continue
-      SOURCE_PACKAGES+=("$skill_dir")
-    done
-    return 0
-  fi
-
-  if [[ "$RUNTIME" != "openclaw" ]]; then
-    fail_usage "Unsupported runtime: $RUNTIME"
-  fi
-
-  SOURCE_PACKAGES+=("$MASTER_CHEF_SRC_ROOT")
-  BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/cdd-skills-build.XXXXXX")"
-
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "Missing required binary: python3" >&2
-    exit 1
-  fi
-
-  if [[ ! -f "$RUNTIME_BUILDER_GENERATOR" ]]; then
-    echo "Missing generator script: $RUNTIME_BUILDER_GENERATOR" >&2
-    exit 1
-  fi
-
-  python3 "$RUNTIME_BUILDER_GENERATOR" --runtime openclaw --output "$BUILD_ROOT/openclaw-builder" >/dev/null
-  for skill_dir in "$BUILD_ROOT/openclaw-builder"/*; do
+  local skill_dir
+  for skill_dir in "$SKILLS_SRC_ROOT"/*; do
     [[ -d "$skill_dir" ]] || continue
     [[ -f "$skill_dir/SKILL.md" ]] || continue
     SOURCE_PACKAGES+=("$skill_dir")
@@ -148,7 +96,7 @@ install_all_runtimes() {
   local found_any=0
   local runtime
 
-  for runtime in generic claude openclaw; do
+  for runtime in generic claude; do
     RUNTIME="$runtime"
 
     local runtime_home
@@ -172,7 +120,7 @@ install_all_runtimes() {
   RUNTIME="$original_runtime"
 
   if [[ $found_any -eq 0 ]]; then
-    echo "No existing runtime homes found under $HOME/.agents, $HOME/.claude, or $HOME/.openclaw." >&2
+    echo "No existing runtime homes found under $HOME/.agents or $HOME/.claude." >&2
     exit 1
   fi
 }
@@ -497,7 +445,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$RUNTIME" in
-  generic|codex|claude|openclaw) ;;
+  generic|codex|claude) ;;
   *)
     fail_usage "Unsupported runtime: $RUNTIME"
     ;;
@@ -534,19 +482,8 @@ if [[ ! -f "$MASTER_CHEF_SRC_ROOT/SKILL.md" ]]; then
   exit 1
 fi
 
-if [[ "$RUNTIME" == "openclaw" ]]; then
-  if [[ ! -d "$OPENCLAW_SRC_ROOT" ]]; then
-    echo "Missing OpenClaw adapter source dir: $OPENCLAW_SRC_ROOT" >&2
-    exit 1
-  fi
-  if [[ ! -f "$OPENCLAW_SRC_ROOT/README.md" ]]; then
-    echo "Missing OpenClaw adapter docs: $OPENCLAW_SRC_ROOT/README.md" >&2
-    exit 1
-  fi
-fi
-
 if [[ $LINK -eq 1 ]]; then
-  echo "Warning: --link symlinks canonical source skill directories when possible. Generated runtime Builder skills are still copied." >&2
+  echo "Warning: --link symlinks canonical source skill directories when possible." >&2
 fi
 
 if [[ $ALL -eq 1 ]]; then

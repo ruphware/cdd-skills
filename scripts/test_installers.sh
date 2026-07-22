@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke-test installer behaviors for the unified installer across core and OpenClaw targets.
+# Smoke-test installer behaviors for the unified installer across core targets.
 #
 # Example:
 #   bash scripts/test_installers.sh
@@ -89,10 +89,6 @@ BUILDER_LINK="$TMP_ROOT/builder-link"
 BUILDER_PRUNE="$TMP_ROOT/builder-prune"
 BUILDER_UNINSTALL="$TMP_ROOT/builder-uninstall"
 CLAUDE_INSTALL="$TMP_ROOT/claude-install"
-OPENCLAW_INSTALL="$TMP_ROOT/openclaw-install"
-OPENCLAW_UPDATE="$TMP_ROOT/openclaw-update"
-OPENCLAW_LINK="$TMP_ROOT/openclaw-link"
-OPENCLAW_UNINSTALL="$TMP_ROOT/openclaw-uninstall"
 ALL_HOME="$TMP_ROOT/all-home"
 ALL_PARTIAL_HOME="$TMP_ROOT/all-partial-home"
 ALL_REMOVE_HOME="$TMP_ROOT/all-remove-home"
@@ -105,10 +101,8 @@ assert_command_fails_with "Unsupported flag: --force" \
   "$ROOT_DIR/scripts/install.sh" --force
 assert_command_fails_with "Unsupported flag: --prune" \
   "$ROOT_DIR/scripts/install.sh" --prune
-assert_command_fails_with "Unsupported flag: --force" \
-  "$ROOT_DIR/scripts/install-openclaw.sh" --force
-assert_command_output_contains "Deprecated: use ./scripts/install.sh --runtime openclaw" \
-  "$ROOT_DIR/scripts/install-openclaw.sh" --help
+assert_command_fails_with "Unsupported runtime: openclaw" \
+  "$ROOT_DIR/scripts/install.sh" --runtime openclaw
 assert_command_fails_with "--all cannot be combined with --runtime" \
   "$ROOT_DIR/scripts/install.sh" --all --runtime claude
 assert_command_fails_with "--all cannot be combined with --target" \
@@ -134,7 +128,6 @@ assert_exists "$BUILDER_INSTALL/cdd-master-chef/agents/openai.yaml"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/README.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/CODEX-ADAPTER.md"
 assert_exists "$BUILDER_INSTALL/cdd-master-chef/CLAUDE-ADAPTER.md"
-assert_exists "$BUILDER_INSTALL/cdd-master-chef/openclaw/README.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$BUILDER_INSTALL/cdd-master-chef/SKILL.md"
 assert_command_output_contains 'display_name: "[CDD-6] Master Chef"' sed -n '1,20p' "$BUILDER_INSTALL/cdd-master-chef/agents/openai.yaml"
 assert_not_exists "$BUILDER_INSTALL/cdd-index"
@@ -307,104 +300,24 @@ assert_not_exists "$CLAUDE_INSTALL/cdd-audit-and-implement"
 assert_exists "$CLAUDE_INSTALL/cdd-master-chef/SKILL.md"
 assert_exists "$CLAUDE_INSTALL/cdd-master-chef/agents/openai.yaml"
 assert_exists "$CLAUDE_INSTALL/cdd-master-chef/CLAUDE-ADAPTER.md"
-assert_exists "$CLAUDE_INSTALL/cdd-master-chef/openclaw/README.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$CLAUDE_INSTALL/cdd-master-chef/SKILL.md"
 assert_command_fails_with "Rerun with --update" \
   "$ROOT_DIR/scripts/install.sh" --runtime claude --target "$CLAUDE_INSTALL"
 
-echo "[CI] INFO OpenClawInstallFresh root={$OPENCLAW_INSTALL}"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_INSTALL"
-assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/agents/openai.yaml"
-assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/README.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/CONTRACT.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/CODEX-ADAPTER.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-master-chef/openclaw/README.md"
-assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$OPENCLAW_INSTALL/cdd-master-chef/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-boot/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-maintain/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-plan/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-implement/SKILL.md"
-assert_exists "$OPENCLAW_INSTALL/cdd-audit/SKILL.md"
-assert_not_exists "$OPENCLAW_INSTALL/cdd-audit-and-implement"
-assert_command_output_contains "user-invocable: false" sed -n '1,40p' "$OPENCLAW_INSTALL/cdd-plan/SKILL.md"
-assert_command_fails_with "Rerun with --update" \
-  "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_INSTALL"
-
-echo "[CI] INFO OpenClawInstallUpdate root={$OPENCLAW_UPDATE}"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UPDATE"
-touch "$OPENCLAW_UPDATE/cdd-master-chef/EXTRA.txt"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UPDATE" --update
-assert_exists "$OPENCLAW_UPDATE/cdd-master-chef/SKILL.md"
-assert_not_exists "$OPENCLAW_UPDATE/cdd-master-chef/EXTRA.txt"
-assert_no_match "$OPENCLAW_UPDATE" 'cdd-master-chef.bak.*'
-touch "$OPENCLAW_UPDATE/cdd-plan/EXTRA.txt"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UPDATE" --update
-assert_exists "$OPENCLAW_UPDATE/cdd-plan/SKILL.md"
-assert_not_exists "$OPENCLAW_UPDATE/cdd-plan/EXTRA.txt"
-assert_no_match "$OPENCLAW_UPDATE" 'cdd-plan.bak.*'
-
-echo "[CI] INFO OpenClawInstallLink root={$OPENCLAW_LINK}"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_LINK" --link
-assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
-assert_exists "$OPENCLAW_LINK/cdd-master-chef/RUNBOOK.md"
-assert_exists "$OPENCLAW_LINK/cdd-master-chef/openclaw/MASTER-CHEF-RUNBOOK.md"
-assert_exists "$OPENCLAW_LINK/cdd-plan/SKILL.md"
-assert_exists "$OPENCLAW_LINK/cdd-audit/SKILL.md"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_LINK" --link --update
-assert_symlink "$OPENCLAW_LINK/cdd-master-chef"
-assert_exists "$OPENCLAW_LINK/cdd-implement/SKILL.md"
-
-echo "[CI] INFO OpenClawUninstall root={$OPENCLAW_UNINSTALL}"
-"$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UNINSTALL"
-mkdir -p "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
-mkdir -p "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
-mkdir -p "$OPENCLAW_UNINSTALL/cdd-foreign"
-cat >"$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md" <<'EOF'
----
-name: cdd-foreign
-description: foreign skill
-disable-model-invocation: true
----
-EOF
-printf 'n\n' | "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UNINSTALL" --uninstall
-assert_exists "$OPENCLAW_UNINSTALL/cdd-master-chef/SKILL.md"
-assert_exists "$OPENCLAW_UNINSTALL/cdd-plan/SKILL.md"
-assert_exists "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
-assert_exists "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
-assert_exists "$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md"
-printf 'y\n' | "$ROOT_DIR/scripts/install.sh" --runtime openclaw --target "$OPENCLAW_UNINSTALL" --uninstall
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-boot"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-maintain"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-implement"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-audit"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-master-chef.bak.legacy"
-assert_not_exists "$OPENCLAW_UNINSTALL/cdd-plan.bak.legacy"
-assert_exists "$OPENCLAW_UNINSTALL/cdd-foreign/SKILL.md"
-
 echo "[CI] INFO InstallAllExistingHomes root={$ALL_HOME}"
-mkdir -p "$ALL_HOME/.agents" "$ALL_HOME/.claude" "$ALL_HOME/.openclaw"
+mkdir -p "$ALL_HOME/.agents" "$ALL_HOME/.claude"
 HOME="$ALL_HOME" "$ROOT_DIR/scripts/install.sh" --all
 assert_exists "$ALL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
 assert_exists "$ALL_HOME/.claude/skills/cdd-master-chef/SKILL.md"
-assert_exists "$ALL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
 assert_exists "$ALL_HOME/.agents/skills/cdd-implement/SKILL.md"
 assert_exists "$ALL_HOME/.claude/skills/cdd-implement/SKILL.md"
-assert_exists "$ALL_HOME/.openclaw/skills/cdd-implement/SKILL.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$ALL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
 assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$ALL_HOME/.claude/skills/cdd-master-chef/SKILL.md"
-assert_command_output_contains "user-invocable: true" sed -n '1,8p' "$ALL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
 assert_not_exists "$ALL_HOME/.agents/skills/cdd-audit-and-implement"
 assert_not_exists "$ALL_HOME/.claude/skills/cdd-audit-and-implement"
-assert_not_exists "$ALL_HOME/.openclaw/skills/cdd-audit-and-implement"
 assert_exists "$ALL_HOME/.agents/skills/cdd-audit/SKILL.md"
 assert_exists "$ALL_HOME/.claude/skills/cdd-audit/SKILL.md"
-assert_exists "$ALL_HOME/.openclaw/skills/cdd-audit/SKILL.md"
-assert_command_output_contains "user-invocable: false" sed -n '1,40p' "$ALL_HOME/.openclaw/skills/cdd-plan/SKILL.md"
 touch "$ALL_HOME/.agents/skills/cdd-master-chef/EXTRA.txt"
-touch "$ALL_HOME/.openclaw/skills/cdd-plan/EXTRA.txt"
 mkdir -p "$ALL_HOME/.agents/skills/cdd-audit-and-implement"
 cat >"$ALL_HOME/.agents/skills/cdd-audit-and-implement/SKILL.md" <<'EOF'
 ---
@@ -417,30 +330,24 @@ echo "cdd_skills_origin=ruphware/cdd-skills" >"$ALL_HOME/.agents/skills/cdd-audi
 mkdir -p "$ALL_HOME/.agents/skills/cdd-audit-and-implement.pruned.20260505T080008Z"
 HOME="$ALL_HOME" "$ROOT_DIR/scripts/install.sh" --all --update
 assert_not_exists "$ALL_HOME/.agents/skills/cdd-master-chef/EXTRA.txt"
-assert_not_exists "$ALL_HOME/.openclaw/skills/cdd-plan/EXTRA.txt"
 assert_not_exists "$ALL_HOME/.agents/skills/cdd-audit-and-implement"
 assert_no_match "$ALL_HOME/.agents/skills" 'cdd-audit-and-implement.pruned.*'
 
 echo "[CI] INFO InstallAllSkipsMissingHomes root={$ALL_PARTIAL_HOME}"
-mkdir -p "$ALL_PARTIAL_HOME/.agents" "$ALL_PARTIAL_HOME/.openclaw"
+mkdir -p "$ALL_PARTIAL_HOME/.agents"
 HOME="$ALL_PARTIAL_HOME" "$ROOT_DIR/scripts/install.sh" --all
 assert_exists "$ALL_PARTIAL_HOME/.agents/skills/cdd-master-chef/SKILL.md"
-assert_exists "$ALL_PARTIAL_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
 assert_not_exists "$ALL_PARTIAL_HOME/.claude/skills"
 
 echo "[CI] INFO InstallAllUninstall root={$ALL_REMOVE_HOME}"
-mkdir -p "$ALL_REMOVE_HOME/.agents" "$ALL_REMOVE_HOME/.claude" "$ALL_REMOVE_HOME/.openclaw"
+mkdir -p "$ALL_REMOVE_HOME/.agents" "$ALL_REMOVE_HOME/.claude"
 HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all
-printf 'n\nn\nn\n' | HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all --uninstall
+printf 'n\nn\n' | HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all --uninstall
 assert_exists "$ALL_REMOVE_HOME/.agents/skills/cdd-master-chef/SKILL.md"
 assert_exists "$ALL_REMOVE_HOME/.claude/skills/cdd-master-chef/SKILL.md"
-assert_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-master-chef/SKILL.md"
-printf 'y\ny\ny\n' | HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all --uninstall
+printf 'y\ny\n' | HOME="$ALL_REMOVE_HOME" "$ROOT_DIR/scripts/install.sh" --all --uninstall
 assert_not_exists "$ALL_REMOVE_HOME/.agents/skills/cdd-master-chef"
 assert_not_exists "$ALL_REMOVE_HOME/.claude/skills/cdd-master-chef"
-assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-master-chef"
-assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-plan"
-assert_not_exists "$ALL_REMOVE_HOME/.openclaw/skills/cdd-audit"
 
 echo "[CI] INFO RemoteInstallAndUpdate root={$REMOTE_HOME}"
 mkdir -p "$REMOTE_HOME/.agents" "$REMOTE_HOME/.claude"

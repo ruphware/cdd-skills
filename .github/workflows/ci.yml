@@ -14,7 +14,6 @@ jobs:
         run: |
           bash -n scripts/install-common.sh
           bash -n scripts/install.sh
-          bash -n scripts/install-openclaw.sh
           bash -n scripts/test_installers.sh
           bash -n scripts/test_codex_skill_smoke.sh
           bash -n scripts/test_master_chef_artifacts.sh

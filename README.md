@@ -14,27 +14,15 @@ Powered by [cdd-boilerplate](https://github.com/ruphware/cdd-boilerplate).
 
 * **Human-guided feature work:** `[CDD-0] Boot` → `[CDD-2] Plan` → `[CDD-3] Implement`.
 * **Post-implementation review:** `[CDD-4] Audit` → `[CDD-2] Plan` for approved follow-up.
-* **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactor review.
-* **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution after kickoff approval.
-
-Here's a refined version for your `cdd-skills` repo README section:
+* **Repo upkeep:** `[CDD-5] Maintain` for doc drift, source cleanup, index refresh, and refactoring.
+* **Review proposal, investigate bug:** `[CDD-4] Audit` for everything.
+* **Autonomous delivery:** `[CDD-6] Master Chef` for controlled multi-step execution!
 
 ---
 
 ## Autonomous Development
 
-Multiple ways to run autonomous development steps using CDD boilerplate:
-
-### 1. Codex `/goal $cdd-implement TODO.md all undone steps`
-
-* **Reliability:** ⚠️ Can be unreliable on `gpt-5.4 xhigh`.
-
-### 2. Claude `/workflows $cdd-implement TODO.md all undone steps`
-
-* **Reliability:** ✅ Works well and fast on `Opus 4.8 xhigh`.
-* **Token use:** Can be token-hungry, watch your budget.
-
-### 3. 🧑‍🍳 Master Chef `$cdd-master-chef TODO.md all steps`
+### 🧑‍🍳 Master Chef `$cdd-master-chef TODO.md all steps`
 
 * **Process:** Executes each step methodically in a highly controlled manner.
 * **Reliability:** ✅ Highly dependable; ideal for unattended runs (e.g., overnight).
@@ -47,14 +35,25 @@ Multiple ways to run autonomous development steps using CDD boilerplate:
 $cdd-plan docs/specs/blueprint.md into TODO.md
 # Optional audit step:
 $cdd-audit TODO.md and confirm cdd-master-chef readiness
-$cdd-master-chef TODO.md all steps, session gpt-5.5 xhigh builder gpt-5.4 xhigh, worktree and branch todo-123
+$cdd-master-chef TODO.md all steps, session gpt-5.6 max builder gpt-5.6 high, worktree and branch todo-123
 ```
 
 > [!NOTE]
-> The session model is fixed to ensure smooth operation and consistency. In the authors’ opinion, gpt-5.5 xhigh is better for longer-running tasks, while gpt-5.4 xhigh is better for detailed work, albeit slower.
+> The master chef model must match the running session's actual model. In the authors’ opinion, gpt-5.6 max works nice with gpt-5.6 high. (5.4 xhigh used to be great builder, but that's over)
 
 > [!TIP]
 > Autonomous runs work best with well-defined, properly chunked steps. Run `$cdd-audit TODO.md and confirm it's cdd-master-chef ready` first to review and adjust step size.
+
+### Codex or Claude native
+
+Codex:
+`/goal $cdd-implement TODO.md all undone steps`
+
+Claude:
+`/workflows $cdd-implement TODO.md all undone steps`
+
+* All with their own problems and reliability. 
+* Especially Claude can be token-hungry, watch your budget.
 
 ### How does it work?
 
@@ -64,11 +63,11 @@ Master Chef works through runnable TODO steps in a branch-backed worktree, with 
 * Branch-backed worktrees keep autonomous changes isolated and reviewable.
 * Persistent Builder sessions carry context across steps instead of starting cold every time.
 * Oversized work is reviewed first and split only when the split cost is justified.
-* Builder transport ladder (kickoff-gated): exact-model Builders via run-scoped agent configs or CLI-exec transports, including cross-runtime — see `skills/cdd-master-chef/CONTRACT.md` §4.
-* Wave-parallel opt-in: TODO files annotated with `deps:`/`touches:` can run declared-disjoint steps as bounded waves with a serial merge queue — see `CONTRACT.md` §12.
+* Builder transport ladder (kickoff-gated): exact-model Builders via run-scoped agent configs or CLI-exec transports, including cross-runtime.
+* Wave-parallel opt-in: TODO files annotated with `deps:`/`touches:` can run declared-disjoint steps as bounded waves with a serial merge queue.
 * Mission reports make the result auditable: completed steps, checks, pushes, decisions, and next actions.
 
-Start `cdd-master-chef` via `$cdd-master-chef` for Codex or `/cdd-master-chef` for Claude Code or OpenClaw runtime.
+Start `cdd-master-chef` via `$cdd-master-chef` for Codex or `/cdd-master-chef` for Claude Code.
 
 ---
 
@@ -137,7 +136,6 @@ Current concrete Master Chef adapters:
 
 * **Codex** — subagent-backed adapter docs in `skills/cdd-master-chef/CODEX-ADAPTER.md` and `skills/cdd-master-chef/CODEX-RUNBOOK.md`
 * **Claude Code** — subagent-backed adapter docs in `skills/cdd-master-chef/CLAUDE-ADAPTER.md` and `skills/cdd-master-chef/CLAUDE-RUNBOOK.md`
-* **OpenClaw** — packaged adapter installed with `./scripts/install.sh --runtime openclaw`
 
 Runtime details live in:
 
@@ -145,7 +143,6 @@ Runtime details live in:
 * [`skills/cdd-master-chef/CODEX-ADAPTER.md`](skills/cdd-master-chef/CODEX-ADAPTER.md)
 * [`skills/cdd-master-chef/CLAUDE-ADAPTER.md`](skills/cdd-master-chef/CLAUDE-ADAPTER.md)
 * [`skills/cdd-master-chef/RUNTIME-CAPABILITIES.md`](skills/cdd-master-chef/RUNTIME-CAPABILITIES.md)
-* [`skills/cdd-master-chef/openclaw/README.md`](skills/cdd-master-chef/openclaw/README.md)
 
 ---
 
@@ -162,7 +159,6 @@ Common variants:
 ```bash
 ./scripts/install.sh --all
 ./scripts/install.sh --runtime claude
-./scripts/install.sh --runtime openclaw
 ./scripts/install.sh --help
 ```
 
