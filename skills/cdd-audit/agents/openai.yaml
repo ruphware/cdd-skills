@@ -1,5 +1,5 @@
 interface:
   display_name: "[CDD-4] Audit"
-  short_description: "Audit goal fit, explain every problem and practical solution in simple English, then route approved follow-up"
+  short_description: "Audit goal fit, boundary simplicity, and minimal limits; explain practical solutions plainly and route follow-up"
 policy:
   allow_implicit_invocation: false

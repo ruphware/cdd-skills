@@ -125,6 +125,7 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Review depth and proportionality",
         "## As-built model",
         "## Core direction checkpoint",
+        "## Boundary and simplicity check",
         "## Core audit dimensions",
         "## Optional lenses",
         "## Plain-English output",
