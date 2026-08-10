@@ -52,6 +52,8 @@ Before detailed review, classify what question this audit is actually trying to 
   - `Hardest constraint`
   - `Recommended review depth`
   - `Out of scope`
+  - `Artifact authority` — when an in-scope artifact mixes a problem statement with design detail, classify that design detail as `binding contract` or `illustrative guidance`; `bug_report` artifacts default to `illustrative guidance`
+- Design detail classified as `illustrative guidance` is direction the implementation may deviate from, not a contract to audit against. Misreading artifact authority re-anchors the audit framing; it never produces findings against the misread contract.
 - Audit a proposal for unbuilt capability (issue, RFC, or spec draft) as `enhancement_proposal`; never force a retrospective shape onto unbuilt work. Readiness review of unimplemented TODO steps (including Master Chef readiness) stays with the step-scoped and `master_chef_multi_step` shapes.
 - If the audit type, intended goal, or primary review question is ambiguous enough to materially change the audit conclusion, ask one framing clarification first.
 - Produce a compact visible `Audit framing` summary for behavior-changing, branch-sized, step-scoped, or multi-step audits. For narrow local audits, keep the framing compact but still classify it before findings.
@@ -279,9 +281,8 @@ Every audit uses these core dimensions. Treat them as questions the audit must a
   - Check whether tests, automated checks, and UAT cover the real contract, edge cases, and failure paths instead of only the happy path.
 - `complexity / maintainability`
   - Default to KISS: prefer simpler, clearer solutions over clever indirection.
-  - Apply YAGNI: flag speculative flexibility, premature abstraction, and extension points with no real caller need.
+  - Apply YAGNI: flag speculative abstraction, nested wrapper indirection, generic APIs with one concrete use, parameterization or extension points without real consumers, and ceremony that does not protect a real boundary.
   - Apply SOLID pragmatically, with SRP first: use "one reason to change" as the first pressure test before broader rewrites.
-  - Expose speculative abstraction, nested wrapper indirection, generic APIs with one concrete use, parameterization without real consumers, and ceremony that does not protect a real boundary.
 - `documentation / operability`
   - Audit `README.md`, `docs/specs/*` (PRD, blueprint, and connected `*-definition.md` leaf specs), `docs/INDEX.md` (with `docs/index/**` siblings when INDEX split is active), `docs/runbooks/*.md`, repo-root `RUNBOOK.md`, and the current-state header of `docs/JOURNAL.md` when present when they materially affect the audit verdict.
   - Documentation should stay compact and optimized for reading.
@@ -311,6 +312,7 @@ Activate optional lenses only when the scope, audit type, or evidence warrants t
 Use simple English for every user-facing explanation and option. A capable reader who does not know the repo's internal terms should understand it on the first read.
 
 - Lead with the main point. Name the concrete behavior or action and its effect. Use common words and one idea per short sentence. Explain any necessary technical term once.
+- Never coin a new term inside a finding. When a concept truly needs a name, define it in one plain phrase at first use; otherwise describe the concrete behavior or action instead of naming a concept.
 - Default `Problem` and `Solution` to one sentence each; add a second only when needed. Keep exact evidence and internal labels in `Details` instead of repeating them in prose.
 - Write each option as one decision on one short line: `<selector>. <action> — <immediate result>; <main trade-off>`. Omit the trade-off when none matters. Split choices that lead to different outcomes.
 
@@ -318,21 +320,23 @@ Use simple English for every user-facing explanation and option. A capable reade
 Do not emit raw audit bullets as the final output.
 
 - The compact `Goal match` verdict answers the audit question. Normalized findings explain why that verdict is justified or weak.
-- Normalize each finding into three blocks:
+- Ground every finding in observed evidence from the audited surface: code, tests, configs, artifact text, or observable behavior. Never derive a finding from an implementation, architecture, or contract the auditor imagined. Anything an in-scope artifact leaves unspecified is at most a gap note or a clarification, never a defect finding.
+- Normalize each finding into four blocks:
   - `Problem` — state the current behavior, cause, affected user or system, and impact.
   - `Solution` — state the smallest safe change, where it belongs, and how to prove it worked. If evidence is insufficient, state what must be learned first instead of guessing.
+  - `Assumptions` — every load-bearing assumption the finding rests on, each tagged `evidence-backed <cite>`, `user-confirmed`, or `unconfirmed`; write `none` when the finding rests on observed evidence alone. Assumptions are communicated, never gating: an `unconfirmed` assumption never suppresses the finding, blocks its triage, or auto-converts it into a clarification — it stays visible so the user can strike it.
   - `Details` — audit dimension; severity (`high`, `medium`, or `low`); affected boundary; exact evidence; recommended next path; and approval recommendation. Keep technical labels here; never use them instead of explaining the problem or fix.
 - State what approval authorizes as `<action> in <place> so <result>`, translating planner labels into concrete work. Example: `Check session expiry in the login handler and add a regression test so expired users are signed out.`
 - If several paths are materially different, use approval variants per `## Interaction contract`; otherwise show one recommendation.
 - Anchor each finding to the chosen audit type and the goal-match verdict. Avoid side findings that do not change the audit question being answered.
 - Collapse duplicate symptoms into the smallest root-cause finding that can be discussed and planned cleanly.
-- Fold material edge-case and failure-path gaps into normalized findings; do not add a separate planning-style section for them.
+- Fold material edge-case and failure-path gaps into normalized findings — never a separate planning-style section. An edge-case or failure-path finding requires an observed trigger path (code path, test, config, or repro) in the audited surface; a "could happen" case without one stays report-only, labeled speculative.
 - When follow-up should go to `cdd-plan`, map approved findings into one or more of:
   - `spec_delta`
   - `implementation_delta`
   - `verification_delta`
   - `defer`
-- For non-trivial `solution shape / boundaries`, `complexity / maintainability`, and `verification quality` findings, cite the file, symbol, diff, failing or missing test, or equivalent proof surface, and keep the finding concrete, evidence-backed, and behavior-relevant.
+- For `solution shape / boundaries`, `complexity / maintainability`, and `verification quality` findings, the cite is a file, symbol, diff, failing or missing test, or equivalent proof surface; keep each concrete and behavior-relevant.
 - Prioritize correctness, contract drift, missing validation, missing failure-path coverage, and accidental complexity with real cost. Avoid style-only notes or vague refactor advice unless you can state a real behavior risk, confidence gap, or maintenance payoff.
 - For `small_change`, collapse unrelated low-value drift aggressively; leave it report-only unless it materially changes the audit conclusion.
 
@@ -341,26 +345,21 @@ Example finding:
 ```text
 Problem: Expired sessions remain active because the login handler does not check their expiry time.
 Solution: Check expiry in the login handler and add a test that signs out expired sessions.
+Assumptions: evidence-backed auth/session.ex:validate/1 — expiry is stored but never read at login; unconfirmed — no other layer is expected to enforce expiry.
 Details: high correctness risk; boundary: session validation; evidence: auth/session.ex:validate/1; next: implementation_delta + verification_delta; approval: handler and regression-test follow-up.
 ```
 
 ## Interaction contract
 This skill is interactive, read-only, and decision-driven.
 
-- Stay read-only during the audit.
-- Do not patch code, docs, or TODO files in this skill.
-- Prefer framing or proof-surface clarifications before lower-level implementation-detail questions when ambiguity would materially change the audit conclusion.
-- Review edge-case and failure-path gaps only when they could materially change whether a finding is real, its severity, its root-cause grouping, the affected boundary, or the recommended follow-up route.
-- Ask clarifications only when the answer could materially change the audit conclusion — finding validity, severity, root-cause grouping, affected boundary, or recommended next path.
+- Stay read-only: do not patch code, docs, or TODO files in this skill.
+- Ask a clarification only when the answer could materially change the audit conclusion — finding validity, severity, root-cause grouping, affected boundary, or recommended next path. Ask framing and proof-sufficiency questions before local implementation detail.
+- Review edge-case and failure-path gaps only when they could change that same conclusion. Per `## Finding normalization`, an edge-case finding needs an observed trigger path; speculative cases stay report-only.
 - Treat clarification as a loop, not a batch: ask the single highest-leverage question per message, combining ambiguities that share one root decision, then re-rank and ask the next after the user answers. Never list multiple open questions as a checklist.
 - Each clarification states the current recommended finding direction and what audit conclusion would change if the answer differs.
-- Prefer questions that resolve the audit question or proof sufficiency before questions about local implementation detail.
 - Do not re-ask what the user already answered, repo evidence already resolves, or an accepted assumption already covers.
-- Keep baseline confirmation separate from both ambiguity clarification and finding approval; do not combine them in one message.
-- For qualifying retrospective audits, require exactly one baseline-confirmation pause after the `Core direction checkpoint` and before normalized findings.
-- Use that pause to validate product direction, requirements understanding, implementation scope, and any claim that an in-scope requirement is missing.
-- If the user corrects the baseline, re-anchor the audit and refresh the checkpoint if needed before proceeding; that correction does not consume a finding approval.
-- Keep ambiguity resolution separate from finding approval: resolving an ambiguity does not approve a finding.
+- For qualifying retrospective audits, require exactly one baseline-confirmation pause after the `Core direction checkpoint` and before normalized findings; it validates direction, requirements (including any missing-requirement claim), and scope. A baseline correction re-anchors the audit and does not consume a finding approval.
+- Keep baseline confirmation, ambiguity clarification, and finding approval separate — never combined in one message; resolving an ambiguity does not approve a finding.
 - Surface one proven finding at a time; collapse only symptoms with one root cause. After each decision, refresh the remaining list and show the next. Never batch findings into one approval checklist.
 - Put choices last under `**Options**`. Give every option a visible letter selector; use numbers only when clearer. Tell the user they can reply with just the selector.
 - Follow `## Plain-English output` and name each concrete action so every option stands alone.
@@ -393,7 +392,7 @@ This skill is interactive, read-only, and decision-driven.
 10) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
 11) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary, built on the confirmed baseline and the as-built model's intent diff when a model was emitted.
 12) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
-13) Normalize findings into root-cause items that lead with a simple-English `Problem` and `Solution`, followed by explicit evidence and any material edge-case or failure-path gaps.
+13) Normalize findings into root-cause items per `## Finding normalization`: simple-English `Problem` and `Solution`, tagged `Assumptions`, then `Details` evidence.
 14) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
 15) Triage each proven major finding per `## Interaction contract`: approve follow-up, backlog, accept, request evidence, or reject. Use `A1`, `A2`, and so on only for materially different follow-up paths; plain `A` selects `A1`.
 16) Keep a running list of:
@@ -432,9 +431,6 @@ This skill is interactive, read-only, and decision-driven.
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- cdd-audit stays read-only; do not patch code, docs, or TODO files from within this skill. When the user is ready to act, surface the final routing options so they can choose a `cdd-plan` handoff, an inline plan-and-implement over all approved findings, or backlog or stop.
-- Do not let optional lenses become mandatory noise. Activate them only when the audit type, risk, or evidence justifies them.
-- Do not force branch-scale review onto a bounded `small_change` audit.
-- Do not let a large scope erase the audit question. If the requested scope is broad, keep the audit ordered around the chosen shape and primary proof surfaces.
-- If the audited scope is too large to review sanely in one pass, propose a smaller first audit slice before continuing.
-- If docs or specs are intentionally future-state, say that explicitly and audit for clarity rather than forcing current-state wording onto planned behavior.
+- When the user is ready to act, surface the final routing options — `cdd-plan` handoff, inline plan-and-implement over approved findings, backlog, or stop; the audit itself stays read-only per `## Interaction contract`.
+- Do not let a large scope erase the audit question. If the requested scope is broad, keep the audit ordered around the chosen shape and primary proof surfaces; if it is too large for one sane pass, propose a smaller first audit slice.
+- If docs or specs are intentionally future-state, say so and audit for clarity rather than forcing current-state wording onto planned behavior.

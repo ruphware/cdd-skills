@@ -1161,3 +1161,48 @@ Remove OpenClaw as a supported Master Chef runtime/adapter across the whole repo
 - Confirm `./scripts/install.sh --runtime openclaw` fails with `Unsupported runtime: openclaw`, and `--all` installs only into `~/.agents` and `~/.claude`.
 - Confirm the Master Chef docs and README list only Codex and Claude Code as concrete adapters.
 - Confirm the full local validation/test suite passes.
+
+## Step 70 — Make cdd-audit findings evidence-grounded and assumption-transparent
+
+### Goal
+
+Make every `cdd-audit` normalized finding carry a visible `Assumptions` field, forbid findings derived from imagined contracts or speculative edge cases, ban coined vocabulary in findings, and add an artifact-authority classification to audit framing so design detail inside a bug report is never audited as a binding contract.
+
+### Constraints
+
+- Keep the As-built model (diagram, gist, limits inventory), Core direction checkpoint, Solution shape block, and the multi-option variant families (`A`/`A1`-`A3`/`B`-`E`) unchanged — the long intro and option breadth are intentional.
+- Assumptions are communicated, not gating: an `unconfirmed` assumption never suppresses a finding, blocks triage, or auto-converts it into a clarification; it must simply be visible in the finding.
+- Keep `cdd-audit` read-only, letter selectors, one-finding-at-a-time triage, and the Step 53 closeout contract unchanged.
+- `scripts/validate_skills.py` stays structural-only per its own docstring: no phrase or regex prose checks; touch it only if an H2 heading is added or renamed.
+- Touch only `skills/cdd-audit/SKILL.md` (plus the validator `REQUIRED_SECTIONS` tuple if and only if a heading changes).
+
+### Tasks
+
+- [x] Extend `## Finding normalization` in `skills/cdd-audit/SKILL.md` so each normalized finding has four blocks — `Problem`, `Solution`, `Assumptions`, `Details` — where `Assumptions` lists every load-bearing assumption tagged `evidence-backed <cite>`, `user-confirmed`, or `unconfirmed`, and a finding resting on no assumption states `none`. Update the fenced example finding to show the field with at least one tagged entry.
+- [x] Add a grounding rule to `## Finding normalization`: a finding must cite observed evidence from the audited surface (code, tests, configs, artifact text, observable behavior) and may never be derived from an implementation, architecture, or contract the auditor imagined; anything an in-scope artifact leaves unspecified is at most a gap note or clarification, never a defect finding.
+- [x] Add an edge-case restraint to `## Finding normalization`, cross-referenced from `## Interaction contract`: an edge-case or failure-path finding requires an observed trigger path (code path, test, config, or repro) in the audited surface; "could happen" cases without one stay report-only and are labeled speculative.
+- [x] Add a vocabulary rule to `## Plain-English output`: never coin a new term inside a finding; when a concept needs a name, define it in one plain phrase at first use, and otherwise describe the concrete behavior or action instead of naming a concept.
+- [x] Extend `## Audit framing` with an artifact-authority classification: when an in-scope artifact mixes a problem statement with design detail, the framing summary classifies that design detail as `binding contract` or `illustrative guidance`, with `bug_report` artifacts defaulting to guidance; misreading authority re-anchors framing rather than producing findings.
+- [x] Update `scripts/validate_skills.py` `REQUIRED_SECTIONS["cdd-audit"]` only if a heading was added or renamed; default expectation is zero validator change.
+
+### Implementation notes
+
+- Fold all rules into the existing sections (`## Finding normalization`, `## Plain-English output`, `## Audit framing`); do not add a new H2 unless folding makes a section incoherent.
+- Keep the assumption tags grep-friendly and exactly three: `evidence-backed` (with a file/symbol/artifact cite), `user-confirmed` (points at a user answer in this audit), `unconfirmed` (visible speculation the user can strike).
+- Block order in the finding format: `Problem`, `Solution`, `Assumptions`, `Details` — assumptions sit before `Details` so the reader sees what the finding rests on before the technical evidence line.
+- The artifact-authority line belongs in the `Audit framing` classification list (alongside `Audit type`, `Read strategy`, etc.) so it is decided before scope resolution, where the #426-style misread happened.
+- Root incident for reference: a `bug_report` issue (#426) was audited as a binding design proposal, producing findings about an imagined SourceDeclaration contract with coined terms like "bounded approval envelope"; each new rule must make that failure either impossible (authority rule, grounding rule) or visible (assumptions field, speculative label).
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the updated `## Finding normalization` and confirm the four-block finding format with the tagged `Assumptions` field and updated example.
+- Confirm the grounding rule forbids findings about implementations or contracts the auditor imagined, and that unspecified artifact areas become gap notes or clarifications instead of defects.
+- Confirm edge-case findings require an observed trigger path and speculative cases stay report-only with a speculative label.
+- Confirm `## Plain-English output` bans coined terms in findings and requires a one-phrase definition when a name is unavoidable.
+- Confirm `## Audit framing` now classifies mixed artifacts' design detail as binding contract or illustrative guidance, defaulting bug reports to guidance.
+- Confirm an `unconfirmed` assumption is displayed but never suppresses or gates the finding.
+- Confirm `python3 scripts/validate_skills.py` passes with no prose-matching added.

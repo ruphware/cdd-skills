@@ -91,7 +91,7 @@ For behavior-changing or audit-derived planning, do not move from codebase revie
   - `Major` = could change subsystem boundaries, APIs/contracts, data/state model, user-visible behavior, rollout/migration, or validation strategy.
   - `Minor` = handled by a recommended implementation default without changing plan shape.
 - Collapse duplicate or closely related edge cases into the smallest root decision.
-- For unresolved `major` edges, apply the loop rule from `Interactive planning contract`: ask the highest-leverage unresolved major edge first, wait for the answer, refresh the list, ask the next. Each clarification should state the current recommended direction and what part of the plan would change if the answer differs. Do not re-ask anything already resolved by the user, codebase evidence, or an accepted default.
+- For unresolved `major` edges, apply the loop rule from `Interactive planning contract`, highest-leverage edge first; each clarification states the current recommended direction and what part of the plan would change if the answer differs.
 - If only `minor` edges remain, carry the recommended default into assumptions, constraints, implementation notes, automated checks, or UAT instead of asking.
 - If no meaningful repo-grounded edges exist, say so briefly and continue.
 
@@ -126,8 +126,7 @@ Make remaining plan-shaping choices visible before final TODO drafting.
 - Review the codebase before and during planning. Audit relevant code, docs, tests, entrypoints, configs, and current TODO surfaces so the plan is grounded in the actual implementation, not just docs or user prompt.
 - Follow the intent and assumption checkpoint before detailed implementation questions, TODO drafting, or plan-shape selection.
 - For behavior-changing or audit-derived requests, run the repo-grounded edge-case review before detailed TODO drafting.
-- Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
-- Ask the required substantive clarification before drafting a finished runnable TODO step or applying plan edits. Use it to challenge the highest-leverage unresolved choice rather than to confirm settled facts.
+- Treat clarification as a way to resolve the right assumptions, goals, and implementation paths; satisfy `## Clarification floor and architecture options` before drafting a finished runnable TODO step or applying plan edits.
 - **One question per message, in a loop.** Ask at most one substantive clarification per message. After each user answer, re-rank remaining unresolved decisions and ask the next single highest-leverage question, then wait again. Never list multiple open questions in one message as a checklist for the user to answer at once.
 - Visibility is broader than questioning. When multiple plan-shaping decisions remain, show them in `Open decisions`, mark one `asking now`, and leave the rest `queued`; do not ask them all at once.
 - Prefer the fewest clarifications that resolve the most plan-shaping uncertainty.
@@ -167,7 +166,6 @@ For every clarification or apply message, put choices under a final `**Options**
   7. implementation details
 - Do not ask a lower-level question while a higher-level unresolved decision could still invalidate it.
 - A clarification is allowed only when the answer would materially change product/architecture boundaries, data/state, contracts/APIs, file/write location, sequencing, approval safety, migration/rollback/rollout, security/privacy/permission behavior, validation strategy, or an unresolved `major` edge case.
-- `repo-inferred` and `recommended default` close low-risk assumptions only when they do not leave a live `Open decisions` item. If choosing differently would still materially reshape the plan, keep the choice visible and queue it one at a time.
 - Do not ask about reversible implementation details, naming/copy polish, file placement implied by repo conventions, defaults that can be safely documented in the TODO step, preferences that do not change plan shape, or questions already answered by the user, repo evidence, or an accepted default.
 - Default clarification budget: every `cdd-plan` run asks 1 substantive question minimum; small/local change 1 question; multi-surface change 1-2 questions; audit, migration, security, external contract, or destructive change 1-3 questions.
 - If more than 3 clarifications appear necessary, stop expanding. Present the best bounded plan so far, keep the remaining `Open decisions` visible, mark unresolved major decisions, recommend the next single decision, and proceed only through selector-based options.
@@ -183,7 +181,7 @@ For every clarification or apply message, put choices under a final `**Options**
 - Emitting a finished TODO step while plan-shaping `Open decisions` remain hidden or unresolved.
 - Expanding scope because an implementation path is obvious before confirming the expansion serves the intent.
 - Using many small detail questions to avoid asking one hard direction question.
-- Listing multiple open clarification questions in a single message as a checklist for the user to answer all at once, instead of asking the single highest-leverage question, waiting for the answer, and then re-ranking before the next question.
+- Listing multiple open clarification questions in one message instead of following the one-question loop.
 
 ## Flow (approval-gated, bounded-bisection)
 
@@ -191,7 +189,6 @@ For every clarification or apply message, put choices under a final `**Options**
    - Read repo contract files plus relevant docs/specs, TODO surfaces, code, tests, entrypoints, configs, and manifests — only far enough to stabilize intent, the existing contract, and the likely affected surfaces.
    - Do not deep-dive into reversible implementation choices before intent is stable.
    - Build the intent frame per `Intent and assumption checkpoint`. If it cannot yet be built, ask one intent-level clarification first.
-   - Challenge only assumptions that would materially change scope, direction, sequencing, validation, or whether the work should be done at all.
    - Do not draft TODO edits until the request has a concrete frame.
 
 2) Shape the planning direction.
@@ -204,8 +201,8 @@ For every clarification or apply message, put choices under a final `**Options**
 3) Bisect uncertainty before detailed drafting.
    - List unresolved plan-shaping decisions privately, tagging each as `intent`, `assumption`, `direction`, `boundary`, `implementation`, or `validation`.
    - Resolve `intent`, `assumption`, and `direction` uncertainty before `boundary`, `implementation`, or detailed `validation` questions unless a safety constraint forces otherwise.
-   - Turn remaining plan-shaping decisions into a visible `Open decisions` queue before final TODO drafting. Mark exactly one item `asking now`, keep the rest `queued`, and ask only the `asking now` item in the current message.
-   - Apply the loop rule from `Interactive planning contract` and the ladder/budget from `Question economy`: ask the highest-leverage unresolved decision first; one question at a time; collapse related questions into the fewest root decisions.
+   - Turn remaining plan-shaping decisions into a visible `Open decisions` queue per `## Open decisions queue` before final TODO drafting.
+   - Apply the loop rule from `Interactive planning contract` and the ladder/budget from `Question economy`.
    - The first asked decision must satisfy the clarification floor. For audit-derived requests with more than one viable remediation shape, that first asked decision should usually be the architecture or implementation-shape choice, with 2-3 concrete options and a recommended default.
    - Safety override: if a remaining material assumption would invalidate the plan, enable unsafe or destructive work, or materially change boundaries/sequencing/contracts/data-state/rollout/validation, ask one highest-leverage clarification before moving on, regardless of the question budget.
    - If only minor defaults or `minor` edge cases remain, disclose them briefly and carry them into assumptions, constraints, implementation notes, automated checks, or UAT.
@@ -221,11 +218,9 @@ For every clarification or apply message, put choices under a final `**Options**
    - After the coarse plan is accepted or the next step is clear, refine only the next coarse step into one or more runnable TODO steps. Do not jump straight to a full mixed-surface detailed plan when the work is multi-step.
    - When the work is already a single clearly bounded next step, refine that step directly without forcing a coarse decomposition pass.
    - Do not emit a finished runnable TODO step while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the plan keeps that unresolved item visible instead of pretending the step is decision-complete.
-   - For each new or revised execution step, produce an implementation-ready TODO contract per `Runnable TODO step contract`. Each runnable step must include enough product, architecture, sequencing, and validation detail that the implementer does not need to reopen PRD/Blueprint or surrounding chat to fill gaps.
-   - Keep exact implementation-driving detail in `TODO.md` or the selected TODO file.
+   - For each new or revised execution step, produce an implementation-ready TODO contract per `Runnable TODO step contract`.
 
 6) Apply, hand off, and audit.
-   - Present final selector-based apply options per the `Options block` subsection of `Interactive planning contract` instead of asking a second approval question; the selected option itself is the approval.
-   - When a clear next execution step exists, prefer the three apply/revise selectors from the Options block. If no immediate follow-on step is clear, still use 2-4 selector-based apply/revise/stop options.
+   - Present final selector-based apply options per the `Options block` subsection of `Interactive planning contract`; when no immediate follow-on step is clear, still use 2-4 selector-based apply/revise/stop options.
    - After applying, hand off to `$cdd-implement` (model-invocable) to implement the next approved TODO step.
    - Return to this planning flow only for newly discovered plan-shaping deltas after implementation, validation, or audit.

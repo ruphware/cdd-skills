@@ -57,10 +57,9 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Treat repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces tied to the repo's documented workflow.
 - Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs. Use the bounded checks and orphaned-topic check defined in `Mode A — Codebase-comparison checks` below. When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract.
 - Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, doc-role boundaries, journal topology, and workflow-skill expectations still match the repo.
-- Beyond presence-and-name checks, hunt for lifecycle-mismatch narration: future-tense language for work that has already shipped, in-progress narration ("currently implementing", "we are migrating", "the next phase will") for work that has completed, present-tense documentation of removed or renamed surfaces, deprecated paths still presented as the primary recommendation, and roadmap or "coming soon" items that were delivered but never struck from the roadmap.
-- For `README.md` specifically, flag historical project narration (step-by-step development summaries, "implemented X in commit Y" stories, retired roadmap entries that were once aspirational and are now history) that belongs in journal/changelog rather than in the runbook entrypoint.
+- Beyond presence-and-name checks, hunt for lifecycle-mismatch narration per the `Lifecycle-mismatch claims` check in `Mode A — Codebase-comparison checks`.
+- For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but not historical project narration — step-by-step development summaries, "implemented X in commit Y" stories, retired roadmap entries — or CDD/TODO step progression; that history belongs in journal/changelog. If it includes a CDD contract note, keep it as a low-visibility bottom footer.
 - For `docs/runbooks/*.md` and repo-root `RUNBOOK.md`, flag procedures or commands for decommissioned, renamed, or removed services, scripts, or entrypoints; the runbook is for current operations, not archaeology.
-- For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but it must not include historical project narration or CDD/TODO step progression. If `README.md` includes a CDD contract note, keep it as a low-visibility bottom footer.
 - If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
 - For `docs/specs/prd.md`: treat it as the product-manager view.
 - For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec.
@@ -68,8 +67,8 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Classify each support doc as `current`, `drifted`, `stale-candidate`, `missing`, or `unclear`. The `stale-candidate` label applies only to ad-hoc support docs and is populated only by the orphaned-topic check in `Mode A — Codebase-comparison checks`; classifying a doc as `stale-candidate` does not by itself archive anything.
 - Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear`.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
-- If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/index/**` siblings when INDEX split is active, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything. Do not silently refresh `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/index/**` siblings, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files.
-- Ask once for documentation approval using selector-based options under a final `**Options**` section. Keep documentation approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/index/**` siblings when INDEX split is active, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything; never silently refresh any of these files.
+- Ask once for documentation approval using selector-based options under a final `**Options**` section, per the separation rules in `## Approval contract`.
 - If the user approves, apply only the approved support-doc edits and then report them.
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
@@ -96,7 +95,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - **Entrypoint claims** (a main / CLI / service / handler in a doc): verify the named entrypoint file exists and is referenced from the relevant manifest.
 - **Skill-reference claims** (`$cdd-<x>` or `skills/<x>` in a doc): verify the skill directory and `SKILL.md` exist.
 - **Manifest-field claims** (package name, version range, or dependency in a doc): verify the field is present in the relevant manifest.
-- **Lifecycle-mismatch claims** (narrative content that talks about work as future, in-progress, current, or past): cross-check against current code, active TODO surfaces, and recent journal or commit activity. Future-tense work that already shipped, in-progress narration of completed work, present-tense documentation of removed surfaces, and retired roadmap or "coming soon" items still presented as future are all `drifted` findings — cite the specific phrase and the evidence that contradicts it.
+- **Lifecycle-mismatch claims** (narrative content that talks about work as future, in-progress, current, or past): cross-check against current code, active TODO surfaces, and recent journal or commit activity. Future-tense work that already shipped, in-progress narration ("currently implementing", "we are migrating") of completed work, present-tense documentation of removed or renamed surfaces, deprecated paths still presented as the primary recommendation, and retired roadmap or "coming soon" items still presented as future are all `drifted` findings — cite the specific phrase and the evidence that contradicts it.
 - Orphaned-topic check (ad-hoc support docs only):
   - Extract the doc's primary subject from filename, H1 heading, and first-paragraph keywords.
   - Grep the subject across (a) the codebase, (b) the active TODO step list (`TODO.md` + adjacent `TODO-*.md`), (c) the active specs and blueprint (`docs/specs/*`), and (d) the last 30 days of journal activity. Locate journal sources per the existing single-vs-split rules in `Mode A — Journal archive rules`.
@@ -138,7 +137,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
   - Repo-root non-canonical `*.md` such as `NOTES.md` → `docs/archive/NOTES_YYYY-MM-DD.md`
   - Subsystem-internal `<subsystem>/scratch.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD.md` (local archive so the subsystem stays self-contained)
 - Same-day archive append: if the destination archive file already exists for the same date, append the newly archived sections to that file rather than overwriting it.
-- Ask once for documentation approval using selector-based options; allow per-file or batched approval — user picks granularity. Reuse the existing documentation-approval flow defined in `## Approval contract`. Keep ad-hoc-doc archive approval separate from stale TODO deletion approval and runtime-cleanup approval.
+- Ask once for documentation approval using selector-based options; allow per-file or batched approval — user picks granularity. Reuse the documentation-approval flow and separation rules from `## Approval contract`.
 - Journal archive rules (`### Mode A — Journal archive rules`) and TODO archive rules (`### Mode A — TODO archive rules`) are unchanged; the ad-hoc support doc archive contract is parallel and additive.
 
 ### Mode A — Local runtime cleanup review
@@ -147,16 +146,13 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Treat currently linked worktrees, clearly active runtime locks, and current run state as `live`.
 - Treat abandoned managed worktree directories, orphaned runtime logs, stale context snapshots, and old run directories not tied to live worktrees as `stale`.
 - If runtime state is unclear, leave it in place and report it as `unclear`.
-- Do not silently delete `.cdd-runtime/` content.
-- Ask once for runtime-cleanup approval using selector-based options.
-- Keep runtime-cleanup approval separate from support-document approval and stale TODO deletion approval.
+- Ask once for runtime-cleanup approval using selector-based options, per the separation rules in `## Approval contract`.
 - If the user approves, remove only `stale` repo-local runtime artifacts and managed worktrees.
 - Never remove the current worktree, the current run state, or any runtime surface still tied to a `live` linked worktree.
 
 ## Mode B — Source cleanup
 - Start from tracked source, tests, configs, manifests, and entrypoints. Treat this as a tracked-code cleanup pass, not a broad repo-maintenance audit.
 - Prefer repo-native lint, typecheck, unused-code, or dead-code tooling when present.
-- Read `README.md`, `TODO*.md`, journal surfaces, repo-local `.agents/skills/*/SKILL.md`, or `.cdd-runtime/` only when one of those surfaces is needed as proof for a specific cleanup candidate. Do not front-load those reads in a pure `B` pass.
 - Otherwise use conservative heuristic scans for:
   - dead modules or orphaned tracked files
   - dead or unreachable code branches
@@ -258,7 +254,6 @@ After approval, if `docs/prompts/PROMPT-INDEX.md` does not define replacement va
   - explicit refactor notes already in `docs/INDEX.md` (or `docs/index/**` siblings when split) or `TODO*.md`
   - refactor pressure discovered during maintain-mode review
 - Review the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context so the audit reflects the real implementation state. When multiple modes are selected, run refactor mode against the repo state after any approved `doc drift + upkeep`, `source cleanup`, and `index` work has completed.
-- Stay read-only in this mode. Do not rewrite implementation directly and do not write `TODO-refactor-<tag>.md` files here.
 - Normalize findings around architecture boundaries, design pressure, duplicated responsibility, unclear ownership, oversized files, brittle seams, and other concrete refactor drivers.
 - Ask at most one substantive clarification or decision question per message.
 - Present 2-3 context-specific refactor options under a final `**Options**` section with `A.`, `B.`, and `C.` selectors. Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.

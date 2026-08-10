@@ -13,7 +13,6 @@ Do not invent missing product, architecture, sequencing, or validation decisions
 - One TODO step in `TODO.md` or `TODO-*.md` files. This is the preferred path.
 - One approved audit finding package that is already small and bounded enough to implement without a planning pass.
 - One pasted task list item, issue text, or ticket text that is already available in the prompt or repo.
-- If multiple candidate items remain, stop and ask the user to pick exactly one bounded task.
 - Do not fetch live tracker content or integrate with external task managers in this skill.
 
 ## Task normalization and escalation
@@ -22,11 +21,7 @@ Do not invent missing product, architecture, sequencing, or validation decisions
 - For non-TODO tasks, extract a compact implementation frame: target boundary, expected behavior or contract, key constraints, and validation evidence.
 - Normalize only small local gaps in place. Acceptable normalization includes tightening wording, making validation concrete, or writing a runnable TODO step when the user chooses the TODO-backed path.
 - If minimal normalization still leaves multiple hard gates, migration or rollback boundaries, distinct subsystems, or unresolved product, architecture, sequencing, or validation decisions, stop and offer `cdd-plan`.
-- When a non-TODO task is already bounded and decision-complete after normalization, present selector-based options for:
-  - `A. implement directly`
-  - `B. add to TODO and implement`
-  - `C. run cdd-plan first`
-  - `D. keep it read-only and revise first`
+- When a non-TODO task is already bounded and decision-complete after normalization, present the source-appropriate selector options per `## Interaction contract`.
 - For `add to TODO and implement`, write the normalized task into the active TODO surface first as one runnable TODO step that matches the repo's step contract before any code edits begin. Reuse the repo's step template when possible and add only the missing sections or detail needed to make that step decision-complete. Default to the active `TODO.md` unless multiple TODO files are plausible targets or no TODO surface exists yet.
 
 ## Interaction contract
@@ -66,7 +61,6 @@ Do not invent missing product, architecture, sequencing, or validation decisions
 3) Normalize or escalate before implementing:
    - Treat a TODO step as underspecified when it is missing `Tasks`, `Automated checks`, or `UAT`, or when those sections still omit the concrete target boundary, required behavior change, cross-surface sequencing, or validation proof.
    - For non-TODO tasks, normalize only enough to make one bounded implementation frame. If that frame still needs planning-shaped decisions, offer `cdd-plan` instead of coding.
-   - If the user chooses `add to TODO and implement`, materialize that frame as one runnable TODO step before any code edits begin.
    - When a non-TODO task is bounded and decision-complete, present the direct-vs-TODO-vs-plan selector options before implementing.
 4) Implement the selected task with minimal diffs.
 5) Run the task's listed `Automated checks`, repo-native checks, or other concrete validation promised by the normalized task frame.

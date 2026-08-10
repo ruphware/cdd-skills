@@ -39,7 +39,20 @@ For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and
 ## Canonical bootstrap source
 - Treat `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source when boilerplate material is needed.
 - Even when that canonical source is identified, do not copy, download, clone, or otherwise materialize boilerplate from it until the user gives separate explicit confirmation.
-- If the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source.
+
+### Bootstrap materialization
+Shared mechanics for every flow that materializes boilerplate; the separate-approval rule above always applies.
+
+- GitHub-backed (requires the separately approved networked/repo-admin actions):
+  - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
+  - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
+  - never keep the template repo's git history as part of the new project history
+  - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history; otherwise initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
+  - connect/push the resulting project history so the remote matches the project history rather than the template history
+- Local-only:
+  - if the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source
+  - materialize the approved boilerplate into the current folder without changing directories
+  - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 
 ## Required README CDD footnote footer
 - For fresh/bootstrap repos, require this exact `README.md` footer block near the bottom of the file so the runbook stays primary and the CDD contract remains present but low-visibility:
@@ -136,6 +149,30 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Do not emit a finished init or adoption plan while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the item stays visible instead of being treated as closed.
 - Default final apply choices to `A. apply now`, `B. revise first`, and `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.
 
+## Shared flow building blocks
+
+Flows reference these blocks instead of restating them.
+
+### Repo naming and backing
+- Derive the current directory basename and propose it as the default repo name; ask the user to confirm or edit it before any bootstrap step, using the interaction contract.
+- Ask whether they want a GitHub-backed repo (default: private) or a local-only repo for now.
+
+### Standard init edit set
+Draft proposed edits (grouped by file) to:
+- if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
+- update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
+- fill `docs/specs/prd.md`
+- fill `docs/specs/blueprint.md`
+- update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
+- extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
+- keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
+
+### Post-apply closeout
+After applying:
+- list the exact Step 00 `Automated checks` commands to run
+- provide a Step 00 UAT checklist
+- suggest the next step to implement via `$cdd-implement`
+
 ## State detection (required)
 Classify the workspace into exactly one state and tell the user which one you detected:
 
@@ -190,111 +227,39 @@ No substantive files are present after applying the ignore rules above.
 ## Flow A — Empty directory (approval-gated)
 Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory as the local repo root.
 
-1) Derive the current directory basename and propose it as the default repo name.
-2) Ask the user to confirm or edit that repo name before any bootstrap step, using the interaction contract above.
-3) Ask whether they want, using the interaction contract above:
-   - a GitHub-backed repo (default: private), or
-   - a local-only repo for now
-4) If GitHub-backed and separately approved for networked/repo-admin actions:
-   - use `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source
-   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
-   - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-   - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
-   - never keep the template repo's git history as part of the new project history
-   - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history
-   - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
-   - connect/push the resulting project history so the remote matches the project history rather than the template history
-5) If local-only:
-   - default the bootstrap source to `https://github.com/ruphware/cdd-boilerplate`
-   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
-   - if the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source
-   - materialize the approved boilerplate into the current folder without changing directories
-   - initialize git locally if needed, or preserve existing local history if `.git/` already exists
-6) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
-7) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from.
-   - Recommend one option based on the workspace review.
-   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
-8) Draft proposed edits (grouped by file) to:
-   - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
-   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
-   - fill `docs/specs/prd.md`
-   - fill `docs/specs/blueprint.md`
-   - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
-   - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-9) Present final selector-based apply options for the proposed edits.
-10) After applying:
-   - list the exact Step 00 `Automated checks` commands to run
-   - provide a Step 00 UAT checklist
-   - suggest the next step to implement via `$cdd-implement`
+1) Resolve the repo name and backing per `### Repo naming and backing`.
+2) Materialize boilerplate per `### Bootstrap materialization` for the chosen backing.
+3) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
+4) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from; recommend one based on the workspace review.
+5) Draft proposed edits per `### Standard init edit set`.
+6) Present final selector-based apply options for the proposed edits.
+7) Close out per `### Post-apply closeout`.
 
 ## Flow B — Docs-seeded init (approval-gated)
 Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discovered source material, and build Step 00 from it inside this repo.
 
 1) Inventory the current folder for candidate source/reference documents before asking any questions.
 2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices). If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
-3) Derive the current directory basename and propose it as the default repo name.
-4) Ask the user to confirm or edit that repo name before any bootstrap step, using the interaction contract above.
-5) Ask whether they want, using the interaction contract above:
-   - a GitHub-backed repo (default: private), or
-   - a local-only repo for now
-6) Before materializing the boilerplate, and only after explicit apply approval, stage discovered source documents that would conflict with template paths.
+3) Resolve the repo name and backing per `### Repo naming and backing`.
+4) Before materializing the boilerplate, and only after explicit apply approval, stage discovered source documents that would conflict with template paths.
    - restore them afterward under `docs/source-material/`, preserving relative paths as much as possible
    - use `docs/source-material/` as the default input set for Step 00
-7) If GitHub-backed and separately approved for networked/repo-admin actions:
-   - use `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source
-   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
-   - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-   - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
-   - never keep the template repo's git history as part of the new project history
-   - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history
-   - otherwise, initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
-   - connect/push the resulting project history so the remote matches the project history rather than the template history
-8) If local-only:
-   - default the bootstrap source to `https://github.com/ruphware/cdd-boilerplate`
-   - ask for separate explicit approval before copying, downloading, cloning, or otherwise materializing boilerplate from that source
-   - if the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source
-   - materialize the approved boilerplate into the current folder without changing directories
-   - initialize git locally if needed, or preserve existing local history if `.git/` already exists
-9) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
-10) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location.
-    - Recommend one option based on the workspace review.
-    - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
-11) Draft proposed edits (grouped by file) to:
-   - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
-   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
-   - fill `docs/specs/prd.md`
-   - fill `docs/specs/blueprint.md`
-   - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
-   - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-12) Present final selector-based apply options for the proposed edits.
-13) After applying:
-   - list the exact Step 00 `Automated checks` commands to run
-   - provide a Step 00 UAT checklist
-   - suggest the next step to implement via `$cdd-implement`
+5) Materialize boilerplate per `### Bootstrap materialization` for the chosen backing.
+6) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
+7) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location; recommend one based on the workspace review.
+8) Draft proposed edits per `### Standard init edit set`.
+9) Present final selector-based apply options for the proposed edits.
+10) Close out per `### Post-apply closeout`.
 
 ## Flow C — Fresh boilerplate repo (approval-gated)
 1) Read the canonical contract files above.
 2) Use `TODO.md` **Step 00** as the checklist (do not re-define it).
 3) Inventory the current workspace for candidate source/reference documents before asking questions.
 4) Show the detected document list. If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
-5) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing.
-   - Recommend one option based on the workspace review.
-   - Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
-6) Draft proposed edits (grouped by file) to:
-   - if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
-   - update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
-   - fill `docs/specs/prd.md`
-   - fill `docs/specs/blueprint.md`
-   - update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
-   - extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-   - keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
+5) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing; recommend one based on the workspace review.
+6) Draft proposed edits per `### Standard init edit set`.
 7) Present final selector-based apply options for the proposed edits.
-8) After applying:
-   - list the exact Step 00 `Automated checks` commands to run
-   - provide a Step 00 UAT checklist
-   - suggest the next step to implement via `$cdd-implement`
+8) Close out per `### Post-apply closeout`.
 
 If Step 00 is already complete and the repo is actively developed:
 - STOP and recommend using `$cdd-plan` instead.
@@ -309,12 +274,8 @@ Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-ope
 4) Ask only blocking questions one at a time using the interaction contract above (for example, docs that must keep their path due to external links).
 
 ### Phase 2 — Draft migration plan (proposal)
-Before drafting the patch proposal, resolve project intent per `Intent and assumption checkpoint` (for existing-repo adoption, derive the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief), then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 migration shapes only when there is a real decision about scope, doc reorganization, or TODO placement.
-- Recommend one option based on the workspace review.
-- Keep the options at the bottom of the message under `**Options**`, with selector-prefixed labels such as `A.`, `B.`, `C.`.
-- Use `https://github.com/ruphware/cdd-boilerplate` as the source of truth for the CDD contract when migrating an existing repo.
-- If migration requires copying, downloading, cloning, or otherwise materializing contract files from that source, ask for separate explicit confirmation before doing so.
-- If the user explicitly prefers a local checkout or network access is unavailable, you may use a local `cdd-boilerplate` checkout as the migration fallback source.
+Before drafting the patch proposal, resolve project intent per `Intent and assumption checkpoint` (for existing-repo adoption, derive the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief), then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 migration shapes only when there is a real decision about scope, doc reorganization, or TODO placement; recommend one based on the workspace review.
+- Source migrated contract files per `## Canonical bootstrap source` and its separate-approval rule; a local `cdd-boilerplate` checkout is the fallback source.
 
 Draft a patch proposal grouped by file, including:
 1) Add the CDD contract files using the taxonomy above:
