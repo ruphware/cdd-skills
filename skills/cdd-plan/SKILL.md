@@ -32,6 +32,7 @@ A runnable step is decision-complete: the implementer can execute it without reo
 - Each `Tasks` bullet must name the target boundary or subsystem, the exact change to make, the output artifact/contract/behavior that must result, and any must-preserve invariant or evidence requirement when relevant.
 - Use `Implementation notes` for file/symbol hints, interface or schema changes, ordering constraints, migration notes, snapshot/audit requirements, and other coding-critical detail that would otherwise be lost in a short task list.
 - Do not leave essential implementation detail only in the surrounding chat — put it in the TODO step.
+- Do not write new caps, truncations, timeouts, retries, or config knobs into a step without a proven trust, resource, external-deadline, or liveness risk with a named owner and defined reached behavior; prefer explicit failure, streaming, pagination, or backpressure over speculative caps — most values stay unbounded.
 - Split work into separate steps when it crosses distinct hard gates, migration boundaries, rollback surfaces, or independently testable subsystems.
 
 ## Plan output style
@@ -78,6 +79,7 @@ Do not let `cdd-plan` go straight from repo review to TODO drafting.
 - That first question must target the highest-leverage unresolved direction, boundary, architecture, sequencing, or validation choice, not wording polish, repo-implied file placement, or another reversible detail.
 - For audit-derived planning, default the first question to remediation shape after repo review and audit normalization: compare 2-3 concrete implementation options, recommend one, and explain what changes if the user picks differently.
 - When audit findings touch architecture or cross multiple boundaries, review the likely affected boundaries, main trade-offs, and where each option would stop before proposing TODO edits.
+- Rank options toward the simplest shape that preserves correct ownership: reuse existing seams and repo prior art before adding a new layer, registry, or wrapper; keep an abstraction only when it owns policy or state, isolates a real dependency, or removes proven repetition.
 - If repo constraints leave only one viable architecture, still surface it as a real user choice: accept the recommended path, narrow scope, or defer. Repo evidence alone is not user approval.
 - The clarification floor is satisfied only by a question that could materially change the plan. A rhetorical summary, pure apply approval, or yes/no restatement of settled facts does not count.
 
@@ -182,6 +184,7 @@ For every clarification or apply message, put choices under a final `**Options**
 - Expanding scope because an implementation path is obvious before confirming the expansion serves the intent.
 - Using many small detail questions to avoid asking one hard direction question.
 - Listing multiple open clarification questions in one message instead of following the one-question loop.
+- Planning speculative caps, guards, wrappers, or abstraction layers "just in case" instead of tying each to a proven risk or a real consumer.
 
 ## Flow (approval-gated, bounded-bisection)
 

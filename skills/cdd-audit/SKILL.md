@@ -166,21 +166,21 @@ For retrospective audit shapes (`bug_report`, `functionality`, `small_change`, `
   - `Diagram` — compact ASCII: components, data/control flow, boundary crossings.
   - `Gist` — 2-4 sentences: what the audited surface actually does as built.
   - `Perceived intent vs stated intent` — the implementation's apparent design goal, stated independently, then marked `matches` or `diverges at <point>` against the stated contract.
-  - `Limits & assumptions` — every encoded bound in the audited surface (string lengths, collection caps, numeric ranges, timeouts, retries, concurrency caps, enum sets, truncations, defaults) as `value | location/owner | evidence | behavior when reached | verdict`:
-    - `contractual` — required by an existing external or public contract; provenance, not proof that the bound is well designed
-    - `defensive` — minimum necessary guard at the owner of a proven trust, resource, external deadline, or liveness risk; value and reached behavior are justified
-    - `over-defensive` — risk may be real, but the value or placement rejects valid production work, silently truncates truth, duplicates another owner, or adds defense at every layer
-    - `arbitrary` — no consumer or rationale found → useless-limit candidate
-    - `missing` — unbounded input that should be bounded → false-assumption candidate
-- Require every hard bound to justify the risk, value, owner, and reached behavior. An implementation may need to honor a fixed external contract; when the contract itself is in scope, flag an unsupported cap as a contract weakness. Prefer one canonical bound at the risk owner plus streaming, pagination, backpressure, cancellation, or explicit failure over cascading caps and silent truncation. Do not turn an arbitrary bound into configuration unless operators have a real tuning need.
+  - `Limits & assumptions` — every encoded bound in the audited surface (string lengths, collection caps, numeric ranges, timeouts, retries, concurrency caps, enum sets, truncations, defaults) as `limit | value | location/owner | behavior when reached | verdict`, where the verdict is an action plus its reason:
+    - `keep — <reason>` — required by an external or public contract, or a minimum necessary guard at the owner of a proven trust, resource, external deadline, or liveness risk; being contractual is provenance, not proof the bound is well designed
+    - `too restrictive — <reason>` — the risk may be real, but the value or placement rejects valid production work, silently truncates truth, duplicates another owner, or adds defense at every layer; name what to relax
+    - `remove — <reason>` — nothing breaks without it: the bound is arbitrary (no consumer or rationale found) or over-defensive where deleting beats relaxing
+    - `add bound — <reason>` — reserved for a proven trust, resource, external-deadline, or liveness risk with a named owner; most values should stay unbounded, and a missing bound without such proof is not a defect
+  - `Prior art` — existing similar solutions or established repo patterns the audited surface overlaps, each marked `standardizable onto <surface>` or `novel`.
+- A `keep` verdict needs a strong reason: the contract or proven risk, the value, the owner, and the reached behavior all justified — otherwise the verdict is `remove` or `too restrictive`. An implementation may need to honor a fixed external contract; when the contract itself is in scope, flag an unsupported cap as a contract weakness. Prefer one canonical bound at the risk owner plus streaming, pagination, backpressure, cancellation, or explicit failure over cascading caps and silent truncation. Do not turn an arbitrary bound into configuration unless operators have a real tuning need.
 - Evidence: the model cites only code, tests, configs, manifests, and observable behavior — never plan or spec wording.
 - Blind window: when `Read strategy` is `plan-vs-implementation`, the stated contract is locator-only until `Gist`, `Perceived intent`, and the limits inventory are drafted. Locator use answers where the audited surface is (scope, shape, files, step ids, boundaries); semantic use answers what it should do. Deep-read the stated claims only after drafting, then emit the diff.
 - No stated contract (`implementation-only`): the diff line reads `no stated contract`, perceived intent stands as the audit baseline, and the missing contract surface stays a finding per the missing-proof-surface rule.
-- Depth scaling: `quick` = `Gist` + limits inventory, diagram optional; `standard`/`deep` = full four-part model.
+- Depth scaling: `quick` = `Gist` + limits inventory, diagram and `Prior art` optional; `standard`/`deep` = the full model including `Prior art`.
 - Soft checkpoint: intent divergence or a load-bearing ambiguous limit routes through the existing one-framing-clarification rule — no second question gate. User corrections re-anchor the audit without consuming a finding approval.
 - Scope: one model per audited scope. Multi-step and branch scopes model the composed result, not per-step; bound the limits inventory to the audited delta plus directly touched surfaces.
 - Exemptions: `enhancement_proposal` — the `Existing-capability inventory` plays this role per `## Enhancement-proposal audit`; readiness audits of unbuilt TODO steps skip the model with a one-line reason.
-- Findings map into existing dimensions: intent divergence → `goal / contract match`; missing bounds → `correctness / failure handling`; arbitrary or over-defensive limits → `complexity / maintainability` and, when production behavior changes, `correctness / failure handling`.
+- Findings map into existing dimensions: intent divergence → `goal / contract match`; `add bound` verdicts → `correctness / failure handling`; `remove` and `too restrictive` verdicts → `complexity / maintainability` and, when production behavior changes, `correctness / failure handling`.
 
 Example shape:
 
@@ -196,11 +196,14 @@ Gist: streams rows from CSV, validates per-row, applies in one transaction.
 Perceived intent: bulk-import with all-or-nothing semantics.
 Stated intent (Step 42): "import user CSVs" -> diverges: contract is silent
 on atomicity; implementation chose all-or-nothing.
+Prior art: jobs/bulk_load.py batch importer -> standardizable onto its
+chunked-apply path instead of a second import pipeline.
 
 Limits & assumptions:
-| limit        | value     | location/owner   | evidence | behavior when reached | verdict       |
-| max rows     | 500       | limits.py:import | none     | rejects row 501       | arbitrary     |
-| email length | unbounded | parse.py:email   | —        | memory grows with input | missing       |
+| limit          | value     | location/owner   | behavior when reached    | verdict                                      |
+| max rows       | 500       | limits.py:import | rejects row 501          | remove — no consumer found                   |
+| upload timeout | 5s        | http.py:upload   | valid large uploads fail | too restrictive — p95 is 8s; raise or stream |
+| email length   | unbounded | parse.py:email   | memory grows with input  | add bound — proven memory risk; owner parse() |
 ```
 
 ## Core direction checkpoint
@@ -228,17 +231,17 @@ For qualifying retrospective audits with an implemented delta, stop after the as
   - `B. Correct the baseline — update the intended behavior or requirements before findings`
   - `C. Change scope — review a smaller or different surface`
   - `D. Stop — end after the baseline review; do not produce findings`
-- Baseline confirmation validates the auditor's reading of product direction, requirements understanding, implementation shape, and audit scope. It neither approves findings nor authorizes follow-up work. Major-finding approval still happens later per `## Interaction contract`.
+- Baseline confirmation validates the auditor's reading of product direction, requirements understanding (including any missing-requirement claim), implementation shape, and audit scope. It neither approves findings nor authorizes follow-up work. Major-finding approval still happens later per `## Interaction contract`.
 
 ## Boundary and simplicity check
 
-For every implemented or proposed solution, judge the audited delta against the simplest shape that preserves correct ownership and fits the real capability family. Reuse the `As-built model` and its diagram when emitted; for proposals, reuse the `Existing-capability inventory` and `Integration options` rather than creating another model.
+For every implemented or proposed solution, judge the audited delta against the simplest shape that preserves correct ownership and fits the real capability family. Reuse the `As-built model` (diagram, `Prior art`, limits inventory) when emitted; for proposals, reuse the `Existing-capability inventory` and `Integration options` rather than creating another model.
 
 Trace one representative path: entrypoint → validation/authority → state or durable effect → projection/adapter. Judge:
 
 - `Boundaries` — Give truth, policy, validation, persistence, orchestration, and presentation one appropriate owner; point dependencies toward it. Flag duplicated truth or reversed dependencies, but do not collapse a necessary boundary to reduce layers.
-- `Simplicity / elegance` — Try deletion, an existing seam, or direct composition first. Keep an abstraction only when it owns policy/state, isolates a real dependency, or removes proven repetition. The main and failure paths should remain locally explainable; tie every concern to concrete cost or risk.
-- `Limit discipline` — Keep only contractual and minimum necessary defensive bounds. Put each bound at the owner of the actual risk and justify its value and reached behavior. Flag low or duplicated caps, premature truncation, speculative configuration, and timeouts that fail valid production work; missing protection at a real trust/resource boundary remains a correctness issue.
+- `Simplicity / elegance` — Try deletion, standardization onto the model's `Prior art`, an existing seam, or direct composition first. Keep an abstraction only when it owns policy/state, isolates a real dependency, or removes proven repetition. The main and failure paths should remain locally explainable; tie every concern to concrete cost or risk.
+- `Limit discipline` — Keep only contractual and minimum necessary defensive bounds, judged per the limits rules in `## As-built model`; missing protection at a real trust/resource boundary remains a correctness issue.
 - `Reusable generality` — Use the narrowest contract serving current consumers or an established extension seam. Flag duplicated shared concerns and generic APIs for hypothetical consumers; system-wide reuse is not maximum abstraction.
 - `Legacy load` — Require compatibility aliases, deprecated dependencies, superseded paths, old-format writes, or parallel truth to have a live caller, durable-data, or public-contract reason, regression proof, and a permanence or retirement decision. Proposals name the evidence and proof plan. Do not confuse retry, failover, or recovery with compatibility.
 
@@ -253,25 +256,24 @@ Emit `Solution shape` before normalized findings. For `quick`, give one overall 
 - `Legacy load`: `none` | `justified compatibility` | `legacy-on-arrival` | `unclear`
 - `Verdict`: `KISS and boundary-aligned` | `aligned with justified complexity` | `works but over-engineered` | `boundary-breaking` | `unclear`
 
-Expand only non-green or unclear judgments into findings; still cite concrete evidence for a green verdict.
+Expand only non-green or unclear judgments into findings, and only when they create concrete behavior risk or maintenance cost; still cite concrete evidence for a green verdict.
 
 ## Core audit dimensions
 
 Every audit uses these core dimensions. Treat them as questions the audit must answer, phrased relative to the chosen audit type and intended goal.
 
 - `solution shape / boundaries`
-  - Apply `## Boundary and simplicity check` to the actual implementation or recommended proposal integration shape, not only its names or file count.
-  - Treat misplaced ownership, reversed dependencies, duplicated truth, needless indirection, over-defensive limits, under- or over-generalization, and legacy-on-arrival code as findings when they create concrete behavior risk or maintenance cost.
+  - Apply `## Boundary and simplicity check` to the actual implementation or recommended proposal integration shape, not only its names or file count; its expansion rule decides which judgments become findings.
 
 - `goal / contract match`
   - Compare implementation against the requested audit question, intended goal, `README.md`, `docs/specs/*`, the selected `TODO*.md` scope, and observable current behavior.
-  - For one-step or multi-step TODO audits, compare each selected step's `Goal`, `Constraints`, `Tasks`, `Implementation notes`, `Automated checks`, and `UAT` against the concrete implementation delta reviewed for that scope, not only the final filesystem state.
+  - For one-step or multi-step TODO audits, compare each selected step's contract sections per `## Step-scoped TODO contract audit` against the concrete implementation delta reviewed for that scope, not only the final filesystem state.
   - Treat drift between code, tests, and docs as a real finding.
   - Before listing normalized findings, emit a compact `Goal match` or equivalent summary stating whether the intended goal is understood, whether the implementation matches, partially matches, or misses it, and whether the proof surface is strong enough to justify that verdict. When an as-built model was emitted, build this verdict on the model's `Perceived intent vs stated intent` diff. When a `Core direction checkpoint` was emitted, build the verdict on the confirmed baseline, not the pre-confirmation draft.
 - `correctness / failure handling`
   - Check happy paths, edge cases, failure paths, boundary validation, and state or data invariants.
   - Validate untrusted input early, separate syntactic from semantic validation when both matter, and keep invariants explicit where they protect real behavior.
-  - Require only the bounds that protect a proven contract, trust, resource, external deadline, or liveness boundary; verify cancellation, partial-work, retry, and user-visible behavior when each bound is reached.
+  - Require only the bounds justified per `## As-built model`; verify cancellation, partial-work, retry, and user-visible behavior when each is reached.
   - For `bug_report`, treat missing repro closure or new adjacent regression risk as first-class findings.
 - `verification quality`
   - Prioritize confidence over coverage theater.
@@ -358,7 +360,7 @@ This skill is interactive, read-only, and decision-driven.
 - Treat clarification as a loop, not a batch: ask the single highest-leverage question per message, combining ambiguities that share one root decision, then re-rank and ask the next after the user answers. Never list multiple open questions as a checklist.
 - Each clarification states the current recommended finding direction and what audit conclusion would change if the answer differs.
 - Do not re-ask what the user already answered, repo evidence already resolves, or an accepted assumption already covers.
-- For qualifying retrospective audits, require exactly one baseline-confirmation pause after the `Core direction checkpoint` and before normalized findings; it validates direction, requirements (including any missing-requirement claim), and scope. A baseline correction re-anchors the audit and does not consume a finding approval.
+- For qualifying retrospective audits, require exactly one baseline-confirmation pause after the `Core direction checkpoint` and before normalized findings; a baseline correction re-anchors the audit and does not consume a finding approval.
 - Keep baseline confirmation, ambiguity clarification, and finding approval separate — never combined in one message; resolving an ambiguity does not approve a finding.
 - Surface one proven finding at a time; collapse only symptoms with one root cause. After each decision, refresh the remaining list and show the next. Never batch findings into one approval checklist.
 - Put choices last under `**Options**`. Give every option a visible letter selector; use numbers only when clearer. Tell the user they can reply with just the selector.
@@ -390,11 +392,11 @@ This skill is interactive, read-only, and decision-driven.
 8) For qualifying retrospective audits, derive the smallest useful in-scope requirements set, map it to implementation evidence, emit the visible `Core direction checkpoint`, and pause for baseline confirmation or correction before normalized findings.
 9) Apply `## Boundary and simplicity check` after any required retrospective baseline confirmation, or while ranking `Integration options` for an `enhancement_proposal`; then review the core audit dimensions together. Emit `Solution shape` before normalized findings. If a baseline correction materially changes the checkpoint, refresh it before continuing. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
 10) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
-11) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary, built on the confirmed baseline and the as-built model's intent diff when a model was emitted.
+11) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary per `## Core audit dimensions`.
 12) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
 13) Normalize findings into root-cause items per `## Finding normalization`: simple-English `Problem` and `Solution`, tagged `Assumptions`, then `Details` evidence.
-14) Collapse related unresolved ambiguities into root decisions. Ask only when one could materially change the audit conclusion; otherwise report the finding directly. Follow the `Interaction contract` clarification loop.
-15) Triage each proven major finding per `## Interaction contract`: approve follow-up, backlog, accept, request evidence, or reject. Use `A1`, `A2`, and so on only for materially different follow-up paths; plain `A` selects `A1`.
+14) Resolve remaining ambiguities through the `## Interaction contract` clarification loop, asking only what could change the audit conclusion; otherwise report findings directly.
+15) Triage each proven major finding per `## Interaction contract`: approve follow-up, backlog, accept, request evidence, or reject.
 16) Keep a running list of:
    - findings approved for follow-up
    - findings backlogged
@@ -402,22 +404,14 @@ This skill is interactive, read-only, and decision-driven.
    - findings needing more evidence
    - findings rejected
 17) When the audit is complete, return a final audit summary that includes:
-   - audit type
-   - audited scope
-   - review depth
-   - compact audit-framing summary
-   - core direction checkpoint summary — recent delta reviewed, intent provenance, requirements coverage summary, direction verdict, open assumptions / proof gaps
-   - solution-shape verdict — boundary integrity, simplicity/elegance, limit posture, reusable generality, legacy load, and overall KISS verdict
+   - compact audit-framing summary — audit type, audited scope, review depth
+   - core direction checkpoint summary per `## Core direction checkpoint`, when one was emitted
+   - solution-shape verdict fields per `## Boundary and simplicity check`
    - goal-match verdict
-   - selected TODO step ids when the scope is step-scoped
-   - which implementation delta or changed-file or commit surface was reviewed
+   - which implementation delta, changed-file, or commit surface was reviewed
    - findings by audit dimension
-   - whether the selected steps' checked tasks appear fully done
-   - whether the observed implementation matches the selected step goals
-   - whether automated checks and UAT evidence support the claimed completion
-   - approved findings (mapped to `cdd-plan` types — `spec_delta`, `implementation_delta`, `verification_delta`, `defer` — when the planning route is the recommended next action)
-   - backlogged or accepted findings
-   - findings needing more evidence or rejected
+   - for step-scoped audits: the selected step ids plus the step-completion judgments from step 12
+   - the full triage state from step 16, mapping approved findings to `cdd-plan` types (`spec_delta`, `implementation_delta`, `verification_delta`, `defer`) when the planning route is the recommended next action
    - notable missing proof surfaces, docs, specs, or tests
    - recommended next action
 18) End with selector-labeled next actions.
@@ -431,6 +425,5 @@ This skill is interactive, read-only, and decision-driven.
    - When no approved findings exist, do not recommend an empty `$cdd-plan` or direct implementation; offer concrete non-planning next actions such as backlog, stop, or rerun on a narrower audit slice.
 
 ## Guardrails
-- When the user is ready to act, surface the final routing options — `cdd-plan` handoff, inline plan-and-implement over approved findings, backlog, or stop; the audit itself stays read-only per `## Interaction contract`.
 - Do not let a large scope erase the audit question. If the requested scope is broad, keep the audit ordered around the chosen shape and primary proof surfaces; if it is too large for one sane pass, propose a smaller first audit slice.
 - If docs or specs are intentionally future-state, say so and audit for clarity rather than forcing current-state wording onto planned behavior.

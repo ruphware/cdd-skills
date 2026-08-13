@@ -62,7 +62,7 @@ Do not invent missing product, architecture, sequencing, or validation decisions
    - Treat a TODO step as underspecified when it is missing `Tasks`, `Automated checks`, or `UAT`, or when those sections still omit the concrete target boundary, required behavior change, cross-surface sequencing, or validation proof.
    - For non-TODO tasks, normalize only enough to make one bounded implementation frame. If that frame still needs planning-shaped decisions, offer `cdd-plan` instead of coding.
    - When a non-TODO task is bounded and decision-complete, present the direct-vs-TODO-vs-plan selector options before implementing.
-4) Implement the selected task with minimal diffs.
+4) Implement the selected task with minimal diffs. Do not add caps, guards, retries, or abstraction layers the task does not call for; a new limit needs a proven risk named in the task frame or step contract.
 5) Run the task's listed `Automated checks`, repo-native checks, or other concrete validation promised by the normalized task frame.
    - Follow the repo's `AGENTS.md` DoD before closing the task out.
 6) Apply the appropriate completion semantics:
