@@ -165,6 +165,7 @@ For retrospective audit shapes (`bug_report`, `functionality`, `small_change`, `
 - Model parts:
   - `Diagram` — compact ASCII: components, data/control flow, boundary crossings.
   - `Gist` — 2-4 sentences: what the audited surface actually does as built.
+  - `Delta stats` — the audited delta's measured size: files changed, LOC added/deleted, net — tool output (`git diff --numstat`-style), never estimated. Report generated, vendored, and lockfile churn separately so it cannot distort the counts. No measurable delta (whole-codebase scope, no diff surface): one line naming why, no numbers.
   - `Perceived intent vs stated intent` — the implementation's apparent design goal, stated independently, then marked `matches` or `diverges at <point>` against the stated contract.
   - `Limits & assumptions` — every encoded bound in the audited surface (string lengths, collection caps, numeric ranges, timeouts, retries, concurrency caps, enum sets, truncations, defaults) as `limit | value | location/owner | behavior when reached | verdict`, where the verdict is an action plus its reason:
     - `keep — <reason>` — required by an external or public contract, or a minimum necessary guard at the owner of a proven trust, resource, external deadline, or liveness risk; being contractual is provenance, not proof the bound is well designed
@@ -176,11 +177,11 @@ For retrospective audit shapes (`bug_report`, `functionality`, `small_change`, `
 - Evidence: the model cites only code, tests, configs, manifests, and observable behavior — never plan or spec wording.
 - Blind window: when `Read strategy` is `plan-vs-implementation`, the stated contract is locator-only until `Gist`, `Perceived intent`, and the limits inventory are drafted. Locator use answers where the audited surface is (scope, shape, files, step ids, boundaries); semantic use answers what it should do. Deep-read the stated claims only after drafting, then emit the diff.
 - No stated contract (`implementation-only`): the diff line reads `no stated contract`, perceived intent stands as the audit baseline, and the missing contract surface stays a finding per the missing-proof-surface rule.
-- Depth scaling: `quick` = `Gist` + limits inventory, diagram and `Prior art` optional; `standard`/`deep` = the full model including `Prior art`.
+- Depth scaling: `quick` = `Gist` + `Delta stats` + limits inventory, diagram and `Prior art` optional; `standard`/`deep` = the full model including `Prior art`.
 - Soft checkpoint: intent divergence or a load-bearing ambiguous limit routes through the existing one-framing-clarification rule — no second question gate. User corrections re-anchor the audit without consuming a finding approval.
 - Scope: one model per audited scope. Multi-step and branch scopes model the composed result, not per-step; bound the limits inventory to the audited delta plus directly touched surfaces.
 - Exemptions: `enhancement_proposal` — the `Existing-capability inventory` plays this role per `## Enhancement-proposal audit`; readiness audits of unbuilt TODO steps skip the model with a one-line reason.
-- Findings map into existing dimensions: intent divergence → `goal / contract match`; `add bound` verdicts → `correctness / failure handling`; `remove` and `too restrictive` verdicts → `complexity / maintainability` and, when production behavior changes, `correctness / failure handling`.
+- Findings map into existing dimensions: intent divergence → `goal / contract match`; `add bound` verdicts → `correctness / failure handling`; `remove` and `too restrictive` verdicts → `complexity / maintainability` and, when production behavior changes, `correctness / failure handling`; deletion opportunities, duplicate logic, and obscured values → `complexity / maintainability`; test-cost findings → `verification quality`.
 
 Example shape:
 
@@ -193,6 +194,8 @@ As-built model — import pipeline
          defaults.py   limits.py (MAX_ROWS=500)
 
 Gist: streams rows from CSV, validates per-row, applies in one transaction.
+Delta stats: 6 files, +412 / -38 LOC (net +374); package-lock.json churn
+(+1,120) reported separately.
 Perceived intent: bulk-import with all-or-nothing semantics.
 Stated intent (Step 42): "import user CSVs" -> diverges: contract is silent
 on atomicity; implementation chose all-or-nothing.
@@ -235,26 +238,31 @@ For qualifying retrospective audits with an implemented delta, stop after the as
 
 ## Boundary and simplicity check
 
-For every implemented or proposed solution, judge the audited delta against the simplest shape that preserves correct ownership and fits the real capability family. Reuse the `As-built model` (diagram, `Prior art`, limits inventory) when emitted; for proposals, reuse the `Existing-capability inventory` and `Integration options` rather than creating another model.
+For every implemented or proposed solution, judge the audited delta against the simplest shape that preserves correct ownership and fits the real capability family. Reuse the `As-built model` (diagram, `Delta stats`, `Prior art`, limits inventory) when emitted; for proposals, reuse the `Existing-capability inventory` and `Integration options` rather than creating another model.
 
 Trace one representative path: entrypoint → validation/authority → state or durable effect → projection/adapter. Judge:
 
 - `Boundaries` — Give truth, policy, validation, persistence, orchestration, and presentation one appropriate owner; point dependencies toward it. Flag duplicated truth or reversed dependencies, but do not collapse a necessary boundary to reduce layers.
-- `Simplicity / elegance` — Try deletion, standardization onto the model's `Prior art`, an existing seam, or direct composition first. Keep an abstraction only when it owns policy/state, isolates a real dependency, or removes proven repetition. The main and failure paths should remain locally explainable; tie every concern to concrete cost or risk.
+- `Simplicity / elegance` — Try deletion, standardization onto the model's `Prior art`, an existing seam, or direct composition first. Keep an abstraction only when it owns policy/state, isolates a real dependency, or removes proven repetition. Flag indirection hiding a plain value — a getter, factory, or config layer over one fixed value, a single-variant wrapper or enum, a resolution chain returning a literal, a pass-through parameter that never varies: keep such values readable at the use site unless the indirection owns real variation, policy, or state. The main and failure paths should remain locally explainable; tie every concern to concrete cost or risk.
 - `Limit discipline` — Keep only contractual and minimum necessary defensive bounds, judged per the limits rules in `## As-built model`; missing protection at a real trust/resource boundary remains a correctness issue.
 - `Reusable generality` — Use the narrowest contract serving current consumers or an established extension seam. Flag duplicated shared concerns and generic APIs for hypothetical consumers; system-wide reuse is not maximum abstraction.
+- `Duplication` — Detect logic repeated within the delta and delta code reimplementing an existing repo surface, anchored to the model's `Prior art`. Cite both locations; prefer standardizing onto the existing owner over parallel copies.
 - `Legacy load` — Require compatibility aliases, deprecated dependencies, superseded paths, old-format writes, or parallel truth to have a live caller, durable-data, or public-contract reason, regression proof, and a permanence or retirement decision. Proposals name the evidence and proof plan. Do not confuse retry, failover, or recovery with compatibility.
 
 Practical example: if two adapters need the same normalization, prefer one small function at their existing shared boundary; add a registry or strategy layer only when runtime selection is real. Reading stored v1 rows can be justified compatibility, while adding a new v1 write path without a live consumer is legacy-on-arrival. A provider timeout backed by its SLA and real cancellation can be defensive; a 100-row scan that silently hides valid results is over-defensive.
 
-Emit `Solution shape` before normalized findings. For `quick`, give one overall verdict plus one evidence sentence. For `standard` or `deep`, give one evidence-backed line for each field:
+Emit `Solution shape` and `Deletion opportunities` together before normalized findings. For `quick`, give one overall verdict plus one evidence sentence. For `standard` or `deep`, give one evidence-backed line for each field:
 
 - `Boundary integrity`: `respected` | `strained` | `violated` | `unclear`
 - `Simplicity / elegance`: `simplest` | `justified complexity` | `over-engineered` | `unclear`
 - `Limit posture`: `minimal` | `justified` | `over-defensive` | `under-defensive` | `unclear`
 - `Reusable generality`: `right-sized` | `under-generalized` | `over-generalized` | `unclear`
 - `Legacy load`: `none` | `justified compatibility` | `legacy-on-arrival` | `unclear`
+- `Duplication`: `none` | `within-delta` | `vs-repo` | `both` | `unclear`
+- `Deletion opportunities`: `none` | `found (<n> cited)` | `unclear`
 - `Verdict`: `KISS and boundary-aligned` | `aligned with justified complexity` | `works but over-engineered` | `boundary-breaking` | `unclear`
+
+`Deletion opportunities` lists every cited candidate: what to delete, why it is safe, the evidence — a dead or unreachable path, a superseded caller, a duplicate of named `Prior art` or an existing seam, or a limits-table `remove` / `too restrictive` verdict — and approximate LOC recoverable when measurable. With no candidates, state `none` plus one evidence sentence. A net-additive delta is never a finding by itself; an uncited candidate stays report-only, labeled speculative.
 
 Expand only non-green or unclear judgments into findings, and only when they create concrete behavior risk or maintenance cost; still cite concrete evidence for a green verdict.
 
@@ -280,10 +288,11 @@ Every audit uses these core dimensions. Treat them as questions the audit must a
   - Prefer a layered suite with mostly integration where it buys meaningful confidence, plus narrower unit tests and fewer high-level tests.
   - Flag brittle tests that assert implementation details, broad unrelated object equality, mock choreography, fragile snapshots, or other harmless-refactor breakpoints.
   - Flag useless tests that duplicate lower-level coverage without adding confidence, or that mainly check framework behavior instead of product behavior.
+  - Flag needlessly costly tests: real sleeps or waits instead of controllable time, heavyweight fixtures or broad integration setup where a narrower test buys the same confidence, redundant per-test rebuilding of shared state, duplicated parameterization. Judge cost against confidence bought; a test-cost finding needs observable evidence (test code, measured runtime, or a CI signal) and targets the tests' own runtime cost, never missing benchmark coverage.
   - Check whether tests, automated checks, and UAT cover the real contract, edge cases, and failure paths instead of only the happy path.
 - `complexity / maintainability`
   - Default to KISS: prefer simpler, clearer solutions over clever indirection.
-  - Apply YAGNI: flag speculative abstraction, nested wrapper indirection, generic APIs with one concrete use, parameterization or extension points without real consumers, and ceremony that does not protect a real boundary.
+  - Apply YAGNI: flag speculative abstraction, nested wrapper indirection, value-obscuring indirection (a plain value behind a getter, factory, config layer, or wrapper that owns no real variation), generic APIs with one concrete use, parameterization or extension points without real consumers, and ceremony that does not protect a real boundary.
   - Apply SOLID pragmatically, with SRP first: use "one reason to change" as the first pressure test before broader rewrites.
 - `documentation / operability`
   - Audit `README.md`, `docs/specs/*` (PRD, blueprint, and connected `*-definition.md` leaf specs), `docs/INDEX.md` (with `docs/index/**` siblings when INDEX split is active), `docs/runbooks/*.md`, repo-root `RUNBOOK.md`, and the current-state header of `docs/JOURNAL.md` when present when they materially affect the audit verdict.
@@ -390,7 +399,7 @@ This skill is interactive, read-only, and decision-driven.
 6) For retrospective audits with an implemented surface, inspect one concrete implementation delta first: current branch diff, selected commits, or another repo-local changed-file surface appropriate to the chosen scope.
 7) For retrospective shapes with an implemented surface, build and emit the visible as-built model per `## As-built model` before core-dimension review, honoring its blind-window ordering for `plan-vs-implementation` audits.
 8) For qualifying retrospective audits, derive the smallest useful in-scope requirements set, map it to implementation evidence, emit the visible `Core direction checkpoint`, and pause for baseline confirmation or correction before normalized findings.
-9) Apply `## Boundary and simplicity check` after any required retrospective baseline confirmation, or while ranking `Integration options` for an `enhancement_proposal`; then review the core audit dimensions together. Emit `Solution shape` before normalized findings. If a baseline correction materially changes the checkpoint, refresh it before continuing. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
+9) Apply `## Boundary and simplicity check` after any required retrospective baseline confirmation, or while ranking `Integration options` for an `enhancement_proposal`; then review the core audit dimensions together. Emit `Solution shape` and `Deletion opportunities` before normalized findings. If a baseline correction materially changes the checkpoint, refresh it before continuing. Do not audit code in isolation when the contract, proof surface, or tests are part of the issue.
 10) Activate optional lenses only when the audit type, risk, or evidence triggers them. Note when specialist review is needed instead of pretending coverage you do not have.
 11) Before listing normalized findings, emit the compact `Goal match` or equivalent verdict summary per `## Core audit dimensions`.
 12) For step-scoped audits, decide whether the selected steps' checked tasks appear fully done, whether the observed implementation satisfies each step goal, and whether automated checks plus UAT evidence support the claimed completion. For `master_chef_multi_step`, also judge run-level execution quality and proof.
@@ -409,6 +418,7 @@ This skill is interactive, read-only, and decision-driven.
    - solution-shape verdict fields per `## Boundary and simplicity check`
    - goal-match verdict
    - which implementation delta, changed-file, or commit surface was reviewed
+   - `Delta stats` and the `Deletion opportunities` outcome when a measurable delta was audited
    - findings by audit dimension
    - for step-scoped audits: the selected step ids plus the step-completion judgments from step 12
    - the full triage state from step 16, mapping approved findings to `cdd-plan` types (`spec_delta`, `implementation_delta`, `verification_delta`, `defer`) when the planning route is the recommended next action

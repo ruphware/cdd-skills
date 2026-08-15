@@ -1206,3 +1206,50 @@ Make every `cdd-audit` normalized finding carry a visible `Assumptions` field, f
 - Confirm `## Audit framing` now classifies mixed artifacts' design detail as binding contract or illustrative guidance, defaulting bug reports to guidance.
 - Confirm an `unconfirmed` assumption is displayed but never suppresses or gates the finding.
 - Confirm `python3 scripts/validate_skills.py` passes with no prose-matching added.
+
+## Step 71 — Add delta accounting, deletion opportunities, obscured-value, duplicate-logic, and test-cost checks to cdd-audit
+
+### Goal
+
+Make `cdd-audit` retrospective audits measure the audited delta's added/deleted LOC as tool-backed evidence, actively surface cited opportunities to delete code and limits, flag needlessly obscured values and duplicate logic as over-engineering, and judge in-scope tests for runtime cost alongside the existing usefulness rules.
+
+### Constraints
+
+- Fold every rule into existing H2 sections; do not add or rename an H2. Default expectation: zero `scripts/validate_skills.py` change (validator stays structural-only per its docstring).
+- Keep the Step 70 grounding contract: every deletion opportunity, duplication, obscured-value, and test-cost finding cites observed evidence (code path, prior-art surface, limits-table verdict, test code, measured runtime); uncited candidates stay report-only and labeled speculative.
+- A net-additive delta is never a finding by itself; new capability legitimately adds code. The check hunts missed deletions, not addition itself.
+- `Delta stats` are measured with repo tools (`git diff --numstat`-style evidence), never estimated; generated, vendored, and lockfile churn is separated or annotated; when no measurable delta exists (whole-codebase scope, no diff surface) the model writes one line naming why. `enhancement_proposal` stays exempt via its existing model exemption.
+- Test performance means the tests' own runtime cost (sleeps, heavyweight fixtures, redundant setup) — do not require benchmark or performance-test coverage.
+- Keep read-only mode, letter selectors, one-finding-at-a-time triage, the Step 53 closeout, the limits verdict family (`keep` / `too restrictive` / `remove` / `add bound`), and the finding format unchanged.
+- Touch only `skills/cdd-audit/SKILL.md`; leave frontmatter `description:` and `agents/openai.yaml` unchanged unless the new contract makes them materially misleading.
+
+### Tasks
+
+- [x] Extend `## As-built model` model parts in `skills/cdd-audit/SKILL.md` with a `Delta stats` part — files changed, LOC added, LOC deleted, net, tool-measured for the audited delta, with churn separation and the skip-with-reason rule — update the fenced example to show the line, and extend the depth-scaling rule so `quick` includes `Delta stats`.
+- [x] Extend `## Boundary and simplicity check` `Simplicity / elegance` judging with an obscured-value rule: flag indirection that hides a plain value (constants behind getters, factories, or config layers with one fixed value; single-variant wrappers or enums; layered resolution returning a literal; pass-through parameters that never vary); a value should be readable at its use site unless the indirection owns real variation, policy, or state.
+- [x] Add an explicit duplicate-logic pass to `## Boundary and simplicity check`: detect within-delta repetition and delta-vs-repo reimplementation, anchor repo overlap to the model's `Prior art` entries, and require each duplication finding to cite both locations.
+- [x] Add a required `Deletion opportunities` output to `## Boundary and simplicity check`, emitted with `Solution shape`: each candidate names what to delete, why it is safe, an evidence cite (dead or unreachable path, superseded caller, duplicate of named prior art or an existing seam, limits-table `remove` / `too restrictive` verdict), and approximate LOC recoverable when measurable; when none exist, state `none found` with one evidence sentence.
+- [x] Add two `Solution shape` verdict fields to `## Boundary and simplicity check`: `Deletion opportunities`: `none` | `found (<n> cited)` | `unclear`, and `Duplication`: `none` | `within-delta` | `vs-repo` | `both` | `unclear`.
+- [x] Extend `## Core audit dimensions` — `complexity / maintainability`: add value-obscuring indirection to the YAGNI flag list; `verification quality`: add test-cost rules flagging real sleeps or waits instead of controllable time, heavyweight fixtures or broad integration setup where a narrower test buys the same confidence, redundant per-test rebuilding of shared state, and duplicated parameterization — each judged as cost against confidence bought and backed by observable evidence.
+- [x] Extend the `## As-built model` findings-mapping bullet so deletion opportunities, duplicate logic, and obscured values map to `complexity / maintainability` and test-cost findings map to `verification quality`.
+- [x] Update `## Flow` so step 9 emits `Deletion opportunities` with `Solution shape` and the step 17 final audit summary includes the delta stats and the deletion-opportunity outcome.
+
+### Implementation notes
+
+- Placement per approved shape: measurement is evidence and lives in the as-built model; judgment and outputs live in `## Boundary and simplicity check`; dimension-level rules live in `## Core audit dimensions`. Do not create a second competing home for duplication — `Prior art` remains the delta-vs-repo anchor, `Reusable generality` keeps its existing shared-concern rule.
+- Keep the two new `Solution shape` fields in the existing field-list format and update the expansion rule's reach implicitly — non-green `Deletion opportunities` / `Duplication` judgments expand into findings under the existing rule, no new expansion mechanism.
+- Obscured-value findings feed the existing `over-engineered` verdict on `Simplicity / elegance`; do not add a third structural field for it.
+- Wording stays plain-English per `## Plain-English output`; no coined terms (the outputs are named literally: `Delta stats`, `Deletion opportunities`, `Duplication`).
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+
+### UAT
+
+- Read the updated `## As-built model` and confirm `Delta stats` is a model part with tool-measured counts, churn separation, skip-with-reason, an updated example, and `quick`-depth inclusion.
+- Confirm `## Boundary and simplicity check` now judges obscured values and duplicate logic, requires the cited `Deletion opportunities` output beside `Solution shape`, and carries the two new verdict fields with their enum values.
+- Confirm a net-additive delta alone produces no finding, and an uncited deletion or duplication candidate stays report-only as speculative.
+- Confirm `verification quality` now flags evidenced test-cost waste without demanding benchmark coverage, and `complexity / maintainability` names value-obscuring indirection.
+- Confirm the flow emits `Deletion opportunities` with `Solution shape` and the final summary reports delta stats plus the deletion-opportunity outcome.
+- Confirm `python3 scripts/validate_skills.py` passes with zero validator changes.
