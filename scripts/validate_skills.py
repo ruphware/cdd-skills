@@ -111,7 +111,10 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Supported task sources",
         "## Task normalization and escalation",
         "## Interaction contract",
+        "## Implementation rules",
+        "## Revision pass",
         "## Completion semantics",
+        "## UAT handoff",
         "## Flow",
     ),
     "cdd-audit": (

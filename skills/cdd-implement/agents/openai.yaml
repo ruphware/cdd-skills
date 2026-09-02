@@ -1,5 +1,5 @@
 interface:
   display_name: "[CDD-3] Implement"
-  short_description: "Implement one bounded task → checks → TODO or direct closeout → report"
+  short_description: "Implement one bounded task → revise delta → checks → TODO or direct closeout → UAT handoff"
 policy:
   allow_implicit_invocation: false

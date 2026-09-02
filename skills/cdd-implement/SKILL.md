@@ -1,80 +1,79 @@
 ---
 name: cdd-implement
-description: "Implement exactly one bounded task, run its checks, close it out through TODO-backed or direct mode as appropriate, and return a UAT checklist (interactive)."
+description: "Implement exactly one bounded task under the repo's AGENTS.md rules, revise the delta for overlap and residue, run its checks, close out in TODO-backed or direct mode, and hand off a UAT checklist tagged by who can cover each item (interactive)."
 ---
 
 # CDD Implement (interactive)
 
-Implement exactly one bounded task in the target repo. Prefer a TODO-backed step when one exists, but support one explicit non-TODO task when that task is already available in the prompt or repo.
+Implement exactly one bounded task in the target repo per invocation: a TODO step when one exists, otherwise one explicit non-TODO task. Runtime loops such as `/goal` or `/workflows` may re-invoke the skill once per step; the skill itself never batches.
 
-Do not invent missing product, architecture, sequencing, or validation decisions during implementation. If the selected task is not decision-complete and cannot be normalized locally into one bounded unit, route it through `cdd-plan` first.
+Never invent product, architecture, sequencing, or validation decisions while implementing. A task that is not decision-complete after minimal normalization goes to `cdd-plan` first.
 
 ## Supported task sources
-- One TODO step in `TODO.md` or `TODO-*.md` files. This is the preferred path.
-- One approved audit finding package that is already small and bounded enough to implement without a planning pass.
-- One pasted task list item, issue text, or ticket text that is already available in the prompt or repo.
-- Do not fetch live tracker content or integrate with external task managers in this skill.
+- One TODO step in `TODO.md` or `TODO-*.md`; the preferred path.
+- One approved audit finding package small and bounded enough to skip a planning pass.
+- One pasted task item, issue text, or ticket text already present in the prompt or repo.
+- Never fetch live tracker content or integrate with external task managers here.
 
 ## Task normalization and escalation
-- Resolve the task source before asking anything else.
-- For TODO-backed tasks, preserve the repo's existing step-resolution behavior and patch only the selected step when a minimal clarification makes it runnable.
-- For non-TODO tasks, extract a compact implementation frame: target boundary, expected behavior or contract, key constraints, and validation evidence.
-- Normalize only small local gaps in place. Acceptable normalization includes tightening wording, making validation concrete, or writing a runnable TODO step when the user chooses the TODO-backed path.
-- If minimal normalization still leaves multiple hard gates, migration or rollback boundaries, distinct subsystems, or unresolved product, architecture, sequencing, or validation decisions, stop and offer `cdd-plan`.
-- When a non-TODO task is already bounded and decision-complete after normalization, present the source-appropriate selector options per `## Interaction contract`.
-- For `add to TODO and implement`, write the normalized task into the active TODO surface first as one runnable TODO step that matches the repo's step contract before any code edits begin. Reuse the repo's step template when possible and add only the missing sections or detail needed to make that step decision-complete. Default to the active `TODO.md` unless multiple TODO files are plausible targets or no TODO surface exists yet.
+- A TODO step is underspecified only when it lacks `Tasks`; other sections such as `Automated checks` and `UAT` are optional. Patch only the selected step, and only as far as a minimal clarification makes its tasks runnable.
+- For a non-TODO task, extract a compact implementation frame: target boundary, expected behavior or contract, key constraints, validation evidence.
+- Normalize only small local gaps in place: tighten wording, make validation concrete, or write a runnable TODO step when the user picks the TODO-backed path.
+- Escalate to `cdd-plan` when minimal normalization still leaves multiple hard gates, migration or rollback boundaries, distinct subsystems, or unresolved product, architecture, sequencing, or validation decisions.
+- For `add to TODO and implement`, write the normalized task into the active TODO surface as one runnable step in the repo's step template, adding only what makes it decision-complete, before any code edit; the run then closes out in TODO-backed mode. Default to `TODO.md` unless several TODO files are plausible targets or none exists.
 
 ## Interaction contract
-- Resolve ambiguity and approval boundaries with selector-based options under a final `**Options**` section.
-- Prefix every option label with a visible selector so plan-mode UIs still expose a selectable key. Default to `A.`, `B.`, `C.`; use numbers only when surrounding context is already numeric.
-- When practical, tell the user they can reply with just the selector.
-- When a minimal normalization patch is required before implementation, the selected option itself is the approval; do not append a separate free-form approval question.
-- Prefer source-appropriate options:
-  - for a bounded non-TODO task: `A. implement directly`, `B. add to TODO and implement`, `C. run cdd-plan first`, `D. keep it read-only and revise first`
-  - for an underspecified TODO step: `A. apply the minimal TODO patch and implement`, `B. apply the minimal TODO patch only`, `C. run cdd-plan first`, `D. keep the task read-only and revise first`
+- Resolve ambiguity and approval boundaries with selector-labeled options under the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise under a final `**Options**` section.
+- Prefix every option label with a visible selector so plan-mode UIs expose a selectable key: `A.`, `B.`, `C.` by default, numbers only when the surrounding context is already numeric. When practical, say the user can reply with just the selector.
+- The selected option itself is the approval; never append a separate free-form approval question.
+- Source-appropriate option sets:
+  - bounded non-TODO task: `A. implement directly`, `B. add to TODO and implement`, `C. run cdd-plan first`, `D. keep it read-only and revise first`
+  - underspecified TODO step: `A. apply the minimal TODO patch and implement`, `B. apply the minimal TODO patch only`, `C. run cdd-plan first`, `D. keep the task read-only and revise first`
+  - UAT handoff after closeout: `run the self-coverable UATs now`, `hand every UAT to the user`, lettered after any commit suggestion the repo's `NEXT` format places first
+
+## Implementation rules
+- Before any code edit, read the target repo's `AGENTS.md` and internalize its implementation rules as binding for the run: role and scope, core rules, KISS guardrails, code-structuring rules, logging conventions, Definition of Done, and per-turn output format.
+- Restate under `CONSTRAINTS` only the rules that shape this task, such as a file LOC target, the log line template, or the ban on stripping debug lines; never echo the whole document.
+- Where `AGENTS.md` is missing or silent, follow the repo's observable conventions (tooling, formatters, test framework, naming, layout), then CDD defaults: KISS, single responsibility per file, composition over inheritance, one-line docstring plus minimal example per public interface. Never remove tests or logs unless the task says so.
+- Keep the diff minimal: touch only files the task names or clearly requires. Add no caps, guards, retries, or abstraction layers the task does not call for; a new limit needs a proven risk named in the task.
+- Anything noticed outside the task boundary goes under `OPINION` in the final report, never into the diff.
+
+## Revision pass
+- Once the main implementation is done and before the final check run, review the working-tree diff plus the code it touches as a reviewer would, for four things:
+  - `overlap`: new code duplicating a helper, utility, type, or path the repo already has. Use the existing one; extend it only when the task needs a small generalization.
+  - `net complexity`: abstractions, parameters, branches, or files beyond what the task needed. Remove forward-only indirection, flatten single-use layers, fold special cases into one path.
+  - `duplicated paths`: two paths now doing one job, old and new or two new variants. Keep the one general path that covers the task's cases; retire the other.
+  - `residue`: unrequested debug output, dead branches, unused imports or parameters, stale comments or docstrings, orphaned tests, configs, fixtures, or temp files.
+- Revise towards smaller, more general code: fewer lines and fewer special cases for the same behavior. Generalize only across cases the task actually has.
+- Stay inside the task boundary: the delta and the code it directly touches. Pre-existing overlap or residue elsewhere goes under `OPINION`.
+- One pass, then stop. Stop earlier when a further cut would change behavior the task did not ask for or needs a decision the task did not make; record what was left and why.
+- Report under `EXECUTION` what was merged, flattened, or deleted with approximate LOC removed, or `revision pass: no change` plus one sentence of evidence.
 
 ## Completion semantics
-- TODO-backed mode:
-  - If implementation and checks pass, update only the selected step in the active `TODO*.md` file to show its Tasks are done.
-  - If the step's `Tasks` section already uses markdown checkboxes, change unchecked task items from `[ ]` to `[x]`.
-  - If the step's `Tasks` section uses plain bullets, rewrite only those task bullets into checked markdown checkboxes while preserving the task text and order.
-  - Do not add a new step-level `Status:` field or any other completion marker.
-  - Do not mark the TODO step done if implementation or checks failed.
-  - Do not modify future or unrelated steps.
-- Direct mode:
-  - Do not fabricate a TODO artifact or synthetic completion record on success.
-  - The final report must name the exact source task, the files changed, the checks run, and the UAT evidence.
-  - If the user chose `add to TODO and implement`, that run switches into TODO-backed mode only after the normalized task is written into the TODO surface as a runnable TODO step.
-- Update the matching journal file only when changes are non-trivial, per `AGENTS.md`.
-  - In single-journal mode, update `docs/JOURNAL.md`.
-  - If the selected task is in `TODO-<area>.md`, treat matching `docs/journal/JOURNAL-<area>.md` as the default hot journal in split-journal mode.
-  - In split-journal mode, use `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes.
-  - Do not duplicate the same journal entry across multiple journal files.
+- TODO-backed mode, on success: mark the selected step's `Tasks` done and nothing else. Flip `[ ]` to `[x]`; rewrite plain bullets into checked checkboxes, preserving text and order. Add no `Status:` field or other completion marker. Never touch other steps.
+- Never mark a step done after failed implementation or checks.
+- Direct mode: no TODO writeback and no fabricated TODO artifact or completion record; the final report is the closeout.
+- Journal, only for non-trivial changes per `AGENTS.md`: `docs/JOURNAL.md` in single-journal mode; in split-journal mode the `docs/journal/JOURNAL-<area>.md` matching the step's `TODO-<area>.md`, with `docs/journal/JOURNAL.md` reserved for repo-wide or cross-cutting notes. Write each entry in exactly one file.
+
+## UAT handoff
+- After closeout, list every UAT item as a checklist in original wording and order: the step's `UAT` section when it has one, otherwise the validation its tasks imply; in direct mode, the frame's validation evidence. Add an item only for behavior the implementation introduced that the list misses, and say so.
+- Tag each item: `self` when repo-local tools can produce the evidence (run a command or test, read a file or output, diff a rendered artifact, exercise a CLI or API locally); `user` when it needs human judgment or access the agent lacks (visual or UX acceptance, product fit, external systems, credentials, real devices, production data); `partial` when the agent can do the mechanical half and the user must judge the rest, naming the split.
+- For each `self` item name the exact command, check, or read, so one reply approves the batch. Cite evidence the checks already produced where it covers an item; run the rest only after the user selects that option.
+- Agent-covered items are evidence, not acceptance: the user still confirms acceptance tests per the Definition of Done. Report each covered item with what ran and what was observed; never mark a `user` item done.
 
 ## Flow
-1) Read `AGENTS.md`, `README.md`, active `TODO*.md` files when present, and any files needed for the chosen task source.
-2) Resolve the requested task before asking anything:
-   - If the user explicitly names a TODO step (for example `step 8`, `step 08`, `step 008`, or an exact step heading), search `TODO.md` and `TODO-*.md` and normalize numeric step identifiers so `8`, `08`, and `008` are equivalent.
-   - If exactly one TODO step matches, treat that step as authoritative and continue immediately without asking for confirmation.
-   - If the source text contains multiple candidate findings or task items, ask the user to choose exactly one bounded item before continuing.
-   - Ask only when the task source is ambiguous or cannot be resolved from the user's request.
-3) Normalize or escalate before implementing:
-   - Treat a TODO step as underspecified when it is missing `Tasks`, `Automated checks`, or `UAT`, or when those sections still omit the concrete target boundary, required behavior change, cross-surface sequencing, or validation proof.
-   - For non-TODO tasks, normalize only enough to make one bounded implementation frame. If that frame still needs planning-shaped decisions, offer `cdd-plan` instead of coding.
-   - When a non-TODO task is bounded and decision-complete, present the direct-vs-TODO-vs-plan selector options before implementing.
-4) Implement the selected task with minimal diffs. Do not add caps, guards, retries, or abstraction layers the task does not call for; a new limit needs a proven risk named in the task frame or step contract.
-5) Run the task's listed `Automated checks`, repo-native checks, or other concrete validation promised by the normalized task frame.
-   - Follow the repo's `AGENTS.md` DoD before closing the task out.
-6) Apply the appropriate completion semantics:
-   - TODO-backed mode updates only the selected TODO step on success.
-   - Direct mode closes out through the final report only.
-7) Final report format: follow the target repo's `AGENTS.md` "Output Format Per Turn".
-   - Explicitly state which `TODO*.md` file and step were updated, or explicitly state that the task completed in direct mode with no TODO writeback.
+1) Read `AGENTS.md` first and internalize its implementation guidance; then `README.md`, active `TODO*.md` files, and whatever the task source needs.
+2) Find the task: the named TODO step (`8`, `08`, and `008` are the same step) or the one pasted item. One match: proceed without reconfirmation. Several matches or several items: ask the user to pick one.
+3) Normalize small gaps or escalate to `cdd-plan`; present the source-appropriate options before any edit.
+4) Implement all of the step's tasks with minimal diffs.
+5) Revise the delta for overlap, net complexity, duplicated paths, and residue.
+6) Run the step's automated checks or the repo-native checks and meet the DoD. Any edit after a green run re-runs the checks. Fix failures inside the task boundary and re-run; when a failure needs a decision the task did not make, stop, mark nothing, and report the failing output and the decision needed.
+7) Close out: mark the step's tasks done in TODO-backed mode, report only in direct mode, journal when non-trivial.
+8) List the UATs tagged `self`, `user`, or `partial`, with the evidence you would produce for each `self` item.
+9) Report in the `AGENTS.md` output format: source task, files changed, checks run, and revision outcome under `EXECUTION`; which `TODO*.md` step was updated, or that direct mode had no writeback; the UAT checklist and its options under `NEXT`.
 
 ## Resolution examples
-- `$cdd-implement step 008` + one matching Step 08 in the repo: implement immediately, no reconfirmation.
-- `$cdd-implement step 008` + matches in `TODO.md` and `TODO-foo.md`: present selector-based choices for the matching TODO file or exact heading.
-- `$cdd-implement` with one pasted ticket that is already bounded: offer `implement directly`, `add to TODO and implement`, `run cdd-plan first`, or `revise first`.
-- `$cdd-implement` with an approved audit finding package that still spans multiple boundaries: offer `cdd-plan` instead of direct implementation.
-- A matched TODO step missing `Tasks`, `Automated checks`, or `UAT`: present selector-based options for the minimal TODO patch needed to make the step executable.
-- A direct task that passes implementation and checks: close it out in the final report without fabricating TODO completion state.
+- `$cdd-implement` with one pasted, already bounded ticket: offer `implement directly`, `add to TODO and implement`, `run cdd-plan first`, or `revise first`.
+- `$cdd-implement` with an approved audit finding package spanning several boundaries: offer `cdd-plan` instead.
+- Revision pass finds the new parser duplicates an existing `parse_step_id` helper: delete the copy, call the helper, report the LOC removed, note the helper's own quirks under `OPINION`.
+- A step whose UAT says "run the validator" and "confirm the rendered diagram reads well": tag the first `self` with the exact command, the second `user`, and offer to run the first.
