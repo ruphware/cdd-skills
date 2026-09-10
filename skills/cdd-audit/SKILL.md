@@ -372,7 +372,8 @@ This skill is interactive, read-only, and decision-driven.
 - For qualifying retrospective audits, require exactly one baseline-confirmation pause after the `Core direction checkpoint` and before normalized findings; a baseline correction re-anchors the audit and does not consume a finding approval.
 - Keep baseline confirmation, ambiguity clarification, and finding approval separate — never combined in one message; resolving an ambiguity does not approve a finding.
 - Surface one proven finding at a time; collapse only symptoms with one root cause. After each decision, refresh the remaining list and show the next. Never batch findings into one approval checklist.
-- Put choices last under `**Options**`. Give every option a visible letter selector; use numbers only when clearer. Tell the user they can reply with just the selector.
+- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
+- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count. Tell the user they can reply with just the selector.
 - Follow `## Plain-English output` and name each concrete action so every option stands alone.
 - For one recommended follow-up path, use this shape and adapt its concrete nouns and actions to the finding (route choice happens at final closeout):
   - `A. Approve the session-expiry follow-up — include handler and regression-test work; no code changes yet`

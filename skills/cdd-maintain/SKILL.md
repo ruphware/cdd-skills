@@ -21,15 +21,16 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 
 ## Mode selection
 - If the user request already clearly maps to one mode, use it directly.
-- Otherwise ask one substantive question and wait. Put choices at the bottom under a final `**Options**` section:
+- Otherwise ask one substantive question and wait, using the presentation rules below:
   - `A. doc drift + upkeep`
   - `B. source cleanup`
   - `C. index`
   - `D. refactor`
-  - `do all`
-- Prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters: `A.`, `B.`, `C.`. Use numbers only when the surrounding context is already numeric and that would be clearer.
+  - `E. do all`
+- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
+- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count.
 - When practical, tell the user they can reply with just the selector.
-- Allow selecting more than one option in the same reply. If the user says `do all` or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
+- Allow selecting more than one option in the same reply. If the user selects `E`, says `do all`, or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
 - Keep the mode-specific write scope tight. Do not widen from one mode into another without asking.
 
 ## Approval contract
@@ -68,7 +69,7 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 - Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear`.
 - If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
 - If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/index/**` siblings when INDEX split is active, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything; never silently refresh any of these files.
-- Ask once for documentation approval using selector-based options under a final `**Options**` section, per the separation rules in `## Approval contract`.
+- Ask once for documentation approval using selector-based options, per the presentation rules in `## Mode selection` and separation rules in `## Approval contract`.
 - If the user approves, apply only the approved support-doc edits and then report them.
 - If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
 
@@ -256,7 +257,7 @@ After approval, if `docs/prompts/PROMPT-INDEX.md` does not define replacement va
 - Review the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context so the audit reflects the real implementation state. When multiple modes are selected, run refactor mode against the repo state after any approved `doc drift + upkeep`, `source cleanup`, and `index` work has completed.
 - Normalize findings around architecture boundaries, design pressure, duplicated responsibility, unclear ownership, oversized files, brittle seams, and other concrete refactor drivers.
 - Ask at most one substantive clarification or decision question per message.
-- Present 2-3 context-specific refactor options under a final `**Options**` section with `A.`, `B.`, and `C.` selectors. Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.
+- Present 2-3 context-specific refactor options per the presentation rules in `## Mode selection`. Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.
 - Keep the options KISS: minimal scope first, no speculative cleanup, no pattern cargo-culting.
 - Finish with an architecture audit report and recommend `cdd-plan` as the next step for any selected or preferred refactor direction.
 

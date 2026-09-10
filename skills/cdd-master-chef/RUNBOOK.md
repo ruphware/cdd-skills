@@ -4,7 +4,7 @@ Use this runbook for shared operational procedures that apply across runtime ada
 
 Adapter docs may add runtime-specific detail, but they must not contradict this shared runbook.
 
-When a shared approval or decision point is surfaced to the human through an adapter, use visible selector-based options when practical and let the human reply with just the selector.
+For every human decision prompt, follow `CONTRACT.md` §7: lettered choices, optional nested variants, and the entire decision block last.
 
 ## Compact policy flow
 

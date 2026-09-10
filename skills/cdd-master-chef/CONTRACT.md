@@ -299,9 +299,9 @@ Before implementation starts, present one kickoff approval that covers:
 - run lease creation
 - worktree branch setup plus active-worktree environment bootstrap expectations
 
-Present that kickoff decision with selector-based options rather than a free-form approval question.
+End every human decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
 
-Use visible `A.`, `B.`, `C.` labels when practical, tell the human they can reply with just the selector, and let the selected option itself count as the kickoff approval.
+Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count. Tell the human they can reply with just the selector, and let the selected option itself count as the kickoff approval.
 
 - `A. approve kickoff and start the autonomous run now`
 - `B. approve kickoff but do not spawn Builder yet`

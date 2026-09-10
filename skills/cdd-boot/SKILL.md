@@ -96,9 +96,9 @@ External intent surfaces:
 - Treat `$cdd-implement` direct mode as optional post-boot scaffolding for one bounded non-TODO task when that handoff is useful; do not make it mandatory just because the work is write-producing.
 
 ## Follow-up contract
-- Treat repo-local `AGENTS.md` response-format guidance as authoritative for follow-up presentation; when it defines a repo-local `NEXT` section or selector-style follow-up contract, use that `NEXT` section with visible selector-labeled choices.
-- Prefix every follow-up option label with a visible selector in the label itself so plan-mode UIs still show a selectable key. Default to letters `A.` through `D.`; use numbers only when the surrounding context is already numeric and that would be clearer.
-- Offer 2-4 concrete next-step choices in both paths, ordered by suitability with the recommended option first; when practical tell the user they can reply with just the selector. When no repo-local `NEXT` contract exists, use a final `**Options**` section.
+- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
+- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count.
+- Offer 2-4 concrete next-step choices, ordered by suitability with the recommended option first; when practical tell the user they can reply with just the selector.
 - For `inquiry` intents the answer itself is the result: omit `Next action` unless a concrete continuation genuinely helps.
 - When booting from the main worktree of a Git repo, include both `create or move into a worktree+branch first` and `continue in the main checkout` as distinct choices, each naming the continuation it chains to (for example `create worktree ... then $cdd-plan <intent>` or `continue in the main checkout in vanilla AGENTS-driven mode on <intent>`). Place them by suitability, not fixed slots.
 - For read-only evidence intents, order `continue in the main checkout` ahead of worktree creation unless the user explicitly asks for isolation.

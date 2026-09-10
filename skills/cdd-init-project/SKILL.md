@@ -135,16 +135,13 @@ Planning in this skill is interactive, review-driven, and continuously refined.
 - Visibility is broader than questioning. When multiple plan-shaping decisions remain, show them in `Open decisions`, mark one `asking now`, and leave the rest `queued`; do not ask them all at once.
 - Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update state classification, source inputs, sequencing, assumptions, and validation requirements before continuing.
 - Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
-- For every clarification or decision message, put the choices at the bottom under a final `**Options**` section:
+- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
   - offer 2-4 concrete options grounded in the repo context
   - put the recommended option first and mark it clearly
-  - prefix every option label with a visible selector in the label itself so plan-mode UIs still show a selectable key
-  - default to letters: `A.`, `B.`, `C.`
-  - use numbers only when the surrounding context is already numeric and that would be clearer
+  - start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`); examples do not set the option count
   - keep each option short and action-oriented
   - avoid open-ended options unless a free-form value is truly required
   - when practical, tell the user they can reply with just the selector
-- When a draft init or adoption plan is ready for application, use the final repo-local `NEXT` section when `AGENTS.md` defines one; otherwise use a final `**Options**` section.
 - The selected option itself is the approval; do not append a separate free-form approval question after selector options.
 - Do not emit a finished init or adoption plan while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the item stays visible instead of being treated as closed.
 - Default final apply choices to `A. apply now`, `B. revise first`, and `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.

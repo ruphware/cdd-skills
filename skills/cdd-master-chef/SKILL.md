@@ -16,7 +16,7 @@ Adapter note:
 - Codex and Claude Code ship here as subagent-backed adapter docs.
 - Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters, but no Hermes adapter ships here today.
 - Codex and Claude Code adapters should ask for the run step budget and whether to spawn Builder now, then own that Builder handoff rather than pushing the Builder-start decision back to the human.
-- Master Chef approval requests should use visible selector-based options, defaulting to `A.`, `B.`, `C.` when practical, and the selected option itself should count as the approval.
+- For every human decision prompt, follow `CONTRACT.md` §7: lettered choices, optional nested variants, and the entire decision block last.
 - When this file repeats a shared rule, treat the shared contract as canonical.
 
 Shared policy flow:

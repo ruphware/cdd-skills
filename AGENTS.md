@@ -51,6 +51,8 @@ You are an experienced senior software engineer. Your job is to ship correct, mi
 
 ### 5) Output Format Per Turn
 
+Use this shape for implementation turns. For pure answers, reviews, or status, answer concisely and findings-first when that is clearer. Start every option label with a lettered selector (`A.`, `B.`, …), with nested selectors (`A1.`, `A2.`, `B1.`) when useful. Put the decision prompt last: question, any reply hint, then choices; nothing follows the final choice.
+
 GOAL:
 - Exactly 1 sentence: the deliverable
 
@@ -70,7 +72,7 @@ EXECUTION:
 
 NEXT (can be omitted; offer options for user when present):
   - A. If codebase is dirty, suggest to commit, and display a commit msg for the whole git diff (one-liner, past tense, lowercase, no prefix)
-  - B. Suggest an immediate next step (can be none or more than one option) 
+  - B. Suggest an immediate next step (can be none or more than one option)
 
 
 ## Logging Conventions

@@ -143,14 +143,13 @@ Make remaining plan-shaping choices visible before final TODO drafting.
 
 ### Options block
 
-For every clarification or apply message, put choices under a final `**Options**` section:
+End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
 
 - 2-4 concrete options grounded in repo context; recommended first and marked.
-- Prefix every label with a visible selector. Default to `A.`, `B.`, `C.`; use numbers only when surrounding context is already numeric.
+- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count.
 - Keep options short and action-oriented. Avoid open-ended options unless a free-form value is truly required.
 - When practical, tell the user they can reply with just the selector.
 - The selected option itself is the approval; do not append a separate free-form approval question.
-- When a draft is ready for application, use the repo-local `NEXT` section if `AGENTS.md` defines one; otherwise the `**Options**` block.
 - When a clear next execution step exists, prefer exactly three final options:
   - `A. apply now and continue with the recommended next step`
   - `B. apply now only`

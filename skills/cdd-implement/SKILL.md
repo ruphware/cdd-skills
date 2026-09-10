@@ -23,8 +23,8 @@ Never invent product, architecture, sequencing, or validation decisions while im
 - For `add to TODO and implement`, write the normalized task into the active TODO surface as one runnable step in the repo's step template, adding only what makes it decision-complete, before any code edit; the run then closes out in TODO-backed mode. Default to `TODO.md` unless several TODO files are plausible targets or none exists.
 
 ## Interaction contract
-- Resolve ambiguity and approval boundaries with selector-labeled options under the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise under a final `**Options**` section.
-- Prefix every option label with a visible selector so plan-mode UIs expose a selectable key: `A.`, `B.`, `C.` by default, numbers only when the surrounding context is already numeric. When practical, say the user can reply with just the selector.
+- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
+- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count. When practical, say the user can reply with just the selector.
 - The selected option itself is the approval; never append a separate free-form approval question.
 - Source-appropriate option sets:
   - bounded non-TODO task: `A. implement directly`, `B. add to TODO and implement`, `C. run cdd-plan first`, `D. keep it read-only and revise first`
