@@ -46,12 +46,12 @@ Built for unattended runs you can still merge after review.
 ### Prerequisites, then how the run stays reviewable
 
 1. **`$cdd-plan` first** so `TODO.md` has bounded, checkable steps. Master Chef executes a plan; it does not invent one.
-2. **`$cdd-audit` (recommended)** to confirm step size and Master Chef readiness before a long run.
+2. **`$cdd-audit` (recommended)** to confirm step points and Master Chef readiness before a long run.
 3. **One kickoff approval** sets how far the run can go.
 4. **Branch-backed worktrees** keep changes isolated until you review.
 5. **Persistent Builder context** carries knowledge across steps instead of starting cold each time.
 6. **Oversized work** is reviewed first; split only when the split cost is justified.
-7. **Wave-parallel (opt-in):** TODO steps annotated with `deps:` / `touches:` can run declared-disjoint work as bounded waves with a serial merge queue.
+7. **Wave-parallel (opt-in):** TODO steps annotated with `touches:`, plus `deps:` where ordering matters, can run declared-disjoint work as bounded waves with a serial merge queue.
 8. **Mission report** records completed steps, checks, pushes, decisions, and next actions.
 
 ```sh

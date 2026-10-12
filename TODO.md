@@ -1253,3 +1253,80 @@ Make `cdd-audit` retrospective audits measure the audited delta's added/deleted 
 - Confirm `verification quality` now flags evidenced test-cost waste without demanding benchmark coverage, and `complexity / maintainability` names value-obscuring indirection.
 - Confirm the flow emits `Deletion opportunities` with `Solution shape` and the final summary reports delta stats plus the deletion-opportunity outcome.
 - Confirm `python3 scripts/validate_skills.py` passes with zero validator changes.
+
+## Step 72 — Size steps in points and emit deps only for real edges
+
+points: 3
+touches: skills/cdd-plan/SKILL.md, skills/cdd-master-chef/{SKILL.md,CONTRACT.md,RUNBOOK.md,README.md,RUNTIME-CAPABILITIES.md}, skills/cdd-implement/SKILL.md, skills/cdd-audit/SKILL.md, README.md, scripts/test_plan_artifacts.sh
+
+### Goal
+
+Every cdd-plan step carries a `points:` line on a generic Fibonacci scale that consuming repos calibrate locally, `deps:` appears only when a hard ordering edge exists, and Master Chef reads the points as its oversized-step signal instead of guessing from wording.
+
+### Constraints
+
+- Keep the `## Step annotations` H2 and the four phrases `scripts/validate_skills.py` pins for it: `` `deps:` ``, `` `touches:` ``, `serial barrier`, `Unannotated TODO files always run serial`. The validator stays untouched.
+- The scale text is repo-neutral: no project names, paths, or example steps. Calibration (anchor steps per level, corrections to a dimension) belongs to the consuming repo and wins over the generic table; the levels and the line format never change.
+- Points measure relative complexity, never time. The skill never asks the user to size a step and never emits a number above 21: anything larger is written `>21`.
+- Serial stays the default. Wave eligibility keys on `touches:` alone; a missing `deps:` line means no ordering edge. `deps: none` is never written again; existing `deps: none` lines in any repo are left alone.
+- Compress wording, never decisions. Fold every rule into existing sections; add no new H2 anywhere.
+
+### Tasks
+
+- [x] `skills/cdd-plan/SKILL.md`: replace the body of `## Step annotations` with the text in Implementation notes; in `## Runnable TODO step contract`, extend the split bullet with "or when its `points:` would exceed 8".
+- [x] `skills/cdd-master-chef/CONTRACT.md`: §0.5 rule 4 and the oversized policy name a declared `points:` value as the primary signal (8 is the one-run ceiling, 13 or 21 enters the review-first split before the first delegation, `>21` is never delegated); the §2 inspection bullet reads the step's `points:` line when present; the "non-signals" bullet says a declared 13 or 21 is a signal and 8 or below means delegate unchanged; §12's presence rule becomes "the active TODO file carries `touches:` step annotations, with `deps:` lines where ordering edges exist". Keep `Unannotated TODO files always run serial` verbatim.
+- [x] `skills/cdd-master-chef/SKILL.md`: mirror the same three places (the §0.5 summary bullet, the kickoff inspection bullet, the routing bullet) and the kickoff-summary bullet that names the annotations.
+- [x] `skills/cdd-implement/SKILL.md`: the `add to TODO and implement` bullet writes the step "in the repo's step template, with its `points:` line".
+- [x] `skills/cdd-audit/SKILL.md`: both `master_chef_multi_step` mentions of step sizing read "step sizing (declared `points:` against the delivered shape)".
+- [x] `README.md`: the wave-parallel feature line names `touches:` with `deps:` where ordering matters.
+- [x] `scripts/test_plan_artifacts.sh`: the `deps: <comma-separated step ids | none>` literal becomes `deps: <comma-separated step ids>`; add assertions for `points: <1 | 2 | 3 | 5 | 8 | 13 | 21 | >21>` and `never write `deps: none``.
+
+### Implementation notes
+
+Replacement body for `## Step annotations` in `skills/cdd-plan/SKILL.md` (keep the heading; tighten wording if a shorter sentence loses nothing):
+
+```md
+Every emitted TODO step carries grep-friendly lines directly under its `## Step N` heading, before the first H3.
+
+- `points: <1 | 2 | 3 | 5 | 8 | 13 | 21 | >21>` on every step: relative complexity, never time.
+- `touches: <comma-separated path globs or boundary names>` on every step of a multi-step plan: the files, globs, or boundaries the step is expected to write.
+- `deps: <comma-separated step ids>` only when a hard ordering edge exists, and only to step ids in the same TODO file. A step without a `deps:` line has no ordering edge; never write `deps: none`. Cross-file dependencies are out of scope and force serial execution.
+- Two steps are disjoint only when neither lists the other in `deps:` and their `touches:` sets share no file, glob overlap, or named boundary. A step with no `touches:` line is a serial barrier: it is treated as touching everything.
+- Unannotated TODO files always run serial; annotations are additive and never change the meaning of an existing serial run.
+
+Points measure four dimensions: shape (how many owners change and whether one is new), contract (none, private, additive, or a new port or durable format), proof (what evidence closes the step), and unknowns (what is still open when the step is written). A step takes the highest level any dimension reaches.
+
+| Points | Shape | Contract | Proof | Unknowns |
+|---|---|---|---|---|
+| 1 | one site | none | existing test or one assertion | none |
+| 2 | one owner, a few sites | private shape | one focused test | none |
+| 3 | one path through existing seams, or one doc family | internal shape | focused tests in one or two scopes | decisions taken |
+| 5 | one path with regenerated artifacts, or several paths in one subsystem | additive change to an existing contract | several test scopes | shape known, many sites |
+| 8 | a new owner or mechanism | new port or behaviour, or a durable format with a rollback path | acceptance beyond unit tests | design decisions remain |
+| 13 | several new mechanisms, or one behavior across runtimes or surfaces | new durable records | acceptance across surfaces | several open decisions |
+| 21 | a program phase | several of the above | acceptance matrix | the design is still being settled |
+| >21 | a program | — | — | planned into sized steps before any of it is delegated |
+
+- 13 and 21 size phases, not steps: split before delegation unless a hard gate makes the work indivisible. Never write a number above 21.
+- Count consumers, not lines: a deletion behind one seam is small however large the file.
+- An investigate-first gate that may close the step without code does not raise the size; one that decides which owner or contract moves does.
+- Points are spent at implementation: a step whose remaining boxes are UAT only carries no points.
+- A repo may calibrate this scale in its TODO family or a repo-local skill: anchor steps per level and corrections to a dimension for that codebase. Repo calibration wins over this table; the levels and the line format never change.
+```
+
+- Master Chef sentences to place, verbatim or tighter: in §0.5 rule 4 and its SKILL.md mirror append "A declared `points:` value is the primary signal: 8 is the one-run ceiling, 13 or 21 enters this review before the first delegation, `>21` is planned, never delegated."; the §2 and SKILL.md inspection bullet becomes "whether the next runnable top-level TODO step is oversized for one Builder run, reading its `points:` line when present"; the oversized-policy "non-signals" bullet gains "a declared `points:` of 13 or 21 is a signal, and 8 or below means delegate unchanged".
+- `scripts/test_master_chef_artifacts.sh` pins `Unannotated TODO files always run serial` in CONTRACT.md; keep that sentence where it is. Adapters and `RUNTIME-CAPABILITIES.md` keep their `CONTRACT.md §12` pointers; do not touch them.
+- Steps 67 and 68 in this file keep their `deps: none` lines; this step demonstrates the new header shape.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_plan_artifacts.sh`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- Read `## Step annotations` and confirm: `points:` on every step with the `>21` marker, `touches:` on multi-step plans, `deps:` only for real edges with `deps: none` banned, the four-dimension table, the five rules, and the repo-calibration hook.
+- Confirm Master Chef's kickoff inspection, §0.5 rule 4, the oversized policy, and §12 read `points:` and key wave eligibility on `touches:` alone, with the serial-default sentence intact.
+- Confirm cdd-implement's add-to-TODO path and cdd-audit's multi-step shape mention `points:`, and the README feature line no longer requires `deps:`.
+- Confirm the three checks pass with `scripts/validate_skills.py` unchanged.

@@ -12,7 +12,7 @@ For every human decision prompt, follow `CONTRACT.md` §7: lettered choices, opt
 - Startup: recommend a descriptive worktree branch on fresh runs from long-lived branches, keep the source checkout on its original branch, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
 - Routing: default to TODO-backed `cdd-implement` for the next runnable step; route approved audit or external-review findings through `cdd-plan` first.
 - Builder lifecycle: keep one persistent Builder per active run, attempt step-start compaction when supported, and replace Builder only for recovery conditions.
-- Step shaping: review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified.
+- Step shaping: review oversized-looking work first, with the step's declared `points:` as the primary signal, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified.
 
 ## 0) Session settings
 
@@ -90,7 +90,7 @@ If this is a fresh run and the source checkout is still on a long-lived branch s
 
 1. Inspect the source checkout path, branch, and `HEAD` SHA.
 2. If this is a fresh run from a long-lived branch and no existing managed worktree is being resumed, recommend a descriptive worktree branch first and set `worktree_branch` from that decision without switching the source checkout.
-3. If the next runnable top-level TODO step looks oversized for one Builder run, apply the shared review-first split policy rather than splitting automatically. Keep it intact while one Builder delegation can still finish it safely, repair it in place if a minimal TODO fix restores that shape without changing scope, and split before delegation only when the parent step still is not safely delegable and the added split cost is clearly justified.
+3. If the next runnable top-level TODO step looks oversized for one Builder run, with its declared `points:` as the primary signal, apply the shared review-first split policy rather than splitting automatically. Keep it intact while one Builder delegation can still finish it safely, repair it in place if a minimal TODO fix restores that shape without changing scope, and split before delegation only when the parent step still is not safely delegable and the added split cost is clearly justified.
 4. If the active TODO file has a finite remaining unfinished top-level TODO step-heading count, recommend that exact count as the default/max `run_step_budget`, meaning "all remaining steps", after any step split.
 5. Choose the managed worktree path and `worktree_branch`.
 6. Run `git worktree add <path> -b <branch> HEAD` from the source checkout. Do not `git switch` the source checkout onto `<branch>` as part of normal provisioning.

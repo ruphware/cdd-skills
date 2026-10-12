@@ -20,7 +20,7 @@ Never invent product, architecture, sequencing, or validation decisions while im
 - For a non-TODO task, extract a compact implementation frame: target boundary, expected behavior or contract, key constraints, validation evidence.
 - Normalize only small local gaps in place: tighten wording, make validation concrete, or write a runnable TODO step when the user picks the TODO-backed path.
 - Escalate to `cdd-plan` when minimal normalization still leaves multiple hard gates, migration or rollback boundaries, distinct subsystems, or unresolved product, architecture, sequencing, or validation decisions.
-- For `add to TODO and implement`, write the normalized task into the active TODO surface as one runnable step in the repo's step template, adding only what makes it decision-complete, before any code edit; the run then closes out in TODO-backed mode. Default to `TODO.md` unless several TODO files are plausible targets or none exists.
+- For `add to TODO and implement`, write the normalized task into the active TODO surface as one runnable step in the repo's step template, with its `points:` line, adding only what makes it decision-complete, before any code edit; the run then closes out in TODO-backed mode. Default to `TODO.md` unless several TODO files are plausible targets or none exists.
 
 ## Interaction contract
 - End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.

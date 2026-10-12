@@ -24,7 +24,7 @@ Shared policy anchors for every adapter in this package:
 - keep Builder persistent across normal delegated-step transitions, attempt step-start compaction only when supported, and replace Builder only for recovery conditions
 - follow the active-monitoring ladder, boot timeout, suspect classification, and replacement policy defined in CONTRACT.md §7 — Kickoff and Builder lifecycle
 - preserve lineage and durable evidence, then close or mark older Builder sessions inactive so one active Builder remains after recovery or direct completion
-- review oversized-looking work first, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
+- review oversized-looking work first, with the step's declared `points:` as the primary signal, keep or repair the parent step when one-run delivery is still viable, and split only when the split cost is justified
 
 ## Runtime mechanics only
 

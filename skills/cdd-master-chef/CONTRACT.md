@@ -24,7 +24,7 @@ Treat these rules as the canonical policy flow for `cdd-master-chef`:
 1. Session settings are best-effort facts. Observe the current session model and thinking when the runtime exposes them, record unresolved fields as `unknown`, and continue with the active session as-is rather than blocking kickoff.
 2. Startup is branch-backed and environment-backed. On fresh runs from long-lived branches, default to recommending a descriptive worktree branch, keep the source checkout on its original branch unless the human explicitly asks otherwise, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate` validation rely on it.
 3. Builder lifecycle is persistent. Keep one Builder across normal delegated-step transitions, attempt step-start compaction when supported, replace Builder only for recovery conditions, and retire older Builders after preserving evidence so one active Builder remains.
-4. Oversized-looking work is reviewed first. Keep the parent step while one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified by lower total delivery churn.
+4. Oversized-looking work is reviewed first. Keep the parent step while one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified by lower total delivery churn. A declared `points:` value is the primary signal: 8 is the one-run ceiling, 13 or 21 enters this review before the first delegation, `>21` is planned, never delegated.
 
 ## 1) Actors
 
@@ -81,7 +81,7 @@ Before autonomous work begins:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
-   - whether the next runnable top-level TODO step is oversized for one Builder run
+   - whether the next runnable top-level TODO step is oversized for one Builder run, reading its `points:` line when present
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - whether this is a fresh run from a long-lived branch and should first suggest a descriptive worktree branch
    - whether the repo first needs `cdd-init-project`
@@ -246,7 +246,7 @@ Master Chef chooses the internal `cdd-*` routing model.
 
 - For a new or not-yet-CDD project, propose and normally start with `cdd-init-project` in the main session before any autonomous TODO execution.
 - Builder default: `cdd-implement` for the next runnable TODO step. Direct non-TODO use is explicit opt-in only.
-- If the next runnable top-level TODO step looks oversized for one Builder run, apply the compact review-first split policy rather than splitting by default. Delegate the parent step unchanged while one Builder delegation can still finish it safely, repair it in place when a minimal TODO fix restores that viability without changing scope, and split only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
+- If the next runnable top-level TODO step looks oversized for one Builder run, with its declared `points:` value as the primary signal per §0.5 rule 4, apply the compact review-first split policy rather than splitting by default. Delegate the parent step unchanged while one Builder delegation can still finish it safely, repair it in place when a minimal TODO fix restores that viability without changing scope, and split only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then delegate the first new runnable step.
 - Master Chef direct: `cdd-init-project`, `cdd-plan`, and `cdd-maintain` stay in the main session rather than being delegated to Builder.
 - Use `cdd-maintain` directly when the repo specifically needs doc drift review, codebase cleanup, `docs/INDEX.md` refresh, refactor architecture audit, archive upkeep, or local runtime cleanup review before the normal TODO loop continues.
 - `cdd-audit` is an installed direct audit helper for explicit implementation or codebase audits.
@@ -480,7 +480,7 @@ If a TODO step is blocked by a hard blocker, ambiguous scope, being oversized fo
 - pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED`
 - revise the situation in Master Chef before any more Builder work
 - run the same continuation review again: inspect completed work, failed proof, remaining scope, whether the active Builder is still usable after status or compaction checks, likely recovery cost for a replacement Builder, and whether the remainder now forms cleaner child steps than the parent step did
-- treat many checklist items, many touched files, or broad-looking wording as non-signals by themselves; use them only when they materially raise one-run failure risk
+- treat many checklist items, many touched files, or broad-looking wording as non-signals by themselves; use them only when they materially raise one-run failure risk; a declared `points:` of 13 or 21 is a signal, and 8 or below means delegate unchanged
 - treat split as expensive because it adds Builder restart overhead, extra hard-gate reruns, extra QA cycles, extra mission time, and extra proof boundaries
 - prefer `continue_same_step` when progress is real and the remainder still forms one bounded proof boundary for the active Builder, or for one recovery replacement Builder if the active one is no longer usable
 - if a minimal TODO repair restores one-run viability without changing the true scope, repair the step in place and continue that same parent step with the active Builder when safe, otherwise with one recovery replacement Builder
@@ -523,7 +523,7 @@ Runtime adapters must define:
 Serial execution per §7 stays the default. Wave-parallel is active only when all three hold:
 
 - the kickoff approval explicitly opts in and sets `max_parallel` (2-3)
-- the active TODO file carries `deps:` / `touches:` step annotations
+- the active TODO file carries `touches:` step annotations, with `deps:` lines where ordering edges exist
 - every step selected for a wave has a `touches:` line (a step without one is a serial barrier)
 
 Unannotated TODO files always run serial.

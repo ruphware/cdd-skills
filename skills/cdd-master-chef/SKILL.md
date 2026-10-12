@@ -24,7 +24,7 @@ Shared policy flow:
 - Session settings are best-effort facts: record unresolved current-session fields as `unknown` and continue with the active session as-is.
 - Startup is branch-backed and environment-backed: on fresh runs from long-lived branches, default to recommending a descriptive worktree branch, keep the source checkout on its original branch unless the human explicitly asks otherwise, create the managed worktree on the approved branch name, and bootstrap the active worktree to `env_ready` before Builder or `hard_gate`.
 - Builder lifecycle is persistent: keep the same Builder across normal delegated-step transitions, attempt step-start compaction when supported, replace Builder only for recovery conditions, and retire older Builders after preserving evidence so one active Builder remains.
-- Oversized-looking work is reviewed first: keep the parent step when one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified.
+- Oversized-looking work is reviewed first: keep the parent step when one-run delivery is still viable, repair it in place when a minimal TODO fix restores that shape, and split only when the split cost is justified. A declared `points:` value is the primary signal: 8 is the one-run ceiling, 13 or 21 enters this review before the first delegation, `>21` is planned, never delegated.
 - Wave-parallel execution is opt-in per `CONTRACT.md` §12: annotated TODO files plus kickoff opt-in can run declared-disjoint steps as bounded waves; unannotated TODO files always run serial.
 
 Operating contract:
@@ -57,7 +57,7 @@ Operating contract:
    - active TODO file when present
    - last completed step when present
    - next runnable TODO step when present
-   - whether the next runnable top-level TODO step is oversized for one Builder run
+   - whether the next runnable top-level TODO step is oversized for one Builder run, reading its `points:` line when present
    - remaining unfinished top-level TODO step-heading count in the active TODO file when that count is finite
    - whether this looks like a fresh run from a long-lived branch and should first suggest a descriptive worktree branch
    - whether the repo first needs `cdd-init-project` before the normal TODO loop can start
@@ -66,7 +66,7 @@ Operating contract:
 8. Master Chef chooses the internal `cdd-*` routing model for the core `[CDD-0]` through `[CDD-5]` skills.
    - `[CDD-1] Init Project` (`cdd-init-project`): for a new or not-yet-CDD project, propose and normally start here in the main session before any autonomous TODO execution.
    - `[CDD-3] Implement` (`cdd-implement`): Builder default for the next runnable TODO step; direct non-TODO use is explicit opt-in only.
-   - If the next runnable top-level TODO step is oversized for one Builder run, apply the shared review-first split policy rather than splitting by default. Prefer delegating the step unchanged while one Builder delegation can still finish it safely in one run; if a minimal TODO fix restores that viability without changing scope, repair it in place; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then treat the first new runnable step as the proposed delegated action.
+   - If the next runnable top-level TODO step is oversized for one Builder run, with its declared `points:` value as the primary signal, apply the shared review-first split policy rather than splitting by default. Prefer delegating the step unchanged while one Builder delegation can still finish it safely in one run; if a minimal TODO fix restores that viability without changing scope, repair it in place; split before delegation only when the parent step is not safely delegable as one coherent Builder action or cannot be made so with a minimal repair, and only when concrete evidence shows the split cost is justified. Charge split cost explicitly: extra Builder boots, extra hard-gate reruns, extra QA cycles, extra mission delay, and extra proof boundaries. Recompute the remaining unfinished top-level TODO step-heading count after a justified split, then treat the first new runnable step as the proposed delegated action.
    - `[CDD-2] Plan` (`cdd-plan`): Master Chef direct path that stays in the main session rather than being delegated to Builder.
    - `[CDD-4] Audit` (`cdd-audit`): installed direct audit helper for explicit implementation or codebase audits.
    - Route approved findings from `[CDD-4] Audit` or external review through `[CDD-2] Plan` (`cdd-plan`) in the main session before any delegated implementation begins.
@@ -92,7 +92,7 @@ Operating contract:
    - the default/max run step-budget recommendation when the active TODO has a finite remaining top-level step count
    - the approved run step budget
    - whether to spawn Builder now and start the autonomous run
-   - wave-parallel opt-in and `max_parallel` when the active TODO file carries `deps:`/`touches:` step annotations
+   - wave-parallel opt-in and `max_parallel` when the active TODO file carries `touches:` step annotations
    - runtime initialization under `.cdd-runtime/master-chef/`
    - run lease creation
    - managed worktree creation and relaunch expectations
@@ -150,7 +150,7 @@ Operating contract:
    - pause delegated implementation and report `STEP_BLOCKED` or `DEADLOCK_STOPPED` in the current Master Chef session
    - revise the situation in Master Chef before any more Builder work
    - run the same continuation review again: inspect completed work, failed proof, remaining scope, whether the active Builder is still usable after status or compaction checks, likely recovery cost for a replacement Builder, and whether the remainder now forms cleaner child steps than the parent step did
-   - treat many checklist items, many touched files, or broad-looking wording as non-signals by themselves; use them only when they materially raise one-run failure risk
+   - treat many checklist items, many touched files, or broad-looking wording as non-signals by themselves; use them only when they materially raise one-run failure risk; a declared `points:` of 13 or 21 is a signal, and 8 or below means delegate unchanged
    - treat split as expensive because it adds Builder restart overhead, extra hard-gate reruns, extra QA cycles, extra mission time, and extra proof boundaries
    - prefer `continue_same_step` when progress is real and the remainder still forms one bounded proof boundary for the active Builder, or for one recovery replacement Builder if the active one is no longer usable
    - if a minimal TODO repair restores one-run viability without changing the true scope, repair the step in place and continue that same parent step with the active Builder when safe, otherwise with one recovery replacement Builder

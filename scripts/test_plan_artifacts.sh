@@ -54,7 +54,9 @@ assert_contains "$SKILL_MD" "## Plan output style"
 assert_contains "$SKILL_MD" "## Step annotations"
 assert_contains "$SKILL_MD" "high-entropy"
 assert_contains "$SKILL_MD" "ASCII diagrams"
-assert_contains "$SKILL_MD" 'deps: <comma-separated step ids | none>'
+assert_contains "$SKILL_MD" 'deps: <comma-separated step ids>'
+assert_contains "$SKILL_MD" 'never write `deps: none`'
+assert_contains "$SKILL_MD" 'points: <1 | 2 | 3 | 5 | 8 | 13 | 21 | >21>'
 assert_contains "$SKILL_MD" 'touches: <comma-separated path globs or boundary names>'
 assert_contains "$SKILL_MD" "serial barrier"
 assert_contains "$SKILL_MD" "Unannotated TODO files always run serial"

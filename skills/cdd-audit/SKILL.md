@@ -103,7 +103,7 @@ Choose one audit shape before reviewing dimensions. The shape determines which p
 - `master_chef_multi_step`
   - Primary question: were the steps correctly decomposed, executed, evidenced, and closed out?
   - Preferred proof surfaces: selected TODO step contracts, implementation deltas, automated checks, UAT evidence, run summaries, continuation artifacts, and final mission or stop-state evidence when present.
-  - Prioritize step sizing, dependency order, completion evidence, proof quality, and whether the run stopped at the right boundary for the evidence available.
+  - Prioritize step sizing (declared `points:` against the delivered shape), dependency order, completion evidence, proof quality, and whether the run stopped at the right boundary for the evidence available.
   - Suppress planning-style replanning inside the audit itself; route approved findings outward instead.
 - `enhancement_proposal`
   - Primary question: is the proposal sound, non-duplicative, and ready to plan — what already exists, how does it fit, and which integration shape is best?
@@ -127,7 +127,7 @@ When the chosen scope resolves to one or more TODO steps, explicitly audit each 
 - Treat unchecked TODO tasks, missing completion evidence, weak automated-check or UAT proof, or implementation that misses the step goal as first-class findings.
 - If a selected TODO step lacks one of the preferred sections, treat that as a contract weakness or missing proof surface rather than silently skipping it.
 - Keep this step-scoped audit additive to the broader README, spec, code, test, config, manifest, and entrypoint review; do not narrow the audit into TODO-only review.
-- For `master_chef_multi_step`, audit both the per-step contract and the run-level execution evidence: step sizing, dependency order, completion evidence, continuation quality, and whether checks plus UAT actually prove completion.
+- For `master_chef_multi_step`, audit both the per-step contract and the run-level execution evidence: step sizing (declared `points:` against the delivered shape), dependency order, completion evidence, continuation quality, and whether checks plus UAT actually prove completion.
 
 ## Enhancement-proposal audit
 

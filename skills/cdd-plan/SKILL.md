@@ -33,7 +33,7 @@ A runnable step is decision-complete: the implementer can execute it without reo
 - Use `Implementation notes` for file/symbol hints, interface or schema changes, ordering constraints, migration notes, snapshot/audit requirements, and other coding-critical detail that would otherwise be lost in a short task list.
 - Do not leave essential implementation detail only in the surrounding chat — put it in the TODO step.
 - Do not write new caps, truncations, timeouts, retries, or config knobs into a step without a proven trust, resource, external-deadline, or liveness risk with a named owner and defined reached behavior; prefer explicit failure, streaming, pagination, or backpressure over speculative caps — most values stay unbounded.
-- Split work into separate steps when it crosses distinct hard gates, migration boundaries, rollback surfaces, or independently testable subsystems.
+- Split work into separate steps when it crosses distinct hard gates, migration boundaries, rollback surfaces, or independently testable subsystems, or when its `points:` would exceed 8.
 
 ## Plan output style
 
@@ -48,17 +48,33 @@ Plans are high-entropy: every sentence must carry decisions, constraints, or evi
 
 ## Step annotations
 
-Parallel-eligible multi-step plans annotate each emitted TODO step for downstream wave-parallel execution.
+Every emitted TODO step carries grep-friendly lines directly under its `## Step N` heading, before the first H3.
 
-- A plan is parallel-eligible when it emits two or more runnable steps into one TODO file and at least two steps could plausibly run independently.
-- Emit two grep-friendly lines directly under each `## Step N` heading, before the first H3:
-  - `deps: <comma-separated step ids | none>`
-  - `touches: <comma-separated path globs or boundary names>`
-- `deps:` names hard ordering edges only, and only step ids in the same TODO file; cross-file dependencies are out of scope and force serial execution.
-- `touches:` names the files, globs, or boundaries the step is expected to write; overlapping `touches:` between two steps means they are not disjoint.
-- Two steps are disjoint only when neither lists the other in `deps:` and their `touches:` sets share no file, glob overlap, or named boundary.
-- A step with no `touches:` line is a serial barrier: it is treated as touching everything.
+- `points: <1 | 2 | 3 | 5 | 8 | 13 | 21 | >21>` on every step: complexity points on the Fibonacci story-point scale, never time, sized by the planner without asking the user.
+- `touches: <comma-separated path globs or boundary names>` on every step of a multi-step plan: the files, globs, or boundaries the step is expected to write.
+- `deps: <comma-separated step ids>` only when a hard ordering edge exists, to step ids in the same TODO file; a step without the line has no edge, so never write `deps: none`. Cross-file dependencies are out of scope and force serial execution.
+- Two steps are disjoint only when neither lists the other in `deps:` and their `touches:` sets share no file, glob overlap, or named boundary. A step with no `touches:` line is a serial barrier: it is treated as touching everything.
 - Unannotated TODO files always run serial; annotations are additive and never change the meaning of an existing serial run.
+
+Points measure four dimensions: shape (how many owners change and whether one is new), contract (none, private, additive, or a new port or durable format), proof (what evidence closes the step), and unknowns (what is still open when the step is written). A step takes the highest level any dimension reaches.
+
+| Points | Shape | Contract | Proof | Unknowns |
+|---|---|---|---|---|
+| 1 | one site | none | existing test or one assertion | none |
+| 2 | one owner, a few sites | private shape | one focused test | none |
+| 3 | one path through existing seams, or one doc family | internal shape | focused tests in one or two scopes | decisions taken |
+| 5 | one path with regenerated artifacts, or several paths in one subsystem | additive change to an existing contract | several test scopes | shape known, many sites |
+| 8 | a new owner or mechanism | new port or behavior, or a durable format with a rollback path | acceptance beyond unit tests | design decisions remain |
+| 13 | several new mechanisms, or one behavior across runtimes or surfaces | new durable records | acceptance across surfaces | several open decisions |
+| 21 | a program phase | several of the above | acceptance matrix | the design is still being settled |
+| >21 | a program | not sized | not sized | plan it into phases before delegating any of it |
+
+- 13 and 21 size phases, not steps: split before delegation unless a hard gate makes the work indivisible. Never write a number above 21.
+- Count consumers, not lines: a deletion behind one seam is small however large the file.
+- Docs-only work tops out at 3: width does not raise it, judgment per section does.
+- An investigate-first gate that may close the step without code does not raise the size; one that decides which owner or contract moves does.
+- Points are spent at implementation: a step left with only UAT boxes has 0 remaining; its `points:` line is not edited.
+- A repo calibrates this scale in its TODO family or a repo-local skill with anchor steps per level and corrections to a dimension; that calibration wins over this table, while the levels and the line format never change.
 
 ## Audit-input normalization
 
