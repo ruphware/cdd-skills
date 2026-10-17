@@ -10,256 +10,34 @@ Use this skill for explicit repo maintenance: doc drift and repo upkeep, approva
 ## Shared routing read
 - Read `AGENTS.md` first.
 - Read only the minimum repo context needed to route the selected mode before doing deeper review.
-- Do not front-load support-doc, journal, or runtime review when the selected mode does not require it.
-
-## Mode-scoped read discipline
-- `A. doc drift + upkeep`: read `README.md`, `TODO.md` and adjacent `TODO*.md`, `docs/JOURNAL.md` as the stable journal entrypoint, plus `docs/journal/JOURNAL.md`, matching `docs/journal/JOURNAL-<area>.md` files, `docs/journal/SUMMARY.md`, and `docs/journal/archive/` when split-journal mode is active, `docs/INDEX.md` and `docs/index/**` siblings when INDEX split is active, `docs/specs/prd.md`, `docs/specs/blueprint.md`, connected `docs/specs/*-definition.md` files when present, `docs/prompts/PROMPT-INDEX.md` if present, repo-root `RUNBOOK.md` and `docs/runbooks/*.md` when present, every detected subsystem doc cluster (see `Mode A — Subsystem doc clusters`), every ad-hoc support doc (see `Mode A — Ad-hoc support docs`), repo-local `.agents/skills/*/SKILL.md` files when present, repo-local `.cdd-runtime/` when present, and manifests, entrypoints, or scripts needed to verify drift or upkeep decisions.
-- `B. source cleanup`: start from tracked source, tests, configs, manifests, and entrypoints, plus repo-native dead-code or unused-code tooling when present. Read `README.md`, `TODO*.md`, journal surfaces, repo-local `.agents/skills/*/SKILL.md`, or `.cdd-runtime/` only when one of those surfaces is needed as proof for a specific cleanup candidate.
-- `C. index`: read only the project content needed to regenerate `docs/INDEX.md` (and `docs/index/**` siblings when INDEX split is active), plus `docs/prompts/PROMPT-INDEX.md` when present as the repo-local INDEX contract.
-- `D. refactor`: read `docs/INDEX.md` (and `docs/index/**` siblings when INDEX split is active) plus the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context needed for the selected architecture audit.
-- When multiple modes are selected, read and report them in fixed order `A -> B -> C -> D`.
+- Each mode's read list lives in its mode file (`## Mode files`); do not front-load support-doc, journal, or runtime review when the selected mode does not require it.
 
 ## Mode selection
-- If the user request already clearly maps to one mode, use it directly.
-- Otherwise ask one substantive question and wait, using the presentation rules below:
+- If the user request already clearly maps to one mode, use it directly. Otherwise ask and wait:
   - `A. doc drift + upkeep`
   - `B. source cleanup`
   - `C. index`
   - `D. refactor`
   - `E. do all`
-- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
-- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count.
-- When practical, tell the user they can reply with just the selector.
-- Allow selecting more than one option in the same reply. If the user selects `E`, says `do all`, or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named.
+- Ask at most one substantive question per message. After each answer, re-rank what remains and ask the next highest-leverage question; never list several open questions as a checklist.
+- End every decision message with repo-local `NEXT` when `AGENTS.md` defines one, otherwise `**Options**`: question, any reply hint, then choices; nothing follows the final choice.
+- Label every choice with a lettered selector, also in native option UIs (`A.`, `B.`, …; nested `A1.`, `A2.`); put the recommended choice first and mark it; say the user may reply with the selector alone. The selected option is the approval; never append a separate approval question.
+- Allow selecting more than one option in the same reply. If the user selects `E`, says `do all`, or selects multiple modes, execute them in fixed order `A -> B -> C -> D` regardless of the order they were named; read and report them in that order too.
 - Keep the mode-specific write scope tight. Do not widen from one mode into another without asking.
 
 ## Approval contract
-- Reuse the same selector-based option pattern for documentation, cleanup, index, stale-TODO deletion, and runtime-cleanup approvals.
-- The selected option itself is the approval; do not append a separate free-form approval question after selector options.
-- Keep documentation approval, stale TODO deletion approval, and runtime-cleanup approval separate even when the same report surfaces all three.
+- Documentation, ad-hoc archive, stale-TODO deletion, runtime-cleanup, source-cleanup, and INDEX-update approvals all reuse the options block above: the selected option is the approval.
+- Keep documentation, stale-TODO deletion, runtime-cleanup, and source-cleanup approvals separate even when the same report surfaces them together.
+- Present multiple approval decisions one at a time as a loop: surface the highest-priority approval first, wait for the user's selector, apply the approved actions for that decision, then surface the next remaining approval. Do not list multiple approval decisions in one message as a checklist for the user to triage at once.
 - When a single apply decision is ready, prefer `A. apply now`, `B. keep the report only`, and `C. revise scope first`.
-- When the report surfaces multiple separate approval decisions (documentation + ad-hoc archive + stale-TODO deletion + runtime cleanup + source cleanup batches), present them one at a time as a loop: surface the highest-priority approval first, wait for the user's selector, apply the approved actions for that decision, then surface the next remaining approval. Do not list multiple approval decisions in one message as a checklist for the user to triage at once.
 
 ## Safe write behavior
 - Apply safe archive moves immediately.
-- Apply ad-hoc-doc archive moves only after documentation approval.
-- Ask before deleting stale adjacent `TODO*.md` files.
-- Do not silently rewrite support docs.
-- Do not silently delete `.cdd-runtime/` content.
-- In `source cleanup` mode, remove only clearly approved dead or obsolete code and artifacts.
-- In `index` mode, write only `docs/INDEX.md` (plus `docs/index/**` siblings when INDEX split is active).
-- In `refactor` mode, do not rewrite implementation directly; produce an architecture audit, refactor options, and a recommendation to use `cdd-plan`.
-
-## Mode A — Doc drift + upkeep
-- In this mode, own both support-doc drift and repo upkeep: TODO archive review, stale adjacent TODO review, journal archive review, and repo-local runtime cleanup review.
-- Apply the TODO archive rules, stale adjacent `TODO*.md` rules, journal archive rules, and local runtime cleanup review rules below only in this mode unless another selected mode explicitly needs one of those surfaces as proof.
-- Treat `README.md`, repo-root `RUNBOOK.md` and `docs/runbooks/*.md` when present, `docs/specs/prd.md`, `docs/specs/blueprint.md`, and connected `docs/specs/*-definition.md` files as canonical support docs.
-- Also review `docs/INDEX.md`, `docs/index/**` siblings when INDEX split is active, and `docs/prompts/PROMPT-INDEX.md` when present as support-doc navigation surfaces.
-- Treat repo-local `.agents/skills/*/SKILL.md` files when present as workflow/governance drift surfaces tied to the repo's documented workflow.
-- Compare each support doc against the current repo state or clearly intended future-state contract using manifests, entrypoints, scripts, active TODO/JOURNAL context, and the other support docs. Use the bounded checks and orphaned-topic check defined in `Mode A — Codebase-comparison checks` below. When repo-local `.agents/skills/*/SKILL.md` files are present, compare them against the current repo structure, documentation topology, `AGENTS.md`, and the current support-doc contract.
-- Check whether setup/dev/test/build instructions, documented workflows, active features, future plans, architecture notes, referenced doc paths, doc-role boundaries, journal topology, and workflow-skill expectations still match the repo.
-- Beyond presence-and-name checks, hunt for lifecycle-mismatch narration per the `Lifecycle-mismatch claims` check in `Mode A — Codebase-comparison checks`.
-- For `README.md`: keep it as the runbook entrypoint. It may include current features, use cases, and future plans, but not historical project narration — step-by-step development summaries, "implemented X in commit Y" stories, retired roadmap entries — or CDD/TODO step progression; that history belongs in journal/changelog. If it includes a CDD contract note, keep it as a low-visibility bottom footer.
-- For `docs/runbooks/*.md` and repo-root `RUNBOOK.md`, flag procedures or commands for decommissioned, renamed, or removed services, scripts, or entrypoints; the runbook is for current operations, not archaeology.
-- If `README.md` is long and substantially duplicates content already maintained in other support docs such as `TODO.md` or `docs/specs/*`, propose a user-approved compaction rather than silently condensing it.
-- For `docs/specs/prd.md`: treat it as the product-manager view.
-- For `docs/specs/blueprint.md` and connected `*-definition.md` files: treat `blueprint.md` as the anchor technical spec.
-- Repo history is not justification for stale support-doc content; drift review is about current repo truth or clearly intended future-state docs.
-- Classify each support doc as `current`, `drifted`, `stale-candidate`, `missing`, or `unclear`. The `stale-candidate` label applies only to ad-hoc support docs and is populated only by the orphaned-topic check in `Mode A — Codebase-comparison checks`; classifying a doc as `stale-candidate` does not by itself archive anything.
-- Classify each repo-local skill surface reviewed under `.agents/skills/*/SKILL.md` as `current`, `drifted`, `missing`, or `unclear`.
-- If a support doc is missing, report it explicitly and do not fabricate it automatically as part of maintenance.
-- If `README.md`, `docs/specs/*`, connected `*-definition.md` files, `docs/INDEX.md`, `docs/index/**` siblings when INDEX split is active, `docs/prompts/PROMPT-INDEX.md`, or repo-local `.agents/skills/*/SKILL.md` files have drifted, prepare the needed edits and show them to the user before applying anything; never silently refresh any of these files.
-- Ask once for documentation approval using selector-based options, per the presentation rules in `## Mode selection` and separation rules in `## Approval contract`.
-- If the user approves, apply only the approved support-doc edits and then report them.
-- If the user does not approve, leave support docs unchanged and report the remaining drift clearly.
-
-### Mode A — Subsystem doc clusters
-- Detect a subsystem doc cluster when a directory contains `README.md` and at least one of `RUNBOOK.md`, `CONTRACT.md`, or `SKILL.md`. Treat the cluster's `README.md`, `RUNBOOK.md`, `CONTRACT.md`, and `SKILL.md` files as canonical for that subsystem only.
-- Root `README.md` stays the repo runbook entrypoint; a subsystem `README.md` is canonical only for its subsystem — both scopes coexist.
-- Treat every other `*.md` inside a detected cluster as a subsystem-internal ad-hoc support doc per `Mode A — Ad-hoc support docs`.
-
-### Mode A — Ad-hoc support docs
-- Treat the following as ad-hoc support docs and walk them on every Mode A invocation:
-  - every `*.md` under `docs/` not in a canonical-role subdirectory (`docs/specs/`, `docs/prompts/`, `docs/runbooks/`, `docs/archive/`, `docs/journal/`, `docs/index/`, `docs/INDEX.md`, `docs/JOURNAL.md`)
-  - every non-canonical `*.md` at repo root (excluding the protected names `README.md`, `AGENTS.md`, `CLAUDE.md`, `TODO.md`, `TODO-*.md`, `CHANGELOG.md`, `LICENSE`, `CONTRIBUTING.md`)
-  - every subsystem-internal non-canonical `*.md` file inside a detected subsystem doc cluster
-- This covers mockups, scratch RFCs, design notes, retired drafts, source mockups, and similar exploratory artifacts. RFCs are one example of an ad-hoc support doc, not a privileged class.
-- Non-`.md` files (images, JSON, binaries) are out of scope for Mode A.
-- Classify each ad-hoc support doc using the classification line above and report them under `Support documentation status`. Archive proposals follow `Mode A — Ad-hoc support doc archive rules`.
-
-### Mode A — Codebase-comparison checks
-- Run these bounded checks against canonical support docs and ad-hoc support docs. Use repo-native search only; no full static analysis or symbol-graph traversal.
-- A failed bounded check produces a `drifted` classification with the specific claim cited.
-- **Script-name claims** (`npm run <name>`, `pnpm <name>`, `yarn <name>`, `make <target>`, `pdm run <name>`, `cargo <command>`, `go run <path>`, `python -m <module>`, or any quoted command pointing at a repo script): verify the target resolves to an entry in the relevant manifest (`package.json`, `pyproject.toml`, `Makefile`, `scripts/`, `Cargo.toml`, `go.mod`, `mix.exs`, etc.).
-- **File-path claims** (any repo-relative path or backticked path in a doc): verify the path exists in the current tree.
-- **Symbol claims** (function, class, module, or CLI command name in a doc): best-effort repo-grep. Report `unclear` if not found rather than auto-`drifted`.
-- **Entrypoint claims** (a main / CLI / service / handler in a doc): verify the named entrypoint file exists and is referenced from the relevant manifest.
-- **Skill-reference claims** (`$cdd-<x>` or `skills/<x>` in a doc): verify the skill directory and `SKILL.md` exist.
-- **Manifest-field claims** (package name, version range, or dependency in a doc): verify the field is present in the relevant manifest.
-- **Lifecycle-mismatch claims** (narrative content that talks about work as future, in-progress, current, or past): cross-check against current code, active TODO surfaces, and recent journal or commit activity. Future-tense work that already shipped, in-progress narration ("currently implementing", "we are migrating") of completed work, present-tense documentation of removed or renamed surfaces, deprecated paths still presented as the primary recommendation, and retired roadmap or "coming soon" items still presented as future are all `drifted` findings — cite the specific phrase and the evidence that contradicts it.
-- Orphaned-topic check (ad-hoc support docs only):
-  - Extract the doc's primary subject from filename, H1 heading, and first-paragraph keywords.
-  - Grep the subject across (a) the codebase, (b) the active TODO step list (`TODO.md` + adjacent `TODO-*.md`), (c) the active specs and blueprint (`docs/specs/*`), and (d) the last 30 days of journal activity. Locate journal sources per the existing single-vs-split rules in `Mode A — Journal archive rules`.
-  - Map hit count to label: 0 hits across all four surfaces → `stale-candidate`; 1-2 weak hits → `unclear`; 3+ hits → `current`.
-
-### Mode A — TODO archive rules
-- Check `TODO.md` and adjacent `TODO*.md` files.
-- Treat a step as archiveable only when its task list is fully complete under the repo's current TODO style. If step completion is ambiguous, leave that step in place and report it.
-- Preserve top-to-bottom TODO history: archive only from the oldest contiguous archiveable block near the top of the active step list. Never archive a step from the middle or tail of the active TODO file. Do not leapfrog an older incomplete or ambiguous step in order to archive later completed steps below it.
-- Retain the newest 3 step headings in each active TODO file. Archive older completed steps when a TODO file is long enough to need trimming. Treat a TODO file as long when it has more than 6 step headings or clearly accumulated completed historical steps beyond the retained active window.
-- Move archived sections into `docs/archive/`.
-- Use archive filenames:
-  - `TODO.md` -> `docs/archive/TODO_YYYY-MM-DD.md`
-  - `TODO-foo.md` -> `docs/archive/TODO-foo_YYYY-MM-DD.md`
-- If the same-day archive file already exists, append the newly archived sections instead of overwriting it.
-- If older incomplete or ambiguous steps block a clean top trim, do not archive later completed steps; report archival as blocked by non-contiguous active history. After archiving, keep the active TODO file focused on the retained newest 3 step headings plus any older incomplete or ambiguous steps that could not be archived safely.
-
-### Mode A — Stale adjacent TODO file handling
-- For adjacent `TODO*.md` files, check last activity using `git log -1` timestamp when available.
-- If git history is unavailable, fall back to filesystem mtime.
-- If an adjacent TODO file is older than 14 days and has no remaining active work after safe archiving, ask the user once for approval before deleting those stale files.
-- Group all such stale-file deletions into one approval request.
-
-### Mode A — Journal archive rules
-- Read the journal layout plus archive or rotation guidance at the top of `docs/JOURNAL.md` first. Treat `docs/JOURNAL.md` as the stable journal entrypoint in all repos.
-- In split-journal mode, expect the top of `docs/JOURNAL.md` to remain a short, clear current-state index/header for the active journal layout; if it no longer clearly routes readers to `docs/journal/*`, report it as drift.
-- If no active implementation `TODO-<area>.md` exists, treat the repo as single-journal mode and archive `docs/JOURNAL.md` only according to the rules defined there.
-- When any active implementation `TODO-<area>.md` exists, treat split-journal mode as active and keep it active; do not propose collapsing back to a single hot journal. In split-journal mode, review `docs/journal/JOURNAL.md` only for repo-wide or cross-cutting notes, matching `docs/journal/JOURNAL-<area>.md` files for active workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches when present.
-- Do not precreate split-journal files before split-journal mode is active.
-- In split-journal mode, archive hot journals only according to the rules defined in the active journal files or entrypoint guidance, and route condensed/archive review through `docs/journal/SUMMARY.md` and `docs/journal/archive/` when present. If the relevant journal entrypoint or active hot journal files have no clear archive or routing rule, do not invent one; skip journal archival for that unclear surface and report it.
-
-### Mode A — Ad-hoc support doc archive rules
-- Primary trigger is an ad-hoc support doc classified as `stale-candidate` by the orphaned-topic check in `Mode A — Codebase-comparison checks`. Cite which evidence surfaces returned no hits when proposing archive.
-- Secondary trigger is an explicit retirement marker in the doc — frontmatter `Deprecated:`, frontmatter `Superseded by:`, or frontmatter `Status:` with value `Superseded`, `Rejected`, or `Withdrawn`. Strong signals when present but not required; judgement-based `stale-candidate` proposals are also valid.
-- Never silent. Documentation approval is required for every archive move.
-- The destination layout mirrors the source location:
-  - `docs/foo.md` → `docs/archive/foo_YYYY-MM-DD.md`
-  - `docs/<sub>/bar.md` → `docs/archive/<sub>/bar_YYYY-MM-DD.md`
-  - Repo-root non-canonical `*.md` such as `NOTES.md` → `docs/archive/NOTES_YYYY-MM-DD.md`
-  - Subsystem-internal `<subsystem>/scratch.md` → `<subsystem>/_archive/scratch_YYYY-MM-DD.md` (local archive so the subsystem stays self-contained)
-- Same-day archive append: if the destination archive file already exists for the same date, append the newly archived sections to that file rather than overwriting it.
-- Ask once for documentation approval using selector-based options; allow per-file or batched approval — user picks granularity. Reuse the documentation-approval flow and separation rules from `## Approval contract`.
-- Journal archive rules (`### Mode A — Journal archive rules`) and TODO archive rules (`### Mode A — TODO archive rules`) are unchanged; the ad-hoc support doc archive contract is parallel and additive.
-
-### Mode A — Local runtime cleanup review
-- Inspect repo-local `.cdd-runtime/` when present, especially `.cdd-runtime/master-chef/`.
-- If the repo is Git-backed, use local worktree state to classify runtime artifacts as `live`, `stale`, or `unclear`.
-- Treat currently linked worktrees, clearly active runtime locks, and current run state as `live`.
-- Treat abandoned managed worktree directories, orphaned runtime logs, stale context snapshots, and old run directories not tied to live worktrees as `stale`.
-- If runtime state is unclear, leave it in place and report it as `unclear`.
-- Ask once for runtime-cleanup approval using selector-based options, per the separation rules in `## Approval contract`.
-- If the user approves, remove only `stale` repo-local runtime artifacts and managed worktrees.
-- Never remove the current worktree, the current run state, or any runtime surface still tied to a `live` linked worktree.
-
-## Mode B — Source cleanup
-- Start from tracked source, tests, configs, manifests, and entrypoints. Treat this as a tracked-code cleanup pass, not a broad repo-maintenance audit.
-- Prefer repo-native lint, typecheck, unused-code, or dead-code tooling when present.
-- Otherwise use conservative heuristic scans for:
-  - dead modules or orphaned tracked files
-  - dead or unreachable code branches
-  - duplicate retired implementation paths
-  - stale feature code no longer wired into entrypoints
-  - obsolete generated leftovers
-  - unused exports when the evidence is strong
-  - prototype, POC, or experimental code paths (signaled by names like `prototype_*`, `poc_*`, `experimental_*`, `scratch_*`, `sandbox_*`; comments like `// XXX`, `// TODO remove`, `// experimental`, `// throwaway`; or directory placement like `prototypes/`, `scratch/`, `sandbox/`, `_experiments/`) that never shipped or were superseded by a production path
-  - backward-compatibility shims, legacy bridges, or deprecated APIs (often in files like `compat.*`, `legacy.*`, `deprecated.*` or function names like `*_v1`, `legacy_*`, `compat_*`, `old_*`) with no remaining callers in the repo; verify call sites with repo-grep before flagging
-  - feature flags, config gates, or env-var toggles that are permanently ON or permanently OFF in current code paths and no longer guard real branching
-  - migration helpers, one-shot data backfill code, or schema-translation shims from completed migrations
-  - removed-vendor or removed-integration adapters whose external dependency or sidecar has already been deleted from manifests/configs
-- Classify each cleanup candidate as `confirmed_cleanup`, `probable_cleanup`, or `unclear`.
-- For each candidate, record:
-  - affected boundary
-  - why it appears dead or obsolete
-  - proof surface
-  - any must-preserve behavior or contract
-- Do not remove anything classified as `unclear`.
-- Do not silently refactor, redesign, or broaden the scope while cleaning.
-- If cleanup needs matching test, config, or doc deletion to keep the repo coherent, include those edits in the same proposed cleanup patch.
-- Group approved removals into cleanup patches by concern (e.g. prototypes, backcompat shims, dead modules, unused exports, completed-migration helpers). When the pass produces multiple distinct concern batches, surface them one at a time per the loop rule in `Approval contract`: ask approval on the highest-priority concern, wait, apply approved removals for that batch, then surface the next concern. Do not present multiple concern batches in one message as a checklist.
-- If the user approves, remove only the approved dead lines, files, folders, tests, configs, or generated leftovers.
-- If the user does not approve, leave code unchanged and report the remaining cleanup candidates clearly.
-
-## Mode C — Index
-Fully rebuild `docs/INDEX.md` (and `docs/index/**` siblings when INDEX split is active) after approval.
-
-### Split detection
-- Treat INDEX split as **active** when any of the following holds:
-  - `docs/index/` already exists with at least one `*.md` sibling.
-  - Current `docs/INDEX.md` exceeds ~300 lines.
-  - A single inventory section is on track to grow unboundedly with the codebase (e.g. app source rows that strictly increase with every regen).
-- Treat INDEX split as **not active** otherwise; default to single-file emission.
-- Once split is detected, keep it active. Do not collapse back to single-file in this mode.
-
-### Write scope
-- In single-file mode, write only `docs/INDEX.md`.
-- In split-file mode, write only `docs/INDEX.md` plus the `docs/index/**` siblings required by the repo-local INDEX contract. If no repo-local contract names them, default to `DIAGRAMS.md`, `INVENTORY-source.md`, `INVENTORY-tests.md`, and `INVENTORY-other.md` (omit `INVENTORY-other.md` when there is no third-tier inventory worth tracking). New siblings may be created when the split layout calls for them; existing siblings are rewritten in place.
-- Never modify `README.md`, `AGENTS.md`, `TODO*.md`, `docs/prompts/*`, `docs/specs/*`, application code, configs, or manifests as part of `index` mode.
-- If refreshing the index appears to require a broader doc or code change, stop and ask whether to switch to `doc drift + upkeep`, `source cleanup`, `refactor`, or `cdd-plan`.
-
-### Generation discipline
-- If `docs/prompts/PROMPT-INDEX.md` exists, use it as the repo-local INDEX contract.
-- Use it for entrypoint, layout, sibling naming, thresholds, and validation when it stays within Mode C write scope.
-- Fall back to this skill's default INDEX contract only when the prompt is missing, silent on a point, or clearly stale/broken; report the fallback.
-- Treat `docs/INDEX.md` and every `docs/index/**` sibling as output-only. Do not reuse prior prose, diagrams, inventories, or summaries from them as semantic input.
-- Rebuild from a fresh, tool-driven scan of tracked source, tests, configs, manifests, entrypoints, and relevant support docs.
-- When present, use `README.md`, `TODO.md`, adjacent `TODO*.md`, `docs/specs/blueprint.md`, and project metadata such as `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `mix.exs`, and `requirements*.txt` as repo signals for framework, dependency, and architecture context.
-- If `docs/specs/*` or project metadata are missing, continue with the available signals and report the gaps rather than failing or inventing content.
-- Read only the project content needed to:
-  - understand the repo from `README.md`, `TODO.md`, `TODO-*.md`, and `docs/specs/blueprint.md`
-  - enumerate tracked files with repo-local tools
-  - identify languages, frameworks, and dependency files
-  - map the codebase and tests
-  - count LOC, build the file inventory, and extract per-file keywords, symbols, names, and concise meaning
-  - apply repo-local LOC tagging rules from `docs/prompts/PROMPT-INDEX.md` when present; otherwise tag files over 760 LOC as `refactor-candidate`
-  - derive 2-4 GitHub-safe mermaid diagrams from the rebuilt repo model when useful
-
-### Split-file emission rules
-- `docs/INDEX.md` stays slim (≤ ~300 lines): Executive Summary, Project Snapshot, **Layout** pointer block listing each diagram H3 and each sibling inventory, Dependency Map (full mermaid), Glossary, Last Generated footer.
-- `docs/index/DIAGRAMS.md` carries every architecture / flow / component mermaid diagram, one H3 per diagram with the same title used in the Layout pointer. Starts with the one-line back-pointer `> Body of [docs/INDEX.md](../INDEX.md) — architecture, flow, and component diagrams.`
-- `docs/index/INVENTORY-<area>.md` carries the file & API inventory split by area. Use repo-local sibling names when the INDEX contract defines them; otherwise default to `INVENTORY-source.md`, `INVENTORY-tests.md`, and `INVENTORY-other.md` as appropriate. Each sibling starts with its own back-pointer.
-- Do not duplicate any inventory row across siblings — each path belongs in exactly one sibling. Dependency Map and Glossary stay in `docs/INDEX.md`. Only `docs/INDEX.md` carries the `## Last Generated` footer.
-
-### Preflight
-- Before proposing the write, emit a concise preflight plan covering:
-  - detected mode (`single-file` or `split-file`) with the trigger that decided it
-  - intended changes per file (`docs/INDEX.md` in single mode; `docs/INDEX.md` plus each touched `docs/index/**` sibling in split mode)
-  - source files and repo signals used
-  - exact validation commands (repo-local commands from `docs/prompts/PROMPT-INDEX.md` when present; otherwise the fallback recipe below)
-  - explicit confirmation that no file outside the declared write scope will be modified
-- Self-grade the draft from 0-12; if below 11.5, revise before asking for approval.
-- Present selector-based apply options for the INDEX update.
-
-### Validation — single-file mode (fallback)
-After approval, if `docs/prompts/PROMPT-INDEX.md` does not define replacement validation commands, run only these fixed validation commands:
-- `test -f docs/INDEX.md`
-- `rg -n '^# Context for ' docs/INDEX.md`
-- `rg -n '^## (Executive Summary|Project Snapshot|Diagrams|File & API Inventory|Dependency Map|Glossary|Last Generated)$' docs/INDEX.md`
-- `rg -c '^```mermaid$' docs/INDEX.md`
-- `rg -n 'refactor-candidate|\| Path \| Role \| LOC \| Key Tags, Symbols, Names \|' docs/INDEX.md`
-
-### Validation — split-file mode (fallback)
-After approval, if `docs/prompts/PROMPT-INDEX.md` does not define replacement validation commands, run only these fixed validation commands:
-- `test -f docs/INDEX.md && test -d docs/index && test -f docs/index/DIAGRAMS.md`
-- `rg -n '^# Context for ' docs/INDEX.md`
-- `rg -n '^## (Executive Summary|Project Snapshot|Layout|Dependency Map|Glossary|Last Generated)$' docs/INDEX.md`
-- `rg -c '^```mermaid$' docs/index/DIAGRAMS.md`
-- `rg -n 'refactor-candidate|\| Path \| Role \| LOC \| Key Tags, Symbols, Names \|' docs/index/INVENTORY-*.md`
-- `rg -nE '^> Body of \[docs/INDEX\.md\]' docs/index/DIAGRAMS.md docs/index/INVENTORY-*.md`
-
-## Mode D — Refactor
-- Use refactor mode for a read-only architecture audit, not TODO authoring or direct implementation edits.
-- Refactor mode requires a fresh `docs/INDEX.md` (and fresh `docs/index/**` siblings when INDEX split is active).
-- If the current selection already includes `C. index`, complete that refreshed index first and run the refactor audit against the post-index repo state. If `docs/INDEX.md` is missing, `stale`, or `very stale` and `C. index` is not part of the current selection, stop and ask whether to add `C. index` before continuing.
-- Candidate sources:
-  - file inventory rows tagged `refactor-candidate` when present, sourced from `docs/INDEX.md` in single-file mode or `docs/index/INVENTORY-*.md` in split-file mode
-  - explicit refactor notes already in `docs/INDEX.md` (or `docs/index/**` siblings when split) or `TODO*.md`
-  - refactor pressure discovered during maintain-mode review
-- Review the relevant code, tests, entrypoints, configs, support docs, and current TODO/JOURNAL context so the audit reflects the real implementation state. When multiple modes are selected, run refactor mode against the repo state after any approved `doc drift + upkeep`, `source cleanup`, and `index` work has completed.
-- Normalize findings around architecture boundaries, design pressure, duplicated responsibility, unclear ownership, oversized files, brittle seams, and other concrete refactor drivers.
-- Ask at most one substantive clarification or decision question per message.
-- Present 2-3 context-specific refactor options per the presentation rules in `## Mode selection`. Each option should identify the target boundary, intended design direction, key benefits, main risks, and the validation evidence needed to prove it is safe.
-- Keep the options KISS: minimal scope first, no speculative cleanup, no pattern cargo-culting.
-- Finish with an architecture audit report and recommend `cdd-plan` as the next step for any selected or preferred refactor direction.
+- Do not silently rewrite support docs or silently delete `.cdd-runtime/` content.
+- `A. doc drift + upkeep`: apply ad-hoc-doc archive moves only after documentation approval; ask before deleting stale adjacent `TODO*.md` files.
+- `B. source cleanup`: remove only clearly approved dead or obsolete code and artifacts.
+- `C. index`: write only `docs/INDEX.md` (plus `docs/index/**` siblings when INDEX split is active).
+- `D. refactor`: read-only; no implementation edits and no TODO authoring.
 
 ## INDEX freshness
 - Check how old `docs/INDEX.md` is using the last git change when available, otherwise filesystem mtime. When INDEX split is active, take the most recent mtime across `docs/INDEX.md` and `docs/index/**` siblings.
@@ -302,3 +80,10 @@ Include only the sections for the selected mode or modes, in execution order:
 - When multiple modes are selected, include only the status blocks for those selected modes. Omit non-selected mode status blocks.
 
 Recommend follow-up such as `cdd-plan`, direct cleanup work, or direct implementation work when supported by the findings, but do not widen beyond the selected mode automatically.
+
+## Mode files
+After selection, read the file for each selected mode in execution order:
+- `A. doc drift + upkeep`: `references/mode-a-doc-drift.md`
+- `B. source cleanup`: `references/mode-b-source-cleanup.md`
+- `C. index`: `references/mode-c-index.md`
+- `D. refactor`: `references/mode-d-refactor.md`

@@ -122,16 +122,12 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     ),
     "cdd-maintain": (
         "## Shared routing read",
-        "## Mode-scoped read discipline",
         "## Mode selection",
         "## Approval contract",
         "## Safe write behavior",
-        "## Mode A",
-        "## Mode B",
-        "## Mode C",
-        "## Mode D",
         "## INDEX freshness",
         "## Output",
+        "## Mode files",
     ),
 }
 
@@ -145,6 +141,12 @@ REQUIRED_REFERENCE_SECTIONS: dict[str, dict[str, tuple[str, ...]]] = {
         "references/as-built-model.md": ("## Model parts", "## Limits and assumptions", "## Example"),
         "references/boundary-and-dimensions.md": ("## Contents", "## Boundary and simplicity check", "## Core audit dimensions", "## Optional lenses"),
         "references/shapes.md": ("## Enhancement-proposal audit", "## Step-scoped TODO contract audit", "## Multi-step run audit"),
+    },
+    "cdd-maintain": {
+        "references/mode-a-doc-drift.md": ("## Contents", "## Read list", "## Codebase-comparison checks", "## TODO archive rules", "## Journal archive rules", "## Ad-hoc support doc archive rules", "## Local runtime cleanup review"),
+        "references/mode-b-source-cleanup.md": ("## Cleanup candidates",),
+        "references/mode-c-index.md": ("## Split detection", "## Write scope", "## Preflight", "## Validation"),
+        "references/mode-d-refactor.md": ("## Candidate sources",),
     },
 }
 REFERENCE_CONTENTS_MIN_LINES = 100

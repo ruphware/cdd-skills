@@ -1610,12 +1610,12 @@ deps: 74, 75
 
 ### Tasks
 
-- [ ] `skills/cdd-maintain/SKILL.md`: rewrite into `## Shared routing read`, `## Mode selection`, `## Approval contract`, `## Safe write behavior`, `## INDEX freshness`, `## Output`, `## Mode files`; the last section lists the four files with "after selection, read the file for each selected mode in execution order".
-- [ ] `skills/cdd-maintain/references/mode-a-doc-drift.md`: `## Contents`, read list, canonical support docs, drift review and classification, codebase-comparison checks, subsystem clusters, ad-hoc support docs, TODO archive rules, stale adjacent TODO handling, journal archive rules, ad-hoc archive rules, local runtime cleanup review, and one closing list of the mode's four approval surfaces.
-- [ ] `skills/cdd-maintain/references/mode-b-source-cleanup.md`: candidate scan list, classification, per-candidate record, concern batches.
-- [ ] `skills/cdd-maintain/references/mode-c-index.md`: split detection, write scope, generation discipline, split-file emission, preflight checklist, validation for both layouts.
-- [ ] `skills/cdd-maintain/references/mode-d-refactor.md`: preconditions, candidate sources, review, options, report.
-- [ ] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-maintain"]` to the seven core headings; add `REQUIRED_REFERENCE_SECTIONS["cdd-maintain"]` with mode-a `("## Contents", "## Read list", "## Codebase-comparison checks", "## TODO archive rules", "## Journal archive rules", "## Ad-hoc support doc archive rules", "## Local runtime cleanup review")`, mode-b `("## Cleanup candidates",)`, mode-c `("## Split detection", "## Write scope", "## Preflight", "## Validation")`, mode-d `("## Candidate sources",)`.
+- [x] `skills/cdd-maintain/SKILL.md`: rewrite into `## Shared routing read`, `## Mode selection`, `## Approval contract`, `## Safe write behavior`, `## INDEX freshness`, `## Output`, `## Mode files`; the last section lists the four files with "after selection, read the file for each selected mode in execution order".
+- [x] `skills/cdd-maintain/references/mode-a-doc-drift.md`: `## Contents`, read list, canonical support docs, drift review and classification, codebase-comparison checks, subsystem clusters, ad-hoc support docs, TODO archive rules, stale adjacent TODO handling, journal archive rules, ad-hoc archive rules, local runtime cleanup review, and one closing list of the mode's four approval surfaces.
+- [x] `skills/cdd-maintain/references/mode-b-source-cleanup.md`: candidate scan list, classification, per-candidate record, concern batches.
+- [x] `skills/cdd-maintain/references/mode-c-index.md`: split detection, write scope, generation discipline, split-file emission, preflight checklist, validation for both layouts.
+- [x] `skills/cdd-maintain/references/mode-d-refactor.md`: preconditions, candidate sources, review, options, report.
+- [x] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-maintain"]` to the seven core headings; add `REQUIRED_REFERENCE_SECTIONS["cdd-maintain"]` with mode-a `("## Contents", "## Read list", "## Codebase-comparison checks", "## TODO archive rules", "## Journal archive rules", "## Ad-hoc support doc archive rules", "## Local runtime cleanup review")`, mode-b `("## Cleanup candidates",)`, mode-c `("## Split detection", "## Write scope", "## Preflight", "## Validation")`, mode-d `("## Candidate sources",)`.
 
 ### Implementation notes
 
