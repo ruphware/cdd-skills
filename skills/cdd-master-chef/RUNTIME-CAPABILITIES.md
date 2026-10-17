@@ -4,7 +4,7 @@ This matrix records the current capability boundaries for the shared `cdd-master
 
 Runtime adapters may be stricter than this matrix, but they must not claim broader behavior than the documented or observed runtime surface can support, and they must not restate shared Builder lifecycle policy as if it were runtime-specific.
 
-Current concrete adapters in this package are Codex and Claude Code. Additional adapters can be added for other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, but no such adapter ships here today.
+Current concrete adapters in this package are Codex and Claude Code.
 
 ## Capability matrix
 
@@ -70,8 +70,3 @@ All adapters in this package must satisfy the same startup gate:
 - Readiness and cleanup: require a real Builder readiness signal before treating the child as live, and preserve lineage and durable evidence before closing or purging older child sessions so only one live Builder remains visible after recovery or direct completion.
 - Wave mode: concurrent slots via exec-transport children per CONTRACT.md §12; interactive foreground subagents stay serial.
 - Current repo docs: `CLAUDE-ADAPTER.md`, `CLAUDE-RUNBOOK.md`, and `CLAUDE-TEST-HARNESS.md`.
-
-### Future adapters
-
-- Other subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through additional adapters over the shared contract.
-- No Hermes adapter or other extra runtime adapter ships in this repo today.

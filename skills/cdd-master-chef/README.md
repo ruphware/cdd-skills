@@ -4,13 +4,7 @@ This directory is the committed package root for `[CDD-6] Master Chef`, the mult
 
 ## Compact policy flow
 
-- Session settings: observe the current session model and thinking when the runtime exposes them, record only unresolved fields as `unknown`, and continue with the active session as-is. Builder inherits those effective settings unless an adapter can honor an explicit `Builder override` cleanly.
-- Startup: on fresh runs from long-lived branches, recommend a descriptive worktree branch unless the human declines, keep the parent checkout on its original branch, create the managed worktree on the approved branch name, bootstrap that worktree, and wait for `env_ready` before Builder or `hard_gate` depends on it.
-- Builder lifecycle: keep one persistent Builder per active autonomous run, attempt step-start Builder compaction when the runtime supports it, and replace Builder only for recovery conditions.
-- Step shaping: review oversized-looking work before delegation, with the step's declared `points:` as the primary signal, keep or minimally repair the parent step while one-run delivery is still viable, and split only when the added Builder, hard-gate, QA, and mission-delay cost is justified.
-- Mission ownership: after kickoff approval, Master Chef owns the mission under the approved run step budget, passes a step only when the selected TODO step is written back with its task checklist reflecting the completed work, and ends terminal states with a final mission report covering completed work, completed TODO step ids plus checklist state, unresolved session-setting fields, decisions made, and state-based closeout recommendations.
-
-Everything else in this package elaborates that shared flow.
+The canonical policy flow is `CONTRACT.md §0.5`; everything else in this package elaborates it.
 
 The remaining adapter differences are runtime mechanics only: delegation trigger, agent surface, worktree activation, tool or approval inheritance, context or compaction visibility, and child-session cleanup surface.
 
@@ -34,11 +28,6 @@ Current concrete adapters in this package:
 
 - Codex — current subagent-backed adapter docs
 - Claude Code — current subagent-backed adapter docs
-
-Potential future adapters:
-
-- Additional subagent-capable coding tools and autonomous systems, including Hermes-style runtimes, can be supported through new adapter docs and runtime packaging.
-- No Hermes adapter ships in this package today.
 
 Relationship to the rest of the repo:
 
