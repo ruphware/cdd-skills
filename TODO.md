@@ -1542,11 +1542,11 @@ deps: 74
 
 ### Tasks
 
-- [ ] `skills/cdd-audit/SKILL.md`: rewrite into `## Interaction contract`, `## Stage 1 — Frame`, `## Stage 2 — Scope and shape`, `## Stage 3 — Model the as-built`, `## Stage 4 — Judge`, `## Stage 5 — Findings and triage`, `## Stage 6 — Close out`, with the content map in Implementation notes.
-- [ ] `skills/cdd-audit/references/as-built-model.md`: model parts in full (Diagram, Gist, Delta stats, Perceived versus stated intent, Limits and assumptions with the verdict table and the keep-needs-a-strong-reason paragraph, Prior art), evidence rule, blind window, depth scaling, the mapping of model findings into dimensions, and the existing example block.
-- [ ] `skills/cdd-audit/references/boundary-and-dimensions.md`: `## Contents`, the boundary and simplicity check (six judgments, practical example, verdict fields with their vocabularies, deletion opportunities), the six core audit dimensions including the documentation checks for INDEX layout, mermaid diagrams, and runbooks, and the optional lenses.
-- [ ] `skills/cdd-audit/references/shapes.md`: the enhancement-proposal audit (existing-capability inventory, proposal fit, integration options, handoff), the step-scoped TODO contract audit, and the multi-step run audit.
-- [ ] `scripts/validate_skills.py`: add `REQUIRED_REFERENCE_SECTIONS` and its checks per Implementation notes; set `REQUIRED_SECTIONS["cdd-audit"]` to `("## Interaction contract", "## Stage 1", "## Stage 2", "## Stage 3", "## Stage 4", "## Stage 5", "## Stage 6")`.
+- [x] `skills/cdd-audit/SKILL.md`: rewrite into `## Interaction contract`, `## Stage 1 — Frame`, `## Stage 2 — Scope and shape`, `## Stage 3 — Model the as-built`, `## Stage 4 — Judge`, `## Stage 5 — Findings and triage`, `## Stage 6 — Close out`, with the content map in Implementation notes.
+- [x] `skills/cdd-audit/references/as-built-model.md`: model parts in full (Diagram, Gist, Delta stats, Perceived versus stated intent, Limits and assumptions with the verdict table and the keep-needs-a-strong-reason paragraph, Prior art), evidence rule, blind window, depth scaling, the mapping of model findings into dimensions, and the existing example block.
+- [x] `skills/cdd-audit/references/boundary-and-dimensions.md`: `## Contents`, the boundary and simplicity check (six judgments, practical example, verdict fields with their vocabularies, deletion opportunities), the six core audit dimensions including the documentation checks for INDEX layout, mermaid diagrams, and runbooks, and the optional lenses.
+- [x] `skills/cdd-audit/references/shapes.md`: the enhancement-proposal audit (existing-capability inventory, proposal fit, integration options, handoff), the step-scoped TODO contract audit, and the multi-step run audit.
+- [x] `scripts/validate_skills.py`: add `REQUIRED_REFERENCE_SECTIONS` and its checks per Implementation notes; set `REQUIRED_SECTIONS["cdd-audit"]` to `("## Interaction contract", "## Stage 1", "## Stage 2", "## Stage 3", "## Stage 4", "## Stage 5", "## Stage 6")`.
 
 ### Implementation notes
 
@@ -1586,7 +1586,7 @@ In `validate_skill`, for each entry: the file exists; each heading passes `requi
 
 - SKILL.md at or below 20 KB with `## Interaction contract` first; three reference files present and each linked with an imperative read sentence.
 - The bullet-to-home mapping shows every rule of the old file placed once.
-- A `small_change` audit at `quick` depth reads no reference beyond `as-built-model.md`; an `enhancement_proposal` audit reads `shapes.md` before findings.
+- A `small_change` audit at `quick` depth reads `as-built-model.md` and `boundary-and-dimensions.md` only; an `enhancement_proposal` audit reads `shapes.md` before findings.
 - The validator fails when a reference heading is removed, when a reference link is removed from SKILL.md, and when `## Contents` is removed from the over-100-line reference.
 
 ## Step 76 — Split `cdd-maintain` into a routing core and four mode files

@@ -8,6 +8,8 @@ This validator is intentionally narrow. It asserts:
     flag for generated variants)
   - openai.yaml display names and implicit-invocation flags
   - required H2 section headings by name only (not by body content)
+  - skill reference files: presence, required H2 headings, a relative-path
+    link from SKILL.md, and a leading `## Contents` block when long
   - master-chef SKILL.md references each installed skill by name
 
 Prose / phrase / topic matching used to live here and broke on every wording
@@ -110,24 +112,13 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Flow",
     ),
     "cdd-audit": (
-        "## Sources of truth",
-        "## External source handling",
-        "## Audit framing",
-        "## Scope resolution",
-        "## Audit shapes",
-        "## Step-scoped TODO contract audit",
-        "## Enhancement-proposal audit",
-        "## Review depth and proportionality",
-        "## As-built model",
-        "## Core direction checkpoint",
-        "## Boundary and simplicity check",
-        "## Core audit dimensions",
-        "## Optional lenses",
-        "## Plain-English output",
-        "## Finding normalization",
         "## Interaction contract",
-        "## Flow",
-        "## Guardrails",
+        "## Stage 1",
+        "## Stage 2",
+        "## Stage 3",
+        "## Stage 4",
+        "## Stage 5",
+        "## Stage 6",
     ),
     "cdd-maintain": (
         "## Shared routing read",
@@ -143,6 +134,21 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
         "## Output",
     ),
 }
+
+# Required H2 headings per skill reference file, keyed by skill name and the
+# file's path relative to the skill directory. Each file must exist, carry its
+# headings, and be linked from SKILL.md by that relative path; a file longer
+# than REFERENCE_CONTENTS_MIN_LINES must open with `## Contents` within its
+# first REFERENCE_CONTENTS_WITHIN_LINES lines.
+REQUIRED_REFERENCE_SECTIONS: dict[str, dict[str, tuple[str, ...]]] = {
+    "cdd-audit": {
+        "references/as-built-model.md": ("## Model parts", "## Limits and assumptions", "## Example"),
+        "references/boundary-and-dimensions.md": ("## Contents", "## Boundary and simplicity check", "## Core audit dimensions", "## Optional lenses"),
+        "references/shapes.md": ("## Enhancement-proposal audit", "## Step-scoped TODO contract audit", "## Multi-step run audit"),
+    },
+}
+REFERENCE_CONTENTS_MIN_LINES = 100
+REFERENCE_CONTENTS_WITHIN_LINES = 15
 
 
 def frontmatter(path: Path) -> str:
@@ -202,6 +208,21 @@ def validate_skill(skill_dir: Path) -> None:
 
     for heading in REQUIRED_SECTIONS.get(skill_dir.name, ()):
         require_section(skill_text, heading, skill_md)
+
+    for rel, headings in REQUIRED_REFERENCE_SECTIONS.get(skill_dir.name, {}).items():
+        ref_path = skill_dir / rel
+        assert ref_path.exists(), f"missing {ref_path}"
+        ref_text = ref_path.read_text(encoding="utf-8")
+        for heading in headings:
+            require_section(ref_text, heading, ref_path)
+        assert rel in skill_text, f"{skill_md} does not link reference `{rel}`"
+        ref_lines = ref_text.splitlines()
+        if len(ref_lines) > REFERENCE_CONTENTS_MIN_LINES:
+            head = "\n".join(ref_lines[:REFERENCE_CONTENTS_WITHIN_LINES])
+            assert re.search(r"^## Contents\s*$", head, re.M), (
+                f"{ref_path} has {len(ref_lines)} lines but no `## Contents` "
+                f"within its first {REFERENCE_CONTENTS_WITHIN_LINES} lines"
+            )
 
 
 MASTER_CHEF_CONSOLIDATION_SATELLITES = (
