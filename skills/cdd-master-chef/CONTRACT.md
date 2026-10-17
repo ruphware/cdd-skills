@@ -4,6 +4,23 @@ This file is the runtime-agnostic source of truth for `cdd-master-chef`.
 
 Runtime adapters must satisfy this contract without claiming runtime behavior they cannot actually provide. Adapter docs may be stricter than this shared contract, but they must not be looser.
 
+## Contents
+
+- §0 Purpose
+- §0.5 Compact policy flow
+- §1 Actors
+- §2 Required repo state
+- §3 Durable runtime state
+- §4 Session settings and Builder override
+- §5 Routing model
+- §6 Managed worktree lifecycle
+- §7 Kickoff and Builder lifecycle
+- §8 Validation, QA, and UAT
+- §9 Reporting and recovery
+- §10 Context compaction
+- §11 Runtime adapter obligations
+- §12 Wave-parallel execution (opt-in)
+
 ## 0) Purpose
 
 Run autonomous development with one control loop:

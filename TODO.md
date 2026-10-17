@@ -1695,9 +1695,9 @@ touches: skills/cdd-master-chef/SKILL.md, skills/cdd-master-chef/CONTRACT.md
 
 ### Tasks
 
-- [ ] `skills/cdd-master-chef/SKILL.md`: rewrite into the H1, a three-line adapter note, `## Read first` (read `CONTRACT.md` fully before kickoff, `RUNBOOK.md` for operations, `RUNTIME-CAPABILITIES.md` and the active runtime's adapter, `CONTRACT.md §7` for decision prompts and Builder lifecycle), `## Routing` (today's item 8 bullets, including the `points:` oversized sentence once), `## Kickoff approval` (today's item 10 list and its `A.`-`C.` options, plus the managed worktree path), `## Report events` (the event list and a pointer to `CONTRACT.md §9` for mission reports and closeout bundles), `## Section map` (table `topic | CONTRACT.md section` for actors, repo state, runtime state, session settings and transport, routing, worktree lifecycle, kickoff and Builder lifecycle, validation and QA, reporting and recovery, compaction, adapter obligations, wave-parallel).
-- [ ] Delete from SKILL.md: the Shared policy flow bullets, operating-contract items 2-7, 9, 11-17, 19-25, the `BLOCKER_CLEARED` and mission-report paragraphs, and the three closeout bundles, all of which `CONTRACT.md` states.
-- [ ] `skills/cdd-master-chef/CONTRACT.md`: insert `## Contents` listing `§0` through `§12` with one line each.
+- [x] `skills/cdd-master-chef/SKILL.md`: rewrite into the H1, a three-line adapter note, `## Read first` (read `CONTRACT.md` fully before kickoff, `RUNBOOK.md` for operations, `RUNTIME-CAPABILITIES.md` and the active runtime's adapter, `CONTRACT.md §7` for decision prompts and Builder lifecycle), `## Routing` (today's item 8 bullets, including the `points:` oversized sentence once), `## Kickoff approval` (today's item 10 list and its `A.`-`C.` options, plus the managed worktree path), `## Report events` (the event list and a pointer to `CONTRACT.md §9` for mission reports and closeout bundles), `## Section map` (table `topic | CONTRACT.md section` for actors, repo state, runtime state, session settings and transport, routing, worktree lifecycle, kickoff and Builder lifecycle, validation and QA, reporting and recovery, compaction, adapter obligations, wave-parallel).
+- [x] Delete from SKILL.md: the Shared policy flow bullets, operating-contract items 2-7, 9, 11-17, 19-25, the `BLOCKER_CLEARED` and mission-report paragraphs, and the three closeout bundles, all of which `CONTRACT.md` states.
+- [x] `skills/cdd-master-chef/CONTRACT.md`: insert `## Contents` listing `§0` through `§12` with one line each.
 
 ### Implementation notes
 
