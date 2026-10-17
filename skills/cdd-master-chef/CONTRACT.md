@@ -238,7 +238,7 @@ Cross-runtime preflight (rung 3 only, resolved at kickoff, never mid-run):
 - requested `builder_model` valid on the target runtime
 - a preflight failure is a kickoff blocker: report it and fall back to the highest passing rung, or to inherited settings, with explicit disclosure
 
-Treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth. Do not infer model settings from repo docs, memory, previous `run.json`, or earlier runs.
+Treat current-session `master_model` / `master_thinking` plus effective `builder_model` / `builder_thinking` as the only per-run source of truth. Do not infer model settings from repo docs, `USER.md`, memory, previous `run.json`, or earlier runs.
 
 Runtime adapters must define:
 
