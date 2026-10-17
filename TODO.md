@@ -1330,3 +1330,123 @@ Points measure four dimensions: shape (how many owners change and whether one is
 - Confirm Master Chef's kickoff inspection, §0.5 rule 4, the oversized policy, and §12 read `points:` and key wave eligibility on `touches:` alone, with the serial-default sentence intact.
 - Confirm cdd-implement's add-to-TODO path and cdd-audit's multi-step shape mention `points:`, and the README feature line no longer requires `deps:`.
 - Confirm the three checks pass with `scripts/validate_skills.py` unchanged.
+
+## Step 73 — Collapse `cdd-boot` to four sections, one home per rule, and a sliced default read set
+
+points: 3
+touches: skills/cdd-boot/SKILL.md, skills/cdd-boot/agents/openai.yaml, scripts/validate_skills.py
+
+### Goal
+
+`skills/cdd-boot/SKILL.md` states each reading, routing, and checkout rule exactly once under four H2 sections (`Contract`, `Reading`, `Routing`, `Output`), boots from `AGENTS.md` plus sliced reads of README, TODO, and journal routing, deepens into PRD, blueprint, INDEX, lanes, or code only when the intent requires it, and ends at or below 8 KB, cutting per-invocation skill tokens and per-boot read bytes in target repos.
+
+### Constraints
+
+- Behavior preserved: `$cdd-implement <step>` precedence; inquiry answered in the report; main-worktree boots offer both checkout choices, 2-4 lettered options, recommended first, nothing after the last choice; boot stays read-only and approval-free; one lane at a time; external threads read in full; no external mutation.
+- One home per rule: a rule appears in exactly one section. Another section may name that section but never restates the rule.
+- Default read set is `AGENTS.md`, README title + first section + heading outline, TODO step index + first open or user-named step, top of `docs/JOURNAL.md`. PRD, blueprint, INDEX, lane files, journal lanes, and code are deepening surfaces only.
+- Slice rule is a resource rule with a proven cost (boot token spend), an owner (the boot invocation), and a reached behavior (stop slicing, route from what was read): first ~4 KB per file plus a heading outline for router files; further slices on need; whole file only when named or required by intent.
+- The skill stays self-contained: the options-block format remains in the skill because target repos may run an older `AGENTS.md`.
+- Validator stays structural-only: `REQUIRED_SECTIONS["cdd-boot"]` becomes the four H2 headings in document order; H3 headings are not pinned; no prose pins.
+- `agents/openai.yaml` keeps `display_name: "[CDD-0] Boot"` and `allow_implicit_invocation: false`.
+- Compress wording, never decisions.
+
+### Tasks
+
+- [x] `skills/cdd-boot/SKILL.md`: replace the whole file with the body in Implementation notes: frontmatter with the new `description`, H1, one-line intro, H2 `Contract`, `Reading` (with H3 `External sources`), `Routing` (with H3 `Checkout`), `Output` (with H3 `Examples`); deepening and routing as two tables.
+- [x] `skills/cdd-boot/agents/openai.yaml`: set `short_description` and `default_prompt` to the text in Implementation notes; leave `display_name` and `policy` unchanged.
+- [x] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-boot"]` to `("## Contract", "## Reading", "## Routing", "## Output")`.
+
+### Implementation notes
+
+Full replacement for `skills/cdd-boot/SKILL.md` (tighten a sentence only when nothing is lost):
+
+```md
+---
+name: cdd-boot
+description: "Boot a repo from AGENTS.md plus sliced reads of README, TODO, and journal routing, deepen only into the surfaces the intent needs, then route to the `cdd-*` continuation that adds leverage or hand back to vanilla AGENTS-driven work with a checkout recommendation (interactive, read-only)."
+---
+
+# CDD Boot (interactive, read-only)
+
+One-time context boot: read the root entrypoints in slices, route to the continuation that adds leverage, otherwise hand back to vanilla `AGENTS.md`-driven work.
+
+## Contract
+- `AGENTS.md` at repo root is required and is read first as the source of truth for role and response format. When it is missing, stop, say the repo is not CDD-ready for vanilla boot, and recommend `cdd-init-project`.
+- Boot is read-only: no repo edits, no external mutations (post, update, label, assign), no worktree creation or switching, no implementation, no approval requests. The follow-up option the user selects authorizes such actions as the continuation's first step.
+
+## Reading
+- Default set, in order: `AGENTS.md`; `README.md` title, first section, and heading outline; `TODO.md` step index plus the first step with open tasks or the user-named step; the top of `docs/JOURNAL.md`. Continue gracefully when a file is missing.
+- Slice rule: read the first ~4 KB of any file, plus a heading outline for router files (`README.md`, `TODO*.md`, `docs/JOURNAL.md`, `docs/INDEX.md`). Take further slices only when the first one does not answer the current boot need; read a whole file only when the user names it or the intent requires it. Never ingest full history.
+- Deepen into one surface per need:
+
+| Surface | Open only when |
+|---|---|
+| `docs/specs/prd.md`, `docs/specs/blueprint.md` | the intent or question concerns requirements or architecture |
+| `docs/INDEX.md`, then the one `docs/index/**` body it routes to | the user asks for diagrams, inventory, ownership, or file-level discovery |
+| one `TODO-<area>.md` | the user names a lane, area, issue, PR, or step, or `TODO.md` routes the intent there |
+| one `docs/journal/JOURNAL-<area>.md` that `docs/JOURNAL.md` routes to, or `docs/journal/SUMMARY.md` for older context | the user asks for history, prior attempts, decisions, or regressions, or the chosen lane needs recent implementation context |
+| code entrypoints, configs, tests | the intent names a task, bug, or subsystem |
+
+- One lane: never scan lane files to discover work. When more than one lane or body is plausible, ask one clarifying question; open a second only when evidence forces it.
+- Fallbacks when a default file is missing, first existing wins. Project context: `README*.md`, `docs/specs/prd.md`, `TODO.md`, a concise root or `docs/` markdown named `index`, `overview`, `spec`, `blueprint`, or `design`. Development context: top of `TODO.md`, `CHANGELOG*.md`, `docs/CHANGELOG*.md`, `docs/notes*.md`. Within a tier prefer canonical CDD files, then root runbook docs, then the shortest current-state doc.
+
+### External sources
+- Resolve user-named issues, tickets, PRs, RFCs, docs, or tracker references through read-only surfaces: connectors, CLIs, local remotes, pasted URLs, identifiers.
+- Read the complete thread before routing: body, all comments, review comments, directly referenced artifacts; do not crawl unrelated links. The latest authoritative comment is current intent; flag superseded body requirements.
+- Ask one clarifying question when the reference or source of truth is ambiguous enough to change the routing. When a surface cannot be fetched, mark the boot partial, name the unread surfaces, and route from local context.
+
+## Routing
+- Classify a named intent. Research, analysis, investigation, proposal review, and audit are read-only evidence intents unless the user asks for write-producing follow-up.
+
+| Intent | Continuation |
+|---|---|
+| a runnable TODO step named by the user or narrowly resolved from `TODO.md` plus one lane | `$cdd-implement <step>`, precedence over every other route |
+| a question about the codebase, behavior, requirements, or project state (`inquiry`) | answer in the boot report; no continuation required |
+| a new change request or feature idea | `$cdd-plan <intent>` |
+| review or verification of implemented work or a proposed enhancement | `$cdd-audit <intent>` |
+| doc drift, repo upkeep, or index refresh | `$cdd-maintain <intent>` |
+| multi-step autonomous execution over prepared TODO steps | `$cdd-master-chef` |
+| a bounded operational, runbook, release, or other concrete repo task | vanilla AGENTS-driven mode on `<intent>` |
+
+- With no intent, infer the continuation from the default set under the same lane discipline.
+- Recommend a `cdd-*` skill only when its contract materially improves control, decomposition, audit shape, upkeep flow, or autonomous execution; otherwise prefer vanilla continuation. `$cdd-implement` direct mode is optional scaffolding for one bounded non-TODO task, never mandatory.
+- Carry the intent into the recommended option text so the user can continue directly.
+
+### Checkout
+- In a Git repo, detect whether the checkout is the main or a linked worktree. Linked: recommend staying there. Read-only evidence intent: prefer the current or main checkout. Write-producing intent from main while linked worktrees or repo-local managed worktree paths already exist: recommend moving into `.cdd-runtime/worktrees/<branch-or-tag>/`, named after the recommended branch or approved workstream tag. Otherwise staying in main is acceptable unless the user wants parallel or isolated development.
+
+## Output
+- Report fields: `Role`, `Project`, `Development`, `Worktree`, `Intent` (classified intent, surfaces read, partial external gaps, recommended continuation), `Answer` for inquiries (lead the report with a short factual answer, then supporting detail, a table or ASCII diagram where it clarifies structure, explicit gaps; keep the other fields to one line), `Sources used` (files and external artifacts actually read, partial threads marked), `Missing expected files` (canonical docs only), `Next action`.
+- Options block: end with repo-local `NEXT` when `AGENTS.md` defines one, otherwise `**Options**`: question, any reply hint, then choices; nothing follows the final choice. Lettered selectors (`A.`-`D.`, nested `A1.`), 2-4 choices ordered by suitability with the recommended one first; tell the user they can reply with just the selector. Boots from the main worktree of a Git repo include both `create or move into a worktree+branch first, then <continuation>` and `continue in the main checkout, <continuation>`, placed by suitability; read-only intents list the main checkout first. Inquiries omit `Next action` unless a concrete continuation helps.
+
+### Examples
+- `$cdd-boot` — plain boot from the default set.
+- `$cdd-boot I want to fix the flaky CI test` — intent boot: warms the relevant surfaces and recommends the continuation.
+- `$cdd-boot how do releases get versioned here, and which script owns that?` — inquiry: the answer is the result.
+```
+
+`skills/cdd-boot/agents/openai.yaml` interface fields:
+
+```yaml
+  short_description: "Boot from AGENTS.md and sliced reads of README, TODO, and journal routing, then hand off to the right cdd skill or to vanilla AGENTS-driven work"
+  default_prompt: "Use $cdd-boot to ingest AGENTS.md, read the first ~4 KB plus heading outline of README.md, TODO.md, and docs/JOURNAL.md, deepen into PRD, blueprint, INDEX, one TODO lane, or one journal lane only when my intent requires it, route to a specialized `cdd-*` continuation only when it adds real leverage, otherwise hand back to vanilla AGENTS-driven work; prefer the main checkout for read-only or operational intents and recommend a branch-backed worktree under `.cdd-runtime/worktrees/` only when write-producing work should leave main."
+```
+
+- Validator heading match is anchored to line start, so an H3 never satisfies a pinned H2.
+- The installed copy under `~/.claude/skills/cdd-boot` is a snapshot; refresh with `bash scripts/install.sh --update --all` after the change.
+- Removed as duplicates, not as behavior: five restatements of one-lane/no-full-history, four of read-only, four of prefer-vanilla, three each of the checkout pair, inquiry handling, and ask-one-question, two each of implement precedence and missing-AGENTS routing.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- `skills/cdd-boot/SKILL.md` has exactly four H2 headings and is at or below 8 KB; each rule from the duplicate inventory appears once.
+- `/cdd-boot` without intent in a repo that has `docs/specs/*` and `docs/INDEX.md` reads none of them; `/cdd-boot <architecture question>` reads `docs/specs/blueprint.md`.
+- The default pass reads at most ~4 KB per file plus heading outlines; a long `TODO.md` yields the full step index without a full read.
+- A main-worktree boot still offers both checkout choices with the recommended first; an inquiry boot answers in the report.
+- `python3 scripts/validate_skills.py` passes on the new file and fails when `## Routing` is removed.
+- After `bash scripts/install.sh --update --all`, `/cdd-boot` here loads the new text, and the Codex default prompt names the sliced read set.

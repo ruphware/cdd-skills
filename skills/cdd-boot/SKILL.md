@@ -1,139 +1,63 @@
 ---
 name: cdd-boot
-description: "Boot a repo into vanilla AGENTS-driven mode from root entrypoints first, deepen only into intent-relevant follow-ons, route to a specialized `cdd-*` continuation only when it adds real leverage, and otherwise hand back with the right checkout recommendation (interactive, read-only)."
+description: "Boot a repo from AGENTS.md plus sliced reads of README, TODO, and journal routing, deepen only where the intent needs it, then route to the `cdd-*` continuation that adds leverage or back to vanilla AGENTS-driven work, with a checkout recommendation (interactive, read-only)."
 ---
 
 # CDD Boot (interactive, read-only)
 
-Use this skill for a one-time vanilla CDD context boot, whether or not the next step later uses another `cdd-*` skill.
+One-time context boot: read the root entrypoints in slices, route to the continuation that adds leverage, otherwise hand back to vanilla `AGENTS.md`-driven work.
 
-Boot the current repo into vanilla `AGENTS.md`-driven work by reading role, project, and development context, then either recommending the specialized `cdd-*` continuation that best shapes the next step or handing back to vanilla AGENTS-driven work when no specialized contract helps. Decide only whether to stay in place or continue via a branch-backed worktree; do not change repo files during boot.
+## Contract
+- `AGENTS.md` at repo root is required; read it first as the source of truth for role and response format. Missing: stop, say the repo is not CDD-ready for vanilla boot, recommend `cdd-init-project`.
+- Boot is read-only: no repo edits, external mutations (post, update, label, assign), worktree creation or switching, implementation, or approval requests. The option the user selects authorizes those as the continuation's first step.
 
-## Required contract
-- `AGENTS.md` at repo root
-- If `AGENTS.md` is missing, stop, tell the user the repo is not CDD-ready for vanilla boot, and recommend `cdd-init-project`.
+## Reading
+- Default set, in order: `AGENTS.md`; `README.md` title, first section, heading outline; `TODO.md` step index plus the first open or user-named step; top of `docs/JOURNAL.md`. A missing file falls through to the fallbacks below.
+- Slice rule: first ~4 KB of any file, plus a heading outline (grep the headings, do not read the body) for the router files `README.md`, `TODO*.md`, `docs/JOURNAL.md`, `docs/INDEX.md`. Slice further only when the first slice leaves the boot need unanswered; read a whole file only when the user names it or the intent requires it. Never ingest full history.
+- Deepen into one surface per need:
 
-## Preferred inputs
-Role:
-- `AGENTS.md`
+| Surface | Open only when |
+|---|---|
+| `docs/specs/prd.md`, `docs/specs/blueprint.md` | requirements or architecture are in question |
+| `docs/INDEX.md`, then the one `docs/index/**` body it routes to | diagrams, inventory, ownership, or file-level discovery are requested |
+| one `TODO-<area>.md` | a lane, area, issue, PR, or step is named, or `TODO.md` routes the intent there |
+| one `docs/journal/JOURNAL-<area>.md` via `docs/JOURNAL.md`, `docs/journal/JOURNAL.md` for cross-cutting notes, or `docs/journal/SUMMARY.md` for older context | history, prior attempts, decisions, or regressions are requested, or the chosen lane needs recent implementation context |
+| code entrypoints, configs, tests | the intent names a task, bug, or subsystem |
 
-Root boot entrypoints:
-- `README.md`
-- `TODO.md`
-- `docs/specs/blueprint.md`
-- `docs/specs/prd.md` when present
-- top of `docs/JOURNAL.md` as the stable journal entrypoint
-- `docs/INDEX.md` when present
+- One lane: never scan lane files to discover work. Two plausible lanes or bodies: ask one clarifying question. Open a second only when evidence forces it.
+- Fallbacks, first existing wins. Project context: `README*.md`, `docs/specs/prd.md`, `TODO.md`, then a concise root or `docs/` markdown named `index`, `overview`, `spec`, `blueprint`, or `design`. Development context: top of `TODO.md`, `CHANGELOG*.md`, `docs/CHANGELOG*.md`, `docs/notes*.md`. Several candidates for one slot: prefer canonical CDD files, then root runbook docs, then the shortest current-state doc.
 
-Scaled follow-on surfaces:
-- one matching `TODO-<area>.md` when one named lane or intent clearly needs it
-- one matching `docs/journal/JOURNAL-<area>.md` or `docs/journal/SUMMARY.md` when one named lane or explicit history request clearly needs it
-- the relevant `docs/index/**` body when the user explicitly asks for diagrams, inventory, ownership, or file-level discovery and `docs/INDEX.md` routes there
+### External sources
+- Resolve user-named issues, tickets, PRs, RFCs, docs, or tracker references read-only, via connectors, CLIs, local remotes, pasted URLs, or identifiers.
+- Read the complete thread before routing: body, all comments, review comments, directly referenced artifacts; do not crawl unrelated links. The latest authoritative comment is current intent; flag superseded body requirements.
+- Ask one clarifying question when the reference or source of truth is ambiguous enough to change the routing. When a surface cannot be fetched, mark the boot partial, name the unread surfaces, and route from local context.
 
-External intent surfaces:
-- user-named external issues, tickets, PRs, RFCs, docs, or tracker references
+## Routing
+- Classify a named intent. Research, analysis, investigation, proposal review, and audit are read-only evidence intents unless the user asks for write-producing follow-up.
 
-## Default boot set
-- Treat default boot as the small-repo path: read `AGENTS.md` plus the root boot entrypoints only.
-- In scaled or big repos, those same root files still boot first. Treat them as routers into deeper material, not as a reason to read every split file.
-- Do not expand into split TODO, journal, or INDEX bodies unless the user asks for it or one named intent clearly requires one specific lane or body.
-- Do not scan lane files just to discover work. Use `TODO.md` plus the named intent; otherwise recommend the best broad `cdd-*` continuation.
+| Intent | Continuation |
+|---|---|
+| a runnable TODO step, named by the user or narrowly resolved from `TODO.md` plus one lane | `$cdd-implement <step>`, precedence over every other route |
+| a question about the codebase, behavior, requirements, or project state (`inquiry`) | answer in the boot report; no continuation required |
+| a new change request or feature idea | `$cdd-plan <intent>` |
+| review or verification of implemented work or a proposed enhancement | `$cdd-audit <intent>` |
+| doc drift, repo upkeep, or index refresh | `$cdd-maintain <intent>` |
+| multi-step autonomous execution over prepared TODO steps | `$cdd-master-chef` |
+| a bounded operational, runbook, release, or other concrete repo task | vanilla AGENTS-driven mode on `<intent>` |
 
-## Deepening triggers
-- Follow one `TODO-<area>.md` only when the user names a lane, area, issue, PR, or step, or when `TODO.md` clearly routes the named intent into that lane.
-- Follow one journal lane only when the user asks for history, prior attempts, decisions, regressions, or when the chosen lane needs recent implementation context beyond the root journal entrypoint.
-- Follow one INDEX body only when the user explicitly asks for diagrams, inventory, ownership, or file-level discovery that the root `docs/INDEX.md` does not already answer.
-- If more than one lane or body is plausible, ask one clarifying question instead of opening several.
-- Once the target lane or body is clear, read only that lane or body unless the evidence forces a second one.
+- No intent: infer the continuation from the default set under the same lane discipline.
+- Recommend a `cdd-*` skill only when its contract adds real control, decomposition, audit shape, upkeep flow, or autonomous execution; otherwise vanilla. `$cdd-implement` direct mode is optional for one bounded non-TODO task, never mandatory.
+- Carry the intent into the recommended option text so the user can continue directly.
 
-## Graceful fallback rules
-- Read `AGENTS.md` first and treat it as the source of truth for role and response format.
-- Continue gracefully when root boot entrypoints or scaled follow-on surfaces are missing.
-- Detect split layouts from the entrypoints — `docs/INDEX.md` for INDEX, `docs/JOURNAL.md` for journals. When either points to split bodies, treat them as latent follow-ons and open only the one the current question needs.
-- For missing project context, use the first existing curated fallback in this order:
-  - `README*.md`
-  - `docs/specs/prd.md`
-  - `TODO.md`
-  - matching `TODO-<area>.md` only when a deepening trigger identifies one area
-  - concise root or `docs/` markdown files with names matching `index`, `overview`, `spec`, `blueprint`, or `design`
-- For missing development context, use the first existing curated fallback in this order:
-  - top of `TODO.md`
-  - matching `TODO-<area>.md` only when a deepening trigger identifies one area
-  - top of `CHANGELOG*.md`
-  - top of `docs/CHANGELOG*.md`
-  - top of `docs/notes*.md`
-- If deeper development context is needed and no matching area journal is clear, prefer `docs/journal/JOURNAL.md` for cross-cutting notes and `docs/journal/SUMMARY.md` for older condensed context before falling back to non-journal docs.
-- Use only the top of `docs/JOURNAL.md`, matching split-journal files, or development fallback files; do not ingest full history unless the user explicitly asks.
-- If multiple plausible fallback docs exist in the same tier, prefer canonical CDD files, then root runbook docs, then the shortest current-state doc that answers the need.
-- Ask a question only when the repo layout is genuinely ambiguous and the ambiguity would materially change the boot summary.
-
-## External source handling
-- Resolve user-named external references with available read-only surfaces: connectors, CLIs, local remotes, pasted URLs, and identifiers.
-- When an external artifact is in scope, read the complete thread before routing: title/body/description, all comments, review comments when present, and material directly referenced artifacts. Do not recursively crawl unrelated links.
-- Treat the latest authoritative comment or decision as current intent; flag superseded body requirements.
-- Ask one clarifying question when the reference or source of truth is ambiguous enough to change the boot summary or continuation.
-- If the artifact, comments, or material references cannot be fetched after a reasonable read-only attempt, mark the boot partial, name the unread surfaces, and route from available local context.
-- Never post, update, label, assign, or otherwise mutate external systems during boot.
-
-## Boot intent routing
-- When the boot invocation names a task or goal, classify the intent and extend boot reading to the intent-relevant surfaces — external threads, `TODO.md`, the narrowly matching `TODO-<area>.md` or `docs/journal/JOURNAL-<area>.md` files when a deepening trigger identifies them, relevant docs, and code entrypoints — without ingesting full history.
-- Treat research, analysis, investigation, proposal review, and audit as read-only evidence intents unless the user explicitly asks for write-producing follow-up.
-- Route the intent to its continuation:
-  - a matching runnable TODO step already named by the user or narrowly resolved from `TODO.md` plus one matching lane → `$cdd-implement <step>` (takes precedence over all other routes)
-  - a direct question about the codebase, functionality, requirements, or project state that the booted context can answer (`inquiry`) → answer it in the boot report itself per `## Output`; no continuation required
-  - a new change request or feature idea → `cdd-plan`
-  - review or verification of implemented work or a proposed enhancement → `cdd-audit`
-  - doc drift, repo upkeep, or index refresh → `cdd-maintain`
-  - multi-step autonomous execution over prepared TODO steps → `cdd-master-chef`
-  - a concrete operational, runbook, release, or other bounded repo task that does not need a planning, audit, upkeep, or autonomous-execution contract → continue in vanilla AGENTS-driven mode
-  - missing `AGENTS.md` → `cdd-init-project` (per `## Required contract`)
-- With no intent, infer the continuation from the root boot entrypoints; `## Default boot set` lane discipline still applies.
-- Carry the intent into the recommended option text so the user can continue directly (for example `$cdd-plan <intent>` or `continue in vanilla AGENTS-driven mode on <intent>`).
-
-## Continuation fit
-- Recommend another `cdd-*` skill only when its contract materially improves control, decomposition, audit shape, upkeep flow, or autonomous execution for the next step.
-- Prefer vanilla AGENTS-driven continuation for bounded operational work, runbook procedures, release steps, or direct exploration when a specialized skill would add ceremony more than leverage.
-- Treat `$cdd-implement` direct mode as optional post-boot scaffolding for one bounded non-TODO task when that handoff is useful; do not make it mandatory just because the work is write-producing.
-
-## Follow-up contract
-- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
-- Start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`). Examples do not set the option count.
-- Offer 2-4 concrete next-step choices, ordered by suitability with the recommended option first; when practical tell the user they can reply with just the selector.
-- For `inquiry` intents the answer itself is the result: omit `Next action` unless a concrete continuation genuinely helps.
-- When booting from the main worktree of a Git repo, include both `create or move into a worktree+branch first` and `continue in the main checkout` as distinct choices, each naming the continuation it chains to (for example `create worktree ... then $cdd-plan <intent>` or `continue in the main checkout in vanilla AGENTS-driven mode on <intent>`). Place them by suitability, not fixed slots.
-- For read-only evidence intents, order `continue in the main checkout` ahead of worktree creation unless the user explicitly asks for isolation.
-- Keep boot follow-up as routing only; do not ask for approval and do not execute implementation from boot itself. The next action may chain to another `cdd-*` skill or to vanilla AGENTS-driven work.
-- If a clear next runnable TODO step exists, recommend continuing via `$cdd-implement <step>` rather than offering direct implementation.
-
-## Worktree check
-- If the repo is Git-backed, inspect whether the current checkout is the main worktree or a linked worktree before finishing the boot report.
-- If the current checkout is already a linked worktree, recommend staying in that worktree for development.
-- For read-only evidence intents, prefer staying in the current or main checkout; do not recommend worktree migration solely because linked worktrees or repo-local managed worktree paths already exist.
-- For feature implementation or write-producing planning from the main worktree, if linked worktrees or repo-local managed worktree paths already exist, recommend moving feature development into a worktree rather than the main folder.
-- When the boot report recommends creating or moving into a worktree first, recommend a repo-local path under `.cdd-runtime/worktrees/<branch-or-tag>/`, where `<branch-or-tag>` defaults to the recommended branch name or approved workstream tag.
-- Otherwise, say that staying in the main folder is acceptable unless the user wants parallel or isolated development.
-- Do not create, switch, remove, or clean worktrees during boot; a selected follow-up choice authorizes creation as the continuation's first action after the boot report.
+### Checkout
+- In a Git repo, detect main vs linked worktree, then recommend: linked worktree, stay there; read-only evidence intent, the current or main checkout; write-producing intent from main while linked worktrees or repo-local managed worktree paths already exist, move into `.cdd-runtime/worktrees/<branch-or-tag>/` named after the recommended branch or approved workstream tag; otherwise main is acceptable unless the user wants parallel or isolated development.
 
 ## Output
-Return a concise boot report that includes:
-- `Role` — confirm the `AGENTS.md` role was assumed
-- `Project` — summarize the project using canonical files or fallbacks
-- `Development` — summarize current implementation context from the journal top or fallbacks
-- `Worktree` — summarize whether development should stay in the main folder or move into a worktree
-- `Intent` — when the boot invocation named a task, state the classified intent, the intent-relevant surfaces warmed up, any partial external read gaps, and the recommended continuation
-- `Answer` — for `inquiry` intents, lead the report with it: a short factual answer first, then supporting detail — a table or ASCII diagram where it clarifies structure, explicit gaps or unknowns when found. Keep the other report fields to one line each when they do not serve the answer, and omit `Next action` unless a concrete continuation genuinely helps.
-- `Sources used` — list the files and external artifacts actually read; mark partial external threads when comments or material references were unavailable
-- `Missing expected files` — list only the missing canonical docs
-- `Next action` — up to four suitability-ordered selector choices, recommended first, including both checkout choices per `## Follow-up contract`, through the repo-local `NEXT` section when `AGENTS.md` defines one, otherwise a final `**Options**` section. When worktree migration is recommended, one choice creates or moves into `.cdd-runtime/worktrees/<branch-or-tag>/` and chains a clear runnable TODO step with `$cdd-implement <step>`; when no specialized continuation fits, recommend vanilla AGENTS-driven continuation in the appropriate checkout rather than force-fitting another `cdd-*` skill.
+- Report fields: `Role`, `Project`, `Development`, `Worktree`, `Intent` (classified intent and recommended continuation), `Answer` for inquiries (lead with a short factual answer, then detail, a table or ASCII diagram where it clarifies structure, explicit gaps; other fields one line each), `Sources used` (files and external artifacts actually read, partial reads named), `Missing expected files` (canonical docs only), `Next action`.
+- Options block: repo-local `NEXT` when `AGENTS.md` defines one, otherwise `**Options**`: question, reply hint, choices; nothing follows the final choice. 2-4 lettered choices (`A.`-`D.`, nested `A1.`, also in native option UIs), recommended first; say the user may reply with the selector alone. From a main worktree, offer both `worktree+branch first, then <continuation>` and `main checkout, <continuation>`, placed by suitability, main first for read-only intents. Inquiries omit `Next action` unless a continuation genuinely helps.
 
-## Example prompt
-`$cdd-boot Ingest AGENTS.md and assume the role. Read the repo's root entrypoints first, and only follow one scaled lane, journal, or INDEX body if I name a lane or ask for history, diagrams, or inventory.`
-
-With an intent:
-`$cdd-boot I want to fix the flaky CI test — warm up the relevant context and recommend the continuation.`
-
-With an inquiry (the answer is the result):
-`$cdd-boot how do releases get versioned in this repo, and which script owns that?`
-
-With a direct operational task:
-`$cdd-boot stay on main, cut new release 0.7.4 from docs/runbooks/release.md`
+### Examples
+- `$cdd-boot` — plain boot from the default set.
+- `$cdd-boot I want to fix the flaky CI test` — intent boot: warms the relevant surfaces and recommends the continuation.
+- `$cdd-boot how do releases get versioned here, and which script owns that?` — inquiry: the answer is the result.
+- `$cdd-boot stay on main, cut release 0.7.4 from docs/runbooks/release.md` — operational task: vanilla route in the main checkout.

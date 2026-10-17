@@ -1,6 +1,6 @@
 interface:
   display_name: "[CDD-0] Boot"
-  short_description: "Boot from root entrypoints first, then hand off either to the right cdd skill or to vanilla AGENTS-driven work"
-  default_prompt: "Use $cdd-boot to ingest AGENTS.md, boot from the repo's root entrypoints first (`README.md`, `TODO.md`, project contract docs, the root journal entrypoint, and `docs/INDEX.md` when present), use a specialized `cdd-*` continuation only when it adds real leverage, otherwise hand back to vanilla AGENTS-driven work, prefer the main checkout for read-only research or direct operational intents, and in scaled repos follow only one relevant split lane or INDEX body when the prompt clearly calls for it; when write-producing work should leave the main checkout, recommend creating or moving into a branch-backed worktree under `.cdd-runtime/worktrees/`."
+  short_description: "Boot from AGENTS.md and sliced reads of README, TODO, and journal routing, then hand off to the right cdd skill or to vanilla AGENTS-driven work"
+  default_prompt: "Use $cdd-boot to ingest AGENTS.md, read the first ~4 KB plus heading outline of README.md, TODO.md, and docs/JOURNAL.md, deepen into PRD, blueprint, INDEX, one TODO lane, or one journal lane only when my intent requires it, route to a specialized `cdd-*` continuation only when it adds real leverage, otherwise hand back to vanilla AGENTS-driven work; prefer the main checkout for read-only or operational intents and recommend a branch-backed worktree under `.cdd-runtime/worktrees/` only when write-producing work should leave main."
 policy:
   allow_implicit_invocation: false
