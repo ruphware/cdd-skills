@@ -1655,11 +1655,11 @@ deps: 74
 
 ### Tasks
 
-- [ ] `skills/cdd-init-project/SKILL.md`: rewrite into `## Canonical contract`, `## Approval ladder`, `## Canonical bootstrap source`, `## Contract-surface table`, `## Intent and assumption checkpoint`, `## Open decisions queue`, `## Interactive planning contract`, `## State detection`, `## Init flow`, `## Adoption flow`.
-- [ ] `## Contract-surface table`: columns `file | source | preserve | allowed edits`, rows `AGENTS.md`, `TODO.md`, `docs/JOURNAL.md`, `docs/journal/*`, `docs/prompts/PROMPT-INDEX.md`, `.agents/skills/*/SKILL.md`, `.gitignore`, `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`; the README row carries the footer rule for fresh versus adoption repos; the footer block follows the table.
-- [ ] `## Init flow`: name and backing; docs-seeded only: inventory, source-input question via open decisions, staging after level-two confirmation and restore under `docs/source-material/`; materialize per bootstrap source unless the repo is fresh boilerplate; intent gate; standard edit set as a pointer to the table; apply options; closeout; the fresh-boilerplate stop rule when Step 00 is complete.
-- [ ] `## Adoption flow`: Phase 1 audit, Phase 2 proposal built from the table plus doc reorganization and Step 01+ planning, Phase 3 apply with the level-two confirmation.
-- [ ] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-init-project"]` to the ten headings in document order.
+- [x] `skills/cdd-init-project/SKILL.md`: rewrite into `## Canonical contract`, `## Approval ladder`, `## Canonical bootstrap source`, `## Contract-surface table`, `## Intent and assumption checkpoint`, `## Open decisions queue`, `## Interactive planning contract`, `## State detection`, `## Init flow`, `## Adoption flow`.
+- [x] `## Contract-surface table`: columns `file | source | preserve | allowed edits`, rows `AGENTS.md`, `TODO.md`, `docs/JOURNAL.md`, `docs/journal/*`, `docs/prompts/PROMPT-INDEX.md`, `.agents/skills/*/SKILL.md`, `.gitignore`, `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`; the README row carries the footer rule for fresh versus adoption repos; the footer block follows the table.
+- [x] `## Init flow`: name and backing; docs-seeded only: inventory, source-input question via open decisions, staging after level-two confirmation and restore under `docs/source-material/`; materialize per bootstrap source unless the repo is fresh boilerplate; intent gate; standard edit set as a pointer to the table; apply options; closeout; the fresh-boilerplate stop rule when Step 00 is complete.
+- [x] `## Adoption flow`: Phase 1 audit, Phase 2 proposal built from the table plus doc reorganization and Step 01+ planning, Phase 3 apply with the level-two confirmation.
+- [x] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-init-project"]` to the ten headings in document order.
 
 ### Implementation notes
 

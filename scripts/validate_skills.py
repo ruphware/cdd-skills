@@ -78,14 +78,15 @@ REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
     ),
     "cdd-init-project": (
         "## Canonical contract",
-        "## High-impact action guardrails",
+        "## Approval ladder",
         "## Canonical bootstrap source",
-        "## Required README CDD footnote footer",
-        "## Contract-surface taxonomy and drift rules",
+        "## Contract-surface table",
         "## Intent and assumption checkpoint",
         "## Open decisions queue",
         "## Interactive planning contract",
         "## State detection",
+        "## Init flow",
+        "## Adoption flow",
     ),
     "cdd-plan": (
         "## Interactive planning contract",

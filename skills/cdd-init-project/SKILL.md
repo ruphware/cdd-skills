@@ -1,6 +1,6 @@
 ---
 name: cdd-init-project
-description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (interactive, approval-gated; separate confirmation required for bootstrap copy/download and clone/remote/init/push actions)."
+description: "Init or adopt the CDD contract in the current folder (empty dir, docs-seeded folder, fresh boilerplate repo, or existing repo migration) (interactive, approval-gated; level-two confirmation for bootstrap copy/download, clone/remote/init/push, and document moves)."
 ---
 
 # CDD Init Project (interactive, approval-gated)
@@ -11,8 +11,8 @@ This skill is designed for:
 - a repo freshly created from `cdd-boilerplate`
 - an existing repo that wants to adopt the CDD workflow
 
-## Canonical contract (do not duplicate)
-Use these repo files as the authoritative workflow and format:
+## Canonical contract
+These repo files are the authoritative workflow and format; reference them instead of duplicating them:
 - `AGENTS.md`
 - `README.md`
 - `TODO.md` and any split `TODO-<area>.md` files
@@ -23,39 +23,50 @@ Use these repo files as the authoritative workflow and format:
 - `docs/prompts/PROMPT-INDEX.md` (if present)
 - repo-local `.agents/skills/*/SKILL.md` files when present as project workflow surfaces
 
-For methodology-stable contract surfaces, materialize from `cdd-boilerplate` and preserve the CDD workflow language under the drift rules below instead of freehand rewriting.
-
-## High-impact action guardrails
-- Stay read-only until the user approves a concrete apply plan.
-- Require a separate explicit confirmation before any networked or repo-admin action, including:
-  - cloning or downloading bootstrap material
+## Approval ladder
+- Level one approves the apply plan. Stay read-only until the user approves a concrete apply plan. Default final apply choices: `A. apply now`, `B. revise first`, `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.
+- Level two is a separate explicit confirmation, after level one, before any networked or repo-admin action, including:
+  - copying, downloading, or cloning bootstrap material
   - creating a GitHub repo or remote
   - `git init`, connecting a remote, or `git push`
-  - moving or restoring user documents to resolve template path conflicts
-- When asking for that confirmation, list the exact commands or operations, the affected paths, and whether network access is required.
-- Never infer approval for clone/remote/init/push operations from general interest in adopting CDD.
-- If the user approves document edits but not repo-admin or networked actions, stop at that boundary and report the blocked next step.
+  - moving or restoring user documents (template path conflicts or doc reorganization)
+- The level-two request lists the exact commands or operations, the affected paths, and whether network access is required.
+- Never infer level two from level one or from general interest in adopting CDD.
+- When only level one is granted, stop at the level-two boundary and report the blocked next step.
 
 ## Canonical bootstrap source
-- Treat `https://github.com/ruphware/cdd-boilerplate` as the canonical bootstrap source when boilerplate material is needed.
-- Even when that canonical source is identified, do not copy, download, clone, or otherwise materialize boilerplate from it until the user gives separate explicit confirmation.
+- Canonical source: `https://github.com/ruphware/cdd-boilerplate`, whenever boilerplate material is needed.
+- Local fallback: when the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout and use it as the bootstrap source.
+- Materializing from either source is level two. Mechanics for the chosen backing:
+  - GitHub-backed:
+    - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
+    - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
+    - never keep the template repo's git history as part of the new project history
+    - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history; otherwise initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
+    - connect/push the resulting project history so the remote matches the project history rather than the template history
+  - Local-only:
+    - materialize the approved boilerplate into the current folder without changing directories
+    - initialize git locally if needed, or preserve existing local history if `.git/` already exists
 
-### Bootstrap materialization
-Shared mechanics for every flow that materializes boilerplate; the separate-approval rule above always applies.
+## Contract-surface table
+Source `boilerplate`: materialize per `## Canonical bootstrap source` and keep its CDD workflow language; never freehand-rewrite. Source `target repo`: fill from the actual target repo; never copy verbatim.
 
-- GitHub-backed (requires the separately approved networked/repo-admin actions):
-  - create the remote from `ruphware/cdd-boilerplate` using the confirmed repo name
-  - materialize the approved boilerplate files into the current folder without cloning to a sibling directory and without changing directories
-  - never keep the template repo's git history as part of the new project history
-  - if the current folder already has local git history, preserve it and commit the imported boilerplate files into that history; otherwise initialize locally if needed and create a fresh project-owned history after the boilerplate files are in place
-  - connect/push the resulting project history so the remote matches the project history rather than the template history
-- Local-only:
-  - if the user explicitly prefers a local checkout or network access is unavailable, ask for a local path to an existing `cdd-boilerplate` checkout as the fallback bootstrap source
-  - materialize the approved boilerplate into the current folder without changing directories
-  - initialize git locally if needed, or preserve existing local history if `.git/` already exists
+| file | source | preserve | allowed edits |
+|---|---|---|---|
+| `AGENTS.md` | boilerplate | CDD methodology, rule numbering, method structure, output contract | if needed, bounded repo-fit edits for project facts only (language, framework, repo layout, runbook entrypoints, a short repo note); never rewrite the methodology |
+| `TODO.md` | boilerplate | header, Step 00, Step template | if needed, append repo-specific Step 01+ in root `TODO.md` or split `TODO-<area>.md` files; never replace Step 00 with a repo-specific adoption format |
+| `docs/JOURNAL.md` | boilerplate | rules, entry format, compact header guidance, transition-to-split mechanics; its role as the stable journal entrypoint/index | repo-specific content only in entries and summaries; unsplit, it stays the live journal; after split activation (active implementation work branches into `TODO-<area>.md`), rewrite it as a short current-state index, compact and high-signal |
+| `docs/journal/*` | boilerplate, only in split-journal mode | `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, `docs/journal/archive/` for raw archived batches; split-journal mode once it starts | create or preserve only when split-journal mode is active; never precreate split-journal files before active `TODO-<area>.md` work exists |
+| `docs/prompts/PROMPT-INDEX.md` | boilerplate | role, quality bar, output structure; repo-local INDEX workflow and checks when present | otherwise aligned with the boilerplate scaffold; repo-local INDEX workflow and checks may specialize it |
+| `.agents/skills/*/SKILL.md` | boilerplate or target repo, when present | repo-local project skills, as project-level workflow surfaces tied to the repo's documented process, through bootstrap and adoption | never require them when absent; never pull user-home skills into the repo |
+| `.gitignore` | target repo | existing repo-specific ignore rules | if needed, ensure repo-local `.cdd-runtime/` is ignored, in fresh/bootstrap and adoption outputs |
+| `README.md` | target repo | its role as the runbook entrypoint | write from the actual product, architecture, and runbook reality, matching PRD and Blueprint; CDD footer per the rule below |
+| `docs/specs/prd.md` | target repo | none | fill from the actual product reality; never carry boilerplate placeholders forward |
+| `docs/specs/blueprint.md` | target repo | none | fill from the actual architecture reality; never carry boilerplate placeholders forward |
 
-## Required README CDD footnote footer
-- For fresh/bootstrap repos, require this exact `README.md` footer block near the bottom of the file so the runbook stays primary and the CDD contract remains present but low-visibility:
+README footer rule: fresh/bootstrap repos require the block below near the bottom, so the runbook stays primary and the CDD contract stays present but low-visibility. In adoption, get the user's explicit yes before proposing or applying it, then add or move the full block near the bottom of the current `README.md`. Never duplicate it when the block or its badges already exist.
+
+README footer block (exact):
 
 ```md
 ___
@@ -67,111 +78,44 @@ ___
 <sup>Start with `$cdd-boot`. Use `$cdd-audit` for implementation or codebase audits, `$cdd-plan` + `$cdd-implement` for feature work, and `$cdd-maintain` for doc drift, codebase cleanup, index refresh, refactor architecture audit, and upkeep.</sup>
 ```
 
-- For existing-repo adoption, ask the user for explicit confirmation before proposing or applying that README.md edit; only then consider adding or moving that full CDD footnote footer near the bottom of the current `README.md`.
-- Avoid duplicating the block if it or its badges already exist.
-
-## Contract-surface taxonomy and drift rules
-- Treat these files as methodology-stable contract surfaces that should be materialized from `cdd-boilerplate` and kept aligned with its CDD workflow language:
-  - `AGENTS.md`
-  - `TODO.md`
-  - `docs/JOURNAL.md`
-  - `docs/prompts/PROMPT-INDEX.md`
-- Treat these optional scaled workflow surfaces as boilerplate-aligned only when the repo shape activates them:
-  - `docs/journal/JOURNAL.md`
-  - `docs/journal/JOURNAL-<area>.md`
-  - `docs/journal/SUMMARY.md`
-  - `docs/journal/archive/`
-- Treat these optional repo-local workflow surfaces as project-level contract files to preserve when present:
-  - `.agents/skills/*/SKILL.md`
-- Treat these files as repo-specific contract surfaces that must be filled from the actual target repo rather than copied verbatim:
-  - `README.md`
-  - `.gitignore`
-  - `docs/specs/prd.md`
-  - `docs/specs/blueprint.md`
-- `AGENTS.md`: start from the boilerplate `AGENTS.md` and preserve the CDD methodology, rule numbering, method structure, and output contract. Limited repo-fit edits are allowed only for project facts such as language, framework, repo layout, runbook entrypoints, or a short repo note; do not rewrite the methodology.
-- `TODO.md`: start from the boilerplate `TODO.md` and preserve its header, Step 00, and Step template. Add repo-specific work only as Step 01+ in root `TODO.md` or split `TODO-<area>.md` files; do not replace Step 00 with a repo-specific adoption format.
-- `docs/JOURNAL.md`: start from the boilerplate journal and preserve its rules, entry format, compact header guidance, and transition-to-split mechanics. In unsplit repos it remains the live journal; once active implementation work branches into `TODO-<area>.md`, keep `docs/JOURNAL.md` as the stable journal entrypoint/index, rewrite it as a short current-state index after split activation, and keep it compact and high-signal. Repo-specific content belongs in entries and summaries only.
-- `docs/journal/*`: create or preserve these only when split-journal mode is active. Keep `docs/journal/JOURNAL.md` for cross-cutting notes, `docs/journal/JOURNAL-<area>.md` for matching active `TODO-<area>.md` workstreams, `docs/journal/SUMMARY.md` for condensed archive history, and `docs/journal/archive/` for raw archived batches. Do not precreate split-journal files before active `TODO-<area>.md` work exists, and keep split-journal mode once it starts.
-- `docs/prompts/PROMPT-INDEX.md`: start from the boilerplate prompt and preserve its role, quality bar, and output structure. Repo-local INDEX workflow and checks may specialize it.
-- `.agents/skills/*/SKILL.md`: preserve repo-local project skills when present. Treat them as project-level workflow surfaces tied to the repo's documented process. Preserve them during bootstrap or adoption; do not require them when absent and do not pull user-home skills into the repo.
-- `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored in fresh/bootstrap and adoption outputs.
-- `README.md`, `docs/specs/prd.md`, and `docs/specs/blueprint.md` are repo-specific outputs and should be written from the target repo's actual product, architecture, and runbook reality.
-
 ## Intent and assumption checkpoint
 
-Resolve project intent and material assumptions before drafting `docs/specs/prd.md`, `docs/specs/blueprint.md`, repo-specific `README.md` content, or Step 01+ TODO items. These are the repo-specific contract surfaces that must reflect the actual product and architecture vision, not boilerplate placeholders or guesses.
-
-- Build a project intent frame from the user request, the canonical bootstrap source, the workspace audit, and any discovered source documents.
-- Project intent frame fields: `Project purpose`, `Target user or audience`, `Deliverable`, `Hardest constraint`, `Success signal`, `Non-goals`, `Material assumptions`, `Recommended starting shape`, `Unstable points`.
-- Challenge a material assumption when it could change the product purpose, the target user, the architecture or tech stack, scope or non-goals, the deployment or distribution target, the sequencing of Step 01+ work, integration or external-dependency requirements, validation or UAT shape, or risk/privacy/security/permission behavior.
-- If project intent is unclear from the user request and workspace evidence, ask one intent-level clarification first per the loop rule in `Interactive planning contract`. Do not use detail questions (file paths, framework choice, repo name, GitHub-vs-local) to substitute for intent resolution.
-- If intent is stable but assumptions remain, classify each material assumption as `confirmed`, `derived-from-docs`, `recommended default`, `risky`, or `excluded`. Only `risky` assumptions block drafting by themselves. Use a `recommended default` directly only when choosing differently would not create a live `Open decisions` item; otherwise keep the choice visible and recommend the repo-backed default.
-- Include a compact visible `Intent and assumptions` section in the proposed init or adoption plan covering project purpose, target user, success signal, recommended starting shape, material assumptions by status, non-goals, and any blocking intent question.
+- Before detailed implementation questions, drafting `docs/specs/prd.md`, `docs/specs/blueprint.md`, repo-specific `README.md` content, or Step 01+ TODO items, or setup-shape selection, build a project intent frame from the user request, the canonical bootstrap source, the workspace audit, and any discovered source documents.
+- Frame fields: `Project purpose`, `Target user or audience`, `Deliverable`, `Hardest constraint`, `Success signal`, `Non-goals`, `Material assumptions`, `Recommended starting shape`, `Unstable points`.
+- If intent is unclear, including when workspace evidence suggests another reading of the user's first wording, ask one intent-level clarification first, not implementation-detail questions (file paths, framework choice, repo name, GitHub-vs-local).
+- Challenge a material assumption that could change the product purpose, target user, architecture or tech stack, scope or non-goals, deployment or distribution target, Step 01+ sequencing, integrations or external dependencies, validation or UAT shape, or risk/privacy/security/permission behavior.
+- With intent stable, classify each remaining material assumption as `confirmed`, `derived-from-docs`, `recommended default`, `risky`, or `excluded`; only `risky` blocks planning by itself. A `recommended default` goes straight into the plan only if a different choice would not create a live `Open decisions` item; otherwise keep the choice visible with the default recommended.
+- Expand scope only once the expansion is confirmed to serve the intent, however obvious the path.
+- The proposed init or adoption plan shows a compact `Intent and assumptions` section: the frame fields, assumptions by status, and any blocking intent question.
 - Apply order: resolve intent → fill PRD → fill Blueprint → align README and TODO Step 01+. Do not let boilerplate placeholders or template wording stand in for an unresolved intent frame.
 
 ## Open decisions queue
 
-Make remaining init/adoption-shaping choices visible before final apply planning.
-
-- Once the project intent frame and workspace review stabilize the request, surface unresolved plan-shaping choices in a visible `Open decisions` section before emitting a finished init or adoption plan.
-- Use this queue only for choices where a different answer would materially change project purpose, target user, architecture or stack direction, source inputs, repo or bootstrap posture, doc/write location, Step 01+ stop point, or validation/UAT shape.
-- A repo-backed recommendation is not closure. `derived-from-docs` and `recommended default` justify the recommended option, but they do not close a live plan-shaping decision by themselves.
-- Close a decision only by explicit user instruction, a hard workspace/contract constraint, or a true minor default that does not change plan shape.
-- For each open decision, record: short label, affected boundary, why it matters, current recommended option, and status.
-- Status values:
+- After the intent frame and workspace review stabilize the request, surface unresolved plan-shaping choices in a visible `Open decisions` section before emitting a finished init or adoption plan.
+- Queue only choices where a different answer would materially change project purpose, target user, architecture or stack direction, source inputs, repo or bootstrap posture, doc/write location, Step 01+ stop point, or validation/UAT shape; exclude reversible implementation details, minor wording, or file-placement questions implied by repo conventions.
+- A repo-backed recommendation is not closure: `derived-from-docs` and `recommended default` justify the recommended option but never close a live decision alone.
+- Close a decision only by explicit user instruction, a hard workspace or contract constraint, or a remaining difference that is a true minor default leaving plan shape unchanged.
+- Record per decision, collapsing duplicates into the smallest root decision: short label, affected boundary, why it matters, recommended option, status:
   - `asking now` = the single highest-leverage open decision for this message
   - `queued` = still unresolved, visible to the user, but not asked yet
-- Keep the queue compact. Collapse duplicates into the smallest root decision and exclude reversible implementation details, minor wording, or file-placement questions implied by repo conventions.
-- If no plan-shaping open decisions remain, say so briefly and continue.
+- Visibility is broader than questioning: show every remaining decision, mark one `asking now`, leave the rest `queued`.
+- Do not emit a finished init or adoption plan while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the plan keeps it visible instead of pretending the plan is decision-complete.
+- If none remain, say so briefly and continue.
 
 ## Interactive planning contract
-Planning in this skill is interactive, review-driven, and continuously refined.
 
-- Start in planning mode when the runtime supports a native read-only or plan mode. If it does not, emulate that behavior by staying read-only until the user approves applying the plan.
-- Review the workspace before and during planning. Audit the relevant docs, code, manifests, configs, runbook files, and current TODO surfaces so the init or adoption plan reflects the real repo state.
-- Treat clarification as a way to resolve the right assumptions, goals, and implementation paths. Do not ask preference questions that do not materially affect the plan.
-- Ask at most one substantive clarification or decision question per message.
-- Treat clarification as a loop, not a batch: after each user answer, re-rank the remaining unresolved decisions and ask the next single highest-leverage question, then wait again. Never list multiple open questions in one message as a checklist for the user to answer all at once.
-- Visibility is broader than questioning. When multiple plan-shaping decisions remain, show them in `Open decisions`, mark one `asking now`, and leave the rest `queued`; do not ask them all at once.
-- Keep refining the execution plan as new evidence appears. After each user answer or new repo finding, update state classification, source inputs, sequencing, assumptions, and validation requirements before continuing.
-- Keep messages easy to scan: concise, no fluff, and use lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful. Do not depend on color.
-- End every decision message with repo-local `NEXT` when defined, otherwise `**Options**`: question, any reply hint, then choices. All other content comes before this block; nothing follows the final choice.
-  - offer 2-4 concrete options grounded in the repo context
-  - put the recommended option first and mark it clearly
-  - start every option label with a lettered selector, including in native UIs (`A.`, `B.`, …); nested selectors retain the parent letter (`A1.`, `A2.`, `B1.`); examples do not set the option count
-  - keep each option short and action-oriented
-  - avoid open-ended options unless a free-form value is truly required
-  - when practical, tell the user they can reply with just the selector
-- The selected option itself is the approval; do not append a separate free-form approval question after selector options.
-- Do not emit a finished init or adoption plan while a plan-shaping `Open decisions` item remains unresolved unless the user explicitly resolves or accepts it, or the clarification budget is exhausted and the item stays visible instead of being treated as closed.
-- Default final apply choices to `A. apply now`, `B. revise first`, and `C. stop read-only`; when a concrete follow-up is clear, option A may say `apply now and continue with ...`.
+- Use the runtime's native read-only or plan mode when available; otherwise stay read-only until level one (`## Approval ladder`).
+- Review the workspace before and during planning: the relevant docs, code, manifests, configs, runbook files, and current TODO surfaces, so the init or adoption plan reflects the real repo state.
+- Ask only to resolve assumptions, goals, or implementation paths that materially affect the plan; never ask preference questions that do not.
+- Ask at most one substantive question per message. After each answer, re-rank what remains and ask the next highest-leverage question; never list several open questions as a checklist.
+- After each user answer or new repo finding, update state classification, source inputs, sequencing, assumptions, and validation requirements before continuing.
+- Keep messages easy to scan: concise, no fluff, lightweight Markdown emphasis such as `**bold**` and `*italics*` when helpful; do not depend on color.
+- Offer 2-4 short, action-oriented, repo-grounded choices; open-ended only when a free-form value is required.
+- End every decision message with repo-local `NEXT` when `AGENTS.md` defines one, otherwise `**Options**`: question, any reply hint, then choices; nothing follows the final choice.
+- Label every choice with a lettered selector, also in native option UIs (`A.`, `B.`, …; nested `A1.`, `A2.`); put the recommended choice first and mark it; say the user may reply with the selector alone. The selected option is the approval; never append a separate approval question.
 
-## Shared flow building blocks
-
-Flows reference these blocks instead of restating them.
-
-### Repo naming and backing
-- Derive the current directory basename and propose it as the default repo name; ask the user to confirm or edit it before any bootstrap step, using the interaction contract.
-- Ask whether they want a GitHub-backed repo (default: private) or a local-only repo for now.
-
-### Standard init edit set
-Draft proposed edits (grouped by file) to:
-- if needed, add only bounded repo-detail edits to `AGENTS.md` under the drift rules above
-- update `.gitignore` if needed so repo-local `.cdd-runtime/` is ignored without dropping existing ignore rules
-- fill `docs/specs/prd.md`
-- fill `docs/specs/blueprint.md`
-- update `README.md` to match the PRD/Blueprint and include the required CDD footnote footer near the bottom of the file
-- extend `TODO.md` with Step 01+ if needed, preserving the boilerplate header, Step 00, and Step template already in `TODO.md`
-- keep `docs/JOURNAL.md` as the stable journal entrypoint/index, preserve split-journal topology only when active, keep post-split `docs/JOURNAL.md` as a short current-state index, keep `docs/prompts/PROMPT-INDEX.md` aligned with the boilerplate scaffold while preserving repo-local INDEX workflow/checks when present, and preserve repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present
-
-### Post-apply closeout
-After applying:
-- list the exact Step 00 `Automated checks` commands to run
-- provide a Step 00 UAT checklist
-- suggest the next step to implement via `$cdd-implement`
-
-## State detection (required)
-Classify the workspace into exactly one state and tell the user which one you detected:
+## State detection
+Before any flow, classify the workspace into exactly one state.
 
 Use this precedence order; stop on the first matching state:
 
@@ -216,81 +160,40 @@ Common source-document signals:
 After classification:
 - tell the user which state was detected and the main evidence for that classification
 - if any nearby state was ruled out for an important reason, say so briefly
-- continue with the matching flow using the interactive planning contract above
+- continue with the matching flow: `## Init flow` for `EMPTY_DIR`, `DOCS_SEEDED_INIT`, and `FRESH_BOILERPLATE_REPO`; `## Adoption flow` for `EXISTING_REPO_ADOPT_CDD`
 
-### A) EMPTY_DIR
-No substantive files are present after applying the ignore rules above.
+## Init flow
+Goal: bootstrap `cdd-boilerplate` into the current folder as the local repo root (already done in `FRESH_BOILERPLATE_REPO`), preserve any discovered source material, and build Step 00 from it inside this repo.
 
-## Flow A — Empty directory (approval-gated)
-Goal: bootstrap `cdd-boilerplate` into the current folder, using this directory as the local repo root.
+Stop rule: in `FRESH_BOILERPLATE_REPO`, if Step 00 is already complete and the repo is actively developed, STOP and recommend `$cdd-plan` instead.
 
-1) Resolve the repo name and backing per `### Repo naming and backing`.
-2) Materialize boilerplate per `### Bootstrap materialization` for the chosen backing.
-3) Continue directly with Step 00 in this repo; do not stop and do not ask the user to rerun the skill in another directory.
-4) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, repo backing, or where bootstrap material should come from; recommend one based on the workspace review.
-5) Draft proposed edits per `### Standard init edit set`.
-6) Present final selector-based apply options for the proposed edits.
-7) Close out per `### Post-apply closeout`.
+1) Skip for `EMPTY_DIR`: before asking any questions, inventory the current folder for candidate source/reference documents and show the detected list grouped by likely importance (for example: core requirements, supporting notes, appendices). If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
+2) Skip for `FRESH_BOILERPLATE_REPO`: propose the current directory basename as the default repo name and have the user confirm or edit it before any bootstrap step; ask whether they want a GitHub-backed repo (default: private) or a local-only repo for now.
+3) `DOCS_SEEDED_INIT` only: before materializing, and after level two, stage discovered source documents that would conflict with template paths; restore them afterward under `docs/source-material/`, preserving relative paths as much as possible, and use `docs/source-material/` as the default input set for Step 00.
+4) Skip for `FRESH_BOILERPLATE_REPO`: materialize per `## Canonical bootstrap source` for the chosen backing.
+5) Continue directly with Step 00 in this repo, with the discovered documents as the default source material; do not stop and do not ask the user to rerun the skill in another directory. Read the `## Canonical contract` files and use `TODO.md` **Step 00** as the checklist (do not re-define it).
+6) Before drafting edits, resolve intent per `## Intent and assumption checkpoint`, then surface remaining plan-shaping choices per `## Open decisions queue`. Present 2-3 setup shapes only for a real plan-shaping decision about source inputs, repo backing or bootstrap source, write location, or Step 01+ sequencing; recommend one based on the workspace review.
+7) Draft proposed edits grouped by file, applying each `## Contract-surface table` row.
+8) Present the final apply options for the proposed edits (level one).
+9) After applying: list the exact Step 00 `Automated checks` commands to run, provide a Step 00 UAT checklist, and suggest the next step to implement via `$cdd-implement`.
 
-## Flow B — Docs-seeded init (approval-gated)
-Goal: bootstrap `cdd-boilerplate` into the current folder, preserve the discovered source material, and build Step 00 from it inside this repo.
-
-1) Inventory the current folder for candidate source/reference documents before asking any questions.
-2) Show the detected document list grouped by likely importance (for example: core requirements, supporting notes, appendices). If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
-3) Resolve the repo name and backing per `### Repo naming and backing`.
-4) Before materializing the boilerplate, and only after explicit apply approval, stage discovered source documents that would conflict with template paths.
-   - restore them afterward under `docs/source-material/`, preserving relative paths as much as possible
-   - use `docs/source-material/` as the default input set for Step 00
-5) Materialize boilerplate per `### Bootstrap materialization` for the chosen backing.
-6) Continue directly with Step 00 in this repo using the discovered documents as the default source material.
-7) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs, bootstrap mode, or write location; recommend one based on the workspace review.
-8) Draft proposed edits per `### Standard init edit set`.
-9) Present final selector-based apply options for the proposed edits.
-10) Close out per `### Post-apply closeout`.
-
-## Flow C — Fresh boilerplate repo (approval-gated)
-1) Read the canonical contract files above.
-2) Use `TODO.md` **Step 00** as the checklist (do not re-define it).
-3) Inventory the current workspace for candidate source/reference documents before asking questions.
-4) Show the detected document list. If exclusions or missing external documents could materially change the Step 00 input set, queue them in `Open decisions` and ask only the highest-leverage source-input question first.
-5) Before drafting edits, resolve project intent per `Intent and assumption checkpoint`, then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 setup shapes only when there is a real plan-shaping decision about source inputs or Step 01+ sequencing; recommend one based on the workspace review.
-6) Draft proposed edits per `### Standard init edit set`.
-7) Present final selector-based apply options for the proposed edits.
-8) Close out per `### Post-apply closeout`.
-
-If Step 00 is already complete and the repo is actively developed:
-- STOP and recommend using `$cdd-plan` instead.
-
-## Flow D — Existing repo adopting CDD (approval-gated)
+## Adoption flow
 Goal: add the CDD contract files and reorganize docs so the repo becomes CDD-operable.
 
 ### Phase 1 — Audit (no writes)
 1) Read `README.md` and find the current runbook (setup/dev/test/build).
 2) Inventory existing docs (e.g., `docs/`, `design/`, `adr/`, root markdown files) and repo-local `.agents/skills/*/SKILL.md` workflow surfaces when present.
 3) Review the current implementation surfaces that shape adoption planning: manifests, entrypoints, test/lint/typecheck config, and any existing planning system (issues, backlog files, TODO docs).
-4) Ask only blocking questions one at a time using the interaction contract above (for example, docs that must keep their path due to external links).
+4) Ask only blocking questions (for example, docs that must keep their path due to external links).
 
-### Phase 2 — Draft migration plan (proposal)
-Before drafting the patch proposal, resolve project intent per `Intent and assumption checkpoint` (for existing-repo adoption, derive the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief), then surface any remaining plan-shaping choices in `Open decisions`. Present 2-3 migration shapes only when there is a real decision about scope, doc reorganization, or TODO placement; recommend one based on the workspace review.
-- Source migrated contract files per `## Canonical bootstrap source` and its separate-approval rule; a local `cdd-boilerplate` checkout is the fallback source.
-
-Draft a patch proposal grouped by file, including:
-1) Add the CDD contract files using the taxonomy above:
-   - `AGENTS.md`: start from the boilerplate contract and allow only bounded repo-fit edits that do not change the CDD methodology
-   - `TODO.md`, `docs/JOURNAL.md`, and `docs/prompts/PROMPT-INDEX.md`: materialize from `https://github.com/ruphware/cdd-boilerplate` and preserve their methodology scaffolds, with `docs/JOURNAL.md` kept as the stable journal entrypoint/index, rewritten as a short current-state index after split activation, and split-journal `docs/journal/*` topology preserved only when active
-   - `.agents/skills/*/SKILL.md`: when present in the source or target repo, preserve them as repo-local workflow surfaces tied to the repo's documented process; do not require them when absent and do not import user-home skills
-   - `.gitignore`: preserve existing repo-specific ignore rules and ensure repo-local `.cdd-runtime/` is ignored
-   - `docs/specs/prd.md` and `docs/specs/blueprint.md`: fill from the actual repo rather than copying boilerplate placeholders forward
-2) Reorganize docs:
-   - keep `README.md` as the runbook entrypoint
-   - if the current `README.md` does not already contain the required CDD footnote footer, ask for explicit confirmation before proposing or applying that full-block README.md edit during existing-repo adoption
-   - move/normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links
-3) Add repo-specific planning to `TODO.md`:
-   - preserve the boilerplate header, Step 00, and Step template
-   - append repo-specific Step 01+ work, including a step to generate or refresh `docs/INDEX.md` via the repo-local INDEX workflow (or `$cdd-maintain` in `index` mode)
+### Phase 2 — Proposal
+1) Resolve intent per `## Intent and assumption checkpoint`, deriving the frame primarily from the current repo state and the user's adoption goals rather than from a blank brief, then surface remaining plan-shaping choices per `## Open decisions queue`. Present 2-3 migration shapes only for a real decision about scope, doc reorganization, or TODO placement; recommend one based on the workspace review.
+2) Draft a patch proposal grouped by file, applying each `## Contract-surface table` row; source the `boilerplate` rows per `## Canonical bootstrap source`.
+3) Reorganize docs around the `README.md` runbook entrypoint: move or normalize non-runbook docs under `docs/` (or `docs/archive/` if historical), preserving content and adding links.
+4) Plan repo-specific Step 01+ work in `TODO.md`, including a step to generate or refresh `docs/INDEX.md` via the repo-local INDEX workflow (or `$cdd-maintain` in `index` mode).
 
 ### Phase 3 — Apply
-1) Present final selector-based apply options for the migration plan.
-2) If the approved plan includes clone, remote creation, git initialization, push, or path-moving operations, ask a second confirmation listing those exact operations before executing them.
+1) Present the final apply options for the migration plan (level one).
+2) Get level two for every level-two operation in the approved plan before executing it.
 3) Apply only the approved changes.
 4) Provide exact Automated checks + UAT for the adoption step(s), and recommend `$cdd-maintain` in `index` mode as the next action.
