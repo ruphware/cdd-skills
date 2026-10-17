@@ -1470,11 +1470,11 @@ touches: skills/cdd-plan/SKILL.md, scripts/validate_skills.py
 
 ### Tasks
 
-- [ ] `skills/cdd-plan/SKILL.md`: reorder and rewrite into these H2s, in this order: `## Interactive planning contract`, `## Clarification floor and architecture options`, `## Intent and assumption checkpoint`, `## Open decisions queue`, `## Question economy`, `## Edge-case review`, `## Audit-input normalization`, `## External source handling`, `## Runnable TODO step contract`, `## Step annotations`, `## Plan output style`, `## Flow`. Delete `## Planning anti-patterns`; fold its only two bullets without a positive counterpart ("do not treat the user's first wording as confirmed intent when repo evidence suggests another reading", "do not expand scope because a path is obvious") into `## Intent and assumption checkpoint`.
-- [ ] Rule homes: clarification floor and first-question rule only in `## Clarification floor and architecture options`; one-question loop, options block, plan-mode and read-only rule, visible-sections list only in `## Interactive planning contract`; the do-not-emit sentence and "visibility is broader than questioning" only in `## Open decisions queue`; ladder, allowed and forbidden question topics, budget only in `## Question economy`; "plans may be long when scope requires it" only in `## Plan output style`; no-speculative-caps rule only in `## Runnable TODO step contract`.
-- [ ] `## Flow`: six numbered lines, each a stage name plus the section that owns it, no re-explanation.
-- [ ] Insert the canonical blocks below verbatim where they belong.
-- [ ] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-plan"]` to the twelve headings in document order.
+- [x] `skills/cdd-plan/SKILL.md`: reorder and rewrite into these H2s, in this order: `## Interactive planning contract`, `## Clarification floor and architecture options`, `## Intent and assumption checkpoint`, `## Open decisions queue`, `## Question economy`, `## Edge-case review`, `## Audit-input normalization`, `## External source handling`, `## Runnable TODO step contract`, `## Step annotations`, `## Plan output style`, `## Flow`. Delete `## Planning anti-patterns`; fold its only two bullets without a positive counterpart ("do not treat the user's first wording as confirmed intent when repo evidence suggests another reading", "do not expand scope because a path is obvious") into `## Intent and assumption checkpoint`.
+- [x] Rule homes: clarification floor and first-question rule only in `## Clarification floor and architecture options`; one-question loop, options block, plan-mode and read-only rule, visible-sections list only in `## Interactive planning contract`; the do-not-emit sentence and "visibility is broader than questioning" only in `## Open decisions queue`; ladder, allowed and forbidden question topics, budget only in `## Question economy`; "plans may be long when scope requires it" only in `## Plan output style`; no-speculative-caps rule only in `## Runnable TODO step contract`.
+- [x] `## Flow`: six numbered lines, each a stage name plus the section that owns it, no re-explanation.
+- [x] Insert the canonical blocks below verbatim where they belong.
+- [x] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-plan"]` to the twelve headings in document order.
 
 ### Implementation notes
 
