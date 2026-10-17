@@ -1450,3 +1450,268 @@ One-time context boot: read the root entrypoints in slices, route to the continu
 - A main-worktree boot still offers both checkout choices with the recommended first; an inquiry boot answers in the report.
 - `python3 scripts/validate_skills.py` passes on the new file and fails when `## Routing` is removed.
 - After `bash scripts/install.sh --update --all`, `/cdd-boot` here loads the new text, and the Codex default prompt names the sliced read set.
+
+## Step 74 — Dedupe `cdd-plan` in place and define the canonical shared blocks
+
+points: 3
+touches: skills/cdd-plan/SKILL.md, scripts/validate_skills.py
+
+### Goal
+
+`skills/cdd-plan/SKILL.md` states each rule once under twelve sections ordered interaction-first, the Flow becomes a pointer skeleton, the anti-patterns section is gone, and the file carries the canonical wording of the four blocks other skills copy: options block, one-question loop, external source handling, intent checkpoint plus open decisions. Target at or below 18 KB and 4,500 tokens.
+
+### Constraints
+
+- `scripts/test_plan_artifacts.sh` stays untouched and green: headings `## Clarification floor and architecture options`, `## Open decisions queue`, `## Plan output style`, `## Step annotations`; phrases `must ask one substantive clarification or decision question`, `For audit-derived planning, default the first question to remediation shape`, `visible \`Open decisions\` section`, `A repo-backed recommendation is not closure`, `\`asking now\``, `\`queued\``, `Do not emit a finished runnable TODO step while a plan-shaping \`Open decisions\` item remains unresolved`, `high-entropy`, `ASCII diagrams`, `deps: <comma-separated step ids>`, `never write \`deps: none\``, `points: <1 | 2 | 3 | 5 | 8 | 13 | 21 | >21>`, `touches: <comma-separated path globs or boundary names>`, `serial barrier`, `Unannotated TODO files always run serial`. The `## Step annotations` body and its table stay verbatim.
+- One home per rule. A section may name another section; it never restates its rule.
+- Interaction rules first: the sections an agent needs after a context compaction come before contract detail.
+- Compress wording, never decisions. The fixture file `skills/cdd-plan/fixtures/open-decisions-response.md` stays.
+- Validator stays structural: tuple update only.
+
+### Tasks
+
+- [ ] `skills/cdd-plan/SKILL.md`: reorder and rewrite into these H2s, in this order: `## Interactive planning contract`, `## Clarification floor and architecture options`, `## Intent and assumption checkpoint`, `## Open decisions queue`, `## Question economy`, `## Edge-case review`, `## Audit-input normalization`, `## External source handling`, `## Runnable TODO step contract`, `## Step annotations`, `## Plan output style`, `## Flow`. Delete `## Planning anti-patterns`; fold its only two bullets without a positive counterpart ("do not treat the user's first wording as confirmed intent when repo evidence suggests another reading", "do not expand scope because a path is obvious") into `## Intent and assumption checkpoint`.
+- [ ] Rule homes: clarification floor and first-question rule only in `## Clarification floor and architecture options`; one-question loop, options block, plan-mode and read-only rule, visible-sections list only in `## Interactive planning contract`; the do-not-emit sentence and "visibility is broader than questioning" only in `## Open decisions queue`; ladder, allowed and forbidden question topics, budget only in `## Question economy`; "plans may be long when scope requires it" only in `## Plan output style`; no-speculative-caps rule only in `## Runnable TODO step contract`.
+- [ ] `## Flow`: six numbered lines, each a stage name plus the section that owns it, no re-explanation.
+- [ ] Insert the canonical blocks below verbatim where they belong.
+- [ ] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-plan"]` to the twelve headings in document order.
+
+### Implementation notes
+
+Canonical options block (copied verbatim by Steps 75-77):
+
+```md
+- End every decision message with repo-local `NEXT` when `AGENTS.md` defines one, otherwise `**Options**`: question, any reply hint, then choices; nothing follows the final choice.
+- Label every choice with a lettered selector, also in native option UIs (`A.`, `B.`, …; nested `A1.`, `A2.`); put the recommended choice first and mark it; say the user may reply with the selector alone. The selected option is the approval; never append a separate approval question.
+```
+
+Canonical one-question loop:
+
+```md
+- Ask at most one substantive question per message. After each answer, re-rank what remains and ask the next highest-leverage question; never list several open questions as a checklist.
+```
+
+Canonical external source handling; `<stage>` and `<outcome>` are the only skill-specific words:
+
+```md
+- Resolve user-named issues, tickets, PRs, RFCs, docs, or tracker references read-only, via connectors, CLIs, local remotes, pasted URLs, or identifiers.
+- Before <stage>, read each in-scope artifact's complete thread: body, all comments, review comments, directly referenced artifacts; do not crawl unrelated links. The latest authoritative comment is current intent; flag superseded body requirements.
+- Ask one clarifying question when the reference or source of truth is ambiguous enough to change <outcome>.
+- When a surface cannot be fetched after a reasonable read-only attempt, mark coverage partial, name the unread surfaces, and do not promote unread requirements as confirmed.
+- Never post, update, label, assign, or otherwise mutate external systems.
+```
+
+Intent checkpoint and open decisions: this step's final text is the canonical version; Step 77 copies it with init's frame fields, the `derived-from-docs` status label, and its pinned "finished init or adoption plan" sentence as the only differences.
+
+- Option count is skill-specific and never part of the canonical block; cdd-audit uses `A.`-`E.`.
+- The final apply choices (`A. apply now and continue…`, `B. apply now only`, `C. keep the plan read-only and revise`) stay in `## Interactive planning contract`.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_plan_artifacts.sh`
+
+### UAT
+
+- File at or below 18 KB, twelve H2 headings in the listed order, `## Planning anti-patterns` gone.
+- Each rule in the Step 74 home list greps to exactly one section.
+- A plan run still asks one substantive question before any TODO draft, keeps `Open decisions` visible, and ends with the three apply choices.
+- Both checks pass; the validator fails when `## Question economy` is removed.
+
+## Step 75 — Restage `cdd-audit` as an execution spine with stage references and add reference pins to the validator
+
+points: 5
+touches: skills/cdd-audit/SKILL.md, skills/cdd-audit/references/*.md, scripts/validate_skills.py
+deps: 74
+
+### Goal
+
+`skills/cdd-audit/SKILL.md` is a stage-ordered spine at or below 20 KB and 5,000 tokens, with the interaction contract first; the as-built model, the boundary and dimension judgments, and the per-shape detail live in three reference files read at their stage; the validator pins reference headings, links, and contents blocks so moved rules stay enforced.
+
+### Constraints
+
+- No rule is deleted. Every bullet in today's file maps to one home in the spine or one reference; the implementer keeps a mapping list in the step's working notes until the checks pass.
+- Stage order is the structure. The old `## Flow` is dissolved into the stages; no section re-explains another.
+- Shape-specific behavior lives in one shape table in Stage 2 plus `references/shapes.md`; the as-built model, checkpoint trigger lists, and depth defaults are columns of that table, not prose repeated per shape.
+- The question policy is stated once in `## Interaction contract`: when to ask, the canonical one-question loop, and the three things kept separate: baseline confirmation, ambiguity clarification, finding approval. Other stages point to it.
+- Reading is shape-and-depth driven. The old unconditional "Read:" list becomes candidate proof surfaces chosen per shape and depth.
+- Both examples stay: the as-built example in its reference, the finding example in Stage 5.
+- Each reference is linked from SKILL.md by relative path with one imperative sentence saying when to read it; references are one level deep and any file over 100 lines opens with `## Contents`.
+- Canonical options block, one-question loop, and external source handling copied verbatim from Step 74, with `<stage>` = "framing, scope resolution, proposal-fit verdicts, or findings" and `<outcome>` = "the audit question, scope, or conclusion".
+- The visible-framing rule reads: always classify; emit the visible `Audit framing` block for behavior-changing, branch-sized, step-scoped, or multi-step audits; narrow local audits classify in one line.
+
+### Tasks
+
+- [ ] `skills/cdd-audit/SKILL.md`: rewrite into `## Interaction contract`, `## Stage 1 — Frame`, `## Stage 2 — Scope and shape`, `## Stage 3 — Model the as-built`, `## Stage 4 — Judge`, `## Stage 5 — Findings and triage`, `## Stage 6 — Close out`, with the content map in Implementation notes.
+- [ ] `skills/cdd-audit/references/as-built-model.md`: model parts in full (Diagram, Gist, Delta stats, Perceived versus stated intent, Limits and assumptions with the verdict table and the keep-needs-a-strong-reason paragraph, Prior art), evidence rule, blind window, depth scaling, the mapping of model findings into dimensions, and the existing example block.
+- [ ] `skills/cdd-audit/references/boundary-and-dimensions.md`: `## Contents`, the boundary and simplicity check (six judgments, practical example, verdict fields with their vocabularies, deletion opportunities), the six core audit dimensions including the documentation checks for INDEX layout, mermaid diagrams, and runbooks, and the optional lenses.
+- [ ] `skills/cdd-audit/references/shapes.md`: the enhancement-proposal audit (existing-capability inventory, proposal fit, integration options, handoff), the step-scoped TODO contract audit, and the multi-step run audit.
+- [ ] `scripts/validate_skills.py`: add `REQUIRED_REFERENCE_SECTIONS` and its checks per Implementation notes; set `REQUIRED_SECTIONS["cdd-audit"]` to `("## Interaction contract", "## Stage 1", "## Stage 2", "## Stage 3", "## Stage 4", "## Stage 5", "## Stage 6")`.
+
+### Implementation notes
+
+Spine content map:
+
+- `## Interaction contract`: read-only; question policy; one finding at a time with the running list refreshed after each decision; canonical options block; single-path option shape `A.`-`E.` and variant mode `A1.`-`A3.` with the existing example lines compressed; compact replies.
+- `## Stage 1 — Frame`: audit types; framing fields; artifact-authority rule; proposal-versus-readiness rule; the visible-framing rule from Constraints.
+- `## Stage 2 — Scope and shape`: scopes; scope rules; the shape table with columns `shape | primary question | proof surfaces | default depth | as-built model and checkpoint | suppress`; depth definitions in three lines; "unrelated drift stays report-only unless it changes the verdict" once; candidate proof surfaces; canonical external source handling; "for `enhancement_proposal`, step-scoped, or multi-step shapes read `references/shapes.md` now".
+- `## Stage 3 — Model the as-built`: trigger and exemptions in one line each; "read `references/as-built-model.md` now"; the core direction checkpoint block fields, trigger list, options `A.`-`D.`, and the sentence that confirmation validates the baseline and approves nothing.
+- `## Stage 4 — Judge`: "read `references/boundary-and-dimensions.md` now"; order boundary check, dimensions, lenses; emit `Solution shape` and `Deletion opportunities`; the goal-match verdict rule once.
+- `## Stage 5 — Findings and triage`: four-block finding, evidence grounding, assumption tags, speculative edge cases report-only, root-cause collapsing, cdd-plan delta types, the finding example, triage options and running list.
+- `## Stage 6 — Close out`: final summary contents as one compact list; routing options `A.`-`C.` with route behavior; no-approved-findings rule; enhancement handoff; the two guardrails.
+
+Validator addition, structural only:
+
+```python
+REQUIRED_REFERENCE_SECTIONS: dict[str, dict[str, tuple[str, ...]]] = {
+    "cdd-audit": {
+        "references/as-built-model.md": ("## Model parts", "## Limits and assumptions", "## Example"),
+        "references/boundary-and-dimensions.md": ("## Contents", "## Boundary and simplicity check", "## Core audit dimensions", "## Optional lenses"),
+        "references/shapes.md": ("## Enhancement-proposal audit", "## Step-scoped TODO contract audit", "## Multi-step run audit"),
+    },
+}
+```
+
+In `validate_skill`, for each entry: the file exists; each heading passes `require_section`; the relative path string occurs in SKILL.md; a file over 100 lines has `## Contents` within its first 15 lines. Later steps add entries; the checks stay generic.
+
+- `require_section` matches a heading by prefix followed by ` —`, so `## Stage 1` pins `## Stage 1 — Frame`.
+- Installer copies package directories whole; `references/` ships without installer changes.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- SKILL.md at or below 20 KB with `## Interaction contract` first; three reference files present and each linked with an imperative read sentence.
+- The bullet-to-home mapping shows every rule of the old file placed once.
+- A `small_change` audit at `quick` depth reads no reference beyond `as-built-model.md`; an `enhancement_proposal` audit reads `shapes.md` before findings.
+- The validator fails when a reference heading is removed, when a reference link is removed from SKILL.md, and when `## Contents` is removed from the over-100-line reference.
+
+## Step 76 — Split `cdd-maintain` into a routing core and four mode files
+
+points: 3
+touches: skills/cdd-maintain/SKILL.md, skills/cdd-maintain/references/*.md, scripts/validate_skills.py
+deps: 74, 75
+
+### Goal
+
+`skills/cdd-maintain/SKILL.md` holds routing, mode selection, approval contract, safe-write scope, INDEX freshness, and output at or below 10 KB; each mode is one self-contained reference read after selection; the approval loop is stated once; the Mode C self-grade gate is replaced by a concrete checklist.
+
+### Constraints
+
+- No rule is deleted; the implementer keeps the same bullet-to-home mapping as Step 75.
+- Each mode's read list exists once, in its mode file.
+- The one-approval-at-a-time loop and the separation of documentation, stale-TODO, runtime-cleanup, and source-cleanup approvals live only in `## Approval contract`; mode files name the approval surface and nothing more.
+- Low-freedom text stays verbatim: Mode C validation commands for both layouts, archive filename patterns, the fixed order `A -> B -> C -> D`.
+- Mode C preflight gate: "all preflight items present and the mode's validation commands pass" replaces the 0-12 self-grade.
+- Canonical options block and one-question loop from Step 74.
+
+### Tasks
+
+- [ ] `skills/cdd-maintain/SKILL.md`: rewrite into `## Shared routing read`, `## Mode selection`, `## Approval contract`, `## Safe write behavior`, `## INDEX freshness`, `## Output`, `## Mode files`; the last section lists the four files with "after selection, read the file for each selected mode in execution order".
+- [ ] `skills/cdd-maintain/references/mode-a-doc-drift.md`: `## Contents`, read list, canonical support docs, drift review and classification, codebase-comparison checks, subsystem clusters, ad-hoc support docs, TODO archive rules, stale adjacent TODO handling, journal archive rules, ad-hoc archive rules, local runtime cleanup review, and one closing list of the mode's four approval surfaces.
+- [ ] `skills/cdd-maintain/references/mode-b-source-cleanup.md`: candidate scan list, classification, per-candidate record, concern batches.
+- [ ] `skills/cdd-maintain/references/mode-c-index.md`: split detection, write scope, generation discipline, split-file emission, preflight checklist, validation for both layouts.
+- [ ] `skills/cdd-maintain/references/mode-d-refactor.md`: preconditions, candidate sources, review, options, report.
+- [ ] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-maintain"]` to the seven core headings; add `REQUIRED_REFERENCE_SECTIONS["cdd-maintain"]` with mode-a `("## Contents", "## Read list", "## Codebase-comparison checks", "## TODO archive rules", "## Journal archive rules", "## Ad-hoc support doc archive rules", "## Local runtime cleanup review")`, mode-b `("## Cleanup candidates",)`, mode-c `("## Split detection", "## Write scope", "## Preflight", "## Validation")`, mode-d `("## Candidate sources",)`.
+
+### Implementation notes
+
+- `## Shared routing read` is three lines: read `AGENTS.md`; read only what routes the mode; mode read lists live in the mode files.
+- `## Safe write behavior` keeps one line per mode naming its write scope; Mode C's detailed never-modify list stays in `mode-c-index.md` under `## Write scope`.
+- `## Output` keeps the per-mode block lists unchanged.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_installers.sh`
+
+### UAT
+
+- Core at or below 10 KB; four mode files present; the Mode A read list greps to one location.
+- An index-mode run reads only `mode-c-index.md`; a do-all run reads the four files in `A -> B -> C -> D` order.
+- The validation command blocks and archive filename patterns are byte-identical to today's.
+- The validator fails when `## Preflight` is removed from the Mode C file.
+
+## Step 77 — Restructure `cdd-init-project` around one approval ladder, one contract table, and two flows
+
+points: 3
+touches: skills/cdd-init-project/SKILL.md, scripts/validate_skills.py
+deps: 74
+
+### Goal
+
+`skills/cdd-init-project/SKILL.md` stays a single file, states the two-level approval ladder once, carries the per-file contract rules as one table, runs one init flow with conditional steps plus one adoption flow, keeps state detection whole, and drops the orphan `### A) EMPTY_DIR` heading. Quality is the target; size is not.
+
+### Constraints
+
+- `scripts/test_init_project_artifacts.sh` stays untouched and green: heading `## Open decisions queue`; phrases `visible \`Open decisions\` section`, `A repo-backed recommendation is not closure`, `\`asking now\``, `\`queued\``, `Do not emit a finished init or adoption plan while a plan-shaping \`Open decisions\` item remains unresolved`; fixture file kept.
+- Approval ladder stated once: level one approves the apply plan; level two is a separate confirmation for clone, download, remote creation, `git init`, `git push`, and moving or restoring user documents, listing exact commands, paths, and network need; never inferred from interest in CDD; stop at the boundary when only level one is granted.
+- The README footer block stays verbatim.
+- State detection precedence, ignore list, and signal lists stay verbatim.
+- Canonical blocks from Step 74: options block, one-question loop, intent checkpoint and open decisions with init's field names and `derived-from-docs`.
+
+### Tasks
+
+- [ ] `skills/cdd-init-project/SKILL.md`: rewrite into `## Canonical contract`, `## Approval ladder`, `## Canonical bootstrap source`, `## Contract-surface table`, `## Intent and assumption checkpoint`, `## Open decisions queue`, `## Interactive planning contract`, `## State detection`, `## Init flow`, `## Adoption flow`.
+- [ ] `## Contract-surface table`: columns `file | source | preserve | allowed edits`, rows `AGENTS.md`, `TODO.md`, `docs/JOURNAL.md`, `docs/journal/*`, `docs/prompts/PROMPT-INDEX.md`, `.agents/skills/*/SKILL.md`, `.gitignore`, `README.md`, `docs/specs/prd.md`, `docs/specs/blueprint.md`; the README row carries the footer rule for fresh versus adoption repos; the footer block follows the table.
+- [ ] `## Init flow`: name and backing; docs-seeded only: inventory, source-input question via open decisions, staging after level-two confirmation and restore under `docs/source-material/`; materialize per bootstrap source unless the repo is fresh boilerplate; intent gate; standard edit set as a pointer to the table; apply options; closeout; the fresh-boilerplate stop rule when Step 00 is complete.
+- [ ] `## Adoption flow`: Phase 1 audit, Phase 2 proposal built from the table plus doc reorganization and Step 01+ planning, Phase 3 apply with the level-two confirmation.
+- [ ] `scripts/validate_skills.py`: set `REQUIRED_SECTIONS["cdd-init-project"]` to the ten headings in document order.
+
+### Implementation notes
+
+- Bootstrap materialization mechanics (GitHub-backed and local-only) stay under `## Canonical bootstrap source` and are referenced, not repeated, by both flows.
+- "Do not precreate split-journal files" and "keep `docs/JOURNAL.md` as the stable entrypoint, rewritten as a short index after split activation" live only in the `docs/JOURNAL.md` and `docs/journal/*` table rows.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_init_project_artifacts.sh`
+
+### UAT
+
+- Ten H2 headings; the separate-confirmation rule greps to `## Approval ladder` only; the per-file rules grep to the table only.
+- A dry run of each detected state follows one flow without consulting another section for the file rules.
+- Both checks pass; the validator fails when `## Approval ladder` is removed.
+
+## Step 78 — Thin `cdd-master-chef` SKILL.md to an entrypoint and add a contents block to CONTRACT.md
+
+points: 3
+touches: skills/cdd-master-chef/SKILL.md, skills/cdd-master-chef/CONTRACT.md
+
+### Goal
+
+`skills/cdd-master-chef/SKILL.md` is a 10 KB entrypoint holding the adapter note, read-first instructions, routing, the kickoff approval bundle, report events, and a section map into `CONTRACT.md`; every rule `CONTRACT.md` already states is removed from SKILL.md; `CONTRACT.md` gains a `## Contents` block and changes in no other way.
+
+### Constraints
+
+- Pins stay: the names of all six core skills, `effective Builder transport`, a `CONTRACT.md §7` pointer, `.cdd-runtime/worktrees/<run-id>/`; no legacy worktree path; no 5, 10, 20, or 30-minute sentences near cadence, boot, suspect, silence, replace, or probe words; no probe-count replacement phrases.
+- `CONTRACT.md` numbered `## N)` headings and all section bodies stay byte-identical; the contents block goes between the intro paragraphs and `## 0) Purpose`.
+- Frontmatter unchanged. The Hermes sentence is removed.
+- References stay one level deep: SKILL.md links `CONTRACT.md`, `RUNBOOK.md`, `RUNTIME-CAPABILITIES.md`, `CODEX-ADAPTER.md`, `CLAUDE-ADAPTER.md` directly.
+
+### Tasks
+
+- [ ] `skills/cdd-master-chef/SKILL.md`: rewrite into the H1, a three-line adapter note, `## Read first` (read `CONTRACT.md` fully before kickoff, `RUNBOOK.md` for operations, `RUNTIME-CAPABILITIES.md` and the active runtime's adapter, `CONTRACT.md §7` for decision prompts and Builder lifecycle), `## Routing` (today's item 8 bullets, including the `points:` oversized sentence once), `## Kickoff approval` (today's item 10 list and its `A.`-`C.` options, plus the managed worktree path), `## Report events` (the event list and a pointer to `CONTRACT.md §9` for mission reports and closeout bundles), `## Section map` (table `topic | CONTRACT.md section` for actors, repo state, runtime state, session settings and transport, routing, worktree lifecycle, kickoff and Builder lifecycle, validation and QA, reporting and recovery, compaction, adapter obligations, wave-parallel).
+- [ ] Delete from SKILL.md: the Shared policy flow bullets, operating-contract items 2-7, 9, 11-17, 19-25, the `BLOCKER_CLEARED` and mission-report paragraphs, and the three closeout bundles, all of which `CONTRACT.md` states.
+- [ ] `skills/cdd-master-chef/CONTRACT.md`: insert `## Contents` listing `§0` through `§12` with one line each.
+
+### Implementation notes
+
+- `_extract_contract_section` matches only `## N)` headings, so `## Contents` does not disturb section extraction.
+- Keep the one-sentence rule "when SKILL.md and CONTRACT.md disagree, CONTRACT.md wins" in the adapter note; after this step it should never trigger.
+
+### Automated checks
+
+- `python3 scripts/validate_skills.py`
+- `bash scripts/test_master_chef_artifacts.sh`
+
+### UAT
+
+- SKILL.md at or below 10 KB; the 8-word shingle overlap with `CONTRACT.md` drops below 10 percent of SKILL.md.
+- A kickoff dry run finds every needed rule either in SKILL.md or one hop away through the section map.
+- `CONTRACT.md` diff is the contents block only.
+- Both checks pass.
